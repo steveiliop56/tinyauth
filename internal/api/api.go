@@ -9,6 +9,7 @@ import (
 	"time"
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/hooks"
 	"tinyauth/internal/types"
 
 	"github.com/gin-contrib/sessions"
@@ -52,20 +53,14 @@ func Run(config types.Config, users types.UserList) {
 	})
 
 	router.GET("/api/auth", func (c *gin.Context) {
-		session := sessions.Default(c)
-		value := session.Get("tinyauth")
+		userContext := hooks.UseUserContext(c, users)
 
-		if value != nil {
-			usernameString, ok := value.(string)
-			if ok {
-				if auth.FindUser(users, usernameString) != nil {
-					c.JSON(200, gin.H{
-						"status": 200,
-						"message": "Authorized",
-					})
-					return
-				}
-			}
+		if userContext.IsLoggedIn {
+			c.JSON(200, gin.H{
+				"status": 200,
+				"message": "Authenticated",
+			})
+			return
 		}
 
 		uri := c.Request.Header.Get("X-Forwarded-Uri")
@@ -139,29 +134,23 @@ func Run(config types.Config, users types.UserList) {
 	})
 
 	router.GET("/api/status", func (c *gin.Context) {
-		session := sessions.Default(c)
-		value := session.Get("tinyauth")
+		userContext := hooks.UseUserContext(c, users)
 
-		if value != nil {
-			usernameString, ok := value.(string)
-			if ok {
-				if auth.FindUser(users, usernameString) != nil {
-					c.JSON(200, gin.H{
-						"status": 200,
-						"isLoggedIn": true,
-						"username": usernameString,
-						"version": assets.Version,
-					})
-					return
-				}
-			}
-		}
+		if !userContext.IsLoggedIn {
+			c.JSON(200, gin.H{
+				"status": 200,
+				"message": "Unauthenticated",
+				"username": "",
+				"isLoggedIn": false,
+			})
+			return
+		} 
 
 		c.JSON(200, gin.H{
 			"status": 200,
-			"isLoggedIn": false,
-			"username": "",
-			"version": assets.Version,
+			"message": "Authenticated",
+			"username": userContext.Username,
+			"isLoggedIn": true,
 		})
 	})
 

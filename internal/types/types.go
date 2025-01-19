@@ -26,3 +26,8 @@ type Config struct {
 	AppURL string `validate:"required,url" mapstructure:"app-url"`
 	Users string `validate:"required" mapstructure:"users"`
 }
+
+type UserContext struct {
+	Username string
+	IsLoggedIn bool
+}

@@ -3,3 +3,6 @@ internal/assets/dist
 
 # binaries
 tinyauth
+
+# dev docker compose
+docker-compose.dev.yml

@@ -15,7 +15,7 @@ services:
     image: nginx:latest
     labels:
       traefik.enable: true
-      traefik.http.routers.nginx.rule: Host(`nginx.dev.local`)
+      traefik.http.routers.nginx.rule: Host(`nginx.example.com`)
       traefik.http.services.nginx.loadbalancer.server.port: 80
       traefik.http.routers.nginx.middlewares: tinyauth
 
@@ -29,5 +29,5 @@ services:
       - USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u
     labels:
       traefik.enable: true
-      traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.local`)
+      traefik.http.routers.tinyauth.rule: Host(`tinyauth.example.com`)
       traefik.http.services.tinyauth.loadbalancer.server.port: 3000
