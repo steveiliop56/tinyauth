@@ -34,11 +34,11 @@ Tinyauth accepts the following environment variables:
 
 Why make this project? Well we all know that more powerful alternatives like authentik and authelia exist but when I tried to use them I felt overwhelmed with all the configration options and environment variables I had to configure in order for them to work, so, I decided to make a small alternative in Go to both test my skills and cover my simple login screen needs.
 
-## Is this secure?
+### Is this secure?
 
 Probably, the sessions are managed with the gin sessions package so it should be very secure. It is definitely not made for production but it could easily serve as a simple login screen to all of your homelab apps.
 
-## Do I need to login every time?
+### Do I need to login every time?
 
 No, when you login tinyauth sets a `tinyauth` cookie in your browser that applies to all of the subdomains of the root URL you set.
 
