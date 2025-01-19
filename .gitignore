@@ -1,2 +1,5 @@
 # dist
 internal/assets/dist
+
+# binaries
+tinyauth
