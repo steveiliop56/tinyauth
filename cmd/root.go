@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 	"tinyauth/internal/api"
+	"tinyauth/internal/assets"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -21,7 +22,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Logger
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
-		log.Info().Msg("Starting tinyauth")
+		log.Info().Str("version", assets.Version).Msg("Starting tinyauth")
 
 		// Get config
 		log.Info().Msg("Parsing config")
