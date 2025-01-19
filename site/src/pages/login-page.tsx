@@ -20,7 +20,7 @@ export const LoginPage = () => {
   }
 
   const schema = z.object({
-    email: z.string().email({ message: "Invalid email" }),
+    username: z.string(),
     password: z.string(),
   });
 
@@ -29,7 +29,7 @@ export const LoginPage = () => {
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      email: "",
+      username: "",
       password: "",
     },
     validate: zodResolver(schema),
@@ -42,7 +42,7 @@ export const LoginPage = () => {
     onError: () => {
       notifications.show({
         title: "Failed to login",
-        message: "Check your email and password",
+        message: "Check your username and password",
         color: "red",
       });
     },
@@ -68,12 +68,12 @@ export const LoginPage = () => {
       <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
-            label="Email"
-            placeholder="you@example.com"
+            label="Username"
+            placeholder="tinyauth"
             required
             disabled={loginMutation.isLoading}
-            key={form.key("email")}
-            {...form.getInputProps("email")}
+            key={form.key("username")}
+            {...form.getInputProps("username")}
           />
           <PasswordInput
             label="Password"

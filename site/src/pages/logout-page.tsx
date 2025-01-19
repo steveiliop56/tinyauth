@@ -7,7 +7,7 @@ import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
 
 export const LogoutPage = () => {
-  const { isLoggedIn } = useUserContext();
+  const { isLoggedIn, username } = useUserContext();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
@@ -43,7 +43,8 @@ export const LogoutPage = () => {
           Logout
         </Text>
         <Text>
-          You are already logged in, click the button below to log out.
+          You are currently logged in as {username}, click the button below to
+          log out.
         </Text>
         <Button
           fullWidth

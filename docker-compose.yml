@@ -9,7 +9,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
-      traefik.http.middlewares.basic-auth.basicauth.users: user:$$2y$$05$$HgkRucUeFKgZ7ZsPkIJY6uAX2Nh8ZAeIlJ5Rpq.05yYBPsITTnnLu
       traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth
 
   nginx:
@@ -30,6 +29,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3000:3000
+    environment:
+      - PORT=3000
+      - ADDRESS=0.0.0.0
+      - SECRET=ghDaPuDFjvlBuF93zcacFrDiHFHTZhUh
+      - ROOT_URL=http://dev.local
+      - APP_URL=http://tinyauth.dev.local
+      - USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u
     labels:
       traefik.enable: true
       traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.local`)
