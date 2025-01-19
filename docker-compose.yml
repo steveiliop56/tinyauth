@@ -1,0 +1,36 @@
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:v3.3
+    command: --api.insecure=true --providers.docker
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      traefik.http.middlewares.basic-auth.basicauth.users: user:$$2y$$05$$HgkRucUeFKgZ7ZsPkIJY6uAX2Nh8ZAeIlJ5Rpq.05yYBPsITTnnLu
+      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - 8000:80
+    labels:
+      traefik.enable: true
+      traefik.http.routers.nginx.rule: Host(`nginx.dev.local`)
+      traefik.http.services.nginx.loadbalancer.server.port: 80
+      traefik.http.routers.nginx.middlewares: tinyauth
+
+  tinyauth:
+    container_name: tinyauth
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    labels:
+      traefik.enable: true
+      traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.local`)
+      traefik.http.services.tinyauth.loadbalancer.server.port: 3000
