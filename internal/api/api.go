@@ -150,6 +150,7 @@ func Run(config types.Config, users types.UserList) {
 						"status": 200,
 						"isLoggedIn": true,
 						"username": usernameString,
+						"version": assets.Version,
 					})
 					return
 				}
@@ -160,6 +161,14 @@ func Run(config types.Config, users types.UserList) {
 			"status": 200,
 			"isLoggedIn": false,
 			"username": "",
+			"version": assets.Version,
+		})
+	})
+
+	router.GET("/api/healthcheck", func (c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": 200,
+			"message": "OK",
 		})
 	})
 
