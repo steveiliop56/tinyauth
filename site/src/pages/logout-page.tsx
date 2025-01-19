@@ -1,4 +1,4 @@
-import { Button, Paper, Text } from "@mantine/core";
+import { Button, Code, Paper, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -43,8 +43,8 @@ export const LogoutPage = () => {
           Logout
         </Text>
         <Text>
-          You are currently logged in as {username}, click the button below to
-          log out.
+          You are currently logged in as <Code>{username}</Code>, click the
+          button below to log out.
         </Text>
         <Button
           fullWidth
