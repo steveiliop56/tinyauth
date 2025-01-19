@@ -29,7 +29,7 @@ export const ContinuePage = () => {
   return (
     <Layout>
       <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
-        {redirectUri ? (
+        {typeof redirectUri == "string" ? (
           <>
             <Text size="xl" fw={700}>
               Continue
