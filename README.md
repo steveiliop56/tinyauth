@@ -1,6 +1,6 @@
-# Tinyauth - The easiest way to secure your traefik apps with a login screen
+# Tinyauth - The simplest way to protect your apps with a login screen
 
-Tinyauth is an extremely simple traefik forward auth proxy that adds a login screen to all of your apps that are using the traefik reverse proxy. Tinyauth is configurable through environment variables and it is only 20MB in size.
+Tinyauth is an extremely simple traefik middleware that adds a login screen to all of your apps that are using the traefik reverse proxy. Tinyauth is configurable through environment variables and it is only 20MB in size.
 
 ## Getting started
 
@@ -10,7 +10,7 @@ Tinyauth is extremely easy to run since it's shipped as a docker container. The 
 
 ### Why?
 
-Why make this project? Well we all know that more powerful alternatives like authentik and authelia exist but when I tried to use them I felt overwhelmed with all the configration options and environment variables I had to configure in order for them to work, so, I decided to make a small alternative in Go to both test my skills and cover my simple login screen needs.
+Why make this project? Well, we all know that more powerful alternatives like authentik and authelia exist, but when I tried to use them, I felt overwhelmed with all the configration options and environment variables I had to configure in order for them to work. So, I decided to make a small alternative in Go to both test my skills and cover my simple login screen needs.
 
 ### Is this secure?
 
@@ -18,7 +18,7 @@ Probably, the sessions are managed with the gin sessions package so it should be
 
 ### Do I need to login every time?
 
-No, when you login tinyauth sets a `tinyauth` cookie in your browser that applies to all of the subdomains of the root URL you set.
+No, when you login, tinyauth sets a `tinyauth` cookie in your browser that applies to all of the subdomains of your domain.
 
 ## License
 
@@ -26,7 +26,7 @@ Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You ma
 
 ## Contributing
 
-Any contributions to the codebase are welcome! I am not a cybersecurity person so my code may have some vulnerability, if you find something that could be used to exploit and bypass tinyauth please tell me as soon as possible so I can fix it.
+Any contributions to the codebase are welcome! I am not a cybersecurity person so my code may have a security issue, if you find something that could be used to exploit and bypass tinyauth please let me know as soon as possible so I can fix it.
 
 ## Acknowledgements
 
