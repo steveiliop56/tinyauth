@@ -4,8 +4,8 @@ internal/assets/dist
 # binaries
 tinyauth
 
-# dev docker compose
-docker-compose.dev.yml
+# test docker compose
+docker-compose.test.yml
 
 # users file
 users.txt
