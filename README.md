@@ -2,31 +2,9 @@
 
 Tinyauth is an extremely simple traefik forward auth proxy that adds a login screen to all of your apps that are using the traefik reverse proxy. Tinyauth is configurable through environment variables and it is only 20MB in size.
 
-## Screenshots
-
-Talk is cheap, here are some screenshots:
-
-|                                         |                                           |
-| --------------------------------------- | ----------------------------------------- |
-| ![Login](./screenshots/login.png)       | ![Logout](./screenshots/logout.png)       |
-| ![Continue](./screenshots/continue.png) | ![Not Found](./screenshots/not-found.png) |
-
 ## Getting started
 
-Tinyauth is extremely easy to run since it's shipped as a docker container. I chose to bundle it with busybox so as you can easily debug the API (e.g. using curl) and have some simple linux tools. If you want to get started with an example just check the example docker compose file [here](./docker-compose.example.yml)
-
-## Environment variables
-
-Tinyauth accepts the following environment variables:
-
-| Name       | Description                                             | Default | Required |
-| ---------- | ------------------------------------------------------- | ------- | -------- |
-| `PORT`     | The port the API listens on.                            | 3000    | no       |
-| `ADDRESS`  | The address the API binds on.                           | 0.0.0.0 | no       |
-| `SECRET`   | A 32 character long string used for the sessions.       | -       | yes      |
-| `ROOT_URL` | The base URL of your domain. (e.g. https://example.com) | -       | yes      |
-| `APP_URL`  | The Tinyauth URL. (e.g. https://tinyauth.example.com)   | -       | yes      |
-| `USERS`    | Comma seperated list of `user:bcrypt-password-hash`.    | -       | yes      |
+Tinyauth is extremely easy to run since it's shipped as a docker container. The guide on how to get started is available on the website [here](https://tinyauth.doesmycode.work/).
 
 ## FAQ
 
