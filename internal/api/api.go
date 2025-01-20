@@ -11,6 +11,7 @@ import (
 	"tinyauth/internal/auth"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -33,8 +34,13 @@ func Run(config types.Config, users types.UserList) {
 	fileServer := http.FileServer(http.FS(dist))
 	store := cookie.NewStore([]byte(config.Secret))
 
-	domain := strings.Split(config.RootURL, "://")[1]
+	domain, domainErr := utils.GetRootURL(config.AppURL)
 
+	if domainErr != nil {
+		log.Fatal().Err(domainErr).Msg("Failed to get domain")
+		os.Exit(1)
+	}
+	
 	store.Options(sessions.Options{
 		Domain: fmt.Sprintf(".%s", domain),
 		Path: "/",

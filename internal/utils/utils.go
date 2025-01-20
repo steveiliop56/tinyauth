@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"net/url"
 	"strings"
 	"tinyauth/internal/types"
 )
@@ -26,4 +27,18 @@ func CreateUsersList(users string) (types.UserList, error) {
 	}
 
 	return userList, nil
+}
+
+func GetRootURL(urlSrc string) (string, error) {
+	urlParsed, parseErr := url.Parse(urlSrc)
+
+	if parseErr != nil {
+		return "", parseErr
+	}
+
+	urlSplitted := strings.Split(urlParsed.Host, ".")
+
+	urlFinal := urlSplitted[len(urlSplitted)-2] + "." + urlSplitted[len(urlSplitted)-1]
+
+	return urlFinal, nil
 }

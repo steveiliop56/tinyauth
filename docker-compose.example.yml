@@ -24,7 +24,6 @@ services:
     image: ghcr.io/steveiliop56/tinyauth:latest
     environment:
       - SECRET=some-random-32-chars-string
-      - ROOT_URL=https://example.com
       - APP_URL=https://tinyauth.example.com
       - USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u
     labels:
