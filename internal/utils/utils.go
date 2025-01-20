@@ -3,16 +3,17 @@ package utils
 import (
 	"errors"
 	"net/url"
+	"os"
 	"strings"
 	"tinyauth/internal/types"
 )
 
-func CreateUsersList(users string) (types.UserList, error) {
+func ParseUsers(users string) (types.UserList, error) {
 	var userList types.UserList
 	userListString := strings.Split(users, ",")
 
 	if len(userListString) == 0 {
-		return types.UserList{}, errors.New("no users found")
+		return types.UserList{}, errors.New("invalid user format")
 	}
 
 	for _, user := range userListString {
@@ -41,4 +42,20 @@ func GetRootURL(urlSrc string) (string, error) {
 	urlFinal := urlSplitted[len(urlSplitted)-2] + "." + urlSplitted[len(urlSplitted)-1]
 
 	return urlFinal, nil
+}
+
+func GetUsersFromFile(usersFile string) (string, error) {
+	_, statErr := os.Stat(usersFile)
+
+	if statErr != nil {
+		return "", statErr
+	}
+
+	data, readErr := os.ReadFile(usersFile)
+
+	if readErr != nil {
+		return "", readErr
+	}
+
+	return string(data), nil
 }

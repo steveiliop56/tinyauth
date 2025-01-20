@@ -23,7 +23,8 @@ type Config struct {
 	Address string `mapstructure:"address, ip4_addr"`
 	Secret string `validate:"required,len=32" mapstructure:"secret"`
 	AppURL string `validate:"required,url" mapstructure:"app-url"`
-	Users string `validate:"required" mapstructure:"users"`
+	Users string `mapstructure:"users"`
+	UsersFile string `mapstructure:"users-file"`
 }
 
 type UserContext struct {

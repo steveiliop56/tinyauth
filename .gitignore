@@ -6,3 +6,6 @@ tinyauth
 
 # dev docker compose
 docker-compose.dev.yml
+
+# users file
+users.txt

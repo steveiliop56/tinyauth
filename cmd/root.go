@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 	"time"
 	"tinyauth/internal/api"
 	"tinyauth/internal/assets"
@@ -36,10 +37,30 @@ var rootCmd = &cobra.Command{
 		validateErr := validator.Struct(config)
 		HandleError(validateErr, "Invalid config")
 
-		// Create users list
-		log.Info().Msg("Creating users list")
-		userList, createErr := utils.CreateUsersList(config.Users)
-		HandleError(createErr, "Failed to create users list")
+		// Parse users
+		log.Info().Msg("Parsing users")
+
+		if config.UsersFile == "" && config.Users == "" {
+			log.Fatal().Msg("No users provided")
+			os.Exit(1)
+		}
+
+		users := config.Users
+
+		if config.UsersFile != "" {
+			log.Info().Msg("Reading users from file")
+			usersFromFile, readErr := utils.GetUsersFromFile(config.UsersFile)
+			HandleError(readErr, "Failed to read users from file")
+			usersFromFileParsed := strings.Join(strings.Split(usersFromFile, "\n"), ",")
+			if users != "" {
+				users = users + "," + usersFromFileParsed
+			} else {
+				users = usersFromFileParsed
+			}
+		}
+
+		userList, createErr := utils.ParseUsers(users)
+		HandleError(createErr, "Failed to parse users")
 
 		// Start server
 		log.Info().Msg("Starting server")
@@ -68,10 +89,12 @@ func init() {
 	rootCmd.Flags().String("secret", "", "Secret to use for the cookie.")
 	rootCmd.Flags().String("app-url", "", "The tinyauth URL.")
 	rootCmd.Flags().String("users", "", "Comma separated list of users in the format username:bcrypt-hashed-password.")
+	rootCmd.Flags().String("users-file", "", "Path to a file containing users in the format username:bcrypt-hashed-password.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
 	viper.BindEnv("app-url", "APP_URL")
 	viper.BindEnv("users", "USERS")
+	viper.BindEnv("users-file", "USERS_FILE")
 	viper.BindPFlags(rootCmd.Flags())
 }
