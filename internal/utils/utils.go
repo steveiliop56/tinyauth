@@ -39,7 +39,7 @@ func GetRootURL(urlSrc string) (string, error) {
 
 	urlSplitted := strings.Split(urlParsed.Host, ".")
 
-	urlFinal := urlSplitted[len(urlSplitted)-2] + "." + urlSplitted[len(urlSplitted)-1]
+	urlFinal := strings.Join(urlSplitted[1:], ".")
 
 	return urlFinal, nil
 }

@@ -36,6 +36,8 @@ func Run(config types.Config, users types.UserList) {
 
 	domain, domainErr := utils.GetRootURL(config.AppURL)
 
+	log.Info().Str("domain", domain).Msg("Using domain")
+
 	if domainErr != nil {
 		log.Fatal().Err(domainErr).Msg("Failed to get domain")
 		os.Exit(1)
