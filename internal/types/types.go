@@ -25,6 +25,7 @@ type Config struct {
 	AppURL string `validate:"required,url" mapstructure:"app-url"`
 	Users string `mapstructure:"users"`
 	UsersFile string `mapstructure:"users-file"`
+	CookieSecure bool `mapstructure:"cookie-secure"`
 }
 
 type UserContext struct {

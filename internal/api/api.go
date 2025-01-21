@@ -36,17 +36,28 @@ func Run(config types.Config, users types.UserList) {
 
 	domain, domainErr := utils.GetRootURL(config.AppURL)
 
-	log.Info().Str("domain", domain).Msg("Using domain")
+	log.Info().Str("domain", domain).Msg("Using domain for cookies")
 
 	if domainErr != nil {
 		log.Fatal().Err(domainErr).Msg("Failed to get domain")
 		os.Exit(1)
 	}
+
+	var isSecure bool
+
+	if config.CookieSecure {
+		isSecure = true
+	} else {
+		isSecure = false
+	}
 	
 	store.Options(sessions.Options{
 		Domain: fmt.Sprintf(".%s", domain),
 		Path: "/",
+		HttpOnly: true,
+		Secure: isSecure,
 	})
+	
   	router.Use(sessions.Sessions("tinyauth", store))
 
 	router.Use(func(c *gin.Context) {
