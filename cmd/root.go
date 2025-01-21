@@ -3,16 +3,14 @@ package cmd
 import (
 	"os"
 	"strings"
-	"time"
+	cmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
-	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,10 +21,6 @@ var rootCmd = &cobra.Command{
 	Short: "An extremely simple traefik forward auth proxy.",
 	Long: `Tinyauth is an extremely simple traefik forward-auth login screen that makes securing your apps easy.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Logger
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
-		log.Info().Str("version", assets.Version).Msg("Starting tinyauth")
-
 		// Get config
 		log.Info().Msg("Parsing config")
 		var config types.Config
@@ -91,6 +85,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to execute command")
 		os.Exit(1)
 	}
 }
@@ -103,6 +98,7 @@ func HandleError(err error, msg string) {
 }
 
 func init() {
+	rootCmd.AddCommand(cmd.UserCmd())
 	viper.AutomaticEnv()
 	rootCmd.Flags().IntP("port", "p", 3000, "Port to run the server on.")
 	rootCmd.Flags().String("address", "0.0.0.0", "Address to bind the server to.")
