@@ -8,26 +8,26 @@ import (
 	"tinyauth/internal/types"
 )
 
-func ParseUsers(users string) (types.UserList, error) {
-	var userList types.UserList
-	userListString := strings.Split(users, ",")
+func ParseUsers(users string) (types.Users, error) {
+	var usersParsed types.Users
+	userList := strings.Split(users, ",")
 
-	if len(userListString) == 0 {
-		return types.UserList{}, errors.New("invalid user format")
+	if len(userList) == 0 {
+		return types.Users{}, errors.New("invalid user format")
 	}
 
-	for _, user := range userListString {
+	for _, user := range userList {
 		userSplit := strings.Split(user, ":")
 		if len(userSplit) != 2 {
-			return types.UserList{}, errors.New("invalid user format")
+			return types.Users{}, errors.New("invalid user format")
 		}
-		userList.Users = append(userList.Users, types.User{
+		usersParsed = append(usersParsed, types.User{
 			Username: userSplit[0],
 			Password: userSplit[1],
 		})
 	}
 
-	return userList, nil
+	return usersParsed, nil
 }
 
 func GetRootURL(urlSrc string) (string, error) {

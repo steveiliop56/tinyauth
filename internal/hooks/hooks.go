@@ -8,7 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UseUserContext(c *gin.Context, userList types.UserList) (types.UserContext) {
+func NewHooks(auth *auth.Auth) *Hooks {
+	return &Hooks{
+		Auth: auth,
+	}
+}
+
+type Hooks struct {
+	Auth *auth.Auth
+}
+
+func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext) {
 	session := sessions.Default(c)
 	cookie := session.Get("tinyauth")
 
@@ -28,7 +38,7 @@ func UseUserContext(c *gin.Context, userList types.UserList) (types.UserContext)
 		}
 	}
 
-	user := auth.FindUser(userList, username)
+	user := hooks.Auth.GetUser(username)
 
 	if user == nil {
 		return types.UserContext{

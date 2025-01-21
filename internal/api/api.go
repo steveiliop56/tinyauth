@@ -20,8 +20,25 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Run(config types.Config, users types.UserList) {
+func NewAPI(config types.APIConfig, hooks *hooks.Hooks, auth *auth.Auth) (*API) {
+	return &API{
+		Config: config,
+		Hooks: hooks,
+		Auth: auth,
+		Router: nil,
+	}
+}
+
+type API struct {
+	Config types.APIConfig
+	Router *gin.Engine
+	Hooks *hooks.Hooks
+	Auth *auth.Auth
+}
+
+func (api *API) Init() {
 	gin.SetMode(gin.ReleaseMode)
+	
 	router := gin.New()
 	router.Use(zerolog())
 	dist, distErr := fs.Sub(assets.Assets, "dist")
@@ -32,9 +49,9 @@ func Run(config types.Config, users types.UserList) {
 	}
 
 	fileServer := http.FileServer(http.FS(dist))
-	store := cookie.NewStore([]byte(config.Secret))
+	store := cookie.NewStore([]byte(api.Config.Secret))
 
-	domain, domainErr := utils.GetRootURL(config.AppURL)
+	domain, domainErr := utils.GetRootURL(api.Config.AppURL)
 
 	log.Info().Str("domain", domain).Msg("Using domain for cookies")
 
@@ -45,7 +62,7 @@ func Run(config types.Config, users types.UserList) {
 
 	var isSecure bool
 
-	if config.CookieSecure {
+	if api.Config.CookieSecure {
 		isSecure = true
 	} else {
 		isSecure = false
@@ -60,7 +77,7 @@ func Run(config types.Config, users types.UserList) {
 	
   	router.Use(sessions.Sessions("tinyauth", store))
 
-	router.Use(func(c *gin.Context) {
+	  router.Use(func(c *gin.Context) {
 		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
 			_, err := fs.Stat(dist, strings.TrimPrefix(c.Request.URL.Path, "/"))
 			if os.IsNotExist(err) {
@@ -71,8 +88,12 @@ func Run(config types.Config, users types.UserList) {
 		}
 	})
 
-	router.GET("/api/auth", func (c *gin.Context) {
-		userContext := hooks.UseUserContext(c, users)
+	api.Router = router
+}
+
+func (api *API) SetupRoutes() {
+	api.Router.GET("/api/auth", func (c *gin.Context) {
+		userContext := api.Hooks.UseUserContext(c)
 
 		if userContext.IsLoggedIn {
 			c.JSON(200, gin.H{
@@ -97,10 +118,10 @@ func Run(config types.Config, users types.UserList) {
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", config.AppURL, queries.Encode()))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", api.Config.AppURL, queries.Encode()))
 	})
 
-	router.POST("/api/login", func (c *gin.Context) {
+	api.Router.POST("/api/login", func (c *gin.Context) {
 		var login types.LoginRequest
 
 		err := c.BindJSON(&login)
@@ -113,7 +134,7 @@ func Run(config types.Config, users types.UserList) {
 			return
 		}
 
-		user := auth.FindUser(users, login.Username)
+		user := api.Auth.GetUser(login.Username)
 
 		if user == nil {
 			c.JSON(401, gin.H{
@@ -123,7 +144,7 @@ func Run(config types.Config, users types.UserList) {
 			return
 		}
 
-		if !auth.CheckPassword(*user, login.Password) {
+		if !api.Auth.CheckPassword(*user, login.Password) {
 			c.JSON(401, gin.H{
 				"status": 401,
 				"message": "Unauthorized",
@@ -141,7 +162,7 @@ func Run(config types.Config, users types.UserList) {
 		})
 	})
 
-	router.POST("/api/logout", func (c *gin.Context) {
+	api.Router.POST("/api/logout", func (c *gin.Context) {
 		session := sessions.Default(c)
 		session.Delete("tinyauth")
 		session.Save()
@@ -152,8 +173,8 @@ func Run(config types.Config, users types.UserList) {
 		})
 	})
 
-	router.GET("/api/status", func (c *gin.Context) {
-		userContext := hooks.UseUserContext(c, users)
+	api.Router.GET("/api/status", func (c *gin.Context) {
+		userContext := api.Hooks.UseUserContext(c)
 
 		if !userContext.IsLoggedIn {
 			c.JSON(200, gin.H{
@@ -173,14 +194,18 @@ func Run(config types.Config, users types.UserList) {
 		})
 	})
 
-	router.GET("/api/healthcheck", func (c *gin.Context) {
+	api.Router.GET("/api/healthcheck", func (c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": 200,
 			"message": "OK",
 		})
 	})
+}
 
-	router.Run(fmt.Sprintf("%s:%d", config.Address, config.Port))
+
+func (api *API) Run() {
+	log.Info().Str("address", api.Config.Address).Int("port", api.Config.Port).Msg("Starting server")
+	api.Router.Run(fmt.Sprintf("%s:%d", api.Config.Address, api.Config.Port))
 }
 
 func zerolog() gin.HandlerFunc {

@@ -6,6 +6,8 @@ import (
 	"time"
 	"tinyauth/internal/api"
 	"tinyauth/internal/assets"
+	"tinyauth/internal/auth"
+	"tinyauth/internal/hooks"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -45,26 +47,44 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		users := config.Users
+		usersString := config.Users
 
 		if config.UsersFile != "" {
 			log.Info().Msg("Reading users from file")
 			usersFromFile, readErr := utils.GetUsersFromFile(config.UsersFile)
 			HandleError(readErr, "Failed to read users from file")
 			usersFromFileParsed := strings.Join(strings.Split(usersFromFile, "\n"), ",")
-			if users != "" {
-				users = users + "," + usersFromFileParsed
+			if usersString != "" {
+				usersString = usersString + "," + usersFromFileParsed
 			} else {
-				users = usersFromFileParsed
+				usersString = usersFromFileParsed
 			}
 		}
 
-		userList, createErr := utils.ParseUsers(users)
-		HandleError(createErr, "Failed to parse users")
+		users, parseErr := utils.ParseUsers(usersString)
+		HandleError(parseErr, "Failed to parse users")
 
-		// Start server
-		log.Info().Msg("Starting server")
-		api.Run(config, userList)
+		// Create auth service
+		auth := auth.NewAuth(users)
+		
+		// Create hooks service
+		hooks := hooks.NewHooks(auth)
+		
+		// Create API
+		api := api.NewAPI(types.APIConfig{
+			Port: config.Port,
+			Address: config.Address,
+			Secret: config.Secret,
+			AppURL: config.AppURL,
+			CookieSecure: config.CookieSecure,
+		}, hooks, auth)
+
+		// Setup routes
+		api.Init()
+		api.SetupRoutes()
+
+		// Start
+		api.Run()
 	},
 }
 

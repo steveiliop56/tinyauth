@@ -14,9 +14,7 @@ type User struct {
 	Password string
 }
 
-type UserList struct {
-	Users []User
-}
+type Users []User
 
 type Config struct {
 	Port int `validate:"number" mapstructure:"port"`
@@ -31,4 +29,12 @@ type Config struct {
 type UserContext struct {
 	Username string
 	IsLoggedIn bool
+}
+
+type APIConfig struct {
+	Port int
+	Address string
+	Secret string
+	AppURL string
+	CookieSecure bool
 }
