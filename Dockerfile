@@ -46,4 +46,4 @@ COPY --from=builder /tinyauth/tinyauth ./
 
 EXPOSE 3000
 
-CMD ["./tinyauth"]
+ENTRYPOINT ["./tinyauth"]
