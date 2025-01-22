@@ -73,7 +73,7 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		if docker {
-			userSplit[1] = strings.ReplaceAll(password, "$$", "$")
+			userSplit[1] = strings.ReplaceAll(userSplit[1], "$$", "$")
 		}
 
 		verifyErr := bcrypt.CompareHashAndPassword([]byte(userSplit[1]), []byte(password))
