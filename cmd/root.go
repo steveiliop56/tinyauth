@@ -106,11 +106,13 @@ func init() {
 	rootCmd.Flags().String("app-url", "", "The tinyauth URL.")
 	rootCmd.Flags().String("users", "", "Comma separated list of users in the format username:bcrypt-hashed-password.")
 	rootCmd.Flags().String("users-file", "", "Path to a file containing users in the format username:bcrypt-hashed-password.")
+	rootCmd.Flags().Bool("cookie-secure", false, "Send cookie over secure connection only.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
 	viper.BindEnv("app-url", "APP_URL")
 	viper.BindEnv("users", "USERS")
 	viper.BindEnv("users-file", "USERS_FILE")
+	viper.BindEnv("cookie-secure", "COOKIE_SECURE")
 	viper.BindPFlags(rootCmd.Flags())
 }
