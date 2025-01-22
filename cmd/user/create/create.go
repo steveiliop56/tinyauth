@@ -1,4 +1,4 @@
-package subcommands
+package create
 
 import (
 	"errors"
@@ -37,7 +37,7 @@ var CreateCmd = &cobra.Command{
 						}
 						return nil
 					})),
-					huh.NewConfirm().Title("Format the output for docker?").Value(&docker).Affirmative("Yes").Negative("No"),
+					huh.NewSelect[bool]().Title("Format the output for docker?").Options(huh.NewOption("Yes", true), huh.NewOption("No", false)).Value(&docker),
 				),
 			)
 
@@ -55,6 +55,8 @@ var CreateCmd = &cobra.Command{
 			log.Error().Msg("Username and password cannot be empty")
 			os.Exit(1)
 		}
+
+		log.Info().Str("username", username).Str("password", password).Bool("docker", docker).Msg("Creating user")
 
 		passwordByte, passwordErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 

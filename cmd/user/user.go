@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"tinyauth/cmd/user/subcommands"
+	"tinyauth/cmd/user/create"
+	"tinyauth/cmd/user/verify"
 
 	"github.com/spf13/cobra"
 )
@@ -12,6 +13,7 @@ func UserCmd() *cobra.Command {
 		Short: "User utilities",
 		Long: `Utilities for creating and verifying tinyauth compatible users.`,
 	}
-	userCmd.AddCommand(subcommands.CreateCmd)
+	userCmd.AddCommand(create.CreateCmd)
+	userCmd.AddCommand(verify.VerifyCmd)
 	return userCmd
 }	
