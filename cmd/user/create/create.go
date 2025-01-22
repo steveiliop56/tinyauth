@@ -76,8 +76,8 @@ var CreateCmd = &cobra.Command{
 }
 
 func init() {
-	CreateCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Create a user interactively")
-	CreateCmd.Flags().BoolVarP(&docker, "docker", "d", false, "Format output for docker")
-	CreateCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
-	CreateCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
+	CreateCmd.Flags().BoolVar(&interactive, "interactive", false, "Create a user interactively")
+	CreateCmd.Flags().BoolVar(&docker, "docker", false, "Format output for docker")
+	CreateCmd.Flags().StringVar(&username, "username", "", "Username")
+	CreateCmd.Flags().StringVar(&password, "password", "", "Password")
 }

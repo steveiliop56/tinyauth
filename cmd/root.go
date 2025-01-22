@@ -100,7 +100,7 @@ func HandleError(err error, msg string) {
 func init() {
 	rootCmd.AddCommand(cmd.UserCmd())
 	viper.AutomaticEnv()
-	rootCmd.Flags().IntP("port", "p", 3000, "Port to run the server on.")
+	rootCmd.Flags().Int("port", 3000, "Port to run the server on.")
 	rootCmd.Flags().String("address", "0.0.0.0", "Address to bind the server to.")
 	rootCmd.Flags().String("secret", "", "Secret to use for the cookie.")
 	rootCmd.Flags().String("app-url", "", "The tinyauth URL.")
