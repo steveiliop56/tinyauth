@@ -5,9 +5,10 @@ import axios from "axios";
 import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
+import { capitalize } from "../utils/utils";
 
 export const LogoutPage = () => {
-  const { isLoggedIn, username } = useUserContext();
+  const { isLoggedIn, email, oauth, provider } = useUserContext();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
@@ -43,8 +44,9 @@ export const LogoutPage = () => {
           Logout
         </Text>
         <Text>
-          You are currently logged in as <Code>{username}</Code>, click the
-          button below to log out.
+          You are currently logged in as <Code>{email}</Code>{" "}
+          {oauth && `using ${capitalize(provider)}`}. Click the button below to
+          log out.
         </Text>
         <Button
           fullWidth

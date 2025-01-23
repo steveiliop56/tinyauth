@@ -2,53 +2,83 @@ package hooks
 
 import (
 	"tinyauth/internal/auth"
+	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-func NewHooks(auth *auth.Auth) *Hooks {
+func NewHooks(auth *auth.Auth, providers *providers.Providers) *Hooks {
 	return &Hooks{
-		Auth: auth,
+		Auth:      auth,
+		Providers: providers,
 	}
 }
 
 type Hooks struct {
-	Auth *auth.Auth
+	Auth      *auth.Auth
+	Providers *providers.Providers
 }
 
-func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext) {
+func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 	session := sessions.Default(c)
-	cookie := session.Get("tinyauth")
+	sessionCookie := session.Get("tinyauth_sid")
+	oauthProviderCookie := session.Get("tinyauth_oauth_provider")
 
-	if cookie == nil {
+	if sessionCookie == nil {
 		return types.UserContext{
-			Username: "",
+			Email:      "",
 			IsLoggedIn: false,
-		}
+			OAuth:      false,
+			Provider:   "",
+		}, nil
 	}
 
-	username, ok := cookie.(string)
+	email, emailOk := sessionCookie.(string)
+	provider, providerOk := oauthProviderCookie.(string)
 
-	if !ok {
-		return types.UserContext{
-			Username: "",
-			IsLoggedIn: false,
+	if provider == "" || !providerOk {
+		if !emailOk {
+			return types.UserContext{
+				Email:      "",
+				IsLoggedIn: false,
+				OAuth:      false,
+				Provider:   "",
+			}, nil
 		}
+		user := hooks.Auth.GetUser(email)
+		if user == nil {
+			return types.UserContext{
+				Email:      "",
+				IsLoggedIn: false,
+				OAuth:      false,
+				Provider:   "",
+			}, nil
+		}
+		return types.UserContext{
+			Email:      email,
+			IsLoggedIn: true,
+			OAuth:      false,
+			Provider:   "",
+		}, nil
 	}
 
-	user := hooks.Auth.GetUser(username)
+	oauthEmail, oauthEmailErr := hooks.Providers.GetUser(provider)
 
-	if user == nil {
+	if oauthEmailErr != nil {
 		return types.UserContext{
-			Username: "",
+			Email:      "",
 			IsLoggedIn: false,
-		}
+			OAuth:      false,
+			Provider:   "",
+		}, nil
 	}
 
 	return types.UserContext{
-		Username: username,
+		Email:      oauthEmail,
 		IsLoggedIn: true,
-	}
+		OAuth:      true,
+		Provider:   provider,
+	}, nil
 }
