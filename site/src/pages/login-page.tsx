@@ -17,7 +17,6 @@ import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
 import { GoogleIcon } from "../icons/google";
-import { MicrosoftIcon } from "../icons/microsoft";
 import { GithubIcon } from "../icons/github";
 
 export const LoginPage = () => {
@@ -110,21 +109,6 @@ export const LoginPage = () => {
                 loading={loginOAuthMutation.isLoading}
               >
                 Google
-              </Button>
-            </Grid.Col>
-          )}
-          {configuredProviders.includes("microsoft") && (
-            <Grid.Col span="content">
-              <Button
-                radius="xl"
-                leftSection={
-                  <MicrosoftIcon style={{ width: 14, height: 14 }} />
-                }
-                variant="default"
-                onClick={() => loginOAuthMutation.mutate("microsoft")}
-                loading={loginOAuthMutation.isLoading}
-              >
-                Microsoft
               </Button>
             </Grid.Col>
           )}
