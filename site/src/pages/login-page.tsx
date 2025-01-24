@@ -96,55 +96,70 @@ export const LoginPage = () => {
     <Layout>
       <Title ta="center">Tinyauth</Title>
       <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
-        <Text size="lg" fw={500} ta="center">
-          Welcome back, login with
-        </Text>
-        <Grid mb="md" mt="md" align="center" justify="center">
-          {configuredProviders.includes("google") && (
-            <Grid.Col span="content">
-              <Button
-                radius="xl"
-                leftSection={<GoogleIcon style={{ width: 14, height: 14 }} />}
-                variant="default"
-                onClick={() => loginOAuthMutation.mutate("google")}
-                loading={loginOAuthMutation.isLoading}
-              >
-                Google
-              </Button>
-            </Grid.Col>
-          )}
-          {configuredProviders.includes("github") && (
-            <Grid.Col span="content">
-              <Button
-                radius="xl"
-                leftSection={<GithubIcon style={{ width: 14, height: 14 }} />}
-                variant="default"
-                onClick={() => loginOAuthMutation.mutate("github")}
-                loading={loginOAuthMutation.isLoading}
-              >
-                Github
-              </Button>
-            </Grid.Col>
-          )}
-          {configuredProviders.includes("generic") && (
-            <Grid.Col span="content">
-              <Button
-                radius="xl"
-                leftSection={<OAuthIcon style={{ width: 14, height: 14 }} />}
-                variant="default"
-                onClick={() => loginOAuthMutation.mutate("generic")}
-                loading={loginOAuthMutation.isLoading}
-              >
-                Generic
-              </Button>
-            </Grid.Col>
-          )}
-        </Grid>
-        <Divider
-          label="Or continue with email"
-          labelPosition="center"
-          my="lg"
-        />
+        {configuredProviders.length === 0 && (
+          <Text size="lg" mb="md" fw={500} ta="center">
+            Welcome back, please login
+          </Text>
+        )}
+        {configuredProviders.length > 0 && (
+          <>
+            <Text size="lg" fw={500} ta="center">
+              Welcome back, login with
+            </Text>
+            <Grid mb="md" mt="md" align="center" justify="center">
+              {configuredProviders.includes("google") && (
+                <Grid.Col span="content">
+                  <Button
+                    radius="xl"
+                    leftSection={
+                      <GoogleIcon style={{ width: 14, height: 14 }} />
+                    }
+                    variant="default"
+                    onClick={() => loginOAuthMutation.mutate("google")}
+                    loading={loginOAuthMutation.isLoading}
+                  >
+                    Google
+                  </Button>
+                </Grid.Col>
+              )}
+              {configuredProviders.includes("github") && (
+                <Grid.Col span="content">
+                  <Button
+                    radius="xl"
+                    leftSection={
+                      <GithubIcon style={{ width: 14, height: 14 }} />
+                    }
+                    variant="default"
+                    onClick={() => loginOAuthMutation.mutate("github")}
+                    loading={loginOAuthMutation.isLoading}
+                  >
+                    Github
+                  </Button>
+                </Grid.Col>
+              )}
+              {configuredProviders.includes("generic") && (
+                <Grid.Col span="content">
+                  <Button
+                    radius="xl"
+                    leftSection={
+                      <OAuthIcon style={{ width: 14, height: 14 }} />
+                    }
+                    variant="default"
+                    onClick={() => loginOAuthMutation.mutate("generic")}
+                    loading={loginOAuthMutation.isLoading}
+                  >
+                    Generic
+                  </Button>
+                </Grid.Col>
+              )}
+            </Grid>
+            <Divider
+              label="Or continue with email"
+              labelPosition="center"
+              my="lg"
+            />
+          </>
+        )}
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
             label="Email"

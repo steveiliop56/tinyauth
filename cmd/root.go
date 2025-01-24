@@ -87,11 +87,12 @@ var rootCmd = &cobra.Command{
 
 		// Create API
 		api := api.NewAPI(types.APIConfig{
-			Port:         config.Port,
-			Address:      config.Address,
-			Secret:       config.Secret,
-			AppURL:       config.AppURL,
-			CookieSecure: config.CookieSecure,
+			Port:            config.Port,
+			Address:         config.Address,
+			Secret:          config.Secret,
+			AppURL:          config.AppURL,
+			CookieSecure:    config.CookieSecure,
+			DisableContinue: config.DisableContinue,
 		}, hooks, auth, providers)
 
 		// Setup routes
@@ -138,6 +139,7 @@ func init() {
 	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-info-url", "", "Generic OAuth user info URL.")
+	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -155,5 +157,6 @@ func init() {
 	viper.BindEnv("generic-auth-url", "GENERIC_AUTH_URL")
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
 	viper.BindEnv("generic-user-info-url", "GENERIC_USER_INFO_URL")
+	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindPFlags(rootCmd.Flags())
 }

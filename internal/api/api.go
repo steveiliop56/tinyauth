@@ -208,6 +208,7 @@ func (api *API) SetupRoutes() {
 				"oauth":               false,
 				"provider":            "",
 				"configuredProviders": api.Providers.GetConfiguredProviders(),
+				"disableContinue":     api.Config.DisableContinue,
 			})
 			return
 		}
@@ -220,6 +221,7 @@ func (api *API) SetupRoutes() {
 			"oauth":               userContext.OAuth,
 			"provider":            userContext.Provider,
 			"configuredProviders": api.Providers.GetConfiguredProviders(),
+			"disableContinue":     api.Config.DisableContinue,
 		})
 	})
 

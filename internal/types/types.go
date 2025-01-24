@@ -36,6 +36,7 @@ type Config struct {
 	GenericAuthURL      string `mapstructure:"generic-auth-url"`
 	GenericTokenURL     string `mapstructure:"generic-token-url"`
 	GenericUserInfoURL  string `mapstructure:"generic-user-info-url"`
+	DisableContinue     bool   `mapstructure:"disable-continue"`
 }
 
 type UserContext struct {
@@ -46,11 +47,12 @@ type UserContext struct {
 }
 
 type APIConfig struct {
-	Port         int
-	Address      string
-	Secret       string
-	AppURL       string
-	CookieSecure bool
+	Port            int
+	Address         string
+	Secret          string
+	AppURL          string
+	CookieSecure    bool
+	DisableContinue bool
 }
 
 type OAuthConfig struct {
