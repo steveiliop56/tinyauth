@@ -14,6 +14,7 @@ import { LogoutPage } from "./pages/logout-page.tsx";
 import { ContinuePage } from "./pages/continue-page.tsx";
 import { NotFoundPage } from "./pages/not-found-page.tsx";
 import { UnauthorizedPage } from "./pages/unauthorized-page.tsx";
+import { InternalServerError } from "./pages/internal-server-error.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/logout" element={<LogoutPage />} />
               <Route path="/continue" element={<ContinuePage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+              <Route path="/error" element={<InternalServerError />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>

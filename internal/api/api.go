@@ -279,54 +279,34 @@ func (api *API) SetupRoutes() {
 
 		bindErr := c.BindUri(&providerName)
 
-		if bindErr != nil {
-			log.Error().Err(bindErr).Msg("Failed to bind URI")
-			c.JSON(400, gin.H{
-				"status":  400,
-				"message": "Bad Request",
-			})
+		if handleApiError(c, "Failed to bind URI", bindErr) {
 			return
 		}
 
 		code := c.Query("code")
 
 		if code == "" {
-			c.JSON(400, gin.H{
-				"status":  400,
-				"message": "Bad Request",
-			})
+			log.Error().Msg("No code provided")
+			c.Redirect(http.StatusPermanentRedirect, "/error")
 			return
 		}
 
 		provider := api.Providers.GetProvider(providerName.Provider)
 
 		if provider == nil {
-			c.JSON(404, gin.H{
-				"status":  404,
-				"message": "Not Found",
-			})
+			c.Redirect(http.StatusPermanentRedirect, "/not-found")
 			return
 		}
 
 		token, tokenErr := provider.ExchangeToken(code)
 
-		if tokenErr != nil {
-			log.Error().Err(tokenErr).Msg("Failed to exchange token")
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
+		if handleApiError(c, "Failed to exchange token", tokenErr) {
 			return
 		}
 
 		email, emailErr := api.Providers.GetUser(providerName.Provider)
 
-		if emailErr != nil {
-			log.Error().Err(emailErr).Msg("Failed to get user")
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
+		if handleApiError(c, "Failed to get user", emailErr) {
 			return
 		}
 
@@ -335,12 +315,7 @@ func (api *API) SetupRoutes() {
 			unauthorizedQuery, unauthorizedQueryErr := query.Values(types.UnauthorizedQuery{
 				Email: email,
 			})
-			if unauthorizedQueryErr != nil {
-				log.Error().Err(unauthorizedQueryErr).Msg("Failed to build query")
-				c.JSON(501, gin.H{
-					"status":  501,
-					"message": "Internal Server Error",
-				})
+			if handleApiError(c, "Failed to build query", unauthorizedQueryErr) {
 				return
 			}
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, unauthorizedQuery.Encode()))
@@ -365,12 +340,7 @@ func (api *API) SetupRoutes() {
 			RedirectURI: redirectURI,
 		})
 
-		if redirectQueryErr != nil {
-			log.Error().Err(redirectQueryErr).Msg("Failed to build query")
-			c.JSON(501, gin.H{
-				"status":  501,
-				"message": "Internal Server Error",
-			})
+		if handleApiError(c, "Failed to build query", redirectQueryErr) {
 			return
 		}
 
@@ -405,4 +375,13 @@ func zerolog() gin.HandlerFunc {
 			log.Error().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
 		}
 	}
+}
+
+func handleApiError(c *gin.Context, msg string, err error) bool {
+	if err != nil {
+		log.Error().Err(err).Msg(msg)
+		c.Redirect(http.StatusPermanentRedirect, "/error")
+		return true
+	}
+	return false
 }
