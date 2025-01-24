@@ -74,3 +74,10 @@ func ParseFileToLine(content string) string {
 
 	return strings.Join(users, ",")
 }
+
+func ParseWhitelist(whitelist string) []string {
+	if whitelist == "" {
+		return []string{}
+	}
+	return strings.Split(whitelist, ",")
+}

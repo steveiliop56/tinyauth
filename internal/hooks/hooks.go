@@ -105,6 +105,17 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 		}, nil
 	}
 
+	if !hooks.Auth.EmailWhitelisted(email) {
+		session.Delete("tinyauth_sid")
+		session.Save()
+		return types.UserContext{
+			Email:      "",
+			IsLoggedIn: false,
+			OAuth:      false,
+			Provider:   "",
+		}, nil
+	}
+
 	return types.UserContext{
 		Email:      email,
 		IsLoggedIn: true,

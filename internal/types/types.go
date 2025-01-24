@@ -37,6 +37,7 @@ type Config struct {
 	GenericTokenURL     string `mapstructure:"generic-token-url"`
 	GenericUserURL      string `mapstructure:"generic-user-info-url"`
 	DisableContinue     bool   `mapstructure:"disable-continue"`
+	Whitelist           string `mapstructure:"whitelist"`
 }
 
 type UserContext struct {
@@ -77,4 +78,8 @@ type OAuthProviders struct {
 	Github    *oauth.OAuth
 	Google    *oauth.OAuth
 	Microsoft *oauth.OAuth
+}
+
+type UnauthorizedQuery struct {
+	Email string `url:"email"`
 }

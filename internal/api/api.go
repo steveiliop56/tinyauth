@@ -319,6 +319,33 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
+		email, emailErr := api.Providers.GetUser(providerName.Provider)
+
+		if emailErr != nil {
+			log.Error().Err(emailErr).Msg("Failed to get user")
+			c.JSON(500, gin.H{
+				"status":  500,
+				"message": "Internal Server Error",
+			})
+			return
+		}
+
+		if !api.Auth.EmailWhitelisted(email) {
+			log.Warn().Str("email", email).Msg("Email not whitelisted")
+			unauthorizedQuery, unauthorizedQueryErr := query.Values(types.UnauthorizedQuery{
+				Email: email,
+			})
+			if unauthorizedQueryErr != nil {
+				log.Error().Err(unauthorizedQueryErr).Msg("Failed to build query")
+				c.JSON(501, gin.H{
+					"status":  501,
+					"message": "Internal Server Error",
+				})
+				return
+			}
+			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, unauthorizedQuery.Encode()))
+		}
+
 		session := sessions.Default(c)
 		session.Set("tinyauth_sid", fmt.Sprintf("%s:%s", providerName.Provider, token))
 		session.Save()
@@ -334,12 +361,12 @@ func (api *API) SetupRoutes() {
 
 		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
 
-		queries, queryErr := query.Values(types.LoginQuery{
+		redirectQuery, redirectQueryErr := query.Values(types.LoginQuery{
 			RedirectURI: redirectURI,
 		})
 
-		if queryErr != nil {
-			log.Error().Err(queryErr).Msg("Failed to build query")
+		if redirectQueryErr != nil {
+			log.Error().Err(redirectQueryErr).Msg("Failed to build query")
 			c.JSON(501, gin.H{
 				"status":  501,
 				"message": "Internal Server Error",
@@ -347,7 +374,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", api.Config.AppURL, queries.Encode()))
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", api.Config.AppURL, redirectQuery.Encode()))
 	})
 }
 

@@ -56,6 +56,9 @@ var rootCmd = &cobra.Command{
 		users, parseErr := utils.ParseUsers(usersString)
 		HandleError(parseErr, "Failed to parse users")
 
+		// Create whitelist
+		whitelist := utils.ParseWhitelist(config.Whitelist)
+
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
 			GithubClientId:      config.GithubClientId,
@@ -72,7 +75,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Create auth service
-		auth := auth.NewAuth(users)
+		auth := auth.NewAuth(users, whitelist)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
@@ -136,6 +139,7 @@ func init() {
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
+	rootCmd.Flags().String("whitelist", "", "Comma separated list of email addresses to whitelist (only for oauth).")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -154,5 +158,6 @@ func init() {
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
+	viper.BindEnv("whitelist", "WHITELIST")
 	viper.BindPFlags(rootCmd.Flags())
 }
