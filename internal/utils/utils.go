@@ -59,3 +59,18 @@ func GetUsersFromFile(usersFile string) (string, error) {
 
 	return string(data), nil
 }
+
+func ParseFileToLine(content string) string {
+	lines := strings.Split(content, "\n")
+	users := make([]string, 0)
+
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		users = append(users, line)
+	}
+
+	return strings.Join(users, ",")
+}

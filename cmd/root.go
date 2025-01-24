@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"os"
-	"strings"
 	cmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
@@ -48,7 +47,7 @@ var rootCmd = &cobra.Command{
 			log.Info().Msg("Reading users from file")
 			usersFromFile, readErr := utils.GetUsersFromFile(config.UsersFile)
 			HandleError(readErr, "Failed to read users from file")
-			usersFromFileParsed := strings.Join(strings.Split(usersFromFile, "\n"), ",")
+			usersFromFileParsed := utils.ParseFileToLine(usersFromFile)
 			if usersString != "" {
 				usersString = usersString + "," + usersFromFileParsed
 			} else {
