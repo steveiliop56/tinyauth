@@ -7,6 +7,7 @@ import (
 	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/hooks"
+	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -19,7 +20,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "tinyauth",
 	Short: "An extremely simple traefik forward auth proxy.",
-	Long: `Tinyauth is an extremely simple traefik forward-auth login screen that makes securing your apps easy.`,
+	Long:  `Tinyauth is an extremely simple traefik forward-auth login screen that makes securing your apps easy.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get config
 		log.Info().Msg("Parsing config")
@@ -58,20 +59,41 @@ var rootCmd = &cobra.Command{
 		users, parseErr := utils.ParseUsers(usersString)
 		HandleError(parseErr, "Failed to parse users")
 
+		// Create OAuth config
+		oauthConfig := types.OAuthConfig{
+			GithubClientId:      config.GithubClientId,
+			GithubClientSecret:  config.GithubClientSecret,
+			GoogleClientId:      config.GoogleClientId,
+			GoogleClientSecret:  config.GoogleClientSecret,
+			GenericClientId:     config.GenericClientId,
+			GenericClientSecret: config.GenericClientSecret,
+			GenericScopes:       config.GenericScopes,
+			GenericAuthURL:      config.GenericAuthURL,
+			GenericTokenURL:     config.GenericTokenURL,
+			GenericUserInfoURL:  config.GenericUserInfoURL,
+			AppURL:              config.AppURL,
+		}
+
 		// Create auth service
 		auth := auth.NewAuth(users)
-		
+
+		// Create OAuth providers service
+		providers := providers.NewProviders(oauthConfig)
+
+		// Initialize providers
+		providers.Init()
+
 		// Create hooks service
-		hooks := hooks.NewHooks(auth)
-		
+		hooks := hooks.NewHooks(auth, providers)
+
 		// Create API
 		api := api.NewAPI(types.APIConfig{
-			Port: config.Port,
-			Address: config.Address,
-			Secret: config.Secret,
-			AppURL: config.AppURL,
+			Port:         config.Port,
+			Address:      config.Address,
+			Secret:       config.Secret,
+			AppURL:       config.AppURL,
 			CookieSecure: config.CookieSecure,
-		}, hooks, auth)
+		}, hooks, auth, providers)
 
 		// Setup routes
 		api.Init()
@@ -107,6 +129,16 @@ func init() {
 	rootCmd.Flags().String("users", "", "Comma separated list of users in the format username:bcrypt-hashed-password.")
 	rootCmd.Flags().String("users-file", "", "Path to a file containing users in the format username:bcrypt-hashed-password.")
 	rootCmd.Flags().Bool("cookie-secure", false, "Send cookie over secure connection only.")
+	rootCmd.Flags().String("github-client-id", "", "Github OAuth client ID.")
+	rootCmd.Flags().String("github-client-secret", "", "Github OAuth client secret.")
+	rootCmd.Flags().String("google-client-id", "", "Google OAuth client ID.")
+	rootCmd.Flags().String("google-client-secret", "", "Google OAuth client secret.")
+	rootCmd.Flags().String("generic-client-id", "", "Generic OAuth client ID.")
+	rootCmd.Flags().String("generic-client-secret", "", "Generic OAuth client secret.")
+	rootCmd.Flags().String("generic-scopes", "", "Generic OAuth scopes.")
+	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
+	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
+	rootCmd.Flags().String("generic-user-info-url", "", "Generic OAuth user info URL.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -114,5 +146,15 @@ func init() {
 	viper.BindEnv("users", "USERS")
 	viper.BindEnv("users-file", "USERS_FILE")
 	viper.BindEnv("cookie-secure", "COOKIE_SECURE")
+	viper.BindEnv("github-client-id", "GITHUB_CLIENT_ID")
+	viper.BindEnv("github-client-secret", "GITHUB_CLIENT_SECRET")
+	viper.BindEnv("google-client-id", "GOOGLE_CLIENT_ID")
+	viper.BindEnv("google-client-secret", "GOOGLE_CLIENT_SECRET")
+	viper.BindEnv("generic-client-id", "GENERIC_CLIENT_ID")
+	viper.BindEnv("generic-client-secret", "GENERIC_CLIENT_SECRET")
+	viper.BindEnv("generic-scopes", "GENERIC_SCOPES")
+	viper.BindEnv("generic-auth-url", "GENERIC_AUTH_URL")
+	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
+	viper.BindEnv("generic-user-info-url", "GENERIC_USER_INFO_URL")
 	viper.BindPFlags(rootCmd.Flags())
 }

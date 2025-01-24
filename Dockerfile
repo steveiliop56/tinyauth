@@ -38,7 +38,7 @@ COPY --from=site-builder /site/dist ./internal/assets/dist
 RUN go build
 
 # Runner
-FROM busybox:1.37-musl AS runner
+FROM alpine:3.21 AS runner
 
 WORKDIR /tinyauth
 

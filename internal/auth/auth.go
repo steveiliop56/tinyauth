@@ -16,9 +16,9 @@ type Auth struct {
 	Users types.Users
 }
 
-func (auth *Auth) GetUser(username string) *types.User {
+func (auth *Auth) GetUser(email string) *types.User {
 	for _, user := range auth.Users {
-		if user.Username == username {
+		if user.Email == email {
 			return &user
 		}
 	}
