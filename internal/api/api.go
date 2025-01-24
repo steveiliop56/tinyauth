@@ -48,7 +48,6 @@ func (api *API) Init() {
 
 	if distErr != nil {
 		log.Fatal().Err(distErr).Msg("Failed to get UI assets")
-		os.Exit(1)
 	}
 
 	fileServer := http.FileServer(http.FS(dist))
@@ -101,6 +100,7 @@ func (api *API) SetupRoutes() {
 		userContext, userContextErr := api.Hooks.UseUserContext(c)
 
 		if userContextErr != nil {
+			log.Error().Err(userContextErr).Msg("Failed to get user context")
 			c.JSON(500, gin.H{
 				"status":  500,
 				"message": "Internal Server Error",
@@ -124,6 +124,7 @@ func (api *API) SetupRoutes() {
 		})
 
 		if queryErr != nil {
+			log.Error().Err(queryErr).Msg("Failed to build query")
 			c.JSON(501, gin.H{
 				"status":  501,
 				"message": "Internal Server Error",
@@ -140,6 +141,7 @@ func (api *API) SetupRoutes() {
 		err := c.BindJSON(&login)
 
 		if err != nil {
+			log.Error().Err(err).Msg("Failed to bind JSON")
 			c.JSON(400, gin.H{
 				"status":  400,
 				"message": "Bad Request",
@@ -192,6 +194,7 @@ func (api *API) SetupRoutes() {
 		userContext, userContextErr := api.Hooks.UseUserContext(c)
 
 		if userContextErr != nil {
+			log.Error().Err(userContextErr).Msg("Failed to get user context")
 			c.JSON(500, gin.H{
 				"status":  500,
 				"message": "Internal Server Error",
@@ -238,6 +241,7 @@ func (api *API) SetupRoutes() {
 		bindErr := c.BindUri(&request)
 
 		if bindErr != nil {
+			log.Error().Err(bindErr).Msg("Failed to bind URI")
 			c.JSON(400, gin.H{
 				"status":  400,
 				"message": "Bad Request",
@@ -276,6 +280,7 @@ func (api *API) SetupRoutes() {
 		bindErr := c.BindUri(&providerName)
 
 		if bindErr != nil {
+			log.Error().Err(bindErr).Msg("Failed to bind URI")
 			c.JSON(400, gin.H{
 				"status":  400,
 				"message": "Bad Request",
@@ -306,6 +311,7 @@ func (api *API) SetupRoutes() {
 		token, tokenErr := provider.ExchangeToken(code)
 
 		if tokenErr != nil {
+			log.Error().Err(tokenErr).Msg("Failed to exchange token")
 			c.JSON(500, gin.H{
 				"status":  500,
 				"message": "Internal Server Error",
@@ -333,6 +339,7 @@ func (api *API) SetupRoutes() {
 		})
 
 		if queryErr != nil {
+			log.Error().Err(queryErr).Msg("Failed to build query")
 			c.JSON(501, gin.H{
 				"status":  501,
 				"message": "Internal Server Error",

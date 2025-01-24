@@ -14,7 +14,7 @@ func main() {
 	// Logger
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
 	log.Info().Str("version", assets.Version).Msg("Starting tinyauth")
-	
+
 	// Run cmd
 	cmd.Execute()
 }

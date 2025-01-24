@@ -3,7 +3,6 @@ package create
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -18,9 +17,9 @@ var password string
 var docker bool
 
 var CreateCmd = &cobra.Command{
-	Use:  "create",
+	Use:   "create",
 	Short: "Create a user",
-	Long: `Create a user either interactively or by passing flags.`,
+	Long:  `Create a user either interactively or by passing flags.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if interactive {
 			form := huh.NewForm(
@@ -47,13 +46,11 @@ var CreateCmd = &cobra.Command{
 
 			if formErr != nil {
 				log.Fatal().Err(formErr).Msg("Form failed")
-				os.Exit(1)
 			}
 		}
 
 		if username == "" || password == "" {
 			log.Error().Msg("Username and password cannot be empty")
-			os.Exit(1)
 		}
 
 		log.Info().Str("username", username).Str("password", password).Bool("docker", docker).Msg("Creating user")
@@ -62,7 +59,6 @@ var CreateCmd = &cobra.Command{
 
 		if passwordErr != nil {
 			log.Fatal().Err(passwordErr).Msg("Failed to hash password")
-			os.Exit(1)
 		}
 
 		passwordString := string(passwordByte)

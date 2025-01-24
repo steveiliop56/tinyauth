@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	cmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
@@ -38,7 +37,6 @@ var rootCmd = &cobra.Command{
 
 		if config.UsersFile == "" && config.Users == "" {
 			log.Fatal().Msg("No users provided")
-			os.Exit(1)
 		}
 
 		usersString := config.Users
@@ -108,14 +106,12 @@ func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to execute command")
-		os.Exit(1)
 	}
 }
 
 func HandleError(err error, msg string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg(msg)
-		os.Exit(1)
 	}
 }
 

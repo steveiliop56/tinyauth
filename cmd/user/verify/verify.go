@@ -2,7 +2,6 @@ package verify
 
 import (
 	"errors"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -18,9 +17,9 @@ var docker bool
 var user string
 
 var VerifyCmd = &cobra.Command{
-	Use: "verify",
+	Use:   "verify",
 	Short: "Verify a user is set up correctly",
-	Long: `Verify a user is set up correctly meaning that it has a correct password.`,
+	Long:  `Verify a user is set up correctly meaning that it has a correct password.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if interactive {
 			form := huh.NewForm(
@@ -53,23 +52,19 @@ var VerifyCmd = &cobra.Command{
 
 			if formErr != nil {
 				log.Fatal().Err(formErr).Msg("Form failed")
-				os.Exit(1)
 			}
 		}
 
-		if username == "" || password == "" || user == "" { 
-			log.Error().Msg("Username, password and user cannot be empty")
-			os.Exit(1)
+		if username == "" || password == "" || user == "" {
+			log.Fatal().Msg("Username, password and user cannot be empty")
 		}
-
 
 		log.Info().Str("user", user).Str("username", username).Str("password", password).Bool("docker", docker).Msg("Verifying user")
 
 		userSplit := strings.Split(user, ":")
 
 		if userSplit[1] == "" {
-			log.Error().Msg("User is not formatted correctly")
-			os.Exit(1)
+			log.Fatal().Msg("User is not formatted correctly")
 		}
 
 		if docker {
@@ -79,8 +74,7 @@ var VerifyCmd = &cobra.Command{
 		verifyErr := bcrypt.CompareHashAndPassword([]byte(userSplit[1]), []byte(password))
 
 		if verifyErr != nil || username != userSplit[0] {
-			log.Error().Msg("Username or password incorrect")
-			os.Exit(1)
+			log.Fatal().Msg("Username or password incorrect")
 		} else {
 			log.Info().Msg("Verification successful")
 		}

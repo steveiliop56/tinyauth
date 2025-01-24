@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 )
 
@@ -33,7 +32,6 @@ func (oauth *OAuth) GetAuthURL() string {
 func (oauth *OAuth) ExchangeToken(code string) (string, error) {
 	token, err := oauth.Config.Exchange(oauth.Context, code, oauth2.VerifierOption(oauth.Verifier))
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to exchange code")
 		return "", err
 	}
 	oauth.Token = token
