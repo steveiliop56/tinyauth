@@ -44,8 +44,8 @@ export const LogoutPage = () => {
           Logout
         </Text>
         <Text>
-          You are currently logged in as <Code>{email}</Code>{" "}
-          {oauth && `using ${capitalize(provider)}`}. Click the button below to
+          You are currently logged in as <Code>{email}</Code>
+          {oauth && ` using ${capitalize(provider)}`}. Click the button below to
           log out.
         </Text>
         <Button
