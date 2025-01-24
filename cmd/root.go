@@ -61,11 +61,17 @@ var rootCmd = &cobra.Command{
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
-			GithubClientId:     config.GithubClientId,
-			GithubClientSecret: config.GithubClientSecret,
-			GoogleClientId:     config.GoogleClientId,
-			GoogleClientSecret: config.GoogleClientSecret,
-			AppURL:             config.AppURL,
+			GithubClientId:      config.GithubClientId,
+			GithubClientSecret:  config.GithubClientSecret,
+			GoogleClientId:      config.GoogleClientId,
+			GoogleClientSecret:  config.GoogleClientSecret,
+			GenericClientId:     config.GenericClientId,
+			GenericClientSecret: config.GenericClientSecret,
+			GenericScopes:       config.GenericScopes,
+			GenericAuthURL:      config.GenericAuthURL,
+			GenericTokenURL:     config.GenericTokenURL,
+			GenericUserInfoURL:  config.GenericUserInfoURL,
+			AppURL:              config.AppURL,
 		}
 
 		// Create auth service
@@ -127,6 +133,12 @@ func init() {
 	rootCmd.Flags().String("github-client-secret", "", "Github OAuth client secret.")
 	rootCmd.Flags().String("google-client-id", "", "Google OAuth client ID.")
 	rootCmd.Flags().String("google-client-secret", "", "Google OAuth client secret.")
+	rootCmd.Flags().String("generic-client-id", "", "Generic OAuth client ID.")
+	rootCmd.Flags().String("generic-client-secret", "", "Generic OAuth client secret.")
+	rootCmd.Flags().String("generic-scopes", "", "Generic OAuth scopes.")
+	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
+	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
+	rootCmd.Flags().String("generic-user-info-url", "", "Generic OAuth user info URL.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -138,5 +150,11 @@ func init() {
 	viper.BindEnv("github-client-secret", "GITHUB_CLIENT_SECRET")
 	viper.BindEnv("google-client-id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("google-client-secret", "GOOGLE_CLIENT_SECRET")
+	viper.BindEnv("generic-client-id", "GENERIC_CLIENT_ID")
+	viper.BindEnv("generic-client-secret", "GENERIC_CLIENT_SECRET")
+	viper.BindEnv("generic-scopes", "GENERIC_SCOPES")
+	viper.BindEnv("generic-auth-url", "GENERIC_AUTH_URL")
+	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
+	viper.BindEnv("generic-user-info-url", "GENERIC_USER_INFO_URL")
 	viper.BindPFlags(rootCmd.Flags())
 }

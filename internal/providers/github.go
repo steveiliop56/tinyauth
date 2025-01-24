@@ -7,12 +7,12 @@ import (
 	"net/http"
 )
 
-type GithubEmailsResponse []struct {
-	Email string `json:"email"`
-	Primary bool `json:"primary"`
+type GithubUserInfoResponse []struct {
+	Email   string `json:"email"`
+	Primary bool   `json:"primary"`
 }
 
-func GithubScopes() ([]string) {
+func GithubScopes() []string {
 	return []string{"user:email"}
 }
 
@@ -29,7 +29,7 @@ func GetGithubEmail(client *http.Client) (string, error) {
 		return "", bodyErr
 	}
 
-	var emails GithubEmailsResponse
+	var emails GithubUserInfoResponse
 
 	jsonErr := json.Unmarshal(body, &emails)
 

@@ -18,6 +18,7 @@ import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
 import { GoogleIcon } from "../icons/google";
 import { GithubIcon } from "../icons/github";
+import { OAuthIcon } from "../icons/oauth";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
@@ -122,6 +123,19 @@ export const LoginPage = () => {
                 loading={loginOAuthMutation.isLoading}
               >
                 Github
+              </Button>
+            </Grid.Col>
+          )}
+          {configuredProviders.includes("generic") && (
+            <Grid.Col span="content">
+              <Button
+                radius="xl"
+                leftSection={<OAuthIcon style={{ width: 14, height: 14 }} />}
+                variant="default"
+                onClick={() => loginOAuthMutation.mutate("generic")}
+                loading={loginOAuthMutation.isLoading}
+              >
+                Generic
               </Button>
             </Grid.Col>
           )}
