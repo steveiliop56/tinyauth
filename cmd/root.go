@@ -61,12 +61,11 @@ var rootCmd = &cobra.Command{
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
-			GithubClientId:        config.GithubClientId,
-			GithubClientSecret:    config.GithubClientSecret,
-			GoogleClientId:        config.GoogleClientId,
-			GoogleClientSecret:    config.GoogleClientSecret,
-			MicrosoftClientId:     config.MicrosoftClientId,
-			MicrosoftClientSecret: config.MicrosoftClientSecret,
+			GithubClientId:     config.GithubClientId,
+			GithubClientSecret: config.GithubClientSecret,
+			GoogleClientId:     config.GoogleClientId,
+			GoogleClientSecret: config.GoogleClientSecret,
+			AppURL:             config.AppURL,
 		}
 
 		// Create auth service
@@ -128,8 +127,6 @@ func init() {
 	rootCmd.Flags().String("github-client-secret", "", "Github OAuth client secret.")
 	rootCmd.Flags().String("google-client-id", "", "Google OAuth client ID.")
 	rootCmd.Flags().String("google-client-secret", "", "Google OAuth client secret.")
-	rootCmd.Flags().String("microsoft-client-id", "", "Microsoft OAuth client ID.")
-	rootCmd.Flags().String("microsoft-client-secret", "", "Microsoft OAuth client secret.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -141,7 +138,5 @@ func init() {
 	viper.BindEnv("github-client-secret", "GITHUB_CLIENT_SECRET")
 	viper.BindEnv("google-client-id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("google-client-secret", "GOOGLE_CLIENT_SECRET")
-	viper.BindEnv("microsoft-client-id", "MICROSOFT_CLIENT_ID")
-	viper.BindEnv("microsoft-client-secret", "MICROSOFT_CLIENT_SECRET")
 	viper.BindPFlags(rootCmd.Flags())
 }

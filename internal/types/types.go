@@ -19,19 +19,17 @@ type User struct {
 type Users []User
 
 type Config struct {
-	Port                  int    `validate:"number" mapstructure:"port"`
-	Address               string `mapstructure:"address, ip4_addr"`
-	Secret                string `validate:"required,len=32" mapstructure:"secret"`
-	AppURL                string `validate:"required,url" mapstructure:"app-url"`
-	Users                 string `mapstructure:"users"`
-	UsersFile             string `mapstructure:"users-file"`
-	CookieSecure          bool   `mapstructure:"cookie-secure"`
-	GithubClientId        string `mapstructure:"github-client-id"`
-	GithubClientSecret    string `mapstructure:"github-client-secret"`
-	GoogleClientId        string `mapstructure:"google-client-id"`
-	GoogleClientSecret    string `mapstructure:"google-client-secret"`
-	MicrosoftClientId     string `mapstructure:"microsoft-client-id"`
-	MicrosoftClientSecret string `mapstructure:"microsoft-client-secret"`
+	Port               int    `validate:"number" mapstructure:"port"`
+	Address            string `mapstructure:"address, ip4_addr"`
+	Secret             string `validate:"required,len=32" mapstructure:"secret"`
+	AppURL             string `validate:"required,url" mapstructure:"app-url"`
+	Users              string `mapstructure:"users"`
+	UsersFile          string `mapstructure:"users-file"`
+	CookieSecure       bool   `mapstructure:"cookie-secure"`
+	GithubClientId     string `mapstructure:"github-client-id"`
+	GithubClientSecret string `mapstructure:"github-client-secret"`
+	GoogleClientId     string `mapstructure:"google-client-id"`
+	GoogleClientSecret string `mapstructure:"google-client-secret"`
 }
 
 type UserContext struct {
@@ -50,12 +48,11 @@ type APIConfig struct {
 }
 
 type OAuthConfig struct {
-	GithubClientId        string
-	GithubClientSecret    string
-	GoogleClientId        string
-	GoogleClientSecret    string
-	MicrosoftClientId     string
-	MicrosoftClientSecret string
+	GithubClientId     string
+	GithubClientSecret string
+	GoogleClientId     string
+	GoogleClientSecret string
+	AppURL             string
 }
 
 type OAuthRequest struct {
