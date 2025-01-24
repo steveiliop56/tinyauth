@@ -35,7 +35,7 @@ type Config struct {
 	GenericScopes       string `mapstructure:"generic-scopes"`
 	GenericAuthURL      string `mapstructure:"generic-auth-url"`
 	GenericTokenURL     string `mapstructure:"generic-token-url"`
-	GenericUserInfoURL  string `mapstructure:"generic-user-info-url"`
+	GenericUserURL      string `mapstructure:"generic-user-info-url"`
 	DisableContinue     bool   `mapstructure:"disable-continue"`
 }
 
@@ -65,7 +65,7 @@ type OAuthConfig struct {
 	GenericScopes       string
 	GenericAuthURL      string
 	GenericTokenURL     string
-	GenericUserInfoURL  string
+	GenericUserURL      string
 	AppURL              string
 }
 

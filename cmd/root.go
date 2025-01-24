@@ -67,7 +67,7 @@ var rootCmd = &cobra.Command{
 			GenericScopes:       config.GenericScopes,
 			GenericAuthURL:      config.GenericAuthURL,
 			GenericTokenURL:     config.GenericTokenURL,
-			GenericUserInfoURL:  config.GenericUserInfoURL,
+			GenericUserURL:      config.GenericUserURL,
 			AppURL:              config.AppURL,
 		}
 
@@ -134,7 +134,7 @@ func init() {
 	rootCmd.Flags().String("generic-scopes", "", "Generic OAuth scopes.")
 	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
-	rootCmd.Flags().String("generic-user-info-url", "", "Generic OAuth user info URL.")
+	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
@@ -152,7 +152,7 @@ func init() {
 	viper.BindEnv("generic-scopes", "GENERIC_SCOPES")
 	viper.BindEnv("generic-auth-url", "GENERIC_AUTH_URL")
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
-	viper.BindEnv("generic-user-info-url", "GENERIC_USER_INFO_URL")
+	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindPFlags(rootCmd.Flags())
 }

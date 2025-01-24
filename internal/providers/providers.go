@@ -102,7 +102,7 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 			return "", nil
 		}
 		client := providers.Generic.GetClient()
-		email, emailErr := GetGenericEmail(client, providers.Config.GenericUserInfoURL)
+		email, emailErr := GetGenericEmail(client, providers.Config.GenericUserURL)
 		if emailErr != nil {
 			return "", emailErr
 		}
