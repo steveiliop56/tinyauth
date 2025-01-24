@@ -36,6 +36,7 @@ type API struct {
 	Hooks     *hooks.Hooks
 	Auth      *auth.Auth
 	Providers *providers.Providers
+	Domain    string
 }
 
 func (api *API) Init() {
@@ -70,8 +71,10 @@ func (api *API) Init() {
 		isSecure = false
 	}
 
+	api.Domain = fmt.Sprintf(".%s", domain)
+
 	store.Options(sessions.Options{
-		Domain:   fmt.Sprintf(".%s", domain),
+		Domain:   api.Domain,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   isSecure,
@@ -163,8 +166,7 @@ func (api *API) SetupRoutes() {
 		}
 
 		session := sessions.Default(c)
-		session.Set("tinyauth_sid", user.Email)
-		session.Set("tinyauth_oauth_provider", "")
+		session.Set("tinyauth_sid", fmt.Sprintf("email:%s", login.Email))
 		session.Save()
 
 		c.JSON(200, gin.H{
@@ -176,8 +178,9 @@ func (api *API) SetupRoutes() {
 	api.Router.POST("/api/logout", func(c *gin.Context) {
 		session := sessions.Default(c)
 		session.Delete("tinyauth_sid")
-		session.Delete("tinyauth_oauth_provider")
 		session.Save()
+
+		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
 
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -198,23 +201,25 @@ func (api *API) SetupRoutes() {
 
 		if !userContext.IsLoggedIn {
 			c.JSON(200, gin.H{
-				"status":     200,
-				"message":    "Unauthenticated",
-				"email":      "",
-				"isLoggedIn": false,
-				"oauth":      false,
-				"provider":   "",
+				"status":              200,
+				"message":             "Unauthenticated",
+				"email":               "",
+				"isLoggedIn":          false,
+				"oauth":               false,
+				"provider":            "",
+				"configuredProviders": api.Providers.GetConfiguredProviders(),
 			})
 			return
 		}
 
 		c.JSON(200, gin.H{
-			"status":     200,
-			"message":    "Authenticated",
-			"email":      userContext.Email,
-			"isLoggedIn": userContext.IsLoggedIn,
-			"oauth":      userContext.OAuth,
-			"provider":   userContext.Provider,
+			"status":              200,
+			"message":             "Authenticated",
+			"email":               userContext.Email,
+			"isLoggedIn":          userContext.IsLoggedIn,
+			"oauth":               userContext.OAuth,
+			"provider":            userContext.Provider,
+			"configuredProviders": api.Providers.GetConfiguredProviders(),
 		})
 	})
 
@@ -226,9 +231,9 @@ func (api *API) SetupRoutes() {
 	})
 
 	api.Router.GET("/api/oauth/url/:provider", func(c *gin.Context) {
-		var provider types.OAuthBind
+		var request types.OAuthRequest
 
-		bindErr := c.BindUri(&provider)
+		bindErr := c.BindUri(&request)
 
 		if bindErr != nil {
 			c.JSON(400, gin.H{
@@ -238,14 +243,22 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		authURL := api.Providers.GetAuthURL(provider.Provider)
+		provider := api.Providers.GetProvider(request.Provider)
 
-		if authURL == "" {
-			c.JSON(400, gin.H{
-				"status":  400,
-				"message": "Bad Request",
+		if provider == nil {
+			c.JSON(404, gin.H{
+				"status":  404,
+				"message": "Not Found",
 			})
 			return
+		}
+
+		authURL := provider.GetAuthURL()
+
+		redirectURI := c.Query("redirect_uri")
+
+		if redirectURI != "" {
+			c.SetCookie("tinyauth_redirect_uri", redirectURI, 3600, "/", api.Domain, api.Config.CookieSecure, true)
 		}
 
 		c.JSON(200, gin.H{
@@ -256,9 +269,9 @@ func (api *API) SetupRoutes() {
 	})
 
 	api.Router.GET("/api/oauth/callback/:provider", func(c *gin.Context) {
-		var provider types.OAuthBind
+		var providerName types.OAuthRequest
 
-		bindErr := c.BindUri(&provider)
+		bindErr := c.BindUri(&providerName)
 
 		if bindErr != nil {
 			c.JSON(400, gin.H{
@@ -278,9 +291,19 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		email, emailErr := api.Providers.Login(code, provider.Provider)
+		provider := api.Providers.GetProvider(providerName.Provider)
 
-		if emailErr != nil {
+		if provider == nil {
+			c.JSON(404, gin.H{
+				"status":  404,
+				"message": "Not Found",
+			})
+			return
+		}
+
+		token, tokenErr := provider.ExchangeToken(code)
+
+		if tokenErr != nil {
 			c.JSON(500, gin.H{
 				"status":  500,
 				"message": "Internal Server Error",
@@ -289,14 +312,33 @@ func (api *API) SetupRoutes() {
 		}
 
 		session := sessions.Default(c)
-		session.Set("tinyauth_sid", email)
-		session.Set("tinyauth_oauth_provider", provider.Provider)
+		session.Set("tinyauth_sid", fmt.Sprintf("%s:%s", providerName.Provider, token))
 		session.Save()
 
-		c.JSON(200, gin.H{
-			"status":  200,
-			"message": "Logged in",
+		redirectURI, redirectURIErr := c.Cookie("tinyauth_redirect_uri")
+
+		if redirectURIErr != nil {
+			c.JSON(200, gin.H{
+				"status":  200,
+				"message": "Logged in",
+			})
+		}
+
+		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
+
+		queries, queryErr := query.Values(types.LoginQuery{
+			RedirectURI: redirectURI,
 		})
+
+		if queryErr != nil {
+			c.JSON(501, gin.H{
+				"status":  501,
+				"message": "Internal Server Error",
+			})
+			return
+		}
+
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", api.Config.AppURL, queries.Encode()))
 	})
 }
 

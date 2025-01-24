@@ -58,7 +58,7 @@ type OAuthConfig struct {
 	MicrosoftClientSecret string
 }
 
-type OAuthBind struct {
+type OAuthRequest struct {
 	Provider string `uri:"provider" binding:"required"`
 }
 
@@ -66,9 +66,4 @@ type OAuthProviders struct {
 	Github    *oauth.OAuth
 	Google    *oauth.OAuth
 	Microsoft *oauth.OAuth
-}
-
-type OAuthLogin struct {
-	Email string
-	Token string
 }

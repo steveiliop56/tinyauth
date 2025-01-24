@@ -35,24 +35,12 @@ func (providers *Providers) Init() {
 	}
 }
 
-func (providers *Providers) Login(code string, provider string) (string, error) {
+func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 	switch provider {
 	case "github":
-		if providers.Github == nil {
-			return "", nil
-		}
-		exchangeErr := providers.Github.ExchangeToken(code)
-		if exchangeErr != nil {
-			return "", exchangeErr
-		}
-		client := providers.Github.GetClient()
-		email, emailErr := GetGithubEmail(client)
-		if emailErr != nil {
-			return "", emailErr
-		}
-		return email, nil
+		return providers.Github
 	default:
-		return "", nil
+		return nil
 	}
 }
 
@@ -73,14 +61,10 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 	}
 }
 
-func (providers *Providers) GetAuthURL(provider string) string {
-	switch provider {
-	case "github":
-		if providers.Github == nil {
-			return ""
-		}
-		return providers.Github.GetAuthURL()
-	default:
-		return ""
+func (provider *Providers) GetConfiguredProviders() []string {
+	providers := []string{}
+	if provider.Github != nil {
+		providers = append(providers, "github")
 	}
+	return providers
 }

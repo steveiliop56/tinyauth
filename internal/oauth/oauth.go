@@ -30,14 +30,14 @@ func (oauth *OAuth) GetAuthURL() string {
 	return oauth.Config.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(oauth.Verifier))
 }
 
-func (oauth *OAuth) ExchangeToken(code string) error {
+func (oauth *OAuth) ExchangeToken(code string) (string, error) {
 	token, err := oauth.Config.Exchange(oauth.Context, code, oauth2.VerifierOption(oauth.Verifier))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to exchange code")
-		return err
+		return "", err
 	}
 	oauth.Token = token
-	return nil
+	return oauth.Token.AccessToken, nil
 }
 
 func (oauth *OAuth) GetClient() *http.Client {
