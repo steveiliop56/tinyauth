@@ -55,20 +55,12 @@ func (api *API) Init() {
 
 	domain, domainErr := utils.GetRootURL(api.Config.AppURL)
 
-	log.Info().Str("domain", domain).Msg("Using domain for cookies")
-
 	if domainErr != nil {
 		log.Fatal().Err(domainErr).Msg("Failed to get domain")
 		os.Exit(1)
 	}
 
-	var isSecure bool
-
-	if api.Config.CookieSecure {
-		isSecure = true
-	} else {
-		isSecure = false
-	}
+	log.Info().Str("domain", domain).Msg("Using domain for cookies")
 
 	api.Domain = fmt.Sprintf(".%s", domain)
 
@@ -76,7 +68,7 @@ func (api *API) Init() {
 		Domain:   api.Domain,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   isSecure,
+		Secure:   api.Config.CookieSecure,
 		MaxAge:   api.Config.CookieExpiry,
 	})
 
