@@ -35,7 +35,7 @@ COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY --from=site-builder /site/dist ./internal/assets/dist
 
-RUN go build
+RUN CGO_ENABLED=0 go build
 
 # Runner
 FROM alpine:3.21 AS runner
