@@ -77,6 +77,7 @@ func (api *API) Init() {
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   isSecure,
+		MaxAge:   api.Config.CookieExpiry,
 	})
 
 	router.Use(sessions.Sessions("tinyauth", store))

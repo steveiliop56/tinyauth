@@ -38,6 +38,7 @@ type Config struct {
 	GenericUserURL      string `mapstructure:"generic-user-info-url"`
 	DisableContinue     bool   `mapstructure:"disable-continue"`
 	Whitelist           string `mapstructure:"whitelist"`
+	CookieExpiry        int    `mapstructure:"cookie-expiry"`
 }
 
 type UserContext struct {
@@ -53,6 +54,7 @@ type APIConfig struct {
 	Secret          string
 	AppURL          string
 	CookieSecure    bool
+	CookieExpiry    int
 	DisableContinue bool
 }
 

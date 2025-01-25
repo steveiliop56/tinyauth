@@ -140,6 +140,7 @@ func init() {
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("whitelist", "", "Comma separated list of email addresses to whitelist (only for oauth).")
+	rootCmd.Flags().Int("cookie-expiry", 86400, "Cookie expiration time in seconds.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -159,5 +160,6 @@ func init() {
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("whitelist", "WHITELIST")
+	viper.BindEnv("cookie-expiry", "COOKIE_EXPIRY")
 	viper.BindPFlags(rootCmd.Flags())
 }
