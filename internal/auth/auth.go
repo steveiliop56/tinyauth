@@ -6,16 +6,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(userList types.Users, whitelist []string) *Auth {
+func NewAuth(userList types.Users, oauthWhitelist []string) *Auth {
 	return &Auth{
-		Users:     userList,
-		Whitelist: whitelist,
+		Users:          userList,
+		OAuthWhitelist: oauthWhitelist,
 	}
 }
 
 type Auth struct {
-	Users     types.Users
-	Whitelist []string
+	Users          types.Users
+	OAuthWhitelist []string
 }
 
 func (auth *Auth) GetUser(email string) *types.User {
@@ -33,10 +33,10 @@ func (auth *Auth) CheckPassword(user types.User, password string) bool {
 }
 
 func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
-	if len(auth.Whitelist) == 0 {
+	if len(auth.OAuthWhitelist) == 0 {
 		return true
 	}
-	for _, email := range auth.Whitelist {
+	for _, email := range auth.OAuthWhitelist {
 		if email == emailSrc {
 			return true
 		}
