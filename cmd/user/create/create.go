@@ -12,7 +12,7 @@ import (
 )
 
 var interactive bool
-var username string
+var email string
 var password string
 var docker bool
 
@@ -24,9 +24,9 @@ var CreateCmd = &cobra.Command{
 		if interactive {
 			form := huh.NewForm(
 				huh.NewGroup(
-					huh.NewInput().Title("Username").Value(&username).Validate((func(s string) error {
+					huh.NewInput().Title("Email").Value(&email).Validate((func(s string) error {
 						if s == "" {
-							return errors.New("username cannot be empty")
+							return errors.New("email cannot be empty")
 						}
 						return nil
 					})),
@@ -49,11 +49,11 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		if username == "" || password == "" {
-			log.Error().Msg("Username and password cannot be empty")
+		if email == "" || password == "" {
+			log.Error().Msg("Email and password cannot be empty")
 		}
 
-		log.Info().Str("username", username).Str("password", password).Bool("docker", docker).Msg("Creating user")
+		log.Info().Str("email", email).Str("password", password).Bool("docker", docker).Msg("Creating user")
 
 		passwordByte, passwordErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
@@ -67,13 +67,13 @@ var CreateCmd = &cobra.Command{
 			passwordString = strings.ReplaceAll(passwordString, "$", "$$")
 		}
 
-		log.Info().Str("user", fmt.Sprintf("%s:%s", username, passwordString)).Msg("User created")
+		log.Info().Str("user", fmt.Sprintf("%s:%s", email, passwordString)).Msg("User created")
 	},
 }
 
 func init() {
 	CreateCmd.Flags().BoolVar(&interactive, "interactive", false, "Create a user interactively")
 	CreateCmd.Flags().BoolVar(&docker, "docker", false, "Format output for docker")
-	CreateCmd.Flags().StringVar(&username, "username", "", "Username")
+	CreateCmd.Flags().StringVar(&email, "email", "", "Email")
 	CreateCmd.Flags().StringVar(&password, "password", "", "Password")
 }
