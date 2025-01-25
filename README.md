@@ -1,36 +1,46 @@
-# Tinyauth - The simplest way to protect your apps with a login screen
+<div align="center">
+    <img alt="Tinyauth" title="Tinyauth" width="256" src="site/public/logo.png">
+    <h1>Tinyauth</h1>
+    <p>The easiest way to secure your apps with a login screen.</p>
+</div>
 
-Tinyauth is an extremely simple traefik middleware that adds a login screen to all of your apps that are using the traefik reverse proxy. Tinyauth is configurable through environment variables and it is only 20MB in size.
+<div align="center">
+    <img alt="License" src="https://img.shields.io/github/license/steveiliop56/tinyauth">
+    <img alt="Release" src="https://img.shields.io/github/v/release/steveiliop56/tinyauth">
+    <img alt="Commit activity" src="https://img.shields.io/github/commit-activity/w/steveiliop56/tinyauth">
+    <img alt="Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/steveiliop56/tinyauth/release.yml">
+    <img alt="Issues" src="https://img.shields.io/github/issues/steveiliop56/tinyauth">
+</div>
 
-## Getting started
+<br />
 
-Tinyauth is extremely easy to run since it's shipped as a docker container. The guide on how to get started is available on the website [here](https://tinyauth.doesmycode.work/).
+Tinyauth is a simple authentication middleware that adds simple email/password login to all of your docker apps. It is made for traefik but it can be extended to work with all reverse proxies like caddy and nginx.
 
-## FAQ
+> [!WARNING]
+> Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
 
-### Why?
+> [!NOTE]
+> Tinyauth is intended for homelab use and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io).
 
-Why make this project? Well, we all know that more powerful alternatives like authentik and authelia exist, but when I tried to use them, I felt overwhelmed with all the configration options and environment variables I had to configure in order for them to work. So, I decided to make a small alternative in Go to both test my skills and cover my simple login screen needs.
+## Getting Started
 
-### Is this secure?
+You can easily get started with tinyauth by following the guide on the documentation [here](https://tinyauth.doesmycode.work/docs/getting-started.html). There is also an available docker compose file [here](./docker-compose.example.yml) that has traefik, nginx and tinyauth to demonstrate its capabilities.
 
-Probably, the sessions are managed with the gin sessions package so it should be very secure. It is definitely not made for production but it could easily serve as a simple login screen to all of your homelab apps.
+## Documentation
 
-### Do I need to login every time?
-
-No, when you login, tinyauth sets a `tinyauth` cookie in your browser that applies to all of the subdomains of your domain.
-
-## License
-
-Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You may copy, distribute and modify the software as long as you track changes/dates in source files. Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions.
+You can find documentation and guides on all available configuration of tinyauth [here](https://tinyauth.doesmycode.work).
 
 ## Contributing
 
-Any contributions to the codebase are welcome! I am not a cybersecurity person so my code may have a security issue, if you find something that could be used to exploit and bypass tinyauth please let me know as soon as possible so I can fix it.
+All contributions to the codebase are welcome! If you have any recommendations on how to improve security or find a security issue in tinyauth please open an issue or pull request so it can be fixed as soon as possible!
+
+## License
+
+Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You may copy, distribute and modify the software as long as you track changes/dates in source files. Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions. For more information about the license check the [license](./LICENSE) file.
 
 ## Acknowledgements
 
-Credits for the logo go to:
+Credits for the logo of this app go to:
 
-- Freepik for providing the hat and police badge.
-- Renee French for making the gopher logo.
+- **Freepik** for providing the police hat and logo.
+- **Renee French** for the original gopher logo.
