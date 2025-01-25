@@ -17,8 +17,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "tinyauth",
-	Short: "An extremely simple traefik forward auth proxy.",
-	Long:  `Tinyauth is an extremely simple traefik forward-auth login screen that makes securing your apps easy.`,
+	Short: "The simplest way to protect your apps with a login screen.",
+	Long:  `Tinyauth is a simple authentication middleware that adds simple email/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get config
 		log.Info().Msg("Parsing config")
