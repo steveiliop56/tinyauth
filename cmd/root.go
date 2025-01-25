@@ -94,6 +94,7 @@ var rootCmd = &cobra.Command{
 			AppURL:          config.AppURL,
 			CookieSecure:    config.CookieSecure,
 			DisableContinue: config.DisableContinue,
+			CookieExpiry:    config.CookieExpiry,
 		}, hooks, auth, providers)
 
 		// Setup routes
