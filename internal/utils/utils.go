@@ -75,9 +75,9 @@ func ParseFileToLine(content string) string {
 	return strings.Join(users, ",")
 }
 
-func ParseWhitelist(whitelist string) []string {
-	if whitelist == "" {
+func ParseCommaString(str string) []string {
+	if str == "" {
 		return []string{}
 	}
-	return strings.Split(whitelist, ",")
+	return strings.Split(str, ",")
 }

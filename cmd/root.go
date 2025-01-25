@@ -57,7 +57,7 @@ var rootCmd = &cobra.Command{
 		HandleError(parseErr, "Failed to parse users")
 
 		// Create whitelist
-		whitelist := utils.ParseWhitelist(config.Whitelist)
+		whitelist := utils.ParseCommaString(config.Whitelist)
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
@@ -67,7 +67,7 @@ var rootCmd = &cobra.Command{
 			GoogleClientSecret:  config.GoogleClientSecret,
 			GenericClientId:     config.GenericClientId,
 			GenericClientSecret: config.GenericClientSecret,
-			GenericScopes:       config.GenericScopes,
+			GenericScopes:       utils.ParseCommaString(config.GenericScopes),
 			GenericAuthURL:      config.GenericAuthURL,
 			GenericTokenURL:     config.GenericTokenURL,
 			GenericUserURL:      config.GenericUserURL,

@@ -52,7 +52,7 @@ func (providers *Providers) Init() {
 			ClientID:     providers.Config.GenericClientId,
 			ClientSecret: providers.Config.GenericClientSecret,
 			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/generic", providers.Config.AppURL),
-			Scopes:       []string{providers.Config.GenericScopes},
+			Scopes:       providers.Config.GenericScopes,
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  providers.Config.GenericAuthURL,
 				TokenURL: providers.Config.GenericTokenURL,

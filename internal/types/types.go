@@ -63,7 +63,7 @@ type OAuthConfig struct {
 	GoogleClientSecret  string
 	GenericClientId     string
 	GenericClientSecret string
-	GenericScopes       string
+	GenericScopes       []string
 	GenericAuthURL      string
 	GenericTokenURL     string
 	GenericUserURL      string
