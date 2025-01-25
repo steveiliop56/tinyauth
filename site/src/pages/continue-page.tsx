@@ -9,14 +9,10 @@ export const ContinuePage = () => {
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri");
 
-  const { isLoggedIn, disableContinue } = useUserContext();
+  const { isLoggedIn } = useUserContext();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
-  }
-
-  if (disableContinue && redirectUri !== "null") {
-    window.location.replace(redirectUri!);
   }
 
   const redirect = () => {

@@ -25,7 +25,7 @@ export const LoginPage = () => {
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri");
 
-  const { isLoggedIn, configuredProviders } = useUserContext();
+  const { isLoggedIn, configuredProviders, disableContinue } = useUserContext();
 
   if (isLoggedIn) {
     return <Navigate to="/logout" />;
@@ -65,6 +65,10 @@ export const LoginPage = () => {
         color: "green",
       });
       setTimeout(() => {
+        if (disableContinue) {
+          window.location.replace(redirectUri!);
+          return;
+        }
         window.location.replace(`/continue?redirect_uri=${redirectUri}`);
       });
     },
