@@ -77,7 +77,7 @@ func ParseFileToLine(content string) string {
 			continue
 		}
 
-		users = append(users, line)
+		users = append(users, strings.TrimSpace(line))
 	}
 
 	return strings.Join(users, ",")
@@ -122,7 +122,9 @@ func GetUsers(env string, file string) (types.Users, error) {
 
 		if fileErr == nil {
 			log.Debug().Str("users", ParseFileToLine(fileContents)).Msg("Using users from file")
-			users += ","
+			if users != "" {
+				users += ","
+			}
 			users += ParseFileToLine(fileContents)
 		}
 	}
