@@ -41,7 +41,10 @@ var rootCmd = &cobra.Command{
 		// Users
 		log.Info().Msg("Parsing users")
 		users, usersErr := utils.GetUsers(config.Users, config.UsersFile)
-		HandleError(usersErr, "Failed to parse users")
+
+		if (len(users) == 0 || usersErr != nil) && !utils.OAuthConfigured(config) {
+			log.Fatal().Err(usersErr).Msg("Failed to parse users")
+		}
 
 		// Secrets
 		log.Info().Msg("Parsing secrets")

@@ -88,3 +88,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		Provider: provider,
 	}, nil
 }
+
+func (auth *Auth) UserAuthConfigured() bool {
+	return len(auth.Users) > 0
+}

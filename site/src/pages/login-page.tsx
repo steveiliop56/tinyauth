@@ -153,40 +153,44 @@ export const LoginPage = () => {
                 </Grid.Col>
               )}
             </Grid>
-            <Divider
-              label="Or continue with password"
-              labelPosition="center"
-              my="lg"
-            />
+            {configuredProviders.includes("username") && (
+              <Divider
+                label="Or continue with password"
+                labelPosition="center"
+                my="lg"
+              />
+            )}
           </>
         )}
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <TextInput
-            label="Username"
-            placeholder="user@example.com"
-            required
-            disabled={loginMutation.isLoading}
-            key={form.key("username")}
-            {...form.getInputProps("username")}
-          />
-          <PasswordInput
-            label="Password"
-            placeholder="password"
-            required
-            mt="md"
-            disabled={loginMutation.isLoading}
-            key={form.key("password")}
-            {...form.getInputProps("password")}
-          />
-          <Button
-            fullWidth
-            mt="xl"
-            type="submit"
-            loading={loginMutation.isLoading}
-          >
-            Login
-          </Button>
-        </form>
+        {configuredProviders.includes("username") && (
+          <form onSubmit={form.onSubmit(handleSubmit)}>
+            <TextInput
+              label="Username"
+              placeholder="user@example.com"
+              required
+              disabled={loginMutation.isLoading}
+              key={form.key("username")}
+              {...form.getInputProps("username")}
+            />
+            <PasswordInput
+              label="Password"
+              placeholder="password"
+              required
+              mt="md"
+              disabled={loginMutation.isLoading}
+              key={form.key("password")}
+              {...form.getInputProps("password")}
+            />
+            <Button
+              fullWidth
+              mt="xl"
+              type="submit"
+              loading={loginMutation.isLoading}
+            >
+              Login
+            </Button>
+          </form>
+        )}
       </Paper>
     </Layout>
   );

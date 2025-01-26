@@ -194,6 +194,12 @@ func (api *API) SetupRoutes() {
 		log.Debug().Msg("Checking status")
 		userContext := api.Hooks.UseUserContext(c)
 
+		configuredProviders := api.Providers.GetConfiguredProviders()
+
+		if api.Auth.UserAuthConfigured() {
+			configuredProviders = append(configuredProviders, "username")
+		}
+
 		if !userContext.IsLoggedIn {
 			log.Debug().Msg("Unauthenticated")
 			c.JSON(200, gin.H{
@@ -203,13 +209,13 @@ func (api *API) SetupRoutes() {
 				"isLoggedIn":          false,
 				"oauth":               false,
 				"provider":            "",
-				"configuredProviders": api.Providers.GetConfiguredProviders(),
+				"configuredProviders": configuredProviders,
 				"disableContinue":     api.Config.DisableContinue,
 			})
 			return
 		}
 
-		log.Debug().Interface("userContext", userContext).Strs("configuredProviders", api.Providers.GetConfiguredProviders()).Bool("disableContinue", api.Config.DisableContinue).Msg("Authenticated")
+		log.Debug().Interface("userContext", userContext).Strs("configuredProviders", configuredProviders).Bool("disableContinue", api.Config.DisableContinue).Msg("Authenticated")
 
 		c.JSON(200, gin.H{
 			"status":              200,
@@ -218,7 +224,7 @@ func (api *API) SetupRoutes() {
 			"isLoggedIn":          userContext.IsLoggedIn,
 			"oauth":               userContext.OAuth,
 			"provider":            userContext.Provider,
-			"configuredProviders": api.Providers.GetConfiguredProviders(),
+			"configuredProviders": configuredProviders,
 			"disableContinue":     api.Config.DisableContinue,
 		})
 	})

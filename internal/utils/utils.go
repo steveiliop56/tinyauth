@@ -129,3 +129,7 @@ func GetUsers(env string, file string) (types.Users, error) {
 
 	return ParseUsers(users)
 }
+
+func OAuthConfigured(config types.Config) bool {
+	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
+}
