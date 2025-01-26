@@ -6,7 +6,7 @@ import { Navigate } from "react-router";
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
-  const username = params.get("email");
+  const username = params.get("username");
 
   const { isLoggedIn } = useUserContext();
 
