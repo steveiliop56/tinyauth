@@ -85,3 +85,8 @@ type OAuthProviders struct {
 type UnauthorizedQuery struct {
 	Username string `url:"username"`
 }
+
+type SessionCookie struct {
+	Username string
+	Provider string
+}

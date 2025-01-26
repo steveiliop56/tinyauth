@@ -1,13 +1,12 @@
 package hooks
 
 import (
-	"strings"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 func NewHooks(auth *auth.Auth, providers *providers.Providers) *Hooks {
@@ -22,88 +21,55 @@ type Hooks struct {
 	Providers *providers.Providers
 }
 
-func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
-	session := sessions.Default(c)
-	sessionCookie := session.Get("tinyauth_sid")
+func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
+	cookie, cookiErr := hooks.Auth.GetSessionCookie(c)
 
-	if sessionCookie == nil {
+	if cookiErr != nil {
+		log.Error().Err(cookiErr).Msg("Failed to get session cookie")
 		return types.UserContext{
 			Username:   "",
 			IsLoggedIn: false,
 			OAuth:      false,
 			Provider:   "",
-		}, nil
+		}
 	}
 
-	data, dataOk := sessionCookie.(string)
-
-	if !dataOk {
-		return types.UserContext{
-			Username:   "",
-			IsLoggedIn: false,
-			OAuth:      false,
-			Provider:   "",
-		}, nil
+	if cookie.Provider == "username" {
+		if hooks.Auth.GetUser(cookie.Username) != nil {
+			return types.UserContext{
+				Username:   cookie.Username,
+				IsLoggedIn: true,
+				OAuth:      false,
+				Provider:   "",
+			}
+		}
 	}
 
-	split := strings.Split(data, ":")
+	provider := hooks.Providers.GetProvider(cookie.Provider)
 
-	if len(split) != 2 {
-		return types.UserContext{
-			Username:   "",
-			IsLoggedIn: false,
-			OAuth:      false,
-			Provider:   "",
-		}, nil
-	}
-
-	sessionType := split[0]
-	sessionValue := split[1]
-
-	if sessionType == "username" {
-		user := hooks.Auth.GetUser(sessionValue)
-		if user == nil {
+	if provider != nil {
+		if !hooks.Auth.EmailWhitelisted(cookie.Username) {
+			log.Error().Msgf("Email %s not whitelisted", cookie.Username)
+			hooks.Auth.DeleteSessionCookie(c)
 			return types.UserContext{
 				Username:   "",
 				IsLoggedIn: false,
 				OAuth:      false,
 				Provider:   "",
-			}, nil
+			}
 		}
 		return types.UserContext{
-			Username:   sessionValue,
+			Username:   cookie.Username,
 			IsLoggedIn: true,
-			OAuth:      false,
-			Provider:   "",
-		}, nil
-	}
-
-	provider := hooks.Providers.GetProvider(sessionType)
-
-	if provider == nil {
-		return types.UserContext{
-			Username:   "",
-			IsLoggedIn: false,
-			OAuth:      false,
-			Provider:   "",
-		}, nil
-	}
-
-	if !hooks.Auth.EmailWhitelisted(sessionValue) {
-		session.Delete("tinyauth_sid")
-		session.Save()
-		return types.UserContext{
-			Username:   "",
-			IsLoggedIn: false,
-			OAuth:      false,
-			Provider:   "",
-		}, nil
+			OAuth:      true,
+			Provider:   cookie.Provider,
+		}
 	}
 
 	return types.UserContext{
-		Username:   sessionValue,
-		IsLoggedIn: true,
-		OAuth:      true,
-		Provider:   sessionType,
-	}, nil
+		Username:   "",
+		IsLoggedIn: false,
+		OAuth:      false,
+		Provider:   "",
+	}
 }

@@ -160,7 +160,7 @@ func init() {
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
-	viper.BindEnv("oauth-whitelist", "WHITELIST")
+	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("cookie-expiry", "COOKIE_EXPIRY")
 	viper.BindPFlags(rootCmd.Flags())
 }

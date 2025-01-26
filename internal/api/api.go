@@ -90,16 +90,7 @@ func (api *API) Init() {
 
 func (api *API) SetupRoutes() {
 	api.Router.GET("/api/auth", func(c *gin.Context) {
-		userContext, userContextErr := api.Hooks.UseUserContext(c)
-
-		if userContextErr != nil {
-			log.Error().Err(userContextErr).Msg("Failed to get user context")
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
-			return
-		}
+		userContext := api.Hooks.UseUserContext(c)
 
 		if userContext.IsLoggedIn {
 			c.JSON(200, gin.H{
@@ -160,9 +151,10 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		session := sessions.Default(c)
-		session.Set("tinyauth_sid", fmt.Sprintf("username:%s", login.Username))
-		session.Save()
+		api.Auth.CreateSessionCookie(c, &types.SessionCookie{
+			Username: login.Username,
+			Provider: "username",
+		})
 
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -171,9 +163,7 @@ func (api *API) SetupRoutes() {
 	})
 
 	api.Router.POST("/api/logout", func(c *gin.Context) {
-		session := sessions.Default(c)
-		session.Delete("tinyauth_sid")
-		session.Save()
+		api.Auth.DeleteSessionCookie(c)
 
 		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
 
@@ -184,16 +174,7 @@ func (api *API) SetupRoutes() {
 	})
 
 	api.Router.GET("/api/status", func(c *gin.Context) {
-		userContext, userContextErr := api.Hooks.UseUserContext(c)
-
-		if userContextErr != nil {
-			log.Error().Err(userContextErr).Msg("Failed to get user context")
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
-			return
-		}
+		userContext := api.Hooks.UseUserContext(c)
 
 		if !userContext.IsLoggedIn {
 			c.JSON(200, gin.H{
@@ -314,9 +295,10 @@ func (api *API) SetupRoutes() {
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, unauthorizedQuery.Encode()))
 		}
 
-		session := sessions.Default(c)
-		session.Set("tinyauth_sid", fmt.Sprintf("%s:%s", providerName.Provider, email))
-		session.Save()
+		api.Auth.CreateSessionCookie(c, &types.SessionCookie{
+			Username: email,
+			Provider: providerName.Provider,
+		})
 
 		redirectURI, redirectURIErr := c.Cookie("tinyauth_redirect_uri")
 
