@@ -28,7 +28,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 
 	if sessionCookie == nil {
 		return types.UserContext{
-			Email:      "",
+			Username:   "",
 			IsLoggedIn: false,
 			OAuth:      false,
 			Provider:   "",
@@ -39,7 +39,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 
 	if !dataOk {
 		return types.UserContext{
-			Email:      "",
+			Username:   "",
 			IsLoggedIn: false,
 			OAuth:      false,
 			Provider:   "",
@@ -50,7 +50,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 
 	if len(split) != 2 {
 		return types.UserContext{
-			Email:      "",
+			Username:   "",
 			IsLoggedIn: false,
 			OAuth:      false,
 			Provider:   "",
@@ -60,18 +60,18 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 	sessionType := split[0]
 	sessionValue := split[1]
 
-	if sessionType == "email" {
+	if sessionType == "username" {
 		user := hooks.Auth.GetUser(sessionValue)
 		if user == nil {
 			return types.UserContext{
-				Email:      "",
+				Username:   "",
 				IsLoggedIn: false,
 				OAuth:      false,
 				Provider:   "",
 			}, nil
 		}
 		return types.UserContext{
-			Email:      sessionValue,
+			Username:   sessionValue,
 			IsLoggedIn: true,
 			OAuth:      false,
 			Provider:   "",
@@ -82,7 +82,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 
 	if provider == nil {
 		return types.UserContext{
-			Email:      "",
+			Username:   "",
 			IsLoggedIn: false,
 			OAuth:      false,
 			Provider:   "",
@@ -93,7 +93,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 		session.Delete("tinyauth_sid")
 		session.Save()
 		return types.UserContext{
-			Email:      "",
+			Username:   "",
 			IsLoggedIn: false,
 			OAuth:      false,
 			Provider:   "",
@@ -101,7 +101,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 	}
 
 	return types.UserContext{
-		Email:      sessionValue,
+		Username:   sessionValue,
 		IsLoggedIn: true,
 		OAuth:      true,
 		Provider:   sessionType,

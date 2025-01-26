@@ -11,7 +11,7 @@ import (
 )
 
 var interactive bool
-var email string
+var username string
 var password string
 var docker bool
 var user string
@@ -19,20 +19,20 @@ var user string
 var VerifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Verify a user is set up correctly",
-	Long:  `Verify a user is set up correctly meaning that it has a correct email and password.`,
+	Long:  `Verify a user is set up correctly meaning that it has a correct username and password.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if interactive {
 			form := huh.NewForm(
 				huh.NewGroup(
-					huh.NewInput().Title("User (email:hash)").Value(&user).Validate((func(s string) error {
+					huh.NewInput().Title("User (username:hash)").Value(&user).Validate((func(s string) error {
 						if s == "" {
 							return errors.New("user cannot be empty")
 						}
 						return nil
 					})),
-					huh.NewInput().Title("Email").Value(&email).Validate((func(s string) error {
+					huh.NewInput().Title("Username").Value(&username).Validate((func(s string) error {
 						if s == "" {
-							return errors.New("email cannot be empty")
+							return errors.New("username cannot be empty")
 						}
 						return nil
 					})),
@@ -55,11 +55,11 @@ var VerifyCmd = &cobra.Command{
 			}
 		}
 
-		if email == "" || password == "" || user == "" {
-			log.Fatal().Msg("Email, password and user cannot be empty")
+		if username == "" || password == "" || user == "" {
+			log.Fatal().Msg("Username, password and user cannot be empty")
 		}
 
-		log.Info().Str("user", user).Str("email", email).Str("password", password).Bool("docker", docker).Msg("Verifying user")
+		log.Info().Str("user", user).Str("username", username).Str("password", password).Bool("docker", docker).Msg("Verifying user")
 
 		userSplit := strings.Split(user, ":")
 
@@ -73,8 +73,8 @@ var VerifyCmd = &cobra.Command{
 
 		verifyErr := bcrypt.CompareHashAndPassword([]byte(userSplit[1]), []byte(password))
 
-		if verifyErr != nil || email != userSplit[0] {
-			log.Fatal().Msg("Email or password incorrect")
+		if verifyErr != nil || username != userSplit[0] {
+			log.Fatal().Msg("Username or password incorrect")
 		} else {
 			log.Info().Msg("Verification successful")
 		}
@@ -84,7 +84,7 @@ var VerifyCmd = &cobra.Command{
 func init() {
 	VerifyCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Create a user interactively")
 	VerifyCmd.Flags().BoolVar(&docker, "docker", false, "Is the user formatted for docker?")
-	VerifyCmd.Flags().StringVar(&email, "email", "", "Email")
+	VerifyCmd.Flags().StringVar(&username, "username", "", "Username")
 	VerifyCmd.Flags().StringVar(&password, "password", "", "Password")
-	VerifyCmd.Flags().StringVar(&user, "user", "", "Hash (user:hash combination)")
+	VerifyCmd.Flags().StringVar(&user, "user", "", "Hash (username:hash combination)")
 }

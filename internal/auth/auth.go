@@ -18,9 +18,9 @@ type Auth struct {
 	OAuthWhitelist []string
 }
 
-func (auth *Auth) GetUser(email string) *types.User {
+func (auth *Auth) GetUser(username string) *types.User {
 	for _, user := range auth.Users {
-		if user.Email == email {
+		if user.Username == username {
 			return &user
 		}
 	}
@@ -28,7 +28,7 @@ func (auth *Auth) GetUser(email string) *types.User {
 }
 
 func (auth *Auth) CheckPassword(user types.User, password string) bool {
-	hashedPasswordErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	hashedPasswordErr := bcrypt.CompareHashAndPassword([]byte(user.Username), []byte(password))
 	return hashedPasswordErr == nil
 }
 

@@ -142,7 +142,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		user := api.Auth.GetUser(login.Email)
+		user := api.Auth.GetUser(login.Username)
 
 		if user == nil {
 			c.JSON(401, gin.H{
@@ -161,7 +161,7 @@ func (api *API) SetupRoutes() {
 		}
 
 		session := sessions.Default(c)
-		session.Set("tinyauth_sid", fmt.Sprintf("email:%s", login.Email))
+		session.Set("tinyauth_sid", fmt.Sprintf("username:%s", login.Username))
 		session.Save()
 
 		c.JSON(200, gin.H{
@@ -199,7 +199,7 @@ func (api *API) SetupRoutes() {
 			c.JSON(200, gin.H{
 				"status":              200,
 				"message":             "Unauthenticated",
-				"email":               "",
+				"username":            "",
 				"isLoggedIn":          false,
 				"oauth":               false,
 				"provider":            "",
@@ -212,7 +212,7 @@ func (api *API) SetupRoutes() {
 		c.JSON(200, gin.H{
 			"status":              200,
 			"message":             "Authenticated",
-			"email":               userContext.Email,
+			"username":            userContext.Username,
 			"isLoggedIn":          userContext.IsLoggedIn,
 			"oauth":               userContext.OAuth,
 			"provider":            userContext.Provider,
@@ -306,7 +306,7 @@ func (api *API) SetupRoutes() {
 		if !api.Auth.EmailWhitelisted(email) {
 			log.Warn().Str("email", email).Msg("Email not whitelisted")
 			unauthorizedQuery, unauthorizedQueryErr := query.Values(types.UnauthorizedQuery{
-				Email: email,
+				Username: email,
 			})
 			if handleApiError(c, "Failed to build query", unauthorizedQueryErr) {
 				return

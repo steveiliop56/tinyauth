@@ -22,7 +22,7 @@ func ParseUsers(users string) (types.Users, error) {
 			return types.Users{}, errors.New("invalid user format")
 		}
 		usersParsed = append(usersParsed, types.User{
-			Email:    userSplit[0],
+			Username: userSplit[0],
 			Password: userSplit[1],
 		})
 	}

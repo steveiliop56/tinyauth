@@ -7,12 +7,12 @@ type LoginQuery struct {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
 type User struct {
-	Email    string
+	Username string
 	Password string
 }
 
@@ -42,7 +42,7 @@ type Config struct {
 }
 
 type UserContext struct {
-	Email      string
+	Username   string
 	IsLoggedIn bool
 	OAuth      bool
 	Provider   string
@@ -83,5 +83,5 @@ type OAuthProviders struct {
 }
 
 type UnauthorizedQuery struct {
-	Email string `url:"email"`
+	Username string `url:"username"`
 }

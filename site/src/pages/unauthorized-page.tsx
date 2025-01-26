@@ -6,7 +6,7 @@ import { Navigate } from "react-router";
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
-  const email = params.get("email");
+  const username = params.get("email");
 
   const { isLoggedIn } = useUserContext();
 
@@ -14,7 +14,7 @@ export const UnauthorizedPage = () => {
     return <Navigate to="/" />;
   }
 
-  if (email === "null") {
+  if (username === "null") {
     return <Navigate to="/" />;
   }
 
@@ -25,7 +25,7 @@ export const UnauthorizedPage = () => {
           Unauthorized
         </Text>
         <Text>
-          The user with email address <Code>{email}</Code> is not authorized to
+          The user with username <Code>{username}</Code> is not authorized to
           login.
         </Text>
         <Button

@@ -18,7 +18,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "tinyauth",
 	Short: "The simplest way to protect your apps with a login screen.",
-	Long:  `Tinyauth is a simple authentication middleware that adds simple email/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.`,
+	Long:  `Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get config
 		log.Info().Msg("Parsing config")
@@ -126,8 +126,8 @@ func init() {
 	rootCmd.Flags().String("address", "0.0.0.0", "Address to bind the server to.")
 	rootCmd.Flags().String("secret", "", "Secret to use for the cookie.")
 	rootCmd.Flags().String("app-url", "", "The tinyauth URL.")
-	rootCmd.Flags().String("users", "", "Comma separated list of users in the format email:hash.")
-	rootCmd.Flags().String("users-file", "", "Path to a file containing users in the format email:hash.")
+	rootCmd.Flags().String("users", "", "Comma separated list of users in the format username:hash.")
+	rootCmd.Flags().String("users-file", "", "Path to a file containing users in the format username:hash.")
 	rootCmd.Flags().Bool("cookie-secure", false, "Send cookie over secure connection only.")
 	rootCmd.Flags().String("github-client-id", "", "Github OAuth client ID.")
 	rootCmd.Flags().String("github-client-secret", "", "Github OAuth client secret.")

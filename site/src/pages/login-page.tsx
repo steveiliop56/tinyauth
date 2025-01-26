@@ -32,7 +32,7 @@ export const LoginPage = () => {
   }
 
   const schema = z.object({
-    email: z.string().email(),
+    username: z.string(),
     password: z.string(),
   });
 
@@ -41,7 +41,7 @@ export const LoginPage = () => {
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      email: "",
+      username: "",
       password: "",
     },
     validate: zodResolver(schema),
@@ -54,7 +54,7 @@ export const LoginPage = () => {
     onError: () => {
       notifications.show({
         title: "Failed to login",
-        message: "Check your email and password",
+        message: "Check your username and password",
         color: "red",
       });
     },
@@ -154,7 +154,7 @@ export const LoginPage = () => {
               )}
             </Grid>
             <Divider
-              label="Or continue with email"
+              label="Or continue with password"
               labelPosition="center"
               my="lg"
             />
@@ -162,12 +162,12 @@ export const LoginPage = () => {
         )}
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
-            label="Email"
+            label="Username"
             placeholder="user@example.com"
             required
             disabled={loginMutation.isLoading}
-            key={form.key("email")}
-            {...form.getInputProps("email")}
+            key={form.key("username")}
+            {...form.getInputProps("username")}
           />
           <PasswordInput
             label="Password"
