@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
 )
 
 func NewHooks(auth *auth.Auth, providers *providers.Providers) *Hooks {
@@ -90,22 +89,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 		}, nil
 	}
 
-	provider.Token = &oauth2.Token{
-		AccessToken: sessionValue,
-	}
-
-	email, emailErr := hooks.Providers.GetUser(sessionType)
-
-	if emailErr != nil {
-		return types.UserContext{
-			Email:      "",
-			IsLoggedIn: false,
-			OAuth:      false,
-			Provider:   "",
-		}, nil
-	}
-
-	if !hooks.Auth.EmailWhitelisted(email) {
+	if !hooks.Auth.EmailWhitelisted(sessionValue) {
 		session.Delete("tinyauth_sid")
 		session.Save()
 		return types.UserContext{
@@ -117,7 +101,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) (types.UserContext, error) {
 	}
 
 	return types.UserContext{
-		Email:      email,
+		Email:      sessionValue,
 		IsLoggedIn: true,
 		OAuth:      true,
 		Provider:   sessionType,

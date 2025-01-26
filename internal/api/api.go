@@ -291,7 +291,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		token, tokenErr := provider.ExchangeToken(code)
+		_, tokenErr := provider.ExchangeToken(code)
 
 		if handleApiError(c, "Failed to exchange token", tokenErr) {
 			return
@@ -315,7 +315,7 @@ func (api *API) SetupRoutes() {
 		}
 
 		session := sessions.Default(c)
-		session.Set("tinyauth_sid", fmt.Sprintf("%s:%s", providerName.Provider, token))
+		session.Set("tinyauth_sid", fmt.Sprintf("%s:%s", providerName.Provider, email))
 		session.Save()
 
 		redirectURI, redirectURIErr := c.Cookie("tinyauth_redirect_uri")
