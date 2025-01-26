@@ -31,7 +31,7 @@ func (auth *Auth) GetUser(username string) *types.User {
 }
 
 func (auth *Auth) CheckPassword(user types.User, password string) bool {
-	hashedPasswordErr := bcrypt.CompareHashAndPassword([]byte(user.Username), []byte(password))
+	hashedPasswordErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	return hashedPasswordErr == nil
 }
 

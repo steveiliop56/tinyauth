@@ -44,14 +44,14 @@ func GetRootURL(urlSrc string) (string, error) {
 	return urlFinal, nil
 }
 
-func GetUsersFromFile(usersFile string) (string, error) {
-	_, statErr := os.Stat(usersFile)
+func ReadFile(file string) (string, error) {
+	_, statErr := os.Stat(file)
 
 	if statErr != nil {
 		return "", statErr
 	}
 
-	data, readErr := os.ReadFile(usersFile)
+	data, readErr := os.ReadFile(file)
 
 	if readErr != nil {
 		return "", readErr
@@ -75,9 +75,43 @@ func ParseFileToLine(content string) string {
 	return strings.Join(users, ",")
 }
 
-func ParseCommaString(str string) []string {
-	if str == "" {
-		return []string{}
+func GetSecret(env string, file string) string {
+	if env == "" && file == "" {
+		return ""
 	}
-	return strings.Split(str, ",")
+
+	if env != "" {
+		return env
+	}
+
+	contents, err := ReadFile(file)
+
+	if err != nil {
+		return ""
+	}
+
+	return contents
+}
+
+func GetUsers(env string, file string) (types.Users, error) {
+	var users string
+
+	if env == "" && file == "" {
+		return types.Users{}, errors.New("no users provided")
+	}
+
+	if env != "" {
+		users += env
+	}
+
+	if file != "" {
+		fileContents, fileErr := ReadFile(file)
+
+		if fileErr == nil {
+			users += ","
+			users += ParseFileToLine(fileContents)
+		}
+	}
+
+	return ParseUsers(users)
 }

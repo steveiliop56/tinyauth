@@ -19,26 +19,29 @@ type User struct {
 type Users []User
 
 type Config struct {
-	Port                int    `validate:"number" mapstructure:"port"`
-	Address             string `mapstructure:"address, ip4_addr"`
-	Secret              string `validate:"required,len=32" mapstructure:"secret"`
-	AppURL              string `validate:"required,url" mapstructure:"app-url"`
-	Users               string `mapstructure:"users"`
-	UsersFile           string `mapstructure:"users-file"`
-	CookieSecure        bool   `mapstructure:"cookie-secure"`
-	GithubClientId      string `mapstructure:"github-client-id"`
-	GithubClientSecret  string `mapstructure:"github-client-secret"`
-	GoogleClientId      string `mapstructure:"google-client-id"`
-	GoogleClientSecret  string `mapstructure:"google-client-secret"`
-	GenericClientId     string `mapstructure:"generic-client-id"`
-	GenericClientSecret string `mapstructure:"generic-client-secret"`
-	GenericScopes       string `mapstructure:"generic-scopes"`
-	GenericAuthURL      string `mapstructure:"generic-auth-url"`
-	GenericTokenURL     string `mapstructure:"generic-token-url"`
-	GenericUserURL      string `mapstructure:"generic-user-info-url"`
-	DisableContinue     bool   `mapstructure:"disable-continue"`
-	OAuthWhitelist      string `mapstructure:"oauth-whitelist"`
-	CookieExpiry        int    `mapstructure:"cookie-expiry"`
+	Port                    int    `validate:"number" mapstructure:"port"`
+	Address                 string `mapstructure:"address, ip4_addr"`
+	Secret                  string `validate:"required,len=32" mapstructure:"secret"`
+	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
+	Users                   string `mapstructure:"users"`
+	UsersFile               string `mapstructure:"users-file"`
+	CookieSecure            bool   `mapstructure:"cookie-secure"`
+	GithubClientId          string `mapstructure:"github-client-id"`
+	GithubClientSecret      string `mapstructure:"github-client-secret"`
+	GithubClientSecretFile  string `mapstructure:"github-client-secret-file"`
+	GoogleClientId          string `mapstructure:"google-client-id"`
+	GoogleClientSecret      string `mapstructure:"google-client-secret"`
+	GoogleClientSecretFile  string `mapstructure:"google-client-secret-file"`
+	GenericClientId         string `mapstructure:"generic-client-id"`
+	GenericClientSecret     string `mapstructure:"generic-client-secret"`
+	GenericClientSecretFile string `mapstructure:"generic-client-secret-file"`
+	GenericScopes           string `mapstructure:"generic-scopes"`
+	GenericAuthURL          string `mapstructure:"generic-auth-url"`
+	GenericTokenURL         string `mapstructure:"generic-token-url"`
+	GenericUserURL          string `mapstructure:"generic-user-info-url"`
+	DisableContinue         bool   `mapstructure:"disable-continue"`
+	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
+	CookieExpiry            int    `mapstructure:"cookie-expiry"`
 }
 
 type UserContext struct {

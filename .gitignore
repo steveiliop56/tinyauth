@@ -9,3 +9,6 @@ docker-compose.test.yml
 
 # users file
 users.txt
+
+# secret test file
+secret.txt

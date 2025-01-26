@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	cmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
@@ -32,32 +33,20 @@ var rootCmd = &cobra.Command{
 		validateErr := validator.Struct(config)
 		HandleError(validateErr, "Invalid config")
 
-		// Parse users
+		// Users
 		log.Info().Msg("Parsing users")
+		users, usersErr := utils.GetUsers(config.Users, config.UsersFile)
+		HandleError(usersErr, "Failed to parse users")
 
-		if config.UsersFile == "" && config.Users == "" {
-			log.Fatal().Msg("No users provided")
-		}
+		// Secrets
+		log.Info().Msg("Parsing secrets")
 
-		usersString := config.Users
-
-		if config.UsersFile != "" {
-			log.Info().Msg("Reading users from file")
-			usersFromFile, readErr := utils.GetUsersFromFile(config.UsersFile)
-			HandleError(readErr, "Failed to read users from file")
-			usersFromFileParsed := utils.ParseFileToLine(usersFromFile)
-			if usersString != "" {
-				usersString = usersString + "," + usersFromFileParsed
-			} else {
-				usersString = usersFromFileParsed
-			}
-		}
-
-		users, parseErr := utils.ParseUsers(usersString)
-		HandleError(parseErr, "Failed to parse users")
+		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
+		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
+		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
 
 		// Create oauth whitelist
-		oauthWhitelist := utils.ParseCommaString(config.OAuthWhitelist)
+		oauthWhitelist := strings.Split(config.OAuthWhitelist, ",")
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
@@ -67,7 +56,7 @@ var rootCmd = &cobra.Command{
 			GoogleClientSecret:  config.GoogleClientSecret,
 			GenericClientId:     config.GenericClientId,
 			GenericClientSecret: config.GenericClientSecret,
-			GenericScopes:       utils.ParseCommaString(config.GenericScopes),
+			GenericScopes:       strings.Split(config.GenericScopes, ","),
 			GenericAuthURL:      config.GenericAuthURL,
 			GenericTokenURL:     config.GenericTokenURL,
 			GenericUserURL:      config.GenericUserURL,
@@ -131,10 +120,13 @@ func init() {
 	rootCmd.Flags().Bool("cookie-secure", false, "Send cookie over secure connection only.")
 	rootCmd.Flags().String("github-client-id", "", "Github OAuth client ID.")
 	rootCmd.Flags().String("github-client-secret", "", "Github OAuth client secret.")
+	rootCmd.Flags().String("github-client-secret-file", "", "Github OAuth client secret file.")
 	rootCmd.Flags().String("google-client-id", "", "Google OAuth client ID.")
 	rootCmd.Flags().String("google-client-secret", "", "Google OAuth client secret.")
+	rootCmd.Flags().String("google-client-secret-file", "", "Google OAuth client secret file.")
 	rootCmd.Flags().String("generic-client-id", "", "Generic OAuth client ID.")
 	rootCmd.Flags().String("generic-client-secret", "", "Generic OAuth client secret.")
+	rootCmd.Flags().String("generic-client-secret-file", "", "Generic OAuth client secret file.")
 	rootCmd.Flags().String("generic-scopes", "", "Generic OAuth scopes.")
 	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
@@ -151,10 +143,13 @@ func init() {
 	viper.BindEnv("cookie-secure", "COOKIE_SECURE")
 	viper.BindEnv("github-client-id", "GITHUB_CLIENT_ID")
 	viper.BindEnv("github-client-secret", "GITHUB_CLIENT_SECRET")
+	viper.BindEnv("github-client-secret-file", "GITHUB_CLIENT_SECRET_FILE")
 	viper.BindEnv("google-client-id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("google-client-secret", "GOOGLE_CLIENT_SECRET")
+	viper.BindEnv("google-client-secret-file", "GOOGLE_CLIENT_SECRET_FILE")
 	viper.BindEnv("generic-client-id", "GENERIC_CLIENT_ID")
 	viper.BindEnv("generic-client-secret", "GENERIC_CLIENT_SECRET")
+	viper.BindEnv("generic-client-secret-file", "GENERIC_CLIENT_SECRET_FILE")
 	viper.BindEnv("generic-scopes", "GENERIC_SCOPES")
 	viper.BindEnv("generic-auth-url", "GENERIC_AUTH_URL")
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
