@@ -11,6 +11,7 @@ import (
 	"tinyauth/internal/utils"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,6 +34,10 @@ var rootCmd = &cobra.Command{
 		validateErr := validator.Struct(config)
 		HandleError(validateErr, "Invalid config")
 
+		// Set log level
+		log.Info().Int8("log_level", config.LogLevel).Msg("Setting log level")
+		log.Logger = log.Logger.Level(zerolog.Level(config.LogLevel))
+
 		// Users
 		log.Info().Msg("Parsing users")
 		users, usersErr := utils.GetUsers(config.Users, config.UsersFile)
@@ -47,6 +52,7 @@ var rootCmd = &cobra.Command{
 
 		// Create oauth whitelist
 		oauthWhitelist := strings.Split(config.OAuthWhitelist, ",")
+		log.Debug().Strs("oauth_whitelist", oauthWhitelist).Msg("Parsed OAuth whitelist")
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
@@ -62,6 +68,7 @@ var rootCmd = &cobra.Command{
 			GenericUserURL:      config.GenericUserURL,
 			AppURL:              config.AppURL,
 		}
+		log.Debug().Interface("oauth_config", oauthConfig).Msg("Parsed OAuth config")
 
 		// Create auth service
 		auth := auth.NewAuth(users, oauthWhitelist)
@@ -134,6 +141,7 @@ func init() {
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().Int("cookie-expiry", 86400, "Cookie expiration time in seconds.")
+	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -157,5 +165,6 @@ func init() {
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("cookie-expiry", "COOKIE_EXPIRY")
+	viper.BindEnv("log-level", "LOG_LEVEL")
 	viper.BindPFlags(rootCmd.Flags())
 }

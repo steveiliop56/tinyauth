@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 type GoogleUserInfoResponse struct {
@@ -21,11 +23,15 @@ func GetGoogleEmail(client *http.Client) (string, error) {
 		return "", resErr
 	}
 
+	log.Debug().Msg("Got response from google")
+
 	body, bodyErr := io.ReadAll(res.Body)
 
 	if bodyErr != nil {
 		return "", bodyErr
 	}
+
+	log.Debug().Msg("Read body from google")
 
 	var user GoogleUserInfoResponse
 
@@ -34,6 +40,8 @@ func GetGoogleEmail(client *http.Client) (string, error) {
 	if jsonErr != nil {
 		return "", jsonErr
 	}
+
+	log.Debug().Interface("user", user).Msg("Parsed user from google")
 
 	return user.Email, nil
 }

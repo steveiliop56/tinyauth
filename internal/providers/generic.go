@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 type GenericUserInfoResponse struct {
@@ -17,11 +19,15 @@ func GetGenericEmail(client *http.Client, url string) (string, error) {
 		return "", resErr
 	}
 
+	log.Debug().Msg("Got response from generic provider")
+
 	body, bodyErr := io.ReadAll(res.Body)
 
 	if bodyErr != nil {
 		return "", bodyErr
 	}
+
+	log.Debug().Msg("Read body from generic provider")
 
 	var user GenericUserInfoResponse
 
@@ -30,6 +36,8 @@ func GetGenericEmail(client *http.Client, url string) (string, error) {
 	if jsonErr != nil {
 		return "", jsonErr
 	}
+
+	log.Debug().Interface("user", user).Msg("Parsed user from generic provider")
 
 	return user.Email, nil
 }

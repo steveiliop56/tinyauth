@@ -42,6 +42,7 @@ type Config struct {
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	CookieExpiry            int    `mapstructure:"cookie-expiry"`
+	LogLevel                int8   `mapstructure:"log-level"`
 }
 
 type UserContext struct {

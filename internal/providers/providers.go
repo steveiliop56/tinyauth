@@ -79,33 +79,42 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 	switch provider {
 	case "github":
 		if providers.Github == nil {
+			log.Debug().Msg("Github provider not configured")
 			return "", nil
 		}
 		client := providers.Github.GetClient()
+		log.Debug().Msg("Got client from github")
 		email, emailErr := GetGithubEmail(client)
 		if emailErr != nil {
 			return "", emailErr
 		}
+		log.Debug().Msg("Got email from github")
 		return email, nil
 	case "google":
 		if providers.Google == nil {
+			log.Debug().Msg("Google provider not configured")
 			return "", nil
 		}
 		client := providers.Google.GetClient()
+		log.Debug().Msg("Got client from google")
 		email, emailErr := GetGoogleEmail(client)
 		if emailErr != nil {
 			return "", emailErr
 		}
+		log.Debug().Msg("Got email from google")
 		return email, nil
 	case "generic":
 		if providers.Generic == nil {
+			log.Debug().Msg("Generic provider not configured")
 			return "", nil
 		}
 		client := providers.Generic.GetClient()
+		log.Debug().Msg("Got client from generic")
 		email, emailErr := GetGenericEmail(client, providers.Config.GenericUserURL)
 		if emailErr != nil {
 			return "", emailErr
 		}
+		log.Debug().Msg("Got email from generic")
 		return email, nil
 	default:
 		return "", nil

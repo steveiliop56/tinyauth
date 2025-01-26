@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 type GithubUserInfoResponse []struct {
@@ -23,11 +25,15 @@ func GetGithubEmail(client *http.Client) (string, error) {
 		return "", resErr
 	}
 
+	log.Debug().Msg("Got response from github")
+
 	body, bodyErr := io.ReadAll(res.Body)
 
 	if bodyErr != nil {
 		return "", bodyErr
 	}
+
+	log.Debug().Msg("Read body from github")
 
 	var emails GithubUserInfoResponse
 
@@ -36,6 +42,8 @@ func GetGithubEmail(client *http.Client) (string, error) {
 	if jsonErr != nil {
 		return "", jsonErr
 	}
+
+	log.Debug().Interface("emails", emails).Msg("Parsed emails from github")
 
 	for _, email := range emails {
 		if email.Primary {

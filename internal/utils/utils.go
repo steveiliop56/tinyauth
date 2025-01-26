@@ -6,11 +6,16 @@ import (
 	"os"
 	"strings"
 	"tinyauth/internal/types"
+
+	"github.com/rs/zerolog/log"
 )
 
 func ParseUsers(users string) (types.Users, error) {
+	log.Debug().Msg("Parsing users")
 	var usersParsed types.Users
 	userList := strings.Split(users, ",")
+
+	log.Debug().Strs("users", userList).Msg("Splitted users")
 
 	if len(userList) == 0 {
 		return types.Users{}, errors.New("invalid user format")
@@ -18,6 +23,7 @@ func ParseUsers(users string) (types.Users, error) {
 
 	for _, user := range userList {
 		userSplit := strings.Split(user, ":")
+		log.Debug().Strs("user", userSplit).Msg("Splitting user")
 		if len(userSplit) != 2 {
 			return types.Users{}, errors.New("invalid user format")
 		}
@@ -26,6 +32,8 @@ func ParseUsers(users string) (types.Users, error) {
 			Password: userSplit[1],
 		})
 	}
+
+	log.Debug().Interface("users", usersParsed).Msg("Parsed users")
 
 	return usersParsed, nil
 }
@@ -77,10 +85,12 @@ func ParseFileToLine(content string) string {
 
 func GetSecret(env string, file string) string {
 	if env == "" && file == "" {
+		log.Debug().Msg("No secret provided")
 		return ""
 	}
 
 	if env != "" {
+		log.Debug().Str("secret", env).Msg("Using secret from env")
 		return env
 	}
 
@@ -89,6 +99,8 @@ func GetSecret(env string, file string) string {
 	if err != nil {
 		return ""
 	}
+
+	log.Debug().Str("secret", contents).Msg("Using secret from file")
 
 	return contents
 }
@@ -101,6 +113,7 @@ func GetUsers(env string, file string) (types.Users, error) {
 	}
 
 	if env != "" {
+		log.Debug().Str("users", env).Msg("Using users from env")
 		users += env
 	}
 
@@ -108,6 +121,7 @@ func GetUsers(env string, file string) (types.Users, error) {
 		fileContents, fileErr := ReadFile(file)
 
 		if fileErr == nil {
+			log.Debug().Str("users", ParseFileToLine(fileContents)).Msg("Using users from file")
 			users += ","
 			users += ParseFileToLine(fileContents)
 		}

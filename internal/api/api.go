@@ -42,17 +42,22 @@ type API struct {
 func (api *API) Init() {
 	gin.SetMode(gin.ReleaseMode)
 
+	log.Debug().Msg("Setting up router")
 	router := gin.New()
 	router.Use(zerolog())
+	log.Debug().Msg("Setting up assets")
 	dist, distErr := fs.Sub(assets.Assets, "dist")
 
 	if distErr != nil {
 		log.Fatal().Err(distErr).Msg("Failed to get UI assets")
 	}
 
+	log.Debug().Msg("Setting up file server")
 	fileServer := http.FileServer(http.FS(dist))
+	log.Debug().Msg("Setting up cookie store")
 	store := cookie.NewStore([]byte(api.Config.Secret))
 
+	log.Debug().Msg("Getting domain")
 	domain, domainErr := utils.GetRootURL(api.Config.AppURL)
 
 	if domainErr != nil {
@@ -90,9 +95,11 @@ func (api *API) Init() {
 
 func (api *API) SetupRoutes() {
 	api.Router.GET("/api/auth", func(c *gin.Context) {
+		log.Debug().Msg("Checking auth")
 		userContext := api.Hooks.UseUserContext(c)
 
 		if userContext.IsLoggedIn {
+			log.Debug().Msg("Authenticated")
 			c.JSON(200, gin.H{
 				"status":  200,
 				"message": "Authenticated",
@@ -106,6 +113,8 @@ func (api *API) SetupRoutes() {
 		queries, queryErr := query.Values(types.LoginQuery{
 			RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
 		})
+
+		log.Debug().Interface("queries", queries).Msg("Redirecting to login")
 
 		if queryErr != nil {
 			log.Error().Err(queryErr).Msg("Failed to build query")
@@ -133,9 +142,12 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
+		log.Debug().Interface("login", login).Msg("Got login request")
+
 		user := api.Auth.GetUser(login.Username)
 
 		if user == nil {
+			log.Debug().Str("username", login.Username).Msg("User not found")
 			c.JSON(401, gin.H{
 				"status":  401,
 				"message": "Unauthorized",
@@ -144,12 +156,15 @@ func (api *API) SetupRoutes() {
 		}
 
 		if !api.Auth.CheckPassword(*user, login.Password) {
+			log.Debug().Str("username", login.Username).Msg("Password incorrect")
 			c.JSON(401, gin.H{
 				"status":  401,
 				"message": "Unauthorized",
 			})
 			return
 		}
+
+		log.Debug().Msg("Password correct, logging in")
 
 		api.Auth.CreateSessionCookie(c, &types.SessionCookie{
 			Username: login.Username,
@@ -165,6 +180,8 @@ func (api *API) SetupRoutes() {
 	api.Router.POST("/api/logout", func(c *gin.Context) {
 		api.Auth.DeleteSessionCookie(c)
 
+		log.Debug().Msg("Cleaning up redirect cookie")
+
 		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
 
 		c.JSON(200, gin.H{
@@ -174,9 +191,11 @@ func (api *API) SetupRoutes() {
 	})
 
 	api.Router.GET("/api/status", func(c *gin.Context) {
+		log.Debug().Msg("Checking status")
 		userContext := api.Hooks.UseUserContext(c)
 
 		if !userContext.IsLoggedIn {
+			log.Debug().Msg("Unauthenticated")
 			c.JSON(200, gin.H{
 				"status":              200,
 				"message":             "Unauthenticated",
@@ -189,6 +208,8 @@ func (api *API) SetupRoutes() {
 			})
 			return
 		}
+
+		log.Debug().Interface("userContext", userContext).Strs("configuredProviders", api.Providers.GetConfiguredProviders()).Bool("disableContinue", api.Config.DisableContinue).Msg("Authenticated")
 
 		c.JSON(200, gin.H{
 			"status":              200,
@@ -223,6 +244,8 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
+		log.Debug().Interface("request", request).Msg("Got OAuth request")
+
 		provider := api.Providers.GetProvider(request.Provider)
 
 		if provider == nil {
@@ -233,11 +256,16 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
+		log.Debug().Str("provider", request.Provider).Msg("Got provider")
+
 		authURL := provider.GetAuthURL()
+
+		log.Debug().Str("authURL", authURL).Msg("Got auth URL")
 
 		redirectURI := c.Query("redirect_uri")
 
 		if redirectURI != "" {
+			log.Debug().Str("redirectURI", redirectURI).Msg("Setting redirect cookie")
 			c.SetCookie("tinyauth_redirect_uri", redirectURI, 3600, "/", api.Domain, api.Config.CookieSecure, true)
 		}
 
@@ -257,6 +285,8 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
+		log.Debug().Interface("providerName", providerName).Msg("Got provider name")
+
 		code := c.Query("code")
 
 		if code == "" {
@@ -265,20 +295,28 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
+		log.Debug().Str("code", code).Msg("Got code")
+
 		provider := api.Providers.GetProvider(providerName.Provider)
+
+		log.Debug().Str("provider", providerName.Provider).Msg("Got provider")
 
 		if provider == nil {
 			c.Redirect(http.StatusPermanentRedirect, "/not-found")
 			return
 		}
 
-		_, tokenErr := provider.ExchangeToken(code)
+		token, tokenErr := provider.ExchangeToken(code)
+
+		log.Debug().Str("token", token).Msg("Got token")
 
 		if handleApiError(c, "Failed to exchange token", tokenErr) {
 			return
 		}
 
 		email, emailErr := api.Providers.GetUser(providerName.Provider)
+
+		log.Debug().Str("email", email).Msg("Got email")
 
 		if handleApiError(c, "Failed to get user", emailErr) {
 			return
@@ -295,6 +333,8 @@ func (api *API) SetupRoutes() {
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, unauthorizedQuery.Encode()))
 		}
 
+		log.Debug().Msg("Email whitelisted")
+
 		api.Auth.CreateSessionCookie(c, &types.SessionCookie{
 			Username: email,
 			Provider: providerName.Provider,
@@ -309,11 +349,15 @@ func (api *API) SetupRoutes() {
 			})
 		}
 
+		log.Debug().Str("redirectURI", redirectURI).Msg("Got redirect URI")
+
 		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
 
 		redirectQuery, redirectQueryErr := query.Values(types.LoginQuery{
 			RedirectURI: redirectURI,
 		})
+
+		log.Debug().Interface("redirectQuery", redirectQuery).Msg("Got redirect query")
 
 		if handleApiError(c, "Failed to build query", redirectQueryErr) {
 			return
