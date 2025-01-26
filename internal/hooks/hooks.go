@@ -73,7 +73,6 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		}
 	}
 
-	log.Error().Msg("Provider does not exist")
 	return types.UserContext{
 		Username:   "",
 		IsLoggedIn: false,
