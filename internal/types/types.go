@@ -19,9 +19,9 @@ type User struct {
 type Users []User
 
 type Config struct {
-	Port                    int    `validate:"number" mapstructure:"port"`
-	Address                 string `mapstructure:"address, ip4_addr"`
-	Secret                  string `validate:"required,len=32" mapstructure:"secret"`
+	Port                    int    `mapstructure:"port"`
+	Address                 string `validate:"ip4_addr" mapstructure:"address"`
+	Secret                  string `validate:"len=32" mapstructure:"secret"`
 	SecretFile              string `mapstructure:"secret-file"`
 	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
 	Users                   string `mapstructure:"users"`

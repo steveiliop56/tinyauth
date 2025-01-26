@@ -28,6 +28,14 @@ var rootCmd = &cobra.Command{
 		parseErr := viper.Unmarshal(&config)
 		HandleError(parseErr, "Failed to parse config")
 
+		// Secrets
+		log.Info().Msg("Parsing secrets")
+
+		config.Secret = utils.GetSecret(config.Secret, config.SecretFile)
+		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
+		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
+		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
+
 		// Validate config
 		log.Info().Msg("Validating config")
 		validator := validator.New()
@@ -45,14 +53,6 @@ var rootCmd = &cobra.Command{
 		if (len(users) == 0 || usersErr != nil) && !utils.OAuthConfigured(config) {
 			log.Fatal().Err(usersErr).Msg("Failed to parse users")
 		}
-
-		// Secrets
-		log.Info().Msg("Parsing secrets")
-
-		config.Secret = utils.GetSecret(config.Secret, config.SecretFile)
-		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
-		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
-		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
 
 		// Create oauth whitelist
 		oauthWhitelist := strings.Split(config.OAuthWhitelist, ",")
