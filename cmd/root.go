@@ -49,6 +49,7 @@ var rootCmd = &cobra.Command{
 		// Secrets
 		log.Info().Msg("Parsing secrets")
 
+		config.Secret = utils.GetSecret(config.Secret, config.SecretFile)
 		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
 		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
 		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
@@ -124,6 +125,7 @@ func init() {
 	rootCmd.Flags().Int("port", 3000, "Port to run the server on.")
 	rootCmd.Flags().String("address", "0.0.0.0", "Address to bind the server to.")
 	rootCmd.Flags().String("secret", "", "Secret to use for the cookie.")
+	rootCmd.Flags().String("secret-file", "", "Path to a file containing the secret.")
 	rootCmd.Flags().String("app-url", "", "The tinyauth URL.")
 	rootCmd.Flags().String("users", "", "Comma separated list of users in the format username:hash.")
 	rootCmd.Flags().String("users-file", "", "Path to a file containing users in the format username:hash.")
@@ -148,6 +150,7 @@ func init() {
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
+	viper.BindEnv("secret-file", "SECRET_FILE")
 	viper.BindEnv("app-url", "APP_URL")
 	viper.BindEnv("users", "USERS")
 	viper.BindEnv("users-file", "USERS_FILE")

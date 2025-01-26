@@ -22,6 +22,7 @@ type Config struct {
 	Port                    int    `validate:"number" mapstructure:"port"`
 	Address                 string `mapstructure:"address, ip4_addr"`
 	Secret                  string `validate:"required,len=32" mapstructure:"secret"`
+	SecretFile              string `mapstructure:"secret-file"`
 	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
 	Users                   string `mapstructure:"users"`
 	UsersFile               string `mapstructure:"users-file"`
