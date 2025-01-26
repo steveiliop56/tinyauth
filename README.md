@@ -14,7 +14,7 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds simple email/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps. It is made for traefik but it can be extended to work with all reverse proxies like caddy and nginx.
+Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps. It is made for traefik but it can be extended to work with all reverse proxies like caddy and nginx.
 
 > [!WARNING]
 > Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
