@@ -34,8 +34,6 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		}
 	}
 
-	log.Debug().Interface("cookie", cookie).Msg("Got session cookie")
-
 	if cookie.Provider == "username" {
 		log.Debug().Msg("Provider is username")
 		if hooks.Auth.GetUser(cookie.Username) != nil {
@@ -55,7 +53,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if provider != nil {
 		log.Debug().Msg("Provider exists")
 		if !hooks.Auth.EmailWhitelisted(cookie.Username) {
-			log.Error().Msgf("Email %s not whitelisted", cookie.Username)
+			log.Error().Str("email", cookie.Username).Msg("Email is not whitelisted")
 			hooks.Auth.DeleteSessionCookie(c)
 			return types.UserContext{
 				Username:   "",

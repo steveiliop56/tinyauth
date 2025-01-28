@@ -43,7 +43,7 @@ func GetGithubEmail(client *http.Client) (string, error) {
 		return "", jsonErr
 	}
 
-	log.Debug().Interface("emails", emails).Msg("Parsed emails from github")
+	log.Debug().Msg("Parsed emails from github")
 
 	for _, email := range emails {
 		if email.Primary {

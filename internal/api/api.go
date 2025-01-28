@@ -114,7 +114,7 @@ func (api *API) SetupRoutes() {
 			RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
 		})
 
-		log.Debug().Interface("queries", queries).Msg("Redirecting to login")
+		log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
 
 		if queryErr != nil {
 			log.Error().Err(queryErr).Msg("Failed to build query")
@@ -142,7 +142,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		log.Debug().Interface("login", login).Msg("Got login request")
+		log.Debug().Msg("Got login request")
 
 		user := api.Auth.GetUser(login.Username)
 
@@ -250,7 +250,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		log.Debug().Interface("request", request).Msg("Got OAuth request")
+		log.Debug().Msg("Got OAuth request")
 
 		provider := api.Providers.GetProvider(request.Provider)
 
@@ -266,7 +266,7 @@ func (api *API) SetupRoutes() {
 
 		authURL := provider.GetAuthURL()
 
-		log.Debug().Str("authURL", authURL).Msg("Got auth URL")
+		log.Debug().Msg("Got auth URL")
 
 		redirectURI := c.Query("redirect_uri")
 
@@ -291,7 +291,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		log.Debug().Interface("providerName", providerName).Msg("Got provider name")
+		log.Debug().Interface("provider", providerName.Provider).Msg("Got provider name")
 
 		code := c.Query("code")
 
@@ -301,7 +301,7 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		log.Debug().Str("code", code).Msg("Got code")
+		log.Debug().Msg("Got code")
 
 		provider := api.Providers.GetProvider(providerName.Provider)
 
@@ -312,9 +312,9 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		token, tokenErr := provider.ExchangeToken(code)
+		_, tokenErr := provider.ExchangeToken(code)
 
-		log.Debug().Str("token", token).Msg("Got token")
+		log.Debug().Msg("Got token")
 
 		if handleApiError(c, "Failed to exchange token", tokenErr) {
 			return
@@ -363,7 +363,7 @@ func (api *API) SetupRoutes() {
 			RedirectURI: redirectURI,
 		})
 
-		log.Debug().Interface("redirectQuery", redirectQuery).Msg("Got redirect query")
+		log.Debug().Msg("Got redirect query")
 
 		if handleApiError(c, "Failed to build query", redirectQueryErr) {
 			return

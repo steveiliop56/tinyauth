@@ -19,9 +19,9 @@ type User struct {
 type Users []User
 
 type Config struct {
-	Port                    int    `mapstructure:"port"`
-	Address                 string `validate:"ip4_addr" mapstructure:"address"`
-	Secret                  string `validate:"len=32" mapstructure:"secret"`
+	Port                    int    `mapstructure:"port" validate:"required"`
+	Address                 string `validate:"required,ip4_addr" mapstructure:"address"`
+	Secret                  string `validate:"required,len=32" mapstructure:"secret"`
 	SecretFile              string `mapstructure:"secret-file"`
 	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
 	Users                   string `mapstructure:"users"`
@@ -43,7 +43,7 @@ type Config struct {
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	CookieExpiry            int    `mapstructure:"cookie-expiry"`
-	LogLevel                int8   `mapstructure:"log-level"`
+	LogLevel                int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 }
 
 type UserContext struct {

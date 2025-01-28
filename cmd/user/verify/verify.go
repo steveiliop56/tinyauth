@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/bcrypt"
@@ -21,6 +22,8 @@ var VerifyCmd = &cobra.Command{
 	Short: "Verify a user is set up correctly",
 	Long:  `Verify a user is set up correctly meaning that it has a correct username and password.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Logger = log.Level(zerolog.InfoLevel)
+
 		if interactive {
 			form := huh.NewForm(
 				huh.NewGroup(

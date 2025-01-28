@@ -8,12 +8,17 @@ import (
 )
 
 func UserCmd() *cobra.Command {
+	// Create the user command
 	userCmd := &cobra.Command{
-		Use:  "user",
+		Use:   "user",
 		Short: "User utilities",
-		Long: `Utilities for creating and verifying tinyauth compatible users.`,
+		Long:  `Utilities for creating and verifying tinyauth compatible users.`,
 	}
+
+	// Add subcommands
 	userCmd.AddCommand(create.CreateCmd)
 	userCmd.AddCommand(verify.VerifyCmd)
+
+	// Return the user command
 	return userCmd
-}	
+}

@@ -50,7 +50,7 @@ func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
 func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) {
 	log.Debug().Msg("Creating session cookie")
 	sessions := sessions.Default(c)
-	log.Debug().Interface("data", data).Msg("Setting session cookie")
+	log.Debug().Msg("Setting session cookie")
 	sessions.Set("username", data.Username)
 	sessions.Set("provider", data.Provider)
 	sessions.Save()
@@ -70,13 +70,10 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 	cookieUsername := sessions.Get("username")
 	cookieProvider := sessions.Get("provider")
 
-	log.Debug().Interface("cookieUsername", cookieUsername).Msg("Got username")
-	log.Debug().Interface("cookieProvider", cookieProvider).Msg("Got provider")
-
 	username, usernameOk := cookieUsername.(string)
 	provider, providerOk := cookieProvider.(string)
 
-	log.Debug().Str("username", username).Bool("usernameOk", usernameOk).Str("provider", provider).Bool("providerOk", providerOk).Msg("Parsed cookie")
+	log.Debug().Str("username", username).Str("provider", provider).Msg("Parsed cookie")
 
 	if !usernameOk || !providerOk {
 		log.Warn().Msg("Session cookie invalid")

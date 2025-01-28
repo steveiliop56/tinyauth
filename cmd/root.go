@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"os"
 	"strings"
+	"time"
 	cmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
+	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
@@ -22,29 +25,28 @@ var rootCmd = &cobra.Command{
 	Short: "The simplest way to protect your apps with a login screen.",
 	Long:  `Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Logger
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Logger().Level(zerolog.FatalLevel)
+
 		// Get config
-		log.Info().Msg("Parsing config")
 		var config types.Config
 		parseErr := viper.Unmarshal(&config)
 		HandleError(parseErr, "Failed to parse config")
 
 		// Secrets
-		log.Info().Msg("Parsing secrets")
-
 		config.Secret = utils.GetSecret(config.Secret, config.SecretFile)
 		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
 		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
 		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
 
 		// Validate config
-		log.Info().Msg("Validating config")
 		validator := validator.New()
 		validateErr := validator.Struct(config)
-		HandleError(validateErr, "Invalid config")
+		HandleError(validateErr, "Failed to validate config")
 
-		// Set log level
-		log.Info().Int8("log_level", config.LogLevel).Msg("Setting log level")
-		log.Logger = log.Logger.Level(zerolog.Level(config.LogLevel))
+		// Logger
+		log.Logger = log.Level(zerolog.Level(config.LogLevel))
+		log.Info().Str("version", assets.Version).Msg("Starting tinyauth")
 
 		// Users
 		log.Info().Msg("Parsing users")
@@ -56,7 +58,7 @@ var rootCmd = &cobra.Command{
 
 		// Create oauth whitelist
 		oauthWhitelist := strings.Split(config.OAuthWhitelist, ",")
-		log.Debug().Strs("oauth_whitelist", oauthWhitelist).Msg("Parsed OAuth whitelist")
+		log.Debug().Msg("Parsed OAuth whitelist")
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
@@ -72,7 +74,8 @@ var rootCmd = &cobra.Command{
 			GenericUserURL:      config.GenericUserURL,
 			AppURL:              config.AppURL,
 		}
-		log.Debug().Interface("oauth_config", oauthConfig).Msg("Parsed OAuth config")
+
+		log.Debug().Msg("Parsed OAuth config")
 
 		// Create auth service
 		auth := auth.NewAuth(users, oauthWhitelist)

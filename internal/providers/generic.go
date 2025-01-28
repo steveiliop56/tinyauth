@@ -37,7 +37,7 @@ func GetGenericEmail(client *http.Client, url string) (string, error) {
 		return "", jsonErr
 	}
 
-	log.Debug().Interface("user", user).Msg("Parsed user from generic provider")
+	log.Debug().Msg("Parsed user from generic provider")
 
 	return user.Email, nil
 }

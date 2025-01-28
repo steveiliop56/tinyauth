@@ -15,15 +15,12 @@ func ParseUsers(users string) (types.Users, error) {
 	var usersParsed types.Users
 	userList := strings.Split(users, ",")
 
-	log.Debug().Strs("users", userList).Msg("Splitted users")
-
 	if len(userList) == 0 {
 		return types.Users{}, errors.New("invalid user format")
 	}
 
 	for _, user := range userList {
 		userSplit := strings.Split(user, ":")
-		log.Debug().Strs("user", userSplit).Msg("Splitting user")
 		if len(userSplit) != 2 {
 			return types.Users{}, errors.New("invalid user format")
 		}
@@ -33,7 +30,7 @@ func ParseUsers(users string) (types.Users, error) {
 		})
 	}
 
-	log.Debug().Interface("users", usersParsed).Msg("Parsed users")
+	log.Debug().Msg("Parsed users")
 
 	return usersParsed, nil
 }
@@ -83,15 +80,13 @@ func ParseFileToLine(content string) string {
 	return strings.Join(users, ",")
 }
 
-func GetSecret(env string, file string) string {
-	if env == "" && file == "" {
-		log.Debug().Msg("No secret provided")
+func GetSecret(conf string, file string) string {
+	if conf == "" && file == "" {
 		return ""
 	}
 
-	if env != "" {
-		log.Debug().Str("secret", env).Msg("Using secret from env")
-		return env
+	if conf != "" {
+		return conf
 	}
 
 	contents, err := ReadFile(file)
@@ -100,28 +95,26 @@ func GetSecret(env string, file string) string {
 		return ""
 	}
 
-	log.Debug().Str("secret", contents).Msg("Using secret from file")
-
 	return contents
 }
 
-func GetUsers(env string, file string) (types.Users, error) {
+func GetUsers(conf string, file string) (types.Users, error) {
 	var users string
 
-	if env == "" && file == "" {
+	if conf == "" && file == "" {
 		return types.Users{}, errors.New("no users provided")
 	}
 
-	if env != "" {
-		log.Debug().Str("users", env).Msg("Using users from env")
-		users += env
+	if conf != "" {
+		log.Debug().Msg("Using users from config")
+		users += conf
 	}
 
 	if file != "" {
 		fileContents, fileErr := ReadFile(file)
 
 		if fileErr == nil {
-			log.Debug().Str("users", ParseFileToLine(fileContents)).Msg("Using users from file")
+			log.Debug().Msg("Using users from file")
 			if users != "" {
 				users += ","
 			}

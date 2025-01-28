@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/bcrypt"
@@ -21,6 +22,8 @@ var CreateCmd = &cobra.Command{
 	Short: "Create a user",
 	Long:  `Create a user either interactively or by passing flags.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Logger = log.Level(zerolog.InfoLevel)
+
 		if interactive {
 			form := huh.NewForm(
 				huh.NewGroup(

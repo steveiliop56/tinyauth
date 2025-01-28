@@ -41,7 +41,7 @@ func GetGoogleEmail(client *http.Client) (string, error) {
 		return "", jsonErr
 	}
 
-	log.Debug().Interface("user", user).Msg("Parsed user from google")
+	log.Debug().Msg("Parsed user from google")
 
 	return user.Email, nil
 }
