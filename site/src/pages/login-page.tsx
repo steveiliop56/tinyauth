@@ -65,8 +65,12 @@ export const LoginPage = () => {
         color: "green",
       });
       setTimeout(() => {
-        window.location.replace(`/continue?redirect_uri=${redirectUri}`);
-      });
+        if (redirectUri === "null") {
+          window.location.replace("/");
+        } else {
+          window.location.replace(`/continue?redirect_uri=${redirectUri}`);
+        }
+      }, 500);
     },
   });
 
@@ -84,7 +88,14 @@ export const LoginPage = () => {
       });
     },
     onSuccess: (data) => {
-      window.location.replace(data.data.url);
+      notifications.show({
+        title: "Redirecting",
+        message: "Redirecting to your OAuth provider",
+        color: "blue",
+      });
+      setTimeout(() => {
+        window.location.href = data.data.url;
+      }, 500);
     },
   });
 

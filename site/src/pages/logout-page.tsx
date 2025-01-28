@@ -32,7 +32,7 @@ export const LogoutPage = () => {
         color: "green",
       });
       setTimeout(() => {
-        window.location.reload();
+        window.location.replace("/login");
       }, 500);
     },
   });
