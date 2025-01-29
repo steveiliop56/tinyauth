@@ -4,7 +4,9 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
+	"tinyauth/internal/constants"
 	"tinyauth/internal/types"
 
 	"github.com/rs/zerolog/log"
@@ -127,4 +129,20 @@ func GetUsers(conf string, file string) (types.Users, error) {
 
 func OAuthConfigured(config types.Config) bool {
 	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
+}
+
+func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
+	var tinyauthLabels types.TinyauthLabels
+	for label, value := range labels {
+		if slices.Contains(constants.TinyauthLabels, label) {
+			log.Debug().Str("label", label).Str("value", value).Msg("Found label")
+			switch label {
+			case "tinyauth.oauth.whitelist":
+				tinyauthLabels.OAuthWhitelist = strings.Split(value, ",")
+			case "tinyauth.users":
+				tinyauthLabels.Users = strings.Split(value, ",")
+			}
+		}
+	}
+	return tinyauthLabels
 }

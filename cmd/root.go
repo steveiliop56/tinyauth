@@ -8,6 +8,7 @@ import (
 	"tinyauth/internal/api"
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/docker"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -89,6 +90,13 @@ var rootCmd = &cobra.Command{
 		// Create hooks service
 		hooks := hooks.NewHooks(auth, providers)
 
+		// Create docker service
+		docker := docker.NewDocker()
+
+		// Initialize docker
+		dockerErr := docker.Init()
+		HandleError(dockerErr, "Failed to initialize docker")
+
 		// Create API
 		api := api.NewAPI(types.APIConfig{
 			Port:            config.Port,
@@ -105,7 +113,18 @@ var rootCmd = &cobra.Command{
 		api.SetupRoutes()
 
 		// Start
-		api.Run()
+		// api.Run()
+		containers, err := docker.GetContainers()
+		HandleError(err, "Failed to get containers")
+
+		for _, container := range containers {
+			log.Debug().Str("container", container.ID).Msg("Found container")
+			inspect, err := docker.InspectContainer(container.ID)
+			HandleError(err, "Failed to inspect container")
+			log.Debug().Str("container", container.ID).Str("name", inspect.Name).Interface("labels", container.Labels).Msg("Inspected container")
+			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
+			log.Debug().Interface("labels", labels).Msg("Parsed labels")
+		}
 	},
 }
 

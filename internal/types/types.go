@@ -95,3 +95,8 @@ type SessionCookie struct {
 	Username string
 	Provider string
 }
+
+type TinyauthLabels struct {
+	OAuthWhitelist []string
+	Users          []string
+}
