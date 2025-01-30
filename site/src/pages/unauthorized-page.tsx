@@ -1,18 +1,12 @@
 import { Button, Code, Paper, Text } from "@mantine/core";
 import { Layout } from "../components/layouts/layout";
-import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
   const username = params.get("username");
-
-  const { isLoggedIn } = useUserContext();
-
-  if (isLoggedIn) {
-    return <Navigate to="/" />;
-  }
+  const resource = params.get("resource");
 
   if (username === "null") {
     return <Navigate to="/" />;
@@ -25,8 +19,14 @@ export const UnauthorizedPage = () => {
           Unauthorized
         </Text>
         <Text>
-          The user with username <Code>{username}</Code> is not authorized to
-          login.
+          The user with username <Code>{username}</Code> is not authorized to{" "}
+          {resource !== "null" ? (
+            <span>
+              access the <Code>{resource}</Code> resource.
+            </span>
+          ) : (
+            "login."
+          )}
         </Text>
         <Button
           fullWidth

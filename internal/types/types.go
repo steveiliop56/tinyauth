@@ -89,6 +89,7 @@ type OAuthProviders struct {
 
 type UnauthorizedQuery struct {
 	Username string `url:"username"`
+	Resource string `url:"resource"`
 }
 
 type SessionCookie struct {

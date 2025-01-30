@@ -78,8 +78,15 @@ var rootCmd = &cobra.Command{
 
 		log.Debug().Msg("Parsed OAuth config")
 
+		// Create docker service
+		docker := docker.NewDocker()
+
+		// Initialize docker
+		dockerErr := docker.Init()
+		HandleError(dockerErr, "Failed to initialize docker")
+
 		// Create auth service
-		auth := auth.NewAuth(users, oauthWhitelist)
+		auth := auth.NewAuth(docker, users, oauthWhitelist)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
@@ -89,13 +96,6 @@ var rootCmd = &cobra.Command{
 
 		// Create hooks service
 		hooks := hooks.NewHooks(auth, providers)
-
-		// Create docker service
-		docker := docker.NewDocker()
-
-		// Initialize docker
-		dockerErr := docker.Init()
-		HandleError(dockerErr, "Failed to initialize docker")
 
 		// Create API
 		api := api.NewAPI(types.APIConfig{
@@ -113,18 +113,7 @@ var rootCmd = &cobra.Command{
 		api.SetupRoutes()
 
 		// Start
-		// api.Run()
-		containers, err := docker.GetContainers()
-		HandleError(err, "Failed to get containers")
-
-		for _, container := range containers {
-			log.Debug().Str("container", container.ID).Msg("Found container")
-			inspect, err := docker.InspectContainer(container.ID)
-			HandleError(err, "Failed to inspect container")
-			log.Debug().Str("container", container.ID).Str("name", inspect.Name).Interface("labels", container.Labels).Msg("Inspected container")
-			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
-			log.Debug().Interface("labels", labels).Msg("Parsed labels")
-		}
+		api.Run()
 	},
 }
 
