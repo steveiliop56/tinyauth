@@ -135,7 +135,7 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 	var tinyauthLabels types.TinyauthLabels
 	for label, value := range labels {
 		if slices.Contains(constants.TinyauthLabels, label) {
-			log.Debug().Str("label", label).Str("value", value).Msg("Found label")
+			log.Debug().Str("label", label).Msg("Found label")
 			switch label {
 			case "tinyauth.oauth.whitelist":
 				tinyauthLabels.OAuthWhitelist = strings.Split(value, ",")
