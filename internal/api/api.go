@@ -98,8 +98,30 @@ func (api *API) SetupRoutes() {
 		log.Debug().Msg("Checking auth")
 		userContext := api.Hooks.UseUserContext(c)
 
+		uri := c.Request.Header.Get("X-Forwarded-Uri")
+		proto := c.Request.Header.Get("X-Forwarded-Proto")
+		host := c.Request.Header.Get("X-Forwarded-Host")
+
 		if userContext.IsLoggedIn {
 			log.Debug().Msg("Authenticated")
+
+			appAllowed, appAllowedErr := api.Auth.ResourceAllowed(userContext, host)
+			if handleApiError(c, "Failed to check if resource is allowed", appAllowedErr) {
+				return
+			}
+
+			if !appAllowed {
+				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
+				queries, queryErr := query.Values(types.UnauthorizedQuery{
+					Username: userContext.Username,
+					Resource: strings.Split(host, ".")[0],
+				})
+				if handleApiError(c, "Failed to build query", queryErr) {
+					return
+				}
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, queries.Encode()))
+			}
+
 			c.JSON(200, gin.H{
 				"status":  200,
 				"message": "Authenticated",
@@ -107,9 +129,6 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		uri := c.Request.Header.Get("X-Forwarded-Uri")
-		proto := c.Request.Header.Get("X-Forwarded-Proto")
-		host := c.Request.Header.Get("X-Forwarded-Host")
 		queries, queryErr := query.Values(types.LoginQuery{
 			RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
 		})

@@ -1,7 +1,11 @@
 package auth
 
 import (
+	"slices"
+	"strings"
+	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -9,8 +13,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(userList types.Users, oauthWhitelist []string) *Auth {
+func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string) *Auth {
 	return &Auth{
+		Docker:         docker,
 		Users:          userList,
 		OAuthWhitelist: oauthWhitelist,
 	}
@@ -18,6 +23,7 @@ func NewAuth(userList types.Users, oauthWhitelist []string) *Auth {
 
 type Auth struct {
 	Users          types.Users
+	Docker         *docker.Docker
 	OAuthWhitelist []string
 }
 
@@ -88,4 +94,54 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 
 func (auth *Auth) UserAuthConfigured() bool {
 	return len(auth.Users) > 0
+}
+
+func (auth *Auth) ResourceAllowed(context types.UserContext, host string) (bool, error) {
+	appId := strings.Split(host, ".")[0]
+	containers, containersErr := auth.Docker.GetContainers()
+
+	if containersErr != nil {
+		return false, containersErr
+	}
+
+	log.Debug().Msg("Got containers")
+
+	for _, container := range containers {
+		inspect, inspectErr := auth.Docker.InspectContainer(container.ID)
+
+		if inspectErr != nil {
+			return false, inspectErr
+		}
+
+		containerName := strings.Split(inspect.Name, "/")[1]
+
+		if containerName == appId {
+			log.Debug().Str("container", containerName).Msg("Found container")
+
+			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
+
+			log.Debug().Msg("Got labels")
+
+			if context.OAuth && len(labels.OAuthWhitelist) != 0 {
+				log.Debug().Msg("Checking OAuth whitelist")
+				if slices.Contains(labels.OAuthWhitelist, context.Username) {
+					return true, nil
+				}
+				return false, nil
+			}
+
+			if len(labels.Users) != 0 {
+				log.Debug().Msg("Checking users")
+				if slices.Contains(labels.Users, context.Username) {
+					return true, nil
+				}
+				return false, nil
+			}
+		}
+
+	}
+
+	log.Debug().Msg("No matching container found, allowing access")
+
+	return true, nil
 }

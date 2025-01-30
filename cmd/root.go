@@ -8,6 +8,7 @@ import (
 	"tinyauth/internal/api"
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/docker"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -77,8 +78,15 @@ var rootCmd = &cobra.Command{
 
 		log.Debug().Msg("Parsed OAuth config")
 
+		// Create docker service
+		docker := docker.NewDocker()
+
+		// Initialize docker
+		dockerErr := docker.Init()
+		HandleError(dockerErr, "Failed to initialize docker")
+
 		// Create auth service
-		auth := auth.NewAuth(users, oauthWhitelist)
+		auth := auth.NewAuth(docker, users, oauthWhitelist)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
