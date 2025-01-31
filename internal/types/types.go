@@ -39,7 +39,7 @@ type Config struct {
 	GenericScopes           string `mapstructure:"generic-scopes"`
 	GenericAuthURL          string `mapstructure:"generic-auth-url"`
 	GenericTokenURL         string `mapstructure:"generic-token-url"`
-	GenericUserURL          string `mapstructure:"generic-user-info-url"`
+	GenericUserURL          string `mapstructure:"generic-user-url"`
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	CookieExpiry            int    `mapstructure:"cookie-expiry"`
