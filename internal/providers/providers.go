@@ -17,10 +17,11 @@ func NewProviders(config types.OAuthConfig) *Providers {
 }
 
 type Providers struct {
-	Config  types.OAuthConfig
-	Github  *oauth.OAuth
-	Google  *oauth.OAuth
-	Generic *oauth.OAuth
+	Config    types.OAuthConfig
+	Github    *oauth.OAuth
+	Google    *oauth.OAuth
+	Tailscale *oauth.OAuth
+	Generic   *oauth.OAuth
 }
 
 func (providers *Providers) Init() {
@@ -46,6 +47,17 @@ func (providers *Providers) Init() {
 		})
 		providers.Google.Init()
 	}
+	if providers.Config.TailscaleClientId != "" && providers.Config.TailscaleClientSecret != "" {
+		log.Info().Msg("Initializing Tailscale OAuth")
+		providers.Tailscale = oauth.NewOAuth(oauth2.Config{
+			ClientID:     providers.Config.TailscaleClientId,
+			ClientSecret: providers.Config.TailscaleClientSecret,
+			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/tailscale", providers.Config.AppURL),
+			Scopes:       TailscaleScopes(),
+			Endpoint:     TailscaleEndpoint,
+		})
+		providers.Tailscale.Init()
+	}
 	if providers.Config.GenericClientId != "" && providers.Config.GenericClientSecret != "" {
 		log.Info().Msg("Initializing Generic OAuth")
 		providers.Generic = oauth.NewOAuth(oauth2.Config{
@@ -68,6 +80,8 @@ func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 		return providers.Github
 	case "google":
 		return providers.Google
+	case "tailscale":
+		return providers.Tailscale
 	case "generic":
 		return providers.Generic
 	default:
@@ -103,6 +117,19 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 		}
 		log.Debug().Msg("Got email from google")
 		return email, nil
+	case "tailscale":
+		if providers.Tailscale == nil {
+			log.Debug().Msg("Tailscale provider not configured")
+			return "", nil
+		}
+		client := providers.Tailscale.GetClient()
+		log.Debug().Msg("Got client from tailscale")
+		email, emailErr := GetTailscaleEmail(client)
+		if emailErr != nil {
+			return "", emailErr
+		}
+		log.Debug().Msg("Got email from tailscale")
+		return email, nil
 	case "generic":
 		if providers.Generic == nil {
 			log.Debug().Msg("Generic provider not configured")
@@ -128,6 +155,9 @@ func (provider *Providers) GetConfiguredProviders() []string {
 	}
 	if provider.Google != nil {
 		providers = append(providers, "google")
+	}
+	if provider.Tailscale != nil {
+		providers = append(providers, "tailscale")
 	}
 	if provider.Generic != nil {
 		providers = append(providers, "generic")

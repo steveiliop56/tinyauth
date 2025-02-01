@@ -45,8 +45,8 @@ export const LogoutPage = () => {
         </Text>
         <Text>
           You are currently logged in as <Code>{username}</Code>
-          {oauth && ` using ${capitalize(provider)}`}. Click the button below to
-          log out.
+          {oauth && ` using ${capitalize(provider)} OAuth`}. Click the button
+          below to log out.
         </Text>
         <Button
           fullWidth

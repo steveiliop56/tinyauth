@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"io/fs"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"strings"
@@ -292,6 +293,21 @@ func (api *API) SetupRoutes() {
 		if redirectURI != "" {
 			log.Debug().Str("redirectURI", redirectURI).Msg("Setting redirect cookie")
 			c.SetCookie("tinyauth_redirect_uri", redirectURI, 3600, "/", api.Domain, api.Config.CookieSecure, true)
+		}
+
+		if request.Provider == "tailscale" {
+			tailscaleQuery, tailscaleQueryErr := query.Values(types.TailscaleQuery{
+				Code: (1000 + rand.IntN(9000)), // doesn't need to be secure, just there to avoid caching
+			})
+			if handleApiError(c, "Failed to build query", tailscaleQueryErr) {
+				return
+			}
+			c.JSON(200, gin.H{
+				"status":  200,
+				"message": "Ok",
+				"url":     fmt.Sprintf("%s/api/oauth/callback/tailscale?%s", api.Config.AppURL, tailscaleQuery.Encode()),
+			})
+			return
 		}
 
 		c.JSON(200, gin.H{

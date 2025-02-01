@@ -19,6 +19,7 @@ import { Layout } from "../components/layouts/layout";
 import { GoogleIcon } from "../icons/google";
 import { GithubIcon } from "../icons/github";
 import { OAuthIcon } from "../icons/oauth";
+import { TailscaleIcon } from "../icons/tailscale";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
@@ -143,6 +144,21 @@ export const LoginPage = () => {
                     loading={loginOAuthMutation.isLoading}
                   >
                     Github
+                  </Button>
+                </Grid.Col>
+              )}
+              {oauthProviders.includes("tailscale") && (
+                <Grid.Col span="content">
+                  <Button
+                    radius="xl"
+                    leftSection={
+                      <TailscaleIcon style={{ width: 14, height: 14 }} />
+                    }
+                    variant="default"
+                    onClick={() => loginOAuthMutation.mutate("tailscale")}
+                    loading={loginOAuthMutation.isLoading}
+                  >
+                    Tailscale
                   </Button>
                 </Grid.Col>
               )}
