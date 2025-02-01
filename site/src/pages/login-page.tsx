@@ -26,6 +26,9 @@ export const LoginPage = () => {
   const redirectUri = params.get("redirect_uri");
 
   const { isLoggedIn, configuredProviders } = useUserContext();
+  const oauthProviders = configuredProviders.filter(
+    (value) => value !== "username",
+  );
 
   if (isLoggedIn) {
     return <Navigate to="/logout" />;
@@ -107,18 +110,13 @@ export const LoginPage = () => {
     <Layout>
       <Title ta="center">Tinyauth</Title>
       <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
-        {configuredProviders.length === 0 && (
-          <Text size="lg" mb="md" fw={500} ta="center">
-            Welcome back, please login
-          </Text>
-        )}
-        {configuredProviders.length > 0 && (
+        {oauthProviders.length > 0 && (
           <>
             <Text size="lg" fw={500} ta="center">
               Welcome back, login with
             </Text>
             <Grid mb="md" mt="md" align="center" justify="center">
-              {configuredProviders.includes("google") && (
+              {oauthProviders.includes("google") && (
                 <Grid.Col span="content">
                   <Button
                     radius="xl"
@@ -133,7 +131,7 @@ export const LoginPage = () => {
                   </Button>
                 </Grid.Col>
               )}
-              {configuredProviders.includes("github") && (
+              {oauthProviders.includes("github") && (
                 <Grid.Col span="content">
                   <Button
                     radius="xl"
@@ -148,7 +146,7 @@ export const LoginPage = () => {
                   </Button>
                 </Grid.Col>
               )}
-              {configuredProviders.includes("generic") && (
+              {oauthProviders.includes("generic") && (
                 <Grid.Col span="content">
                   <Button
                     radius="xl"
