@@ -49,3 +49,8 @@ func (docker *Docker) InspectContainer(containerId string) (types.ContainerJSON,
 
 	return inspect, nil
 }
+
+func (docker *Docker) DockerConnected() bool {
+	_, err := docker.Client.Ping(docker.Context)
+	return err == nil
+}

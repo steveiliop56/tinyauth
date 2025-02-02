@@ -107,7 +107,10 @@ func (api *API) SetupRoutes() {
 			log.Debug().Msg("Authenticated")
 
 			appAllowed, appAllowedErr := api.Auth.ResourceAllowed(userContext, host)
-			if handleApiError(c, "Failed to check if resource is allowed", appAllowedErr) {
+
+			log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if user is allowed")
+
+			if api.handleError(c, "Failed to check if resource is allowed", appAllowedErr) {
 				return
 			}
 
@@ -117,7 +120,7 @@ func (api *API) SetupRoutes() {
 					Username: userContext.Username,
 					Resource: strings.Split(host, ".")[0],
 				})
-				if handleApiError(c, "Failed to build query", queryErr) {
+				if api.handleError(c, "Failed to build query", queryErr) {
 					return
 				}
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, queries.Encode()))
@@ -299,7 +302,7 @@ func (api *API) SetupRoutes() {
 			tailscaleQuery, tailscaleQueryErr := query.Values(types.TailscaleQuery{
 				Code: (1000 + rand.IntN(9000)), // doesn't need to be secure, just there to avoid caching
 			})
-			if handleApiError(c, "Failed to build query", tailscaleQueryErr) {
+			if api.handleError(c, "Failed to build query", tailscaleQueryErr) {
 				return
 			}
 			c.JSON(200, gin.H{
@@ -322,7 +325,7 @@ func (api *API) SetupRoutes() {
 
 		bindErr := c.BindUri(&providerName)
 
-		if handleApiError(c, "Failed to bind URI", bindErr) {
+		if api.handleError(c, "Failed to bind URI", bindErr) {
 			return
 		}
 
@@ -351,7 +354,7 @@ func (api *API) SetupRoutes() {
 
 		log.Debug().Msg("Got token")
 
-		if handleApiError(c, "Failed to exchange token", tokenErr) {
+		if api.handleError(c, "Failed to exchange token", tokenErr) {
 			return
 		}
 
@@ -359,7 +362,7 @@ func (api *API) SetupRoutes() {
 
 		log.Debug().Str("email", email).Msg("Got email")
 
-		if handleApiError(c, "Failed to get user", emailErr) {
+		if api.handleError(c, "Failed to get user", emailErr) {
 			return
 		}
 
@@ -368,7 +371,7 @@ func (api *API) SetupRoutes() {
 			unauthorizedQuery, unauthorizedQueryErr := query.Values(types.UnauthorizedQuery{
 				Username: email,
 			})
-			if handleApiError(c, "Failed to build query", unauthorizedQueryErr) {
+			if api.handleError(c, "Failed to build query", unauthorizedQueryErr) {
 				return
 			}
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, unauthorizedQuery.Encode()))
@@ -400,7 +403,7 @@ func (api *API) SetupRoutes() {
 
 		log.Debug().Msg("Got redirect query")
 
-		if handleApiError(c, "Failed to build query", redirectQueryErr) {
+		if api.handleError(c, "Failed to build query", redirectQueryErr) {
 			return
 		}
 
@@ -411,6 +414,15 @@ func (api *API) SetupRoutes() {
 func (api *API) Run() {
 	log.Info().Str("address", api.Config.Address).Int("port", api.Config.Port).Msg("Starting server")
 	api.Router.Run(fmt.Sprintf("%s:%d", api.Config.Address, api.Config.Port))
+}
+
+func (api *API) handleError(c *gin.Context, msg string, err error) bool {
+	if err != nil {
+		log.Error().Err(err).Msg(msg)
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", api.Config.AppURL))
+		return true
+	}
+	return false
 }
 
 func zerolog() gin.HandlerFunc {
@@ -435,13 +447,4 @@ func zerolog() gin.HandlerFunc {
 			log.Error().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
 		}
 	}
-}
-
-func handleApiError(c *gin.Context, msg string, err error) bool {
-	if err != nil {
-		log.Error().Err(err).Msg(msg)
-		c.Redirect(http.StatusPermanentRedirect, "/error")
-		return true
-	}
-	return false
 }

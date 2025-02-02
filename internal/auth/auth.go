@@ -97,6 +97,13 @@ func (auth *Auth) UserAuthConfigured() bool {
 }
 
 func (auth *Auth) ResourceAllowed(context types.UserContext, host string) (bool, error) {
+	isConnected := auth.Docker.DockerConnected()
+
+	if !isConnected {
+		log.Debug().Msg("Docker not connected, allowing access")
+		return true, nil
+	}
+
 	appId := strings.Split(host, ".")[0]
 	containers, containersErr := auth.Docker.GetContainers()
 
