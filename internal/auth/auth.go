@@ -3,6 +3,7 @@ package auth
 import (
 	"slices"
 	"strings"
+	"time"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
@@ -13,11 +14,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string) *Auth {
+func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string, sessionExpiry int) *Auth {
 	return &Auth{
 		Docker:         docker,
 		Users:          userList,
 		OAuthWhitelist: oauthWhitelist,
+		SessionExpiry:  sessionExpiry,
 	}
 }
 
@@ -25,6 +27,7 @@ type Auth struct {
 	Users          types.Users
 	Docker         *docker.Docker
 	OAuthWhitelist []string
+	SessionExpiry  int
 }
 
 func (auth *Auth) GetUser(username string) *types.User {
@@ -59,6 +62,7 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	log.Debug().Msg("Setting session cookie")
 	sessions.Set("username", data.Username)
 	sessions.Set("provider", data.Provider)
+	sessions.Set("expiry", time.Now().Add(time.Duration(auth.SessionExpiry)*time.Second).Unix())
 	sessions.Save()
 }
 
@@ -75,16 +79,24 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 
 	cookieUsername := sessions.Get("username")
 	cookieProvider := sessions.Get("provider")
+	cookieExpiry := sessions.Get("expiry")
 
 	username, usernameOk := cookieUsername.(string)
 	provider, providerOk := cookieProvider.(string)
+	expiry, expiryOk := cookieExpiry.(int64)
 
-	log.Debug().Str("username", username).Str("provider", provider).Msg("Parsed cookie")
-
-	if !usernameOk || !providerOk {
+	if !usernameOk || !providerOk || !expiryOk {
 		log.Warn().Msg("Session cookie invalid")
 		return types.SessionCookie{}, nil
 	}
+
+	if time.Now().Unix() > expiry {
+		log.Warn().Msg("Session cookie expired")
+		auth.DeleteSessionCookie(c)
+		return types.SessionCookie{}, nil
+	}
+
+	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Msg("Parsed cookie")
 
 	return types.SessionCookie{
 		Username: username,

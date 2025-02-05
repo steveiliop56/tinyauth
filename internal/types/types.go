@@ -45,7 +45,7 @@ type Config struct {
 	GenericUserURL            string `mapstructure:"generic-user-url"`
 	DisableContinue           bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist            string `mapstructure:"oauth-whitelist"`
-	CookieExpiry              int    `mapstructure:"cookie-expiry"`
+	SessionExpiry             int    `mapstructure:"session-expiry"`
 	LogLevel                  int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 }
 

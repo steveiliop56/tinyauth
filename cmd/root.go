@@ -89,7 +89,7 @@ var rootCmd = &cobra.Command{
 		HandleError(dockerErr, "Failed to initialize docker")
 
 		// Create auth service
-		auth := auth.NewAuth(docker, users, oauthWhitelist)
+		auth := auth.NewAuth(docker, users, oauthWhitelist, config.SessionExpiry)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
@@ -108,7 +108,7 @@ var rootCmd = &cobra.Command{
 			AppURL:          config.AppURL,
 			CookieSecure:    config.CookieSecure,
 			DisableContinue: config.DisableContinue,
-			CookieExpiry:    config.CookieExpiry,
+			CookieExpiry:    config.SessionExpiry,
 		}, hooks, auth, providers)
 
 		// Setup routes
@@ -162,7 +162,7 @@ func init() {
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
-	rootCmd.Flags().Int("cookie-expiry", 86400, "Cookie expiration time in seconds.")
+	rootCmd.Flags().Int("session-expiry", 86400, "Session (cookie) expiration time in seconds.")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
@@ -190,7 +190,7 @@ func init() {
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
-	viper.BindEnv("cookie-expiry", "COOKIE_EXPIRY")
+	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
 	viper.BindPFlags(rootCmd.Flags())
 }
