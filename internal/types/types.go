@@ -110,3 +110,7 @@ type TinyauthLabels struct {
 type TailscaleQuery struct {
 	Code int `url:"code"`
 }
+
+type Proxy struct {
+	Proxy string `uri:"proxy" binding:"required"`
+}

@@ -5,7 +5,7 @@ internal/assets/dist
 tinyauth
 
 # test docker compose
-docker-compose.test.yml
+docker-compose.test*
 
 # users file
 users.txt

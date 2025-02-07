@@ -95,8 +95,17 @@ func (api *API) Init() {
 }
 
 func (api *API) SetupRoutes() {
-	api.Router.GET("/api/auth", func(c *gin.Context) {
-		log.Debug().Msg("Checking auth")
+	api.Router.GET("/api/auth/:proxy", func(c *gin.Context) {
+		var proxy types.Proxy
+
+		bindErr := c.BindUri(&proxy)
+
+		if api.handleError(c, "Failed to bind URI", bindErr) {
+			return
+		}
+
+		log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
+
 		userContext := api.Hooks.UseUserContext(c)
 
 		uri := c.Request.Header.Get("X-Forwarded-Uri")
@@ -108,22 +117,59 @@ func (api *API) SetupRoutes() {
 
 			appAllowed, appAllowedErr := api.Auth.ResourceAllowed(userContext, host)
 
-			log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if user is allowed")
-
-			if api.handleError(c, "Failed to check if resource is allowed", appAllowedErr) {
-				return
+			if appAllowedErr != nil {
+				switch proxy.Proxy {
+				case "nginx":
+					log.Error().Err(appAllowedErr).Msg("Failed to check if resource is allowed")
+					c.JSON(501, gin.H{
+						"status":  501,
+						"message": "Internal Server Error",
+					})
+					return
+				default:
+					if api.handleError(c, "Failed to check if resource is allowed", appAllowedErr) {
+						return
+					}
+				}
 			}
+
+			log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if app is allowed")
 
 			if !appAllowed {
 				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
+
 				queries, queryErr := query.Values(types.UnauthorizedQuery{
 					Username: userContext.Username,
 					Resource: strings.Split(host, ".")[0],
 				})
-				if api.handleError(c, "Failed to build query", queryErr) {
+
+				if queryErr != nil {
+					switch proxy.Proxy {
+					case "nginx":
+						log.Error().Err(queryErr).Msg("Failed to build query")
+						c.JSON(501, gin.H{
+							"status":  501,
+							"message": "Internal Server Error",
+						})
+						return
+					default:
+						if api.handleError(c, "Failed to build query", queryErr) {
+							return
+						}
+					}
+				}
+
+				switch proxy.Proxy {
+				case "nginx":
+					c.JSON(401, gin.H{
+						"status":  401,
+						"message": "Unauthorized",
+					})
+					return
+				default:
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, queries.Encode()))
 					return
 				}
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, queries.Encode()))
 			}
 
 			c.JSON(200, gin.H{
@@ -133,22 +179,38 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		queries, queryErr := query.Values(types.LoginQuery{
-			RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
-		})
-
-		log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
-
-		if queryErr != nil {
-			log.Error().Err(queryErr).Msg("Failed to build query")
-			c.JSON(501, gin.H{
-				"status":  501,
-				"message": "Internal Server Error",
+		switch proxy.Proxy {
+		case "nginx":
+			c.JSON(401, gin.H{
+				"status":  401,
+				"message": "Unauthorized",
 			})
 			return
-		}
+		default:
+			queries, queryErr := query.Values(types.LoginQuery{
+				RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
+			})
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", api.Config.AppURL, queries.Encode()))
+			log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
+
+			if queryErr != nil {
+				switch proxy.Proxy {
+				case "nginx":
+					log.Error().Err(queryErr).Msg("Failed to build query")
+					c.JSON(501, gin.H{
+						"status":  501,
+						"message": "Internal Server Error",
+					})
+					return
+				default:
+					if api.handleError(c, "Failed to build query", queryErr) {
+						return
+					}
+				}
+			}
+
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", api.Config.AppURL, queries.Encode()))
+		}
 	})
 
 	api.Router.POST("/api/login", func(c *gin.Context) {
