@@ -104,7 +104,7 @@ func GetUsers(conf string, file string) (types.Users, error) {
 	var users string
 
 	if conf == "" && file == "" {
-		return types.Users{}, errors.New("no users provided")
+		return types.Users{}, nil
 	}
 
 	if conf != "" {
@@ -128,7 +128,7 @@ func GetUsers(conf string, file string) (types.Users, error) {
 }
 
 func OAuthConfigured(config types.Config) bool {
-	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
+	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "") || (config.TailscaleClientId != "" && config.TailscaleClientSecret != "")
 }
 
 func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {

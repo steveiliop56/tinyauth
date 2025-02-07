@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"time"
@@ -54,8 +55,10 @@ var rootCmd = &cobra.Command{
 		log.Info().Msg("Parsing users")
 		users, usersErr := utils.GetUsers(config.Users, config.UsersFile)
 
-		if (len(users) == 0 || usersErr != nil) && !utils.OAuthConfigured(config) {
-			log.Fatal().Err(usersErr).Msg("Failed to parse users")
+		HandleError(usersErr, "Failed to parse users")
+
+		if len(users) == 0 && !utils.OAuthConfigured(config) {
+			HandleError(errors.New("no users or OAuth configured"), "No users or OAuth configured")
 		}
 
 		// Create oauth whitelist
