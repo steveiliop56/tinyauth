@@ -1,0 +1,22 @@
+{
+  "content": null,
+  "embeds": [
+    {
+      "title": "Welcome to Tinyauth Discord!",
+      "description": "Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.\n\n**Information**\n\n• Github: <https://github.com/steveiliop56/tinyauth>\n• Website: <https://tinyauth.doesmycode.work>",
+      "url": "https://tinyauth.doesmycode.work",
+      "color": 7002085,
+      "author": {
+        "name": "Tinyauth"
+      },
+      "footer": {
+        "text": "Updated at"
+      },
+      "timestamp": "2025-02-06T22:00:00.000Z",
+      "thumbnail": {
+        "url": "https://github.com/steveiliop56/tinyauth/blob/main/site/public/logo.png?raw=true"
+      }
+    }
+  ],
+  "attachments": []
+}
