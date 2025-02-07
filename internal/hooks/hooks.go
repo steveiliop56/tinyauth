@@ -22,16 +22,21 @@ type Hooks struct {
 }
 
 func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
-	cookie, cookiErr := hooks.Auth.GetSessionCookie(c)
+	cookie := hooks.Auth.GetSessionCookie(c)
+	basic := hooks.Auth.GetBasicAuth(c)
 
-	if cookiErr != nil {
-		log.Error().Err(cookiErr).Msg("Failed to get session cookie")
-		return types.UserContext{
-			Username:   "",
-			IsLoggedIn: false,
-			OAuth:      false,
-			Provider:   "",
+	if basic.Username != "" {
+		log.Debug().Msg("Got basic auth")
+		user := hooks.Auth.GetUser(basic.Username)
+		if user != nil && hooks.Auth.CheckPassword(*user, basic.Password) {
+			return types.UserContext{
+				Username:   basic.Username,
+				IsLoggedIn: true,
+				OAuth:      false,
+				Provider:   "",
+			}
 		}
+
 	}
 
 	if cookie.Provider == "username" {

@@ -73,7 +73,7 @@ func (auth *Auth) DeleteSessionCookie(c *gin.Context) {
 	sessions.Save()
 }
 
-func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) {
+func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 	log.Debug().Msg("Getting session cookie")
 	sessions := sessions.Default(c)
 
@@ -87,13 +87,13 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 
 	if !usernameOk || !providerOk || !expiryOk {
 		log.Warn().Msg("Session cookie invalid")
-		return types.SessionCookie{}, nil
+		return types.SessionCookie{}
 	}
 
 	if time.Now().Unix() > expiry {
 		log.Warn().Msg("Session cookie expired")
 		auth.DeleteSessionCookie(c)
-		return types.SessionCookie{}, nil
+		return types.SessionCookie{}
 	}
 
 	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Msg("Parsed cookie")
@@ -101,7 +101,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 	return types.SessionCookie{
 		Username: username,
 		Provider: provider,
-	}, nil
+	}
 }
 
 func (auth *Auth) UserAuthConfigured() bool {
@@ -163,4 +163,33 @@ func (auth *Auth) ResourceAllowed(context types.UserContext, host string) (bool,
 	log.Debug().Msg("No matching container found, allowing access")
 
 	return true, nil
+}
+
+func (auth *Auth) GetBasicAuth(c *gin.Context) types.User {
+	header := c.GetHeader("Authorization")
+
+	if header == "" {
+		return types.User{}
+	}
+
+	headerSplit := strings.Split(header, " ")
+
+	if len(headerSplit) != 2 {
+		return types.User{}
+	}
+
+	if headerSplit[0] != "Basic" {
+		return types.User{}
+	}
+
+	credentials := strings.Split(headerSplit[1], ":")
+
+	if len(credentials) != 2 {
+		return types.User{}
+	}
+
+	return types.User{
+		Username: credentials[0],
+		Password: credentials[1],
+	}
 }
