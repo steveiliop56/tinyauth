@@ -23,7 +23,7 @@ type Hooks struct {
 
 func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	cookie := hooks.Auth.GetSessionCookie(c)
-	basic := hooks.Auth.GetBasicAuth(c) // TODO: return json instead of redirect when basic auth
+	basic := hooks.Auth.GetBasicAuth(c)
 
 	if basic.Username != "" {
 		log.Debug().Msg("Got basic auth")
@@ -33,7 +33,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 				Username:   basic.Username,
 				IsLoggedIn: true,
 				OAuth:      false,
-				Provider:   "",
+				Provider:   "basic",
 			}
 		}
 
@@ -47,7 +47,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 				Username:   cookie.Username,
 				IsLoggedIn: true,
 				OAuth:      false,
-				Provider:   "",
+				Provider:   "username",
 			}
 		}
 	}

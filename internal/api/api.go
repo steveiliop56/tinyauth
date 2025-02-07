@@ -127,6 +127,14 @@ func (api *API) SetupRoutes() {
 					})
 					return
 				default:
+					if c.GetHeader("Authorization") != "" {
+						log.Error().Err(appAllowedErr).Msg("Failed to check if resource is allowed")
+						c.JSON(501, gin.H{
+							"status":  501,
+							"message": "Internal Server Error",
+						})
+						return
+					}
 					if api.handleError(c, "Failed to check if resource is allowed", appAllowedErr) {
 						return
 					}
@@ -153,6 +161,14 @@ func (api *API) SetupRoutes() {
 						})
 						return
 					default:
+						if c.GetHeader("Authorization") != "" {
+							log.Error().Err(appAllowedErr).Msg("Failed to build query")
+							c.JSON(501, gin.H{
+								"status":  501,
+								"message": "Internal Server Error",
+							})
+							return
+						}
 						if api.handleError(c, "Failed to build query", queryErr) {
 							return
 						}
@@ -167,6 +183,13 @@ func (api *API) SetupRoutes() {
 					})
 					return
 				default:
+					if c.GetHeader("Authorization") != "" {
+						c.JSON(401, gin.H{
+							"status":  401,
+							"message": "Unauthorized",
+						})
+						return
+					}
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, queries.Encode()))
 					return
 				}
@@ -187,6 +210,14 @@ func (api *API) SetupRoutes() {
 			})
 			return
 		default:
+			if c.GetHeader("Authorization") != "" {
+				c.JSON(401, gin.H{
+					"status":  401,
+					"message": "Unauthorized",
+				})
+				return
+			}
+
 			queries, queryErr := query.Values(types.LoginQuery{
 				RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
 			})
