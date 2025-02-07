@@ -22,9 +22,13 @@ Tinyauth is a simple authentication middleware that adds simple username/passwor
 > [!NOTE]
 > Tinyauth is intended for homelab use and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io).
 
+## Discord
+
+I just made a Discord server for Tinyauth! It is not only for Tinyauth but general self-hosting because I just like chatting with people! The link is [here](https://discord.gg/gWpzrksk), see you there!
+
 ## Getting Started
 
-You can easily get started with tinyauth by following the guide on the documentation [here](https://tinyauth.doesmycode.work/docs/getting-started.html). There is also an available docker compose file [here](./docker-compose.example.yml) that has traefik, nginx and tinyauth to demonstrate its capabilities.
+You can easily get started with tinyauth by following the guide on the [documentation](https://tinyauth.doesmycode.work/docs/getting-started.html). There is also an available [docker compose file](./docker-compose.example.yml) that has traefik, nginx and tinyauth to demonstrate its capabilities.
 
 ## Documentation
 
