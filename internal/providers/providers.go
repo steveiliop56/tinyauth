@@ -25,8 +25,11 @@ type Providers struct {
 }
 
 func (providers *Providers) Init() {
+	// If we have a client id and secret for github, initialize the oauth provider
 	if providers.Config.GithubClientId != "" && providers.Config.GithubClientSecret != "" {
 		log.Info().Msg("Initializing Github OAuth")
+
+		// Create a new oauth provider with the github config
 		providers.Github = oauth.NewOAuth(oauth2.Config{
 			ClientID:     providers.Config.GithubClientId,
 			ClientSecret: providers.Config.GithubClientSecret,
@@ -34,10 +37,16 @@ func (providers *Providers) Init() {
 			Scopes:       GithubScopes(),
 			Endpoint:     endpoints.GitHub,
 		})
+
+		// Initialize the oauth provider
 		providers.Github.Init()
 	}
+
+	// If we have a client id and secret for google, initialize the oauth provider
 	if providers.Config.GoogleClientId != "" && providers.Config.GoogleClientSecret != "" {
 		log.Info().Msg("Initializing Google OAuth")
+
+		// Create a new oauth provider with the google config
 		providers.Google = oauth.NewOAuth(oauth2.Config{
 			ClientID:     providers.Config.GoogleClientId,
 			ClientSecret: providers.Config.GoogleClientSecret,
@@ -45,10 +54,15 @@ func (providers *Providers) Init() {
 			Scopes:       GoogleScopes(),
 			Endpoint:     endpoints.Google,
 		})
+
+		// Initialize the oauth provider
 		providers.Google.Init()
 	}
+
 	if providers.Config.TailscaleClientId != "" && providers.Config.TailscaleClientSecret != "" {
 		log.Info().Msg("Initializing Tailscale OAuth")
+
+		// Create a new oauth provider with the tailscale config
 		providers.Tailscale = oauth.NewOAuth(oauth2.Config{
 			ClientID:     providers.Config.TailscaleClientId,
 			ClientSecret: providers.Config.TailscaleClientSecret,
@@ -56,10 +70,16 @@ func (providers *Providers) Init() {
 			Scopes:       TailscaleScopes(),
 			Endpoint:     TailscaleEndpoint,
 		})
+
+		// Initialize the oauth provider
 		providers.Tailscale.Init()
 	}
+
+	// If we have a client id and secret for generic oauth, initialize the oauth provider
 	if providers.Config.GenericClientId != "" && providers.Config.GenericClientSecret != "" {
 		log.Info().Msg("Initializing Generic OAuth")
+
+		// Create a new oauth provider with the generic config
 		providers.Generic = oauth.NewOAuth(oauth2.Config{
 			ClientID:     providers.Config.GenericClientId,
 			ClientSecret: providers.Config.GenericClientSecret,
@@ -70,11 +90,14 @@ func (providers *Providers) Init() {
 				TokenURL: providers.Config.GenericTokenURL,
 			},
 		})
+
+		// Initialize the oauth provider
 		providers.Generic.Init()
 	}
 }
 
 func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
+	// Return the provider based on the provider string
 	switch provider {
 	case "github":
 		return providers.Github
@@ -90,58 +113,103 @@ func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 }
 
 func (providers *Providers) GetUser(provider string) (string, error) {
+	// Get the email from the provider
 	switch provider {
 	case "github":
+		// If the github provider is not configured, return an error
 		if providers.Github == nil {
 			log.Debug().Msg("Github provider not configured")
 			return "", nil
 		}
+
+		// Get the client from the github provider
 		client := providers.Github.GetClient()
+
 		log.Debug().Msg("Got client from github")
+
+		// Get the email from the github provider
 		email, emailErr := GetGithubEmail(client)
+
+		// Check if there was an error
 		if emailErr != nil {
 			return "", emailErr
 		}
+
 		log.Debug().Msg("Got email from github")
+
+		// Return the email
 		return email, nil
 	case "google":
+		// If the google provider is not configured, return an error
 		if providers.Google == nil {
 			log.Debug().Msg("Google provider not configured")
 			return "", nil
 		}
+
+		// Get the client from the google provider
 		client := providers.Google.GetClient()
+
 		log.Debug().Msg("Got client from google")
+
+		// Get the email from the google provider
 		email, emailErr := GetGoogleEmail(client)
+
+		// Check if there was an error
 		if emailErr != nil {
 			return "", emailErr
 		}
+
 		log.Debug().Msg("Got email from google")
+
+		// Return the email
 		return email, nil
 	case "tailscale":
+		// If the tailscale provider is not configured, return an error
 		if providers.Tailscale == nil {
 			log.Debug().Msg("Tailscale provider not configured")
 			return "", nil
 		}
+
+		// Get the client from the tailscale provider
 		client := providers.Tailscale.GetClient()
+
 		log.Debug().Msg("Got client from tailscale")
+
+		// Get the email from the tailscale provider
 		email, emailErr := GetTailscaleEmail(client)
+
+		// Check if there was an error
 		if emailErr != nil {
 			return "", emailErr
 		}
+
 		log.Debug().Msg("Got email from tailscale")
+
+		// Return the email
 		return email, nil
 	case "generic":
+		// If the generic provider is not configured, return an error
 		if providers.Generic == nil {
 			log.Debug().Msg("Generic provider not configured")
 			return "", nil
 		}
+
+		// Get the client from the generic provider
 		client := providers.Generic.GetClient()
+
 		log.Debug().Msg("Got client from generic")
+
+		// Get the email from the generic provider
 		email, emailErr := GetGenericEmail(client, providers.Config.GenericUserURL)
+
+		// Check if there was an error
 		if emailErr != nil {
 			return "", emailErr
 		}
+
 		log.Debug().Msg("Got email from generic")
+
+		// Return the email
 		return email, nil
 	default:
 		return "", nil
@@ -149,6 +217,7 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 }
 
 func (provider *Providers) GetConfiguredProviders() []string {
+	// Create a list of the configured providers
 	providers := []string{}
 	if provider.Github != nil {
 		providers = append(providers, "github")

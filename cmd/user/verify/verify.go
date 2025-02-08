@@ -22,9 +22,12 @@ var VerifyCmd = &cobra.Command{
 	Short: "Verify a user is set up correctly",
 	Long:  `Verify a user is set up correctly meaning that it has a correct username and password.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Setup logger
 		log.Logger = log.Level(zerolog.InfoLevel)
 
+		// Check if interactive
 		if interactive {
+			// Create huh form
 			form := huh.NewForm(
 				huh.NewGroup(
 					huh.NewInput().Title("User (username:hash)").Value(&user).Validate((func(s string) error {
@@ -49,6 +52,7 @@ var VerifyCmd = &cobra.Command{
 				),
 			)
 
+			// Use simple theme
 			var baseTheme *huh.Theme = huh.ThemeBase()
 
 			formErr := form.WithTheme(baseTheme).Run()
@@ -58,22 +62,26 @@ var VerifyCmd = &cobra.Command{
 			}
 		}
 
+		// Do we have username, password and user?
 		if username == "" || password == "" || user == "" {
 			log.Fatal().Msg("Username, password and user cannot be empty")
 		}
 
 		log.Info().Str("user", user).Str("username", username).Str("password", password).Bool("docker", docker).Msg("Verifying user")
 
+		// Split username and password
 		userSplit := strings.Split(user, ":")
 
 		if userSplit[1] == "" {
 			log.Fatal().Msg("User is not formatted correctly")
 		}
 
+		// Replace $$ with $ if formatted for docker
 		if docker {
 			userSplit[1] = strings.ReplaceAll(userSplit[1], "$$", "$")
 		}
 
+		// Compare username and password
 		verifyErr := bcrypt.CompareHashAndPassword([]byte(userSplit[1]), []byte(password))
 
 		if verifyErr != nil || username != userSplit[0] {
@@ -85,6 +93,7 @@ var VerifyCmd = &cobra.Command{
 }
 
 func init() {
+	// Flags
 	VerifyCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Create a user interactively")
 	VerifyCmd.Flags().BoolVar(&docker, "docker", false, "Is the user formatted for docker?")
 	VerifyCmd.Flags().StringVar(&username, "username", "", "Username")

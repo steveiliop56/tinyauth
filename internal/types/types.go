@@ -2,22 +2,27 @@ package types
 
 import "tinyauth/internal/oauth"
 
+// LoginQuery is the query parameters for the login endpoint
 type LoginQuery struct {
 	RedirectURI string `url:"redirect_uri"`
 }
 
+// LoginRequest is the request body for the login endpoint
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+// User is the struct for a user
 type User struct {
 	Username string
 	Password string
 }
 
+// Users is a list of users
 type Users []User
 
+// Config is the configuration for the tinyauth server
 type Config struct {
 	Port                      int    `mapstructure:"port" validate:"required"`
 	Address                   string `validate:"required,ip4_addr" mapstructure:"address"`
@@ -49,6 +54,7 @@ type Config struct {
 	LogLevel                  int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 }
 
+// UserContext is the context for the user
 type UserContext struct {
 	Username   string
 	IsLoggedIn bool
@@ -56,6 +62,7 @@ type UserContext struct {
 	Provider   string
 }
 
+// APIConfig is the configuration for the API
 type APIConfig struct {
 	Port            int
 	Address         string
@@ -66,6 +73,7 @@ type APIConfig struct {
 	DisableContinue bool
 }
 
+// OAuthConfig is the configuration for the providers
 type OAuthConfig struct {
 	GithubClientId        string
 	GithubClientSecret    string
@@ -82,35 +90,42 @@ type OAuthConfig struct {
 	AppURL                string
 }
 
+// OAuthRequest is the request for the OAuth endpoint
 type OAuthRequest struct {
 	Provider string `uri:"provider" binding:"required"`
 }
 
+// OAuthProviders is the struct for the OAuth providers
 type OAuthProviders struct {
 	Github    *oauth.OAuth
 	Google    *oauth.OAuth
 	Microsoft *oauth.OAuth
 }
 
+// UnauthorizedQuery is the query parameters for the unauthorized endpoint
 type UnauthorizedQuery struct {
 	Username string `url:"username"`
 	Resource string `url:"resource"`
 }
 
+// SessionCookie is the cookie for the session (exculding the expiry)
 type SessionCookie struct {
 	Username string
 	Provider string
 }
 
+// TinyauthLabels is the labels for the tinyauth container
 type TinyauthLabels struct {
 	OAuthWhitelist []string
 	Users          []string
 }
 
+// TailscaleQuery is the query parameters for the tailscale endpoint
 type TailscaleQuery struct {
 	Code int `url:"code"`
 }
 
+// Proxy is the uri parameters for the proxy endpoint
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
 }
