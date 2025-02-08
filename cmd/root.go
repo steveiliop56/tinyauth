@@ -125,20 +125,24 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	err := rootCmd.Execute()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to execute command")
-	}
+	HandleError(err, "Failed to execute root command")
 }
 
 func HandleError(err error, msg string) {
+	// If error log it and exit
 	if err != nil {
 		log.Fatal().Err(err).Msg(msg)
 	}
 }
 
 func init() {
+	// Add user command
 	rootCmd.AddCommand(cmd.UserCmd())
+
+	// Read environment variables
 	viper.AutomaticEnv()
+
+	// Flags
 	rootCmd.Flags().Int("port", 3000, "Port to run the server on.")
 	rootCmd.Flags().String("address", "0.0.0.0", "Address to bind the server to.")
 	rootCmd.Flags().String("secret", "", "Secret to use for the cookie.")
@@ -167,6 +171,8 @@ func init() {
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().Int("session-expiry", 86400, "Session (cookie) expiration time in seconds.")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
+
+	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -195,5 +201,7 @@ func init() {
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
+
+	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())
 }

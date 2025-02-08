@@ -22,9 +22,12 @@ var CreateCmd = &cobra.Command{
 	Short: "Create a user",
 	Long:  `Create a user either interactively or by passing flags.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Setup logger
 		log.Logger = log.Level(zerolog.InfoLevel)
 
+		// Check if interactive
 		if interactive {
+			// Create huh form
 			form := huh.NewForm(
 				huh.NewGroup(
 					huh.NewInput().Title("Username").Value(&username).Validate((func(s string) error {
@@ -43,6 +46,7 @@ var CreateCmd = &cobra.Command{
 				),
 			)
 
+			// Use simple theme
 			var baseTheme *huh.Theme = huh.ThemeBase()
 
 			formErr := form.WithTheme(baseTheme).Run()
@@ -52,12 +56,14 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
+		// Do we have username and password?
 		if username == "" || password == "" {
 			log.Error().Msg("Username and password cannot be empty")
 		}
 
 		log.Info().Str("username", username).Str("password", password).Bool("docker", docker).Msg("Creating user")
 
+		// Hash password
 		passwordByte, passwordErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 		if passwordErr != nil {
@@ -66,15 +72,18 @@ var CreateCmd = &cobra.Command{
 
 		passwordString := string(passwordByte)
 
+		// Escape $ for docker
 		if docker {
 			passwordString = strings.ReplaceAll(passwordString, "$", "$$")
 		}
 
+		// Log user created
 		log.Info().Str("user", fmt.Sprintf("%s:%s", username, passwordString)).Msg("User created")
 	},
 }
 
 func init() {
+	// Flags
 	CreateCmd.Flags().BoolVar(&interactive, "interactive", false, "Create a user interactively")
 	CreateCmd.Flags().BoolVar(&docker, "docker", false, "Format output for docker")
 	CreateCmd.Flags().StringVar(&username, "username", "", "Username")

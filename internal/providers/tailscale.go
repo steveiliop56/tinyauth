@@ -9,48 +9,60 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// The tailscale email is the loginName
 type TailscaleUser struct {
 	LoginName string `json:"loginName"`
 }
 
+// The response from the tailscale user info endpoint
 type TailscaleUserInfoResponse struct {
 	Users []TailscaleUser `json:"users"`
 }
 
+// The scopes required for the tailscale provider
 func TailscaleScopes() []string {
 	return []string{"users:read"}
 }
 
+// The tailscale endpoint
 var TailscaleEndpoint = oauth2.Endpoint{
 	TokenURL: "https://api.tailscale.com/api/v2/oauth/token",
 }
 
 func GetTailscaleEmail(client *http.Client) (string, error) {
+	// Get the user info from tailscale using the oauth http client
 	res, resErr := client.Get("https://api.tailscale.com/api/v2/tailnet/-/users")
 
+	// Check if there was an error
 	if resErr != nil {
 		return "", resErr
 	}
 
 	log.Debug().Msg("Got response from tailscale")
 
+	// Read the body of the response
 	body, bodyErr := io.ReadAll(res.Body)
 
+	// Check if there was an error
 	if bodyErr != nil {
 		return "", bodyErr
 	}
 
 	log.Debug().Msg("Read body from tailscale")
 
+	// Parse the body into a user struct
 	var users TailscaleUserInfoResponse
 
+	// Unmarshal the body into the user struct
 	jsonErr := json.Unmarshal(body, &users)
 
+	// Check if there was an error
 	if jsonErr != nil {
 		return "", jsonErr
 	}
 
 	log.Debug().Msg("Parsed users from tailscale")
 
+	// Return the email of the first user
 	return users.Users[0].LoginName, nil
 }
