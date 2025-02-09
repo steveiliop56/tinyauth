@@ -7,8 +7,6 @@ services:
       - 80:80
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth
 
   nginx:
     container_name: nginx
@@ -32,3 +30,4 @@ services:
       traefik.enable: true
       traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.local`)
       traefik.http.services.tinyauth.loadbalancer.server.port: 3000
+      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth/traefik
