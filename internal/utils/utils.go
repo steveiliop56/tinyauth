@@ -50,7 +50,7 @@ func ParseUsers(users string) (types.Users, error) {
 	return usersParsed, nil
 }
 
-// Root url parses parses a hostname and returns the root domain (e.g. sub1.sub2.domain.com -> domain.com)
+// Root url parses parses a hostname and returns the root domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
 func GetRootURL(urlSrc string) (string, error) {
 	// Make sure the url is valid
 	urlParsed, parseErr := url.Parse(urlSrc)
@@ -176,11 +176,6 @@ func GetUsers(conf string, file string) (types.Users, error) {
 	return ParseUsers(users)
 }
 
-// Check if any of the OAuth providers are configured based on the client id and secret
-func OAuthConfigured(config types.Config) bool {
-	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "") || (config.TailscaleClientId != "" && config.TailscaleClientSecret != "")
-}
-
 // Parse the docker labels to the tinyauth labels struct
 func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 	// Create a new tinyauth labels struct
@@ -206,4 +201,9 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 
 	// Return the tinyauth labels
 	return tinyauthLabels
+}
+
+// Check if any of the OAuth providers are configured based on the client id and secret
+func OAuthConfigured(config types.Config) bool {
+	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "") || (config.TailscaleClientId != "" && config.TailscaleClientSecret != "")
 }
