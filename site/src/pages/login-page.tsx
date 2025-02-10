@@ -24,9 +24,10 @@ import { TailscaleIcon } from "../icons/tailscale";
 export const LoginPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
-  const redirectUri = params.get("redirect_uri");
+  const redirectUri = params.get("redirect_uri") ?? "";
 
   const { isLoggedIn, configuredProviders } = useUserContext();
+
   const oauthProviders = configuredProviders.filter(
     (value) => value !== "username",
   );
@@ -69,7 +70,7 @@ export const LoginPage = () => {
         color: "green",
       });
       setTimeout(() => {
-        if (redirectUri === "null") {
+        if (redirectUri === "null" || redirectUri === "") {
           window.location.replace("/");
         } else {
           window.location.replace(`/continue?redirect_uri=${redirectUri}`);

@@ -5,10 +5,10 @@ import { Navigate } from "react-router";
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
-  const username = params.get("username");
-  const resource = params.get("resource");
+  const username = params.get("username") ?? "";
+  const resource = params.get("resource") ?? "";
 
-  if (username === "null") {
+  if (username === "null" || username === "") {
     return <Navigate to="/" />;
   }
 
@@ -20,7 +20,7 @@ export const UnauthorizedPage = () => {
         </Text>
         <Text>
           The user with username <Code>{username}</Code> is not authorized to{" "}
-          {resource !== "null" ? (
+          {resource !== "null" && resource !== "" ? (
             <span>
               access the <Code>{resource}</Code> resource.
             </span>

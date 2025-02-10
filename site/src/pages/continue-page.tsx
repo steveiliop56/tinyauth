@@ -8,7 +8,7 @@ import { ReactNode } from "react";
 export const ContinuePage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
-  const redirectUri = params.get("redirect_uri");
+  const redirectUri = params.get("redirect_uri") ?? "";
 
   const { isLoggedIn, disableContinue } = useUserContext();
 
@@ -16,7 +16,7 @@ export const ContinuePage = () => {
     return <Navigate to={`/login?redirect_uri=${redirectUri}`} />;
   }
 
-  if (redirectUri === "null") {
+  if (redirectUri === "null" || redirectUri === "") {
     return <Navigate to="/" />;
   }
 
@@ -27,15 +27,29 @@ export const ContinuePage = () => {
       color: "blue",
     });
     setTimeout(() => {
-      window.location.href = redirectUri!;
+      window.location.href = redirectUri;
     }, 500);
   };
 
-  const urlParsed = URL.parse(redirectUri!);
+  const urlParsed = URL.parse(redirectUri);
+
+  if (urlParsed === null) {
+    return (
+      <ContinuePageLayout>
+        <Text size="xl" fw={700}>
+          Invalid Redirect
+        </Text>
+        <Text>
+          The redirect URL is invalid, please contact the app owner to fix the
+          issue.
+        </Text>
+      </ContinuePageLayout>
+    );
+  }
 
   if (
     window.location.protocol === "https:" &&
-    urlParsed!.protocol === "http:"
+    urlParsed.protocol === "http:"
   ) {
     return (
       <ContinuePageLayout>
@@ -54,7 +68,7 @@ export const ContinuePage = () => {
   }
 
   if (disableContinue) {
-    window.location.href = redirectUri!;
+    window.location.href = redirectUri;
     return (
       <ContinuePageLayout>
         <Text size="xl" fw={700}>
