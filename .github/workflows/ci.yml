@@ -19,10 +19,24 @@ jobs:
         with:
           go-version: "^1.23.2"
 
-      - name: Create simple UI for testing
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
         run: |
-          mkdir -p internal/assets/dist
-          echo "Hello, World!" > internal/assets/dist/index.html
+          cd site
+          bun install
+
+      - name: Build frontend
+        run: |
+          cd site
+          bun run build
+
+      - name: Copy frontend
+        run: |
+          cp -r site/dist internal/assets/dist
 
       - name: Run tests
         run: go test -v ./...
