@@ -12,10 +12,12 @@ import (
 )
 
 var interactive bool
-var username string
-var password string
 var docker bool
-var user string
+
+// i stands for input
+var iUsername string
+var iPassword string
+var iUser string
 
 var VerifyCmd = &cobra.Command{
 	Use:   "verify",
@@ -30,19 +32,19 @@ var VerifyCmd = &cobra.Command{
 			// Create huh form
 			form := huh.NewForm(
 				huh.NewGroup(
-					huh.NewInput().Title("User (username:hash)").Value(&user).Validate((func(s string) error {
+					huh.NewInput().Title("User (username:hash)").Value(&iUser).Validate((func(s string) error {
 						if s == "" {
 							return errors.New("user cannot be empty")
 						}
 						return nil
 					})),
-					huh.NewInput().Title("Username").Value(&username).Validate((func(s string) error {
+					huh.NewInput().Title("Username").Value(&iUsername).Validate((func(s string) error {
 						if s == "" {
 							return errors.New("username cannot be empty")
 						}
 						return nil
 					})),
-					huh.NewInput().Title("Password").Value(&password).Validate((func(s string) error {
+					huh.NewInput().Title("Password").Value(&iPassword).Validate((func(s string) error {
 						if s == "" {
 							return errors.New("password cannot be empty")
 						}
@@ -63,28 +65,28 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// Do we have username, password and user?
-		if username == "" || password == "" || user == "" {
+		if iUsername == "" || iPassword == "" || iUser == "" {
 			log.Fatal().Msg("Username, password and user cannot be empty")
 		}
 
-		log.Info().Str("user", user).Str("username", username).Str("password", password).Bool("docker", docker).Msg("Verifying user")
+		log.Info().Str("user", iUser).Str("username", iUsername).Str("password", iPassword).Bool("docker", docker).Msg("Verifying user")
 
-		// Split username and password
-		userSplit := strings.Split(user, ":")
+		// Split username and password hash
+		username, hash, ok := strings.Cut(iUser, ":")
 
-		if userSplit[1] == "" {
+		if !ok {
 			log.Fatal().Msg("User is not formatted correctly")
 		}
 
 		// Replace $$ with $ if formatted for docker
 		if docker {
-			userSplit[1] = strings.ReplaceAll(userSplit[1], "$$", "$")
+			hash = strings.ReplaceAll(hash, "$$", "$")
 		}
 
 		// Compare username and password
-		verifyErr := bcrypt.CompareHashAndPassword([]byte(userSplit[1]), []byte(password))
+		verifyErr := bcrypt.CompareHashAndPassword([]byte(hash), []byte(iPassword))
 
-		if verifyErr != nil || username != userSplit[0] {
+		if verifyErr != nil || username != iUsername {
 			log.Fatal().Msg("Username or password incorrect")
 		} else {
 			log.Info().Msg("Verification successful")
@@ -96,7 +98,7 @@ func init() {
 	// Flags
 	VerifyCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Create a user interactively")
 	VerifyCmd.Flags().BoolVar(&docker, "docker", false, "Is the user formatted for docker?")
-	VerifyCmd.Flags().StringVar(&username, "username", "", "Username")
-	VerifyCmd.Flags().StringVar(&password, "password", "", "Password")
-	VerifyCmd.Flags().StringVar(&user, "user", "", "Hash (username:hash combination)")
+	VerifyCmd.Flags().StringVar(&iUsername, "username", "", "Username")
+	VerifyCmd.Flags().StringVar(&iPassword, "password", "", "Password")
+	VerifyCmd.Flags().StringVar(&iUser, "user", "", "Hash (username:hash combination)")
 }
