@@ -8,8 +8,8 @@
     <img alt="License" src="https://img.shields.io/github/license/steveiliop56/tinyauth">
     <img alt="Release" src="https://img.shields.io/github/v/release/steveiliop56/tinyauth">
     <img alt="Commit activity" src="https://img.shields.io/github/commit-activity/w/steveiliop56/tinyauth">
-    <img alt="Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/steveiliop56/tinyauth/release.yml">
     <img alt="Issues" src="https://img.shields.io/github/issues/steveiliop56/tinyauth">
+    <img alt="Tinyauth CI" src="https://github.com/steveiliop56/tinyauth/actions/workflows/ci.yml/badge.svg">
 </div>
 
 <br />
