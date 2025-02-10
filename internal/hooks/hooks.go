@@ -27,7 +27,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	basic := hooks.Auth.GetBasicAuth(c)
 
 	// Check if basic auth is set
-	if basic.Username != "" {
+	if basic != nil {
 		log.Debug().Msg("Got basic auth")
 
 		// Check if user exists and password is correct

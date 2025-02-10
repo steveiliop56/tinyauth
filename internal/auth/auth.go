@@ -211,38 +211,18 @@ func (auth *Auth) ResourceAllowed(context types.UserContext, host string) (bool,
 	return true, nil
 }
 
-func (auth *Auth) GetBasicAuth(c *gin.Context) types.User {
+func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 	// Get the Authorization header
-	header := c.GetHeader("Authorization")
+	username, password, ok := c.Request.BasicAuth()
 
-	// If the header is empty, return an empty user
-	if header == "" {
-		return types.User{}
-	}
-
-	// Split the header
-	headerSplit := strings.Split(header, " ")
-
-	if len(headerSplit) != 2 {
-		return types.User{}
-	}
-
-	// Check if the header is Basic
-	if headerSplit[0] != "Basic" {
-		return types.User{}
-	}
-
-	// Split the credentials
-	credentials := strings.Split(headerSplit[1], ":")
-
-	// If the credentials are not in the correct format, return an empty user
-	if len(credentials) != 2 {
-		return types.User{}
+	// If not ok, return an empty user
+	if !ok {
+		return nil
 	}
 
 	// Return the user
-	return types.User{
-		Username: credentials[0],
-		Password: credentials[1],
+	return &types.User{
+		Username: username,
+		Password: password,
 	}
 }

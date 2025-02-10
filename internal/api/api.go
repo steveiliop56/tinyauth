@@ -121,7 +121,12 @@ func (api *API) SetupRoutes() {
 		bindErr := c.BindUri(&proxy)
 
 		// Handle error
-		if api.handleError(c, "Failed to bind URI", bindErr) {
+		if bindErr != nil {
+			log.Error().Err(bindErr).Msg("Failed to bind URI")
+			c.JSON(400, gin.H{
+				"status":  400,
+				"message": "Bad Request",
+			})
 			return
 		}
 
@@ -129,6 +134,9 @@ func (api *API) SetupRoutes() {
 
 		// Get user context
 		userContext := api.Hooks.UseUserContext(c)
+
+		// Check if using basic auth
+		_, _, basicAuth := c.Request.BasicAuth()
 
 		// Get headers
 		uri := c.Request.Header.Get("X-Forwarded-Uri")
@@ -144,8 +152,8 @@ func (api *API) SetupRoutes() {
 
 			// Check if there was an error
 			if appAllowedErr != nil {
-				// Return 501 if nginx is the proxy or if the request is using an Authorization header
-				if proxy.Proxy == "nginx" || c.GetHeader("Authorization") != "" {
+				// Return 501 if nginx is the proxy or if the request is using basic auth
+				if proxy.Proxy == "nginx" || basicAuth {
 					log.Error().Err(appAllowedErr).Msg("Failed to check if app is allowed")
 					c.JSON(501, gin.H{
 						"status":  501,
@@ -166,36 +174,24 @@ func (api *API) SetupRoutes() {
 			if !appAllowed {
 				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
 
+				// Return 401 if nginx is the proxy or if the request is using an Authorization header
+				if proxy.Proxy == "nginx" || basicAuth {
+					c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+					c.JSON(401, gin.H{
+						"status":  401,
+						"message": "Unauthorized",
+					})
+					return
+				}
+
 				// Build query
 				queries, queryErr := query.Values(types.UnauthorizedQuery{
 					Username: userContext.Username,
 					Resource: strings.Split(host, ".")[0],
 				})
 
-				// Check if there was an error
-				if queryErr != nil {
-					// Return 501 if nginx is the proxy or if the request is using an Authorization header
-					if proxy.Proxy == "nginx" || c.GetHeader("Authorization") != "" {
-						log.Error().Err(queryErr).Msg("Failed to build query")
-						c.JSON(501, gin.H{
-							"status":  501,
-							"message": "Internal Server Error",
-						})
-						return
-					}
-
-					// Return the internal server error page
-					if api.handleError(c, "Failed to build query", queryErr) {
-						return
-					}
-				}
-
-				// Return 401 if nginx is the proxy or if the request is using an Authorization header
-				if proxy.Proxy == "nginx" || c.GetHeader("Authorization") != "" {
-					c.JSON(401, gin.H{
-						"status":  401,
-						"message": "Unauthorized",
-					})
+				// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
+				if api.handleError(c, "Failed to build query", queryErr) {
 					return
 				}
 
@@ -220,7 +216,8 @@ func (api *API) SetupRoutes() {
 		log.Debug().Msg("Unauthorized")
 
 		// Return 401 if nginx is the proxy or if the request is using an Authorization header
-		if proxy.Proxy == "nginx" || c.GetHeader("Authorization") != "" {
+		if proxy.Proxy == "nginx" || basicAuth {
+			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 			c.JSON(401, gin.H{
 				"status":  401,
 				"message": "Unauthorized",
@@ -233,12 +230,12 @@ func (api *API) SetupRoutes() {
 			RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
 		})
 
-		log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
-
 		// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 		if api.handleError(c, "Failed to build query", queryErr) {
 			return
 		}
+
+		log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
 
 		// Redirect to login
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", api.Config.AppURL, queries.Encode()))
@@ -338,6 +335,7 @@ func (api *API) SetupRoutes() {
 		// We are not logged in so return unauthorized
 		if !userContext.IsLoggedIn {
 			log.Debug().Msg("Unauthorized")
+			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 			c.JSON(200, gin.H{
 				"status":              200,
 				"message":             "Unauthorized",
