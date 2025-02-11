@@ -31,9 +31,9 @@ export const ContinuePage = () => {
     }, 500);
   };
 
-  const urlParsed = URL.parse(redirectUri);
+  const uri = new URL(redirectUri);
 
-  if (urlParsed === null) {
+  if (uri === null) {
     return (
       <ContinuePageLayout>
         <Text size="xl" fw={700}>
@@ -49,7 +49,7 @@ export const ContinuePage = () => {
 
   if (
     window.location.protocol === "https:" &&
-    urlParsed.protocol === "http:"
+    uri.protocol === "http:"
   ) {
     return (
       <ContinuePageLayout>
