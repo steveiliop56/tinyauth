@@ -207,3 +207,13 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 func OAuthConfigured(config types.Config) bool {
 	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "") || (config.TailscaleClientId != "" && config.TailscaleClientSecret != "")
 }
+
+// Filter helper function
+func Filter[T any](slice []T, test func(T) bool) (res []T) {
+	for _, value := range slice {
+		if test(value) {
+			res = append(res, value)
+		}
+	}
+	return res
+}

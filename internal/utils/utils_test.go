@@ -313,3 +313,22 @@ func TestGetTinyauthLabels(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 }
+
+// Test the filter function
+func TestFilter(t *testing.T) {
+	t.Log("Testing filter helper")
+
+	// Create variables
+	data := []string{"", "val1", "", "val2", "", "val3", ""}
+	expected := []string{"val1", "val2", "val3"}
+
+	// Test the filter function
+	result := utils.Filter(data, func(val string) bool {
+		return val != ""
+	})
+
+	// Check if the result is equal to the expected
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}

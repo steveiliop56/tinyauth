@@ -62,7 +62,9 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Create oauth whitelist
-		oauthWhitelist := strings.Split(config.OAuthWhitelist, ",")
+		oauthWhitelist := utils.Filter(strings.Split(config.OAuthWhitelist, ","), func(val string) bool {
+			return val != ""
+		})
 		log.Debug().Msg("Parsed OAuth whitelist")
 
 		// Create OAuth config
