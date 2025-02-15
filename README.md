@@ -24,7 +24,7 @@ Tinyauth is a simple authentication middleware that adds simple username/passwor
 
 ## Discord
 
-I just made a Discord server for Tinyauth! It is not only for Tinyauth but general self-hosting because I just like chatting with people! The link is [here](https://discord.gg/gWpzrksk), see you there!
+I just made a Discord server for Tinyauth! It is not only for Tinyauth but general self-hosting because I just like chatting with people! The link is [here](https://discord.gg/eHzVaCzRRd), see you there!
 
 ## Getting Started
 
