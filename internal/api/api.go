@@ -533,10 +533,7 @@ func (api *API) SetupRoutes() {
 
 		// If it is empty it means that no redirect_uri was provided to the login screen so we just log in
 		if redirectURIErr != nil {
-			c.JSON(200, gin.H{
-				"status":  200,
-				"message": "Logged in",
-			})
+			c.Redirect(http.StatusPermanentRedirect, api.Config.AppURL)
 		}
 
 		log.Debug().Str("redirectURI", redirectURI).Msg("Got redirect URI")
