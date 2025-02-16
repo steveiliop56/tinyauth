@@ -20,6 +20,7 @@ import { GoogleIcon } from "../icons/google";
 import { GithubIcon } from "../icons/github";
 import { OAuthIcon } from "../icons/oauth";
 import { TailscaleIcon } from "../icons/tailscale";
+import { isQueryValid } from "../utils/utils";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
@@ -70,7 +71,7 @@ export const LoginPage = () => {
         color: "green",
       });
       setTimeout(() => {
-        if (redirectUri === "null" || redirectUri === "") {
+        if (isQueryValid(redirectUri)) {
           window.location.replace("/");
         } else {
           window.location.replace(`/continue?redirect_uri=${redirectUri}`);

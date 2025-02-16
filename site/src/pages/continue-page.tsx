@@ -4,6 +4,7 @@ import { Navigate } from "react-router";
 import { useUserContext } from "../context/user-context";
 import { Layout } from "../components/layouts/layout";
 import { ReactNode } from "react";
+import { isQueryValid } from "../utils/utils";
 
 export const ContinuePage = () => {
   const queryString = window.location.search;
@@ -16,7 +17,7 @@ export const ContinuePage = () => {
     return <Navigate to={`/login?redirect_uri=${redirectUri}`} />;
   }
 
-  if (redirectUri === "null" || redirectUri === "") {
+  if (!isQueryValid(redirectUri)) {
     return <Navigate to="/" />;
   }
 

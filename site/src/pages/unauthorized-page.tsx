@@ -1,6 +1,7 @@
 import { Button, Code, Paper, Text } from "@mantine/core";
 import { Layout } from "../components/layouts/layout";
 import { Navigate } from "react-router";
+import { isQueryValid } from "../utils/utils";
 
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
@@ -8,7 +9,7 @@ export const UnauthorizedPage = () => {
   const username = params.get("username") ?? "";
   const resource = params.get("resource") ?? "";
 
-  if (username === "null" || username === "") {
+  if (!isQueryValid(username)) {
     return <Navigate to="/" />;
   }
 
@@ -20,7 +21,7 @@ export const UnauthorizedPage = () => {
         </Text>
         <Text>
           The user with username <Code>{username}</Code> is not authorized to{" "}
-          {resource !== "null" && resource !== "" ? (
+          {isQueryValid(resource) ? (
             <span>
               access the <Code>{resource}</Code> resource.
             </span>
