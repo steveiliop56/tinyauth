@@ -46,5 +46,5 @@ Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You ma
 
 Credits for the logo of this app go to:
 
-- **Freepik** for providing the police hat and logo.
+- **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
