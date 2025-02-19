@@ -71,7 +71,7 @@ export const LoginPage = () => {
         color: "green",
       });
       setTimeout(() => {
-        if (isQueryValid(redirectUri)) {
+        if (!isQueryValid(redirectUri)) {
           window.location.replace("/");
         } else {
           window.location.replace(`/continue?redirect_uri=${redirectUri}`);
