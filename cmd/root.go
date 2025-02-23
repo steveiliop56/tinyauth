@@ -113,7 +113,9 @@ var rootCmd = &cobra.Command{
 			AppURL:          config.AppURL,
 			CookieSecure:    config.CookieSecure,
 			DisableContinue: config.DisableContinue,
-			CookieExpiry:    config.SessionExpiry,
+			SessionExpiry:   config.SessionExpiry,
+			Title:           config.Title,
+			GenericName:     config.GenericName,
 		}, hooks, auth, providers)
 
 		// Setup routes
@@ -169,10 +171,12 @@ func init() {
 	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
+	rootCmd.Flags().String("generic-name", "Generic", "Generic OAuth provider name.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().Int("session-expiry", 86400, "Session (cookie) expiration time in seconds.")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
+	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
 
 	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
@@ -199,10 +203,12 @@ func init() {
 	viper.BindEnv("generic-auth-url", "GENERIC_AUTH_URL")
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
+	viper.BindEnv("generic-name", "GENERIC_NAME")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
+	viper.BindEnv("app-title", "APP_TITLE")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())

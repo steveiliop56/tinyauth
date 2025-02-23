@@ -48,10 +48,12 @@ type Config struct {
 	GenericAuthURL            string `mapstructure:"generic-auth-url"`
 	GenericTokenURL           string `mapstructure:"generic-token-url"`
 	GenericUserURL            string `mapstructure:"generic-user-url"`
+	GenericName               string `mapstructure:"generic-name"`
 	DisableContinue           bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist            string `mapstructure:"oauth-whitelist"`
 	SessionExpiry             int    `mapstructure:"session-expiry"`
 	LogLevel                  int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
+	Title                     string `mapstructure:"app-title"`
 }
 
 // UserContext is the context for the user
@@ -69,8 +71,10 @@ type APIConfig struct {
 	Secret          string
 	AppURL          string
 	CookieSecure    bool
-	CookieExpiry    int
+	SessionExpiry   int
 	DisableContinue bool
+	GenericName     string
+	Title           string
 }
 
 // OAuthConfig is the configuration for the providers
@@ -128,4 +132,18 @@ type TailscaleQuery struct {
 // Proxy is the uri parameters for the proxy endpoint
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
+}
+
+// Status response
+type Status struct {
+	Status              int      `json:"status"`
+	Message             string   `json:"message"`
+	IsLoggedIn          bool     `json:"isLoggedIn"`
+	Username            string   `json:"username"`
+	Provider            string   `json:"provider"`
+	Oauth               bool     `json:"oauth"`
+	ConfiguredProviders []string `json:"configuredProviders"`
+	DisableContinue     bool     `json:"disableContinue"`
+	Title               string   `json:"title"`
+	GenericName         string   `json:"genericName"`
 }

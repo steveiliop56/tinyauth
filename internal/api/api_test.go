@@ -23,7 +23,7 @@ var apiConfig = types.APIConfig{
 	Secret:          "super-secret-api-thing-for-tests", // It is 32 chars long
 	AppURL:          "http://tinyauth.localhost",
 	CookieSecure:    false,
-	CookieExpiry:    3600,
+	SessionExpiry:   3600,
 	DisableContinue: false,
 }
 
@@ -55,7 +55,7 @@ func getAPI(t *testing.T) *api.API {
 			Username: user.Username,
 			Password: user.Password,
 		},
-	}, nil, apiConfig.CookieExpiry)
+	}, nil, apiConfig.SessionExpiry)
 
 	// Create providers service
 	providers := providers.NewProviders(types.OAuthConfig{})

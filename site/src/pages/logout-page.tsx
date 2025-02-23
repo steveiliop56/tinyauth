@@ -8,7 +8,7 @@ import { Layout } from "../components/layouts/layout";
 import { capitalize } from "../utils/utils";
 
 export const LogoutPage = () => {
-  const { isLoggedIn, username, oauth, provider } = useUserContext();
+  const { isLoggedIn, username, oauth, provider, genericName } = useUserContext();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
@@ -45,7 +45,7 @@ export const LogoutPage = () => {
         </Text>
         <Text>
           You are currently logged in as <Code>{username}</Code>
-          {oauth && ` using ${capitalize(provider)} OAuth`}. Click the button
+          {oauth && ` using ${capitalize(provider === "generic" ? genericName : provider)} OAuth`}. Click the button
           below to log out.
         </Text>
         <Button

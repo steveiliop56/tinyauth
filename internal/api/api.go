@@ -84,7 +84,7 @@ func (api *API) Init() {
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   api.Config.CookieSecure,
-		MaxAge:   api.Config.CookieExpiry,
+		MaxAge:   api.Config.SessionExpiry,
 	})
 
 	router.Use(sessions.Sessions("tinyauth", store))
@@ -332,36 +332,45 @@ func (api *API) SetupRoutes() {
 			configuredProviders = append(configuredProviders, "username")
 		}
 
-		// We are not logged in so return unauthorized
+		// Fill status struct with data from user context and api config
+		status := types.Status{
+			Username:            userContext.Username,
+			IsLoggedIn:          userContext.IsLoggedIn,
+			Oauth:               userContext.OAuth,
+			Provider:            userContext.Provider,
+			ConfiguredProviders: configuredProviders,
+			DisableContinue:     api.Config.DisableContinue,
+			Title:               api.Config.Title,
+			GenericName:         api.Config.GenericName,
+		}
+
+		// If we are not logged in we set the status to 401 and add the WWW-Authenticate header else we set it to 200
 		if !userContext.IsLoggedIn {
 			log.Debug().Msg("Unauthorized")
 			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
-			c.JSON(200, gin.H{
-				"status":              200,
-				"message":             "Unauthorized",
-				"username":            "",
-				"isLoggedIn":          false,
-				"oauth":               false,
-				"provider":            "",
-				"configuredProviders": configuredProviders,
-				"disableContinue":     api.Config.DisableContinue,
-			})
-			return
+			status.Status = 401
+			status.Message = "Unauthorized"
+		} else {
+			log.Debug().Interface("userContext", userContext).Strs("configuredProviders", configuredProviders).Bool("disableContinue", api.Config.DisableContinue).Msg("Authenticated")
+			status.Status = 200
+			status.Message = "Authenticated"
 		}
 
-		log.Debug().Interface("userContext", userContext).Strs("configuredProviders", configuredProviders).Bool("disableContinue", api.Config.DisableContinue).Msg("Authenticated")
+		// // Marshall status to JSON
+		// statusJson, marshalErr := json.Marshal(status)
 
-		// We are logged in so return our user context
-		c.JSON(200, gin.H{
-			"status":              200,
-			"message":             "Authenticated",
-			"username":            userContext.Username,
-			"isLoggedIn":          userContext.IsLoggedIn,
-			"oauth":               userContext.OAuth,
-			"provider":            userContext.Provider,
-			"configuredProviders": configuredProviders,
-			"disableContinue":     api.Config.DisableContinue,
-		})
+		// // Handle error
+		// if marshalErr != nil {
+		// 	log.Error().Err(marshalErr).Msg("Failed to marshal status")
+		// 	c.JSON(500, gin.H{
+		// 		"status":  500,
+		// 		"message": "Internal Server Error",
+		// 	})
+		// 	return
+		// }
+
+		// Return data
+		c.JSON(200, status)
 	})
 
 	api.Router.GET("/api/oauth/url/:provider", func(c *gin.Context) {

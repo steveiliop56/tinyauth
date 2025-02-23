@@ -27,7 +27,7 @@ export const LoginPage = () => {
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri") ?? "";
 
-  const { isLoggedIn, configuredProviders } = useUserContext();
+  const { isLoggedIn, configuredProviders, title, genericName } = useUserContext();
 
   const oauthProviders = configuredProviders.filter(
     (value) => value !== "username",
@@ -111,7 +111,7 @@ export const LoginPage = () => {
 
   return (
     <Layout>
-      <Title ta="center">Tinyauth</Title>
+      <Title ta="center">{title}</Title>
       <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
         {oauthProviders.length > 0 && (
           <>
@@ -175,7 +175,7 @@ export const LoginPage = () => {
                     onClick={() => loginOAuthMutation.mutate("generic")}
                     loading={loginOAuthMutation.isLoading}
                   >
-                    Generic
+                    {genericName}
                   </Button>
                 </Grid.Col>
               )}
