@@ -70,7 +70,7 @@ func (docker *Docker) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *Docker) ContainerAction(appId string, run func(labels appTypes.TinyauthLabels) (bool, error)) (bool, error) {
+func (docker *Docker) ContainerAction(appId string, runCheck func(labels appTypes.TinyauthLabels) (bool, error)) (bool, error) {
 	// Check if we have access to the Docker API
 	isConnected := docker.DockerConnected()
 
@@ -112,14 +112,14 @@ func (docker *Docker) ContainerAction(appId string, run func(labels appTypes.Tin
 
 			log.Debug().Msg("Got labels")
 
-			// Run the function
-			return run(labels)
+			// Run the check
+			return runCheck(labels)
 		}
 
 	}
 
-	log.Debug().Msg("No matching container found, allowing access")
+	log.Debug().Msg("No matching container found, passing check")
 
-	// If no matching container is found, allow access
+	// If no matching container is found, pass check
 	return true, nil
 }
