@@ -140,11 +140,11 @@ func (api *API) SetupRoutes() {
 
 		// Handle error
 		if authEnabledErr != nil {
-			// Return 501 if nginx is the proxy or if the request is using basic auth
+			// Return 500 if nginx is the proxy or if the request is using basic auth
 			if proxy.Proxy == "nginx" || basicAuth {
 				log.Error().Err(authEnabledErr).Msg("Failed to check if auth is enabled")
-				c.JSON(501, gin.H{
-					"status":  501,
+				c.JSON(500, gin.H{
+					"status":  500,
 					"message": "Internal Server Error",
 				})
 				return
@@ -185,11 +185,11 @@ func (api *API) SetupRoutes() {
 
 			// Check if there was an error
 			if appAllowedErr != nil {
-				// Return 501 if nginx is the proxy or if the request is using basic auth
+				// Return 500 if nginx is the proxy or if the request is using basic auth
 				if proxy.Proxy == "nginx" || basicAuth {
 					log.Error().Err(appAllowedErr).Msg("Failed to check if app is allowed")
-					c.JSON(501, gin.H{
-						"status":  501,
+					c.JSON(500, gin.H{
+						"status":  500,
 						"message": "Internal Server Error",
 					})
 					return
