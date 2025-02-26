@@ -1,12 +1,12 @@
 package auth
 
 import (
+	"regexp"
 	"slices"
 	"strings"
 	"time"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
-	"tinyauth/internal/utils"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -139,76 +139,89 @@ func (auth *Auth) UserAuthConfigured() bool {
 	return len(auth.Users) > 0
 }
 
-func (auth *Auth) ResourceAllowed(context types.UserContext, host string) (bool, error) {
-	// Check if we have access to the Docker API
-	isConnected := auth.Docker.DockerConnected()
+func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bool, error) {
+	// Get headers
+	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// If we don't have access, it is assumed that the user has access
-	if !isConnected {
-		log.Debug().Msg("Docker not connected, allowing access")
-		return true, nil
-	}
-
-	// Get the app ID from the host
+	// Get app id
 	appId := strings.Split(host, ".")[0]
 
-	// Get the containers
-	containers, containersErr := auth.Docker.GetContainers()
+	// Check if resource is allowed
+	allowed, allowedErr := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
+		// If the container has an oauth whitelist, check if the user is in it
+		if context.OAuth && len(labels.OAuthWhitelist) != 0 {
+			log.Debug().Msg("Checking OAuth whitelist")
+			if slices.Contains(labels.OAuthWhitelist, context.Username) {
+				return true, nil
+			}
+			return false, nil
+		}
+
+		// If the container has users, check if the user is in it
+		if len(labels.Users) != 0 {
+			log.Debug().Msg("Checking users")
+			if slices.Contains(labels.Users, context.Username) {
+				return true, nil
+			}
+			return false, nil
+		}
+
+		// Allowed
+		return true, nil
+	})
 
 	// If there is an error, return false
-	if containersErr != nil {
-		return false, containersErr
+	if allowedErr != nil {
+		log.Error().Err(allowedErr).Msg("Error checking if resource is allowed")
+		return false, allowedErr
 	}
 
-	log.Debug().Msg("Got containers")
+	// Return if the resource is allowed
+	return allowed, nil
+}
 
-	// Loop through the containers
-	for _, container := range containers {
-		// Inspect the container
-		inspect, inspectErr := auth.Docker.InspectContainer(container.ID)
+func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
+	// Get headers
+	uri := c.Request.Header.Get("X-Forwarded-Uri")
+	host := c.Request.Header.Get("X-Forwarded-Host")
 
-		// If there is an error, return false
-		if inspectErr != nil {
-			return false, inspectErr
+	// Get app id
+	appId := strings.Split(host, ".")[0]
+
+	// Check if auth is enabled
+	enabled, enabledErr := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
+		// Check if the allowed label is empty
+		if labels.Allowed == "" {
+			// Auth enabled
+			return true, nil
 		}
 
-		// Get the container name (for some reason it is /name)
-		containerName := strings.Split(inspect.Name, "/")[1]
+		// Compile regex
+		regex, regexErr := regexp.Compile(labels.Allowed)
 
-		// There is a container with the same name as the app ID
-		if containerName == appId {
-			log.Debug().Str("container", containerName).Msg("Found container")
-
-			// Get only the tinyauth labels in a struct
-			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
-
-			log.Debug().Msg("Got labels")
-
-			// If the container has an oauth whitelist, check if the user is in it
-			if context.OAuth && len(labels.OAuthWhitelist) != 0 {
-				log.Debug().Msg("Checking OAuth whitelist")
-				if slices.Contains(labels.OAuthWhitelist, context.Username) {
-					return true, nil
-				}
-				return false, nil
-			}
-
-			// If the container has users, check if the user is in it
-			if len(labels.Users) != 0 {
-				log.Debug().Msg("Checking users")
-				if slices.Contains(labels.Users, context.Username) {
-					return true, nil
-				}
-				return false, nil
-			}
+		// If there is an error, invalid regex, auth enabled
+		if regexErr != nil {
+			log.Warn().Err(regexErr).Msg("Invalid regex")
+			return true, regexErr
 		}
 
+		// Check if the uri matches the regex
+		if regex.MatchString(uri) {
+			// Auth disabled
+			return false, nil
+		}
+
+		// Auth enabled
+		return true, nil
+	})
+
+	// If there is an error, auth enabled
+	if enabledErr != nil {
+		log.Error().Err(enabledErr).Msg("Error checking if auth is enabled")
+		return true, enabledErr
 	}
 
-	log.Debug().Msg("No matching container found, allowing access")
-
-	// If no matching container is found, allow access
-	return true, nil
+	return enabled, nil
 }
 
 func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {

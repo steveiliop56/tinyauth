@@ -2,10 +2,14 @@ package docker
 
 import (
 	"context"
+	"strings"
+	appTypes "tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	apiTypes "github.com/docker/docker/api/types"
+	containerTypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/rs/zerolog/log"
 )
 
 func NewDocker() *Docker {
@@ -34,9 +38,9 @@ func (docker *Docker) Init() error {
 	return nil
 }
 
-func (docker *Docker) GetContainers() ([]types.Container, error) {
+func (docker *Docker) GetContainers() ([]apiTypes.Container, error) {
 	// Get the list of containers
-	containers, err := docker.Client.ContainerList(docker.Context, container.ListOptions{})
+	containers, err := docker.Client.ContainerList(docker.Context, containerTypes.ListOptions{})
 
 	// Check if there was an error
 	if err != nil {
@@ -47,13 +51,13 @@ func (docker *Docker) GetContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func (docker *Docker) InspectContainer(containerId string) (types.ContainerJSON, error) {
+func (docker *Docker) InspectContainer(containerId string) (apiTypes.ContainerJSON, error) {
 	// Inspect the container
 	inspect, err := docker.Client.ContainerInspect(docker.Context, containerId)
 
 	// Check if there was an error
 	if err != nil {
-		return types.ContainerJSON{}, err
+		return apiTypes.ContainerJSON{}, err
 	}
 
 	// Return the inspect
@@ -64,4 +68,58 @@ func (docker *Docker) DockerConnected() bool {
 	// Ping the docker client if there is an error it is not connected
 	_, err := docker.Client.Ping(docker.Context)
 	return err == nil
+}
+
+func (docker *Docker) ContainerAction(appId string, run func(labels appTypes.TinyauthLabels) (bool, error)) (bool, error) {
+	// Check if we have access to the Docker API
+	isConnected := docker.DockerConnected()
+
+	// If we don't have access, it is assumed that the check passed
+	if !isConnected {
+		log.Debug().Msg("Docker not connected, passing check")
+		return true, nil
+	}
+
+	// Get the containers
+	containers, containersErr := docker.GetContainers()
+
+	// If there is an error, return false
+	if containersErr != nil {
+		return false, containersErr
+	}
+
+	log.Debug().Msg("Got containers")
+
+	// Loop through the containers
+	for _, container := range containers {
+		// Inspect the container
+		inspect, inspectErr := docker.InspectContainer(container.ID)
+
+		// If there is an error, return false
+		if inspectErr != nil {
+			return false, inspectErr
+		}
+
+		// Get the container name (for some reason it is /name)
+		containerName := strings.Split(inspect.Name, "/")[1]
+
+		// There is a container with the same name as the app ID
+		if containerName == appId {
+			log.Debug().Str("container", containerName).Msg("Found container")
+
+			// Get only the tinyauth labels in a struct
+			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
+
+			log.Debug().Msg("Got labels")
+
+			// Run the function
+			return run(labels)
+		}
+
+	}
+
+	log.Debug().Msg("No matching container found, allowing access")
+
+	// If no matching container is found, allow access
+	return true, nil
 }

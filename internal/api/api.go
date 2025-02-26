@@ -132,11 +132,44 @@ func (api *API) SetupRoutes() {
 
 		log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
 
-		// Get user context
-		userContext := api.Hooks.UseUserContext(c)
-
 		// Check if using basic auth
 		_, _, basicAuth := c.Request.BasicAuth()
+
+		// Check if auth is enabled
+		authEnabled, authEnabledErr := api.Auth.AuthEnabled(c)
+
+		// Handle error
+		if authEnabledErr != nil {
+			// Return 501 if nginx is the proxy or if the request is using basic auth
+			if proxy.Proxy == "nginx" || basicAuth {
+				log.Error().Err(authEnabledErr).Msg("Failed to check if auth is enabled")
+				c.JSON(501, gin.H{
+					"status":  501,
+					"message": "Internal Server Error",
+				})
+				return
+			}
+
+			// Return the internal server error page
+			if api.handleError(c, "Failed to check if auth is enabled", authEnabledErr) {
+				return
+			}
+		}
+
+		// If auth is not enabled, return 200
+		if !authEnabled {
+			// The user is allowed to access the app
+			c.JSON(200, gin.H{
+				"status":  200,
+				"message": "Authenticated",
+			})
+
+			// Stop further processing
+			return
+		}
+
+		// Get user context
+		userContext := api.Hooks.UseUserContext(c)
 
 		// Get headers
 		uri := c.Request.Header.Get("X-Forwarded-Uri")
@@ -148,7 +181,7 @@ func (api *API) SetupRoutes() {
 			log.Debug().Msg("Authenticated")
 
 			// Check if user is allowed to access subdomain, if request is nginx.example.com the subdomain (resource) is nginx
-			appAllowed, appAllowedErr := api.Auth.ResourceAllowed(userContext, host)
+			appAllowed, appAllowedErr := api.Auth.ResourceAllowed(c, userContext)
 
 			// Check if there was an error
 			if appAllowedErr != nil {

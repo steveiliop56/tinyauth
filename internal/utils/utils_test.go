@@ -298,12 +298,14 @@ func TestGetTinyauthLabels(t *testing.T) {
 	labels := map[string]string{
 		"tinyauth.users":           "user1,user2",
 		"tinyauth.oauth.whitelist": "user1,user2",
+		"tinyauth.allowed":         "random",
 		"random":                   "random",
 	}
 
 	expected := types.TinyauthLabels{
 		Users:          []string{"user1", "user2"},
 		OAuthWhitelist: []string{"user1", "user2"},
+		Allowed:        "random",
 	}
 
 	result := utils.GetTinyauthLabels(labels)

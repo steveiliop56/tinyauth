@@ -122,6 +122,7 @@ type SessionCookie struct {
 type TinyauthLabels struct {
 	OAuthWhitelist []string
 	Users          []string
+	Allowed        string
 }
 
 // TailscaleQuery is the query parameters for the tailscale endpoint

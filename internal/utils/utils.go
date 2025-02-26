@@ -195,6 +195,8 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 				tinyauthLabels.OAuthWhitelist = strings.Split(value, ",")
 			case "tinyauth.users":
 				tinyauthLabels.Users = strings.Split(value, ",")
+			case "tinyauth.allowed":
+				tinyauthLabels.Allowed = value
 			}
 		}
 	}
