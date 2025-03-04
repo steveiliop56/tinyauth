@@ -5,7 +5,8 @@ import (
 	"os"
 	"strings"
 	"time"
-	cmd "tinyauth/cmd/user"
+	totpCmd "tinyauth/cmd/totp"
+	userCmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
@@ -141,7 +142,10 @@ func HandleError(err error, msg string) {
 
 func init() {
 	// Add user command
-	rootCmd.AddCommand(cmd.UserCmd())
+	rootCmd.AddCommand(userCmd.UserCmd())
+
+	// Add totp command
+	rootCmd.AddCommand(totpCmd.TotpCmd())
 
 	// Read environment variables
 	viper.AutomaticEnv()

@@ -15,8 +15,9 @@ type LoginRequest struct {
 
 // User is the struct for a user
 type User struct {
-	Username string
-	Password string
+	Username   string
+	Password   string
+	TotpSecret string
 }
 
 // Users is a list of users

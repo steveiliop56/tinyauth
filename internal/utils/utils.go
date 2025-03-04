@@ -29,19 +29,15 @@ func ParseUsers(users string) (types.Users, error) {
 
 	// Loop through the users and split them by colon
 	for _, user := range userList {
-		// Split the user by colon
-		userSplit := strings.Split(user, ":")
+		parsed, parseErr := ParseUser(user)
 
-		// Check if the user is in the correct format
-		if len(userSplit) != 2 {
-			return types.Users{}, errors.New("invalid user format")
+		// Check if there was an error
+		if parseErr != nil {
+			return types.Users{}, parseErr
 		}
 
 		// Append the user to the users struct
-		usersParsed = append(usersParsed, types.User{
-			Username: userSplit[0],
-			Password: userSplit[1],
-		})
+		usersParsed = append(usersParsed, parsed)
 	}
 
 	log.Debug().Msg("Parsed users")
@@ -218,4 +214,30 @@ func Filter[T any](slice []T, test func(T) bool) (res []T) {
 		}
 	}
 	return res
+}
+
+// Parse user
+func ParseUser(user string) (types.User, error) {
+	// Split the user by colon
+	userSplit := strings.Split(user, ":")
+
+	// Check if the user is in the correct format
+	if len(userSplit) < 2 || len(userSplit) > 3 {
+		return types.User{}, errors.New("invalid user format")
+	}
+
+	// Check if the user has a totp secret
+	if len(userSplit) == 2 {
+		return types.User{
+			Username: userSplit[0],
+			Password: userSplit[1],
+		}, nil
+	}
+
+	// Return the user struct
+	return types.User{
+		Username:   userSplit[0],
+		Password:   userSplit[1],
+		TotpSecret: userSplit[2],
+	}, nil
 }
