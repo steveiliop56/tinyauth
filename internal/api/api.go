@@ -235,6 +235,8 @@ func (api *API) SetupRoutes() {
 				return
 			}
 
+			c.Header("Remote-User", userContext.Username)
+
 			// The user is allowed to access the app
 			c.JSON(200, gin.H{
 				"status":  200,
