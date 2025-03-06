@@ -15,6 +15,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Interactive flag
+var interactive bool
+
+// i stands for input
+var iUser string
+
 var GenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate a totp secret",
@@ -22,41 +28,43 @@ var GenerateCmd = &cobra.Command{
 		// Setup logger
 		log.Logger = log.Level(zerolog.InfoLevel)
 
-		// Variables
-		var userStr string
-		var totpCode string
-
 		// Use simple theme
 		var baseTheme *huh.Theme = huh.ThemeBase()
 
-		// Create huh form
-		form := huh.NewForm(
-			huh.NewGroup(
-				huh.NewInput().Title("User (username:hash)").Value(&userStr).Validate((func(s string) error {
-					if s == "" {
-						return errors.New("user cannot be empty")
-					}
-					return nil
-				})),
-			),
-		)
+		// Interactive
+		if interactive {
+			// Create huh form
+			form := huh.NewForm(
+				huh.NewGroup(
+					huh.NewInput().Title("Current username:hash").Value(&iUser).Validate((func(s string) error {
+						if s == "" {
+							return errors.New("user cannot be empty")
+						}
+						return nil
+					})),
+				),
+			)
 
-		formErr := form.WithTheme(baseTheme).Run()
+			// Run form
+			formErr := form.WithTheme(baseTheme).Run()
 
-		if formErr != nil {
-			log.Fatal().Err(formErr).Msg("Form failed")
+			if formErr != nil {
+				log.Fatal().Err(formErr).Msg("Form failed")
+			}
 		}
 
-		// Remove double dollar signs
-		userStr = strings.ReplaceAll(userStr, "$$", "$")
-
-		log.Info().Str("user", userStr).Msg("User")
-
 		// Parse user
-		user, parseErr := utils.ParseUser(userStr)
+		user, parseErr := utils.ParseUser(iUser)
 
 		if parseErr != nil {
 			log.Fatal().Err(parseErr).Msg("Failed to parse user")
+		}
+
+		// Check if user was using docker escape
+		dockerEscape := false
+
+		if strings.Contains(user.Username, "$$") {
+			dockerEscape = true
 		}
 
 		// Check it has totp
@@ -93,48 +101,21 @@ var GenerateCmd = &cobra.Command{
 
 		qrterminal.GenerateWithConfig(key.URL(), config)
 
-		// Wait for verify
-		log.Info().Msg("Scan the QR code with your authenticator app then press enter to verify")
-
-		// Wait for enter
-		var input string
-		_, _ = fmt.Scanln(&input)
-
-		// Move cursor up and overwrite the line
-		fmt.Print("\033[F\033[K")
-
-		// Create huh form
-		form = huh.NewForm(
-			huh.NewGroup(
-				huh.NewInput().Title("Code").Value(&totpCode).Validate((func(s string) error {
-					if s == "" {
-						return errors.New("code cannot be empty")
-					}
-					return nil
-				})),
-			),
-		)
-
-		formErr = form.WithTheme(baseTheme).Run()
-
-		if formErr != nil {
-			log.Fatal().Err(formErr).Msg("Form failed")
-		}
-
-		// Verify code
-		codeOk := totp.Validate(totpCode, secret)
-
-		if !codeOk {
-			log.Fatal().Msg("Failed to verify code")
-		}
-
-		// Update user
+		// Add the secret to the user
 		user.TotpSecret = secret
 
+		// If using docker escape re-escape it
+		if dockerEscape {
+			user.Password = strings.ReplaceAll(user.Password, "$", "$$")
+		}
+
 		// Print success
-		log.Info().Str("user", fmt.Sprintf("%s:%s:%s", user.Username, user.Password, user.TotpSecret)).Msg("Code verified, get your new user")
+		log.Info().Str("user", fmt.Sprintf("%s:%s:%s", user.Username, user.Password, user.TotpSecret)).Msg("Add the totp secret to your authenticator app then use the verify command to ensure everything is working correctly.")
 	},
 }
 
 func init() {
+	// Add interactive flag
+	GenerateCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Run in interactive mode")
+	GenerateCmd.Flags().StringVar(&iUser, "user", "", "Your current username:hash")
 }

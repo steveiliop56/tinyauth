@@ -218,6 +218,11 @@ func Filter[T any](slice []T, test func(T) bool) (res []T) {
 
 // Parse user
 func ParseUser(user string) (types.User, error) {
+	// Check if the user is escaped
+	if strings.Contains(user, "$$") {
+		user = strings.ReplaceAll(user, "$$", "$")
+	}
+
 	// Split the user by colon
 	userSplit := strings.Split(user, ":")
 
@@ -228,10 +233,19 @@ func ParseUser(user string) (types.User, error) {
 
 	// Check if the user has a totp secret
 	if len(userSplit) == 2 {
+		// Check for empty username or password
+		if userSplit[1] == "" || userSplit[0] == "" {
+			return types.User{}, errors.New("invalid user format")
+		}
 		return types.User{
 			Username: userSplit[0],
 			Password: userSplit[1],
 		}, nil
+	}
+
+	// Check for empty username, password or totp secret
+	if userSplit[2] == "" || userSplit[1] == "" || userSplit[0] == "" {
+		return types.User{}, errors.New("invalid user format")
 	}
 
 	// Return the user struct

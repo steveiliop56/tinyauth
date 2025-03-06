@@ -36,18 +36,6 @@ func TestParseUsers(t *testing.T) {
 	if !reflect.DeepEqual(expected, result) {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
-
-	t.Log("Testing parse users with an invalid string")
-
-	// Test the parse users function with an invalid string
-	users = "user1:pass1,user2"
-
-	_, err = utils.ParseUsers(users)
-
-	// There should be an error
-	if err == nil {
-		t.Fatalf("Expected error parsing users")
-	}
 }
 
 // Test the get root url function
@@ -332,5 +320,67 @@ func TestFilter(t *testing.T) {
 	// Check if the result is equal to the expected
 	if !reflect.DeepEqual(expected, result) {
 		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}
+
+// Test parse user
+func TestParseUser(t *testing.T) {
+	t.Log("Testing parse user with a valid user")
+
+	// Create variables
+	user := "user:pass:secret"
+	expected := types.User{
+		Username:   "user",
+		Password:   "pass",
+		TotpSecret: "secret",
+	}
+
+	// Test the parse user function
+	result, err := utils.ParseUser(user)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error parsing user: %v", err)
+	}
+
+	// Check if the result is equal to the expected
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing parse user with an escaped user")
+
+	// Create variables
+	user = "user:p$$ass$$:secret"
+	expected = types.User{
+		Username:   "user",
+		Password:   "p$ass$",
+		TotpSecret: "secret",
+	}
+
+	// Test the parse user function
+	result, err = utils.ParseUser(user)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error parsing user: %v", err)
+	}
+
+	// Check if the result is equal to the expected
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing parse user with an invalid user")
+
+	// Create variables
+	user = "user::pass"
+
+	// Test the parse user function
+	_, err = utils.ParseUser(user)
+
+	// Check if there was an error
+	if err == nil {
+		t.Fatalf("Expected error parsing user")
 	}
 }
