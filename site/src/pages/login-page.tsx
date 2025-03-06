@@ -1,33 +1,22 @@
-import {
-  Button,
-  Paper,
-  PasswordInput,
-  TextInput,
-  Title,
-  Text,
-  Divider,
-  Grid,
-} from "@mantine/core";
-import { useForm, zodResolver } from "@mantine/form";
+import { Paper, Title, Text, Divider } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { z } from "zod";
 import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
-import { GoogleIcon } from "../icons/google";
-import { GithubIcon } from "../icons/github";
-import { OAuthIcon } from "../icons/oauth";
-import { TailscaleIcon } from "../icons/tailscale";
 import { isQueryValid } from "../utils/utils";
+import { OAuthButtons } from "../components/auth/oauth-buttons";
+import { LoginFormValues } from "../schemas/login-schema";
+import { LoginForm } from "../components/auth/login-forn";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri") ?? "";
 
-  const { isLoggedIn, configuredProviders, title, genericName } = useUserContext();
+  const { isLoggedIn, configuredProviders, title, genericName } =
+    useUserContext();
 
   const oauthProviders = configuredProviders.filter(
     (value) => value !== "username",
@@ -37,24 +26,8 @@ export const LoginPage = () => {
     return <Navigate to="/logout" />;
   }
 
-  const schema = z.object({
-    username: z.string(),
-    password: z.string(),
-  });
-
-  type FormValues = z.infer<typeof schema>;
-
-  const form = useForm({
-    mode: "uncontrolled",
-    initialValues: {
-      username: "",
-      password: "",
-    },
-    validate: zodResolver(schema),
-  });
-
   const loginMutation = useMutation({
-    mutationFn: (login: FormValues) => {
+    mutationFn: (login: LoginFormValues) => {
       return axios.post("/api/login", login);
     },
     onError: () => {
@@ -105,7 +78,7 @@ export const LoginPage = () => {
     },
   });
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);
   };
 
@@ -118,68 +91,12 @@ export const LoginPage = () => {
             <Text size="lg" fw={500} ta="center">
               Welcome back, login with
             </Text>
-            <Grid mb="md" mt="md" align="center" justify="center">
-              {oauthProviders.includes("google") && (
-                <Grid.Col span="content">
-                  <Button
-                    radius="xl"
-                    leftSection={
-                      <GoogleIcon style={{ width: 14, height: 14 }} />
-                    }
-                    variant="default"
-                    onClick={() => loginOAuthMutation.mutate("google")}
-                    loading={loginOAuthMutation.isLoading}
-                  >
-                    Google
-                  </Button>
-                </Grid.Col>
-              )}
-              {oauthProviders.includes("github") && (
-                <Grid.Col span="content">
-                  <Button
-                    radius="xl"
-                    leftSection={
-                      <GithubIcon style={{ width: 14, height: 14 }} />
-                    }
-                    variant="default"
-                    onClick={() => loginOAuthMutation.mutate("github")}
-                    loading={loginOAuthMutation.isLoading}
-                  >
-                    Github
-                  </Button>
-                </Grid.Col>
-              )}
-              {oauthProviders.includes("tailscale") && (
-                <Grid.Col span="content">
-                  <Button
-                    radius="xl"
-                    leftSection={
-                      <TailscaleIcon style={{ width: 14, height: 14 }} />
-                    }
-                    variant="default"
-                    onClick={() => loginOAuthMutation.mutate("tailscale")}
-                    loading={loginOAuthMutation.isLoading}
-                  >
-                    Tailscale
-                  </Button>
-                </Grid.Col>
-              )}
-              {oauthProviders.includes("generic") && (
-                <Grid.Col span="content">
-                  <Button
-                    radius="xl"
-                    leftSection={
-                      <OAuthIcon style={{ width: 14, height: 14 }} />
-                    }
-                    variant="default"
-                    onClick={() => loginOAuthMutation.mutate("generic")}
-                    loading={loginOAuthMutation.isLoading}
-                  >
-                    {genericName}
-                  </Button>
-                </Grid.Col>
-              )}
-            </Grid>
+            <OAuthButtons
+              oauthProviders={oauthProviders}
+              isLoading={loginOAuthMutation.isLoading}
+              mutate={loginOAuthMutation.mutate}
+              genericName={genericName}
+            />
             {configuredProviders.includes("username") && (
               <Divider
                 label="Or continue with password"
@@ -190,33 +107,10 @@ export const LoginPage = () => {
           </>
         )}
         {configuredProviders.includes("username") && (
-          <form onSubmit={form.onSubmit(handleSubmit)}>
-            <TextInput
-              label="Username"
-              placeholder="user@example.com"
-              required
-              disabled={loginMutation.isLoading}
-              key={form.key("username")}
-              {...form.getInputProps("username")}
-            />
-            <PasswordInput
-              label="Password"
-              placeholder="password"
-              required
-              mt="md"
-              disabled={loginMutation.isLoading}
-              key={form.key("password")}
-              {...form.getInputProps("password")}
-            />
-            <Button
-              fullWidth
-              mt="xl"
-              type="submit"
-              loading={loginMutation.isLoading}
-            >
-              Login
-            </Button>
-          </form>
+          <LoginForm
+            isLoading={loginMutation.isLoading}
+            onSubmit={handleSubmit}
+          />
         )}
       </Paper>
     </Layout>
