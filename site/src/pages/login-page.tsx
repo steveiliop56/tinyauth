@@ -5,10 +5,10 @@ import axios from "axios";
 import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
-import { isQueryValid } from "../utils/utils";
 import { OAuthButtons } from "../components/auth/oauth-buttons";
 import { LoginFormValues } from "../schemas/login-schema";
 import { LoginForm } from "../components/auth/login-forn";
+import { isQueryValid } from "../utils/utils";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
@@ -37,18 +37,25 @@ export const LoginPage = () => {
         color: "red",
       });
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      if (data.data.totpPending) {
+        window.location.replace(`/totp?redirect_uri=${redirectUri}`);
+        return;
+      }
+
       notifications.show({
         title: "Logged in",
         message: "Welcome back!",
         color: "green",
       });
+
       setTimeout(() => {
         if (!isQueryValid(redirectUri)) {
           window.location.replace("/");
-        } else {
-          window.location.replace(`/continue?redirect_uri=${redirectUri}`);
+          return;
         }
+
+        window.location.replace(`/continue?redirect_uri=${redirectUri}`);
       }, 500);
     },
   });

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { createContext, useContext } from "react";
-import { UserContextSchemaType } from "../schemas/user-context-schema";
 import axios from "axios";
+import { UserContextSchemaType } from "../schemas/user-context-schema";
 
 const UserContext = createContext<UserContextSchemaType | null>(null);
 
@@ -15,7 +15,7 @@ export const UserContextProvider = ({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["isLoggedIn"],
+    queryKey: ["userContext"],
     queryFn: async () => {
       const res = await axios.get("/api/status");
       return res.data;

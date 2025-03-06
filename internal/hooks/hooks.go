@@ -36,13 +36,27 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		if user != nil && hooks.Auth.CheckPassword(*user, basic.Password) {
 			// Return user context since we are logged in with basic auth
 			return types.UserContext{
-				Username:   basic.Username,
-				IsLoggedIn: true,
-				OAuth:      false,
-				Provider:   "basic",
+				Username:    basic.Username,
+				IsLoggedIn:  true,
+				OAuth:       false,
+				Provider:    "basic",
+				TotpPending: false,
 			}
 		}
 
+	}
+
+	// Check if session cookie has totp pending
+	if cookie.TotpPending {
+		log.Debug().Msg("Totp pending")
+		// Return empty context since we are pending totp
+		return types.UserContext{
+			Username:    cookie.Username,
+			IsLoggedIn:  false,
+			OAuth:       false,
+			Provider:    cookie.Provider,
+			TotpPending: true,
+		}
 	}
 
 	// Check if session cookie is username/password auth
@@ -55,10 +69,11 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 			// It exists so we are logged in
 			return types.UserContext{
-				Username:   cookie.Username,
-				IsLoggedIn: true,
-				OAuth:      false,
-				Provider:   "username",
+				Username:    cookie.Username,
+				IsLoggedIn:  true,
+				OAuth:       false,
+				Provider:    "username",
+				TotpPending: false,
 			}
 		}
 	}
@@ -81,10 +96,11 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 			// Return empty context
 			return types.UserContext{
-				Username:   "",
-				IsLoggedIn: false,
-				OAuth:      false,
-				Provider:   "",
+				Username:    "",
+				IsLoggedIn:  false,
+				OAuth:       false,
+				Provider:    "",
+				TotpPending: false,
 			}
 		}
 
@@ -92,18 +108,20 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 		// Return user context since we are logged in with oauth
 		return types.UserContext{
-			Username:   cookie.Username,
-			IsLoggedIn: true,
-			OAuth:      true,
-			Provider:   cookie.Provider,
+			Username:    cookie.Username,
+			IsLoggedIn:  true,
+			OAuth:       true,
+			Provider:    cookie.Provider,
+			TotpPending: false,
 		}
 	}
 
 	// Neither basic auth or oauth is set so we return an empty context
 	return types.UserContext{
-		Username:   "",
-		IsLoggedIn: false,
-		OAuth:      false,
-		Provider:   "",
+		Username:    "",
+		IsLoggedIn:  false,
+		OAuth:       false,
+		Provider:    "",
+		TotpPending: false,
 	}
 }

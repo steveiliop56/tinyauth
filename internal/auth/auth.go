@@ -74,6 +74,7 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	sessions.Set("username", data.Username)
 	sessions.Set("provider", data.Provider)
 	sessions.Set("expiry", time.Now().Add(time.Duration(auth.SessionExpiry)*time.Second).Unix())
+	sessions.Set("totpPending", data.TotpPending)
 
 	// Save session
 	sessions.Save()
@@ -102,14 +103,16 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 	cookieUsername := sessions.Get("username")
 	cookieProvider := sessions.Get("provider")
 	cookieExpiry := sessions.Get("expiry")
+	cookieTotpPending := sessions.Get("totpPending")
 
 	// Convert interfaces to correct types
 	username, usernameOk := cookieUsername.(string)
 	provider, providerOk := cookieProvider.(string)
 	expiry, expiryOk := cookieExpiry.(int64)
+	totpPending, totpPendingOk := cookieTotpPending.(bool)
 
 	// Check if the cookie is invalid
-	if !usernameOk || !providerOk || !expiryOk {
+	if !usernameOk || !providerOk || !expiryOk || !totpPendingOk {
 		log.Warn().Msg("Session cookie invalid")
 		return types.SessionCookie{}
 	}
@@ -125,12 +128,13 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 		return types.SessionCookie{}
 	}
 
-	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Msg("Parsed cookie")
+	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Msg("Parsed cookie")
 
 	// Return the cookie
 	return types.SessionCookie{
-		Username: username,
-		Provider: provider,
+		Username:    username,
+		Provider:    provider,
+		TotpPending: totpPending,
 	}
 }
 

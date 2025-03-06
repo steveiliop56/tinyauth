@@ -59,10 +59,11 @@ type Config struct {
 
 // UserContext is the context for the user
 type UserContext struct {
-	Username   string
-	IsLoggedIn bool
-	OAuth      bool
-	Provider   string
+	Username    string
+	IsLoggedIn  bool
+	OAuth       bool
+	Provider    string
+	TotpPending bool
 }
 
 // APIConfig is the configuration for the API
@@ -115,8 +116,9 @@ type UnauthorizedQuery struct {
 
 // SessionCookie is the cookie for the session (exculding the expiry)
 type SessionCookie struct {
-	Username string
-	Provider string
+	Username    string
+	Provider    string
+	TotpPending bool
 }
 
 // TinyauthLabels is the labels for the tinyauth container
@@ -148,4 +150,10 @@ type Status struct {
 	DisableContinue     bool     `json:"disableContinue"`
 	Title               string   `json:"title"`
 	GenericName         string   `json:"genericName"`
+	TotpPending         bool     `json:"totpPending"`
+}
+
+// Totp request
+type Totp struct {
+	Code string `json:"code"`
 }

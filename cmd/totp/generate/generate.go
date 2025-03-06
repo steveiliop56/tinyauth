@@ -63,7 +63,7 @@ var GenerateCmd = &cobra.Command{
 		// Check if user was using docker escape
 		dockerEscape := false
 
-		if strings.Contains(user.Username, "$$") {
+		if strings.Contains(iUser, "$$") {
 			dockerEscape = true
 		}
 
