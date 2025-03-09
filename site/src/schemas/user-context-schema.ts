@@ -9,6 +9,7 @@ export const userContextSchema = z.object({
   disableContinue: z.boolean(),
   title: z.string(),
   genericName: z.string(),
+  totpPending: z.boolean(),
 });
 
 export type UserContextSchemaType = z.infer<typeof userContextSchema>;

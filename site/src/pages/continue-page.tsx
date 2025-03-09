@@ -50,26 +50,6 @@ export const ContinuePage = () => {
     );
   }
 
-  if (
-    window.location.protocol === "https:" &&
-    uri.protocol === "http:"
-  ) {
-    return (
-      <ContinuePageLayout>
-        <Text size="xl" fw={700}>
-          Insecure Redirect
-        </Text>
-        <Text>
-          Your are logged in but trying to redirect from <Code>https</Code> to{" "}
-          <Code>http</Code>, please click the button to redirect.
-        </Text>
-        <Button fullWidth mt="xl" onClick={redirect}>
-          Continue
-        </Button>
-      </ContinuePageLayout>
-    );
-  }
-
   if (disableContinue) {
     window.location.href = redirectUri;
     return (
@@ -78,6 +58,23 @@ export const ContinuePage = () => {
           Redirecting
         </Text>
         <Text>You should be redirected to your app soon.</Text>
+      </ContinuePageLayout>
+    );
+  }
+
+  if (window.location.protocol === "https:" && uri.protocol === "http:") {
+    return (
+      <ContinuePageLayout>
+        <Text size="xl" fw={700}>
+          Insecure Redirect
+        </Text>
+        <Text>
+          Your are trying to redirect from <Code>https</Code> to{" "}
+          <Code>http</Code>, are you sure you want to continue?
+        </Text>
+        <Button fullWidth mt="xl" color="yellow" onClick={redirect}>
+          Continue
+        </Button>
       </ContinuePageLayout>
     );
   }

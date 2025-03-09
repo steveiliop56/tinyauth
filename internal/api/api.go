@@ -19,6 +19,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
+	"github.com/pquerna/otp/totp"
 	"github.com/rs/zerolog/log"
 )
 
@@ -321,11 +322,107 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		log.Debug().Msg("Password correct, logging in")
+		log.Debug().Msg("Password correct, checking totp")
+
+		// Check if user has totp enabled
+		if user.TotpSecret != "" {
+			log.Debug().Msg("Totp enabled")
+
+			// Set totp pending cookie
+			api.Auth.CreateSessionCookie(c, &types.SessionCookie{
+				Username:    login.Username,
+				Provider:    "username",
+				TotpPending: true,
+			})
+
+			// Return totp required
+			c.JSON(200, gin.H{
+				"status":      200,
+				"message":     "Waiting for totp",
+				"totpPending": true,
+			})
+
+			// Stop further processing
+			return
+		}
 
 		// Create session cookie with username as provider
 		api.Auth.CreateSessionCookie(c, &types.SessionCookie{
 			Username: login.Username,
+			Provider: "username",
+		})
+
+		// Return logged in
+		c.JSON(200, gin.H{
+			"status":      200,
+			"message":     "Logged in",
+			"totpPending": false,
+		})
+	})
+
+	api.Router.POST("/api/totp", func(c *gin.Context) {
+		// Create totp struct
+		var totpReq types.Totp
+
+		// Bind JSON
+		err := c.BindJSON(&totpReq)
+
+		// Handle error
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to bind JSON")
+			c.JSON(400, gin.H{
+				"status":  400,
+				"message": "Bad Request",
+			})
+			return
+		}
+
+		log.Debug().Msg("Checking totp")
+
+		// Get user context
+		userContext := api.Hooks.UseUserContext(c)
+
+		// Check if we have a user
+		if userContext.Username == "" {
+			log.Debug().Msg("No user context")
+			c.JSON(401, gin.H{
+				"status":  401,
+				"message": "Unauthorized",
+			})
+			return
+		}
+
+		// Get user
+		user := api.Auth.GetUser(userContext.Username)
+
+		// Check if user exists
+		if user == nil {
+			log.Debug().Msg("User not found")
+			c.JSON(401, gin.H{
+				"status":  401,
+				"message": "Unauthorized",
+			})
+			return
+		}
+
+		// Check if totp is correct
+		totpOk := totp.Validate(totpReq.Code, user.TotpSecret)
+
+		// TOTP is incorrect
+		if !totpOk {
+			log.Debug().Msg("Totp incorrect")
+			c.JSON(401, gin.H{
+				"status":  401,
+				"message": "Unauthorized",
+			})
+			return
+		}
+
+		log.Debug().Msg("Totp correct")
+
+		// Create session cookie with username as provider
+		api.Auth.CreateSessionCookie(c, &types.SessionCookie{
+			Username: user.Username,
 			Provider: "username",
 		})
 
@@ -378,6 +475,7 @@ func (api *API) SetupRoutes() {
 			DisableContinue:     api.Config.DisableContinue,
 			Title:               api.Config.Title,
 			GenericName:         api.Config.GenericName,
+			TotpPending:         userContext.TotpPending,
 		}
 
 		// If we are not logged in we set the status to 401 and add the WWW-Authenticate header else we set it to 200
@@ -391,19 +489,6 @@ func (api *API) SetupRoutes() {
 			status.Status = 200
 			status.Message = "Authenticated"
 		}
-
-		// // Marshall status to JSON
-		// statusJson, marshalErr := json.Marshal(status)
-
-		// // Handle error
-		// if marshalErr != nil {
-		// 	log.Error().Err(marshalErr).Msg("Failed to marshal status")
-		// 	c.JSON(500, gin.H{
-		// 		"status":  500,
-		// 		"message": "Internal Server Error",
-		// 	})
-		// 	return
-		// }
 
 		// Return data
 		c.JSON(200, status)
