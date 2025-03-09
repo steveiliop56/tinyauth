@@ -60,7 +60,7 @@ var CreateCmd = &cobra.Command{
 
 		// Do we have username and password?
 		if iUsername == "" || iPassword == "" {
-			log.Error().Msg("Username and password cannot be empty")
+			log.Fatal().Err(errors.New("error invalid input")).Msg("Username and password cannot be empty")
 		}
 
 		log.Info().Str("username", iUsername).Str("password", iPassword).Bool("docker", docker).Msg("Creating user")
