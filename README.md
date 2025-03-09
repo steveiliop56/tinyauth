@@ -42,6 +42,15 @@ All contributions to the codebase are welcome! If you have any recommendations o
 
 Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You may copy, distribute and modify the software as long as you track changes/dates in source files. Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions. For more information about the license check the [license](./LICENSE) file.
 
+## Sponsors
+
+Thanks a lot to the following people for providing me with more coffee:
+
+<div>
+    <a href="https://github.com/nicotsx"><img height="64" src="https://avatars.githubusercontent.com/u/47644445?v=4" style="border-radius:50%;" alt="Nicolas"></a>
+    <a href="https://github.com/erwinkramer"><img height="64" src="https://avatars.githubusercontent.com/u/4255748?v=4" style="border-radius:50%;" alt="Erwin"></a>
+</div>
+
 ## Acknowledgements
 
 Credits for the logo of this app go to:
