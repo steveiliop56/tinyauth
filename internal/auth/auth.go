@@ -70,10 +70,19 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 
 	log.Debug().Msg("Setting session cookie")
 
+	// Calculate expiry
+	var sessionExpiry int
+
+	if data.TotpPending {
+		sessionExpiry = 3600
+	} else {
+		sessionExpiry = auth.SessionExpiry
+	}
+
 	// Set data
 	sessions.Set("username", data.Username)
 	sessions.Set("provider", data.Provider)
-	sessions.Set("expiry", time.Now().Add(time.Duration(auth.SessionExpiry)*time.Second).Unix())
+	sessions.Set("expiry", time.Now().Add(time.Duration(sessionExpiry)*time.Second).Unix())
 	sessions.Set("totpPending", data.TotpPending)
 
 	// Save session
