@@ -128,15 +128,3 @@ jobs:
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf 'ghcr.io/${{ github.repository_owner }}/tinyauth@sha256:%s ' *)
-
-  release:
-    runs-on: ubuntu-latest
-    needs:
-      - build
-      - merge
-    steps:
-      - name: Create alpha release
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: true
-          tag_name: ${{ github.ref_name }}
