@@ -13,7 +13,7 @@ services:
     image: traefik/whoami:latest
     labels:
       traefik.enable: true
-      traefik.http.routers.nginx.rule: Host(`whoami.dev.local`)
+      traefik.http.routers.nginx.rule: Host(`whoami.dev.example.com`)
       traefik.http.services.nginx.loadbalancer.server.port: 80
       traefik.http.routers.nginx.middlewares: tinyauth
 
@@ -24,11 +24,11 @@ services:
       dockerfile: Dockerfile
     environment:
       - SECRET=some-random-32-chars-string
-      - APP_URL=http://tinyauth.dev.local
+      - APP_URL=http://tinyauth.dev.example.com
       - USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u # user:password
     labels:
       traefik.enable: true
-      traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.local`)
+      traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.example.com`)
       traefik.http.services.tinyauth.loadbalancer.server.port: 3000
       traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth/traefik
       traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders: Remote-User

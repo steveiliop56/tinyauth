@@ -2,6 +2,11 @@
 web:
 	cd site; bun run build
 
+# Requirements
+requirements:
+	cd site; bun install
+	go mod tidy
+
 # Copy site assets
 assets: web
 	rm -rf internal/assets/dist
@@ -12,6 +17,10 @@ assets: web
 run: assets
 	go run main.go
 
+# Run development binary without compiling the frontend
+run-skip-web:
+	go run main.go
+
 # Test
 test:
 	go test ./...
@@ -20,6 +29,6 @@ test:
 build: assets
 	go build -o tinyauth
 
-# Build no site
+# Build the binary without compiling the frontend
 build-skip-web:
 	go build -o tinyauth

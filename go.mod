@@ -7,6 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/google/go-querystring v1.1.0
+	github.com/mdp/qrterminal/v3 v3.2.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
@@ -15,7 +16,6 @@ require (
 
 require (
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/mdp/qrterminal/v3 v3.2.0 // indirect
 	github.com/moby/term v0.5.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect

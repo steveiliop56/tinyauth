@@ -8,12 +8,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
-  nginx:
-    container_name: nginx
-    image: nginx:latest
+  whoami:
+    container_name: whoami
+    image: traefik/whoami:latest
     labels:
       traefik.enable: true
-      traefik.http.routers.nginx.rule: Host(`nginx.example.com`)
+      traefik.http.routers.nginx.rule: Host(`whoami.example.com`)
       traefik.http.services.nginx.loadbalancer.server.port: 80
       traefik.http.routers.nginx.middlewares: tinyauth
 

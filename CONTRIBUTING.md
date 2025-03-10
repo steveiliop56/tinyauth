@@ -1,6 +1,6 @@
 # Contributing
 
-Contributing is relatively easy.
+Contributing is relatively easy, you just need to follow the steps carefully and you will be up and running with a development server in less than 5 minutes.
 
 ## Requirements
 
@@ -8,6 +8,7 @@ Contributing is relatively easy.
 - Golang v1.23.2 and above
 - Git
 - Docker
+- Make (not required but it will make your life easier)
 
 ## Cloning the repository
 
@@ -20,47 +21,41 @@ cd tinyauth
 
 ## Install requirements
 
-Now it's time to install the requirements, firstly the Go ones:
+To install the requirements simply run:
 
 ```sh
-go mod download
+make requirements
 ```
 
-And now the site ones:
-
-```sh
-cd site
-bun i
-```
+It will download all the node packages required by the frontend as well as all the go requirements.
 
 ## Developing locally
 
-In order to develop the app locally you need to build the frontend and copy it to the assets folder in order for Go to embed it and host it. In order to build the frontend run:
+In order to develop the app you need to firstly compile the frontend and then the go app. To avoid running the same commands over and over again you can just run:
 
 ```sh
-cd site
-bun run build
-cd ..
+make run
 ```
 
-Copy it to the assets folder:
+This is the equivalent of `go run main.go`, if you would like to build a binary run:
 
 ```sh
-rm -rf internal/assets/dist
-cp -r site/dist internal/assets/dist
+make build
 ```
 
-Finally either run the app with:
+To avoid rebuilding the frontend every time you can run:
 
 ```sh
-go run main.go
+make run-no-web
 ```
 
-Or build it with:
+And:
 
 ```sh
-go build
+make build-no-web
 ```
+
+For these commands to succeed you must have built the frontend at least once.
 
 > [!WARNING]
 > Make sure you have set the environment variables when running outside of docker else the app will fail.
@@ -70,8 +65,8 @@ go build
 My recommended development method is docker so I can test that both my image works and that the app responds correctly to traefik. In my setup I have set these two DNS records in my DNS server:
 
 ```
-*.dev.local -> 127.0.0.1
-dev.local -> 127.0.0.1
+*.dev.example.com -> 127.0.0.1
+dev.example.com -> 127.0.0.1
 ```
 
 Then I can just make sure the domains are correct in the example docker compose file and do:
@@ -79,3 +74,6 @@ Then I can just make sure the domains are correct in the example docker compose 
 ```sh
 docker compose -f docker-compose.dev.yml up --build
 ```
+
+> [!WARNING]
+> I would recommend copying the example `docker-compose.dev.yml` into a `docker-compose.test.yml` file, so as you don't accidentally commit any sensitive information.
