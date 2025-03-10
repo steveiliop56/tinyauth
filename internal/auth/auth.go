@@ -162,7 +162,10 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bo
 	// Check if resource is allowed
 	allowed, allowedErr := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
 		// If the container has an oauth whitelist, check if the user is in it
-		if context.OAuth && len(labels.OAuthWhitelist) != 0 {
+		if context.OAuth {
+			if len(labels.OAuthWhitelist) == 0 {
+				return true, nil
+			}
 			log.Debug().Msg("Checking OAuth whitelist")
 			if slices.Contains(labels.OAuthWhitelist, context.Username) {
 				return true, nil
