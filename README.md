@@ -28,11 +28,11 @@ I just made a Discord server for Tinyauth! It is not only for Tinyauth but gener
 
 ## Getting Started
 
-You can easily get started with tinyauth by following the guide on the [documentation](https://tinyauth.doesmycode.work/docs/getting-started.html). There is also an available [docker compose file](./docker-compose.example.yml) that has traefik, nginx and tinyauth to demonstrate its capabilities.
+You can easily get started with tinyauth by following the guide on the [documentation](https://tinyauth.app/docs/getting-started.html). There is also an available [docker compose file](./docker-compose.example.yml) that has traefik, nginx and tinyauth to demonstrate its capabilities.
 
 ## Documentation
 
-You can find documentation and guides on all available configuration of tinyauth [here](https://tinyauth.doesmycode.work).
+You can find documentation and guides on all available configuration of tinyauth [here](https://tinyauth.app).
 
 ## Contributing
 
