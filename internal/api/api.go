@@ -131,18 +131,24 @@ func (api *API) SetupRoutes() {
 			return
 		}
 
-		log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
+		// Check if the request is coming from a browser (tools like curl/bruno use */* and they don't include the text/html)
+		isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
 
-		// Check if using basic auth
-		_, _, basicAuth := c.Request.BasicAuth()
+		if isBrowser {
+			log.Debug().Msg("Request is most likely coming from a browser")
+		} else {
+			log.Debug().Msg("Request is most likely not coming from a browser")
+		}
+
+		log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
 
 		// Check if auth is enabled
 		authEnabled, authEnabledErr := api.Auth.AuthEnabled(c)
 
 		// Handle error
 		if authEnabledErr != nil {
-			// Return 500 if nginx is the proxy or if the request is using basic auth
-			if proxy.Proxy == "nginx" || basicAuth {
+			// Return 500 if nginx is the proxy or if the request is not coming from a browser
+			if proxy.Proxy == "nginx" || !isBrowser {
 				log.Error().Err(authEnabledErr).Msg("Failed to check if auth is enabled")
 				c.JSON(500, gin.H{
 					"status":  500,
@@ -186,8 +192,8 @@ func (api *API) SetupRoutes() {
 
 			// Check if there was an error
 			if appAllowedErr != nil {
-				// Return 500 if nginx is the proxy or if the request is using basic auth
-				if proxy.Proxy == "nginx" || basicAuth {
+				// Return 500 if nginx is the proxy or if the request is not coming from a browser
+				if proxy.Proxy == "nginx" || !isBrowser {
 					log.Error().Err(appAllowedErr).Msg("Failed to check if app is allowed")
 					c.JSON(500, gin.H{
 						"status":  500,
@@ -208,9 +214,11 @@ func (api *API) SetupRoutes() {
 			if !appAllowed {
 				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
 
-				// Return 401 if nginx is the proxy or if the request is using an Authorization header
-				if proxy.Proxy == "nginx" || basicAuth {
-					c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+				// Set WWW-Authenticate header
+				c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+
+				// Return 401 if nginx is the proxy or if the request is not coming from a browser
+				if proxy.Proxy == "nginx" || !isBrowser {
 					c.JSON(401, gin.H{
 						"status":  401,
 						"message": "Unauthorized",
@@ -252,9 +260,11 @@ func (api *API) SetupRoutes() {
 		// The user is not logged in
 		log.Debug().Msg("Unauthorized")
 
-		// Return 401 if nginx is the proxy or if the request is using an Authorization header
-		if proxy.Proxy == "nginx" || basicAuth {
-			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+		// Set www-authenticate header
+		c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+
+		// Return 401 if nginx is the proxy or if the request is not coming from a browser
+		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(401, gin.H{
 				"status":  401,
 				"message": "Unauthorized",
