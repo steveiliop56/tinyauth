@@ -75,5 +75,5 @@ Then I can just make sure the domains are correct in the example docker compose 
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-> [!WARNING]
+> [!NOTE]
 > I would recommend copying the example `docker-compose.dev.yml` into a `docker-compose.test.yml` file, so as you don't accidentally commit any sensitive information.
