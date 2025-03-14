@@ -45,4 +45,4 @@ services:
       - 3000:3000
     labels:
       traefik.enable: true
-      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth/traefik
+      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth-backend:3000/api/auth/traefik
