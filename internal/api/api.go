@@ -372,7 +372,7 @@ func (api *API) SetupRoutes() {
 
 	api.Router.POST("/api/totp", func(c *gin.Context) {
 		// Create totp struct
-		var totpReq types.Totp
+		var totpReq types.TotpRequest
 
 		// Bind JSON
 		err := c.BindJSON(&totpReq)
@@ -461,11 +461,8 @@ func (api *API) SetupRoutes() {
 		})
 	})
 
-	api.Router.GET("/api/status", func(c *gin.Context) {
-		log.Debug().Msg("Checking status")
-
-		// Get user context
-		userContext := api.Hooks.UseUserContext(c)
+	api.Router.GET("/api/app", func(c *gin.Context) {
+		log.Debug().Msg("Getting app context")
 
 		// Get configured providers
 		configuredProviders := api.Providers.GetConfiguredProviders()
@@ -475,33 +472,48 @@ func (api *API) SetupRoutes() {
 			configuredProviders = append(configuredProviders, "username")
 		}
 
-		// Fill status struct with data from user context and api config
-		status := types.Status{
-			Username:            userContext.Username,
-			IsLoggedIn:          userContext.IsLoggedIn,
-			Oauth:               userContext.OAuth,
-			Provider:            userContext.Provider,
+		// Create app context struct
+		appContext := types.AppContext{
+			Status:              200,
+			Message:             "Ok",
 			ConfiguredProviders: configuredProviders,
 			DisableContinue:     api.Config.DisableContinue,
 			Title:               api.Config.Title,
 			GenericName:         api.Config.GenericName,
-			TotpPending:         userContext.TotpPending,
+		}
+
+		// Return app context
+		c.JSON(200, appContext)
+	})
+
+	api.Router.GET("/api/user", func(c *gin.Context) {
+		log.Debug().Msg("Getting user context")
+
+		// Get user context
+		userContext := api.Hooks.UseUserContext(c)
+
+		// Create user context response
+		userContextResponse := types.UserContextResponse{
+			Status:      200,
+			IsLoggedIn:  userContext.IsLoggedIn,
+			Username:    userContext.Username,
+			Provider:    userContext.Provider,
+			Oauth:       userContext.OAuth,
+			TotpPending: userContext.TotpPending,
 		}
 
 		// If we are not logged in we set the status to 401 and add the WWW-Authenticate header else we set it to 200
 		if !userContext.IsLoggedIn {
 			log.Debug().Msg("Unauthorized")
 			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
-			status.Status = 401
-			status.Message = "Unauthorized"
+			userContextResponse.Message = "Unauthorized"
 		} else {
-			log.Debug().Interface("userContext", userContext).Strs("configuredProviders", configuredProviders).Bool("disableContinue", api.Config.DisableContinue).Msg("Authenticated")
-			status.Status = 200
-			status.Message = "Authenticated"
+			log.Debug().Interface("userContext", userContext).Msg("Authenticated")
+			userContextResponse.Message = "Authenticated"
 		}
 
-		// Return data
-		c.JSON(200, status)
+		// Return user context
+		c.JSON(200, userContextResponse)
 	})
 
 	api.Router.GET("/api/oauth/url/:provider", func(c *gin.Context) {
@@ -710,7 +722,12 @@ func (api *API) Run() {
 	log.Info().Str("address", api.Config.Address).Int("port", api.Config.Port).Msg("Starting server")
 
 	// Run server
-	api.Router.Run(fmt.Sprintf("%s:%d", api.Config.Address, api.Config.Port))
+	err := api.Router.Run(fmt.Sprintf("%s:%d", api.Config.Address, api.Config.Port))
+
+	// Check error
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to start server")
+	}
 }
 
 // handleError logs the error and redirects to the error page (only meant for stuff the user may access does not apply for login paths)

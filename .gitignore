@@ -19,3 +19,9 @@ secret_oauth.txt
 
 # apple stuff
 .DS_Store
+
+# env
+.env
+
+# tmp directory
+tmp

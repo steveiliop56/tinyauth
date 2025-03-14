@@ -16,6 +16,7 @@ import { NotFoundPage } from "./pages/not-found-page.tsx";
 import { UnauthorizedPage } from "./pages/unauthorized-page.tsx";
 import { InternalServerError } from "./pages/internal-server-error.tsx";
 import { TotpPage } from "./pages/totp-page.tsx";
+import { AppContextProvider } from "./context/app-context.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,20 +31,22 @@ createRoot(document.getElementById("root")!).render(
     <MantineProvider forceColorScheme="dark">
       <QueryClientProvider client={queryClient}>
         <Notifications />
-        <UserContextProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<App />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/totp" element={<TotpPage />} />
-              <Route path="/logout" element={<LogoutPage />} />
-              <Route path="/continue" element={<ContinuePage />} />
-              <Route path="/unauthorized" element={<UnauthorizedPage />} />
-              <Route path="/error" element={<InternalServerError />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </BrowserRouter>
-        </UserContextProvider>
+        <AppContextProvider>
+          <UserContextProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<App />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/totp" element={<TotpPage />} />
+                <Route path="/logout" element={<LogoutPage />} />
+                <Route path="/continue" element={<ContinuePage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                <Route path="/error" element={<InternalServerError />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </BrowserRouter>
+          </UserContextProvider>
+        </AppContextProvider>
       </QueryClientProvider>
     </MantineProvider>
   </StrictMode>,

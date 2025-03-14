@@ -55,6 +55,7 @@ type Config struct {
 	SessionExpiry             int    `mapstructure:"session-expiry"`
 	LogLevel                  int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 	Title                     string `mapstructure:"app-title"`
+	EnvFile                   string `mapstructure:"env-file"`
 }
 
 // UserContext is the context for the user
@@ -138,22 +139,28 @@ type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
 }
 
-// Status response
-type Status struct {
+// User Context response is the response for the user context endpoint
+type UserContextResponse struct {
+	Status      int    `json:"status"`
+	Message     string `json:"message"`
+	IsLoggedIn  bool   `json:"isLoggedIn"`
+	Username    string `json:"username"`
+	Provider    string `json:"provider"`
+	Oauth       bool   `json:"oauth"`
+	TotpPending bool   `json:"totpPending"`
+}
+
+// App Context is the response for the app context endpoint
+type AppContext struct {
 	Status              int      `json:"status"`
 	Message             string   `json:"message"`
-	IsLoggedIn          bool     `json:"isLoggedIn"`
-	Username            string   `json:"username"`
-	Provider            string   `json:"provider"`
-	Oauth               bool     `json:"oauth"`
 	ConfiguredProviders []string `json:"configuredProviders"`
 	DisableContinue     bool     `json:"disableContinue"`
 	Title               string   `json:"title"`
 	GenericName         string   `json:"genericName"`
-	TotpPending         bool     `json:"totpPending"`
 }
 
-// Totp request
-type Totp struct {
+// Totp request is the request for the totp endpoint
+type TotpRequest struct {
 	Code string `json:"code"`
 }

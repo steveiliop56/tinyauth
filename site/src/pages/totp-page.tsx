@@ -6,13 +6,15 @@ import { TotpForm } from "../components/auth/totp-form";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { notifications } from "@mantine/notifications";
+import { useAppContext } from "../context/app-context";
 
 export const TotpPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri") ?? "";
 
-  const { totpPending, isLoggedIn, title } = useUserContext();
+  const { totpPending, isLoggedIn } = useUserContext();
+  const { title } = useAppContext();
 
   if (isLoggedIn) {
     return <Navigate to={`/logout`} />;
