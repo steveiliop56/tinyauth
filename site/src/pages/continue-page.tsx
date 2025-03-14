@@ -5,13 +5,15 @@ import { useUserContext } from "../context/user-context";
 import { Layout } from "../components/layouts/layout";
 import { ReactNode } from "react";
 import { isQueryValid } from "../utils/utils";
+import { useAppContext } from "../context/app-context";
 
 export const ContinuePage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri") ?? "";
 
-  const { isLoggedIn, disableContinue } = useUserContext();
+  const { isLoggedIn } = useUserContext();
+  const { disableContinue } = useAppContext();
 
   if (!isLoggedIn) {
     return <Navigate to={`/login?redirect_uri=${redirectUri}`} />;

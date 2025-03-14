@@ -17,7 +17,7 @@ export const UserContextProvider = ({
   } = useQuery({
     queryKey: ["userContext"],
     queryFn: async () => {
-      const res = await axios.get("/api/status");
+      const res = await axios.get("/api/user");
       return res.data;
     },
   });

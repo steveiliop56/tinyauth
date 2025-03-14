@@ -1,0 +1,24 @@
+root = "/tinyauth"
+tmp_dir = "tmp"
+
+[build]
+pre_cmd = ["go mod tidy"]
+cmd = "go build -o ./tmp/tinyauth ."
+bin = "tmp/tinyauth"
+include_ext = ["go"]
+exclude_dir = ["internal/assets/dist"]
+exclude_regex = [".*_test\\.go"]
+stop_on_error = true
+
+[color]
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+clean_on_exit = true
+
+[screen]
+clear_on_rebuild = false
+keep_scroll = true

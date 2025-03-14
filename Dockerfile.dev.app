@@ -1,0 +1,22 @@
+FROM golang:1.23-alpine3.21
+
+WORKDIR /tinyauth
+
+COPY go.mod ./
+COPY go.sum ./
+
+RUN go mod download
+
+COPY ./cmd ./cmd
+COPY ./internal ./internal
+COPY ./main.go ./
+COPY ./air.toml ./
+
+RUN mkdir -p ./internal/assets/dist && \
+    echo "app running" > ./internal/assets/dist/index.html
+
+RUN go install github.com/air-verse/air@v1.61.7
+
+EXPOSE 3000
+
+ENTRYPOINT ["air", "-c", "air.toml"]

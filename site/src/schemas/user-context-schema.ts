@@ -5,10 +5,6 @@ export const userContextSchema = z.object({
   username: z.string(),
   oauth: z.boolean(),
   provider: z.string(),
-  configuredProviders: z.array(z.string()),
-  disableContinue: z.boolean(),
-  title: z.string(),
-  genericName: z.string(),
   totpPending: z.boolean(),
 });
 

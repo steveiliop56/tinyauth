@@ -13,21 +13,36 @@ services:
     image: traefik/whoami:latest
     labels:
       traefik.enable: true
-      traefik.http.routers.nginx.rule: Host(`whoami.dev.example.com`)
+      traefik.http.routers.nginx.rule: Host(`whoami.example.com`)
       traefik.http.services.nginx.loadbalancer.server.port: 80
       traefik.http.routers.nginx.middlewares: tinyauth
 
-  tinyauth:
-    container_name: tinyauth
+  tinyauth-frontend:
+    container_name: tinyauth-frontend
     build:
       context: .
-      dockerfile: Dockerfile
-    environment:
-      - SECRET=some-random-32-chars-string
-      - APP_URL=http://tinyauth.dev.example.com
-      - USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u # user:password
+      dockerfile: Dockerfile.site.dev
+    volumes:
+      - ./site/src:/site/src
+    ports:
+      - 5173:5173
     labels:
       traefik.enable: true
-      traefik.http.routers.tinyauth.rule: Host(`tinyauth.dev.example.com`)
-      traefik.http.services.tinyauth.loadbalancer.server.port: 3000
+      traefik.http.routers.tinyauth.rule: Host(`tinyauth.example.com`)
+      traefik.http.services.tinyauth.loadbalancer.server.port: 5173
+
+  tinyauth-backend:
+    container_name: tinyauth-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.app.dev
+    env_file: .env
+    volumes:
+      - ./internal:/tinyauth/internal
+      - ./cmd:/tinyauth/cmd
+      - ./main.go:/tinyauth/main.go
+    ports:
+      - 3000:3000
+    labels:
+      traefik.enable: true
       traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth/traefik

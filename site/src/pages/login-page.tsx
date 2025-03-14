@@ -9,14 +9,15 @@ import { OAuthButtons } from "../components/auth/oauth-buttons";
 import { LoginFormValues } from "../schemas/login-schema";
 import { LoginForm } from "../components/auth/login-forn";
 import { isQueryValid } from "../utils/utils";
+import { useAppContext } from "../context/app-context";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
   const redirectUri = params.get("redirect_uri") ?? "";
 
-  const { isLoggedIn, configuredProviders, title, genericName } =
-    useUserContext();
+  const { isLoggedIn } = useUserContext();
+  const { configuredProviders, title, genericName } = useAppContext();
 
   const oauthProviders = configuredProviders.filter(
     (value) => value !== "username",
