@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -122,9 +123,9 @@ func TestLogin(t *testing.T) {
 	}
 }
 
-// Test status
-func TestStatus(t *testing.T) {
-	t.Log("Testing status")
+// Test user context
+func TestUserContext(t *testing.T) {
+	t.Log("Testing user context")
 
 	// Get API
 	api := getAPI(t)
@@ -133,7 +134,7 @@ func TestStatus(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	// Create request
-	req, err := http.NewRequest("GET", "/api/status", nil)
+	req, err := http.NewRequest("GET", "/api/user", nil)
 
 	// Check if there was an error
 	if err != nil {
@@ -152,11 +153,31 @@ func TestStatus(t *testing.T) {
 	// Assert
 	assert.Equal(t, recorder.Code, http.StatusOK)
 
-	// Parse the body
-	body := recorder.Body.String()
+	// Read the body of the response
+	body, bodyErr := io.ReadAll(recorder.Body)
 
-	if !strings.Contains(body, "user") {
-		t.Fatalf("Expected user in body")
+	// Check if there was an error
+	if bodyErr != nil {
+		t.Fatalf("Error getting body: %v", bodyErr)
+	}
+
+	// Unmarshal the body into the user struct
+	type User struct {
+		Username string `json:"username"`
+	}
+
+	var user User
+
+	jsonErr := json.Unmarshal(body, &user)
+
+	// Check if there was an error
+	if jsonErr != nil {
+		t.Fatalf("Error unmarshalling body: %v", jsonErr)
+	}
+
+	// We should get the username back
+	if user.Username != "user" {
+		t.Fatalf("Expected user, got %s", user.Username)
 	}
 }
 
