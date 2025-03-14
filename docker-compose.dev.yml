@@ -21,7 +21,7 @@ services:
     container_name: tinyauth-frontend
     build:
       context: .
-      dockerfile: Dockerfile.site.dev
+      dockerfile: site/Dockerfile.dev
     volumes:
       - ./site/src:/site/src
     ports:
@@ -35,7 +35,7 @@ services:
     container_name: tinyauth-backend
     build:
       context: .
-      dockerfile: Dockerfile.app.dev
+      dockerfile: Dockerfile.dev
     env_file: .env
     volumes:
       - ./internal:/tinyauth/internal
