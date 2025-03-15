@@ -46,14 +46,14 @@ func ParseUsers(users string) (types.Users, error) {
 	return usersParsed, nil
 }
 
-// Root url parses parses a hostname and returns the root domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
-func GetRootURL(urlSrc string) (string, error) {
+// Get upper domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
+func GetUpperDomain(urlSrc string) (string, error) {
 	// Make sure the url is valid
-	urlParsed, parseErr := url.Parse(urlSrc)
+	urlParsed, err := url.Parse(urlSrc)
 
 	// Check if there was an error
-	if parseErr != nil {
-		return "", parseErr
+	if err != nil {
+		return "", err
 	}
 
 	// Split the hostname by period
