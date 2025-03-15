@@ -1,0 +1,44 @@
+basePath: /api
+definitions:
+  types.SimpleResponse:
+    properties:
+      message:
+        example: OK
+        type: string
+      status:
+        example: 200
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: Documentation for the Tinyauth API
+  title: Tinyauth API
+  version: "1.0"
+paths:
+  /auth/logout:
+    get:
+      description: Log the user out by invalidating the session cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SimpleResponse'
+      summary: Logout
+      tags:
+      - auth
+  /healthcheck:
+    get:
+      description: Simple health check
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SimpleResponse'
+      summary: Health Check
+      tags:
+      - health
+swagger: "2.0"

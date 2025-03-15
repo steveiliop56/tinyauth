@@ -10,10 +10,12 @@ import (
 	"time"
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
-	"tinyauth/internal/utils"
+
+	docs "tinyauth/docs"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -21,14 +23,17 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/pquerna/otp/totp"
 	"github.com/rs/zerolog/log"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func NewAPI(config types.APIConfig, hooks *hooks.Hooks, auth *auth.Auth, providers *providers.Providers) *API {
+func NewAPI(config types.APIConfig, hooks *hooks.Hooks, auth *auth.Auth, providers *providers.Providers, handlers *handlers.Handlers) *API {
 	return &API{
 		Config:    config,
 		Hooks:     hooks,
 		Auth:      auth,
 		Providers: providers,
+		Handlers:  handlers,
 	}
 }
 
@@ -38,8 +43,14 @@ type API struct {
 	Hooks     *hooks.Hooks
 	Auth      *auth.Auth
 	Providers *providers.Providers
+	Handlers  *handlers.Handlers
 	Domain    string
 }
+
+// @title           Tinyauth API
+// @version         1.0
+// @description     Documentation for the Tinyauth API
+// @BasePath  /api
 
 func (api *API) Init() {
 	// Disable gin logs
@@ -49,6 +60,7 @@ func (api *API) Init() {
 	log.Debug().Msg("Setting up router")
 	router := gin.New()
 	router.Use(zerolog())
+	router.RedirectTrailingSlash = true
 
 	// Read UI assets
 	log.Debug().Msg("Setting up assets")
@@ -66,19 +78,6 @@ func (api *API) Init() {
 	log.Debug().Msg("Setting up cookie store")
 	store := cookie.NewStore([]byte(api.Config.Secret))
 
-	// Get domain to use for session cookies
-	log.Debug().Msg("Getting domain")
-	domain, domainErr := utils.GetRootURL(api.Config.AppURL)
-
-	if domainErr != nil {
-		log.Fatal().Err(domainErr).Msg("Failed to get domain")
-		os.Exit(1)
-	}
-
-	log.Info().Str("domain", domain).Msg("Using domain for cookies")
-
-	api.Domain = fmt.Sprintf(".%s", domain)
-
 	// Use session middleware
 	store.Options(sessions.Options{
 		Domain:   api.Domain,
@@ -89,6 +88,15 @@ func (api *API) Init() {
 	})
 
 	router.Use(sessions.Sessions("tinyauth", store))
+
+	// Configure swagger
+	docs.SwaggerInfo.BasePath = "/api"
+
+	// Swagger middleware
+	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	router.GET("/api/swagger", func(ctx *gin.Context) {
+		ctx.Redirect(http.StatusPermanentRedirect, "/api/swagger/index.html")
+	})
 
 	// UI middleware
 	router.Use(func(c *gin.Context) {
@@ -114,179 +122,9 @@ func (api *API) Init() {
 }
 
 func (api *API) SetupRoutes() {
-	api.Router.GET("/api/auth/:proxy", func(c *gin.Context) {
-		// Create struct for proxy
-		var proxy types.Proxy
-
-		// Bind URI
-		bindErr := c.BindUri(&proxy)
-
-		// Handle error
-		if bindErr != nil {
-			log.Error().Err(bindErr).Msg("Failed to bind URI")
-			c.JSON(400, gin.H{
-				"status":  400,
-				"message": "Bad Request",
-			})
-			return
-		}
-
-		// Check if the request is coming from a browser (tools like curl/bruno use */* and they don't include the text/html)
-		isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
-
-		if isBrowser {
-			log.Debug().Msg("Request is most likely coming from a browser")
-		} else {
-			log.Debug().Msg("Request is most likely not coming from a browser")
-		}
-
-		log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
-
-		// Check if auth is enabled
-		authEnabled, authEnabledErr := api.Auth.AuthEnabled(c)
-
-		// Handle error
-		if authEnabledErr != nil {
-			// Return 500 if nginx is the proxy or if the request is not coming from a browser
-			if proxy.Proxy == "nginx" || !isBrowser {
-				log.Error().Err(authEnabledErr).Msg("Failed to check if auth is enabled")
-				c.JSON(500, gin.H{
-					"status":  500,
-					"message": "Internal Server Error",
-				})
-				return
-			}
-
-			// Return the internal server error page
-			if api.handleError(c, "Failed to check if auth is enabled", authEnabledErr) {
-				return
-			}
-		}
-
-		// If auth is not enabled, return 200
-		if !authEnabled {
-			// The user is allowed to access the app
-			c.JSON(200, gin.H{
-				"status":  200,
-				"message": "Authenticated",
-			})
-
-			// Stop further processing
-			return
-		}
-
-		// Get user context
-		userContext := api.Hooks.UseUserContext(c)
-
-		// Get headers
-		uri := c.Request.Header.Get("X-Forwarded-Uri")
-		proto := c.Request.Header.Get("X-Forwarded-Proto")
-		host := c.Request.Header.Get("X-Forwarded-Host")
-
-		// Check if user is logged in
-		if userContext.IsLoggedIn {
-			log.Debug().Msg("Authenticated")
-
-			// Check if user is allowed to access subdomain, if request is nginx.example.com the subdomain (resource) is nginx
-			appAllowed, appAllowedErr := api.Auth.ResourceAllowed(c, userContext)
-
-			// Check if there was an error
-			if appAllowedErr != nil {
-				// Return 500 if nginx is the proxy or if the request is not coming from a browser
-				if proxy.Proxy == "nginx" || !isBrowser {
-					log.Error().Err(appAllowedErr).Msg("Failed to check if app is allowed")
-					c.JSON(500, gin.H{
-						"status":  500,
-						"message": "Internal Server Error",
-					})
-					return
-				}
-
-				// Return the internal server error page
-				if api.handleError(c, "Failed to check if app is allowed", appAllowedErr) {
-					return
-				}
-			}
-
-			log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if app is allowed")
-
-			// The user is not allowed to access the app
-			if !appAllowed {
-				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
-
-				// Set WWW-Authenticate header
-				c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
-
-				// Return 401 if nginx is the proxy or if the request is not coming from a browser
-				if proxy.Proxy == "nginx" || !isBrowser {
-					c.JSON(401, gin.H{
-						"status":  401,
-						"message": "Unauthorized",
-					})
-					return
-				}
-
-				// Build query
-				queries, queryErr := query.Values(types.UnauthorizedQuery{
-					Username: userContext.Username,
-					Resource: strings.Split(host, ".")[0],
-				})
-
-				// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
-				if api.handleError(c, "Failed to build query", queryErr) {
-					return
-				}
-
-				// We are using caddy/traefik so redirect
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", api.Config.AppURL, queries.Encode()))
-
-				// Stop further processing
-				return
-			}
-
-			// Set the user header
-			c.Header("Remote-User", userContext.Username)
-
-			// The user is allowed to access the app
-			c.JSON(200, gin.H{
-				"status":  200,
-				"message": "Authenticated",
-			})
-
-			// Stop further processing
-			return
-		}
-
-		// The user is not logged in
-		log.Debug().Msg("Unauthorized")
-
-		// Set www-authenticate header
-		c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
-
-		// Return 401 if nginx is the proxy or if the request is not coming from a browser
-		if proxy.Proxy == "nginx" || !isBrowser {
-			c.JSON(401, gin.H{
-				"status":  401,
-				"message": "Unauthorized",
-			})
-			return
-		}
-
-		// Build query
-		queries, queryErr := query.Values(types.LoginQuery{
-			RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
-		})
-
-		// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
-		if api.handleError(c, "Failed to build query", queryErr) {
-			return
-		}
-
-		log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
-
-		// Redirect to login
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", api.Config.AppURL, queries.Encode()))
-	})
+	api.Router.GET("/api/healthcheck", api.Handlers.HealthCheck)
+	api.Router.GET("/api/auth/logout", api.Handlers.Logout)
+	api.Router.GET("/api/auth", api.Handlers.CheckAuth)
 
 	api.Router.POST("/api/login", func(c *gin.Context) {
 		// Create login struct
@@ -440,24 +278,6 @@ func (api *API) SetupRoutes() {
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Logged in",
-		})
-	})
-
-	api.Router.POST("/api/logout", func(c *gin.Context) {
-		log.Debug().Msg("Logging out")
-
-		// Delete session cookie
-		api.Auth.DeleteSessionCookie(c)
-
-		log.Debug().Msg("Cleaning up redirect cookie")
-
-		// Clean up redirect cookie if it exists
-		c.SetCookie("tinyauth_redirect_uri", "", -1, "/", api.Domain, api.Config.CookieSecure, true)
-
-		// Return logged out
-		c.JSON(200, gin.H{
-			"status":  200,
-			"message": "Logged out",
 		})
 	})
 
@@ -707,14 +527,6 @@ func (api *API) SetupRoutes() {
 
 		// Redirect to continue with the redirect URI
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", api.Config.AppURL, redirectQuery.Encode()))
-	})
-
-	// Simple healthcheck
-	api.Router.GET("/api/healthcheck", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  200,
-			"message": "OK",
-		})
 	})
 }
 

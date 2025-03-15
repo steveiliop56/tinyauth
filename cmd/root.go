@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/docker"
+	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -106,8 +108,18 @@ var rootCmd = &cobra.Command{
 		// Create hooks service
 		hooks := hooks.NewHooks(auth, providers)
 
-		// Create API
-		api := api.NewAPI(types.APIConfig{
+		// Create doman
+		domain, domainErr := utils.GetRootURL(config.AppURL)
+
+		if domainErr != nil {
+			log.Fatal().Err(domainErr).Msg("Failed to get domain")
+			os.Exit(1)
+		}
+
+		log.Info().Str("domain", domain).Msg("Using domain for cookies")
+
+		// Create api config
+		apiConfig := types.APIConfig{
 			Port:            config.Port,
 			Address:         config.Address,
 			Secret:          config.Secret,
@@ -117,7 +129,14 @@ var rootCmd = &cobra.Command{
 			SessionExpiry:   config.SessionExpiry,
 			Title:           config.Title,
 			GenericName:     config.GenericName,
-		}, hooks, auth, providers)
+			Domain:          fmt.Sprintf(".%s", domain),
+		}
+
+		// Create handlers
+		apiHandlers := handlers.NewHandlers(apiConfig, auth, hooks)
+
+		// Create API
+		api := api.NewAPI(apiConfig, hooks, auth, providers, apiHandlers)
 
 		// Setup routes
 		api.Init()

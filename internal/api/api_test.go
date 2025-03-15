@@ -10,6 +10,7 @@ import (
 	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/docker"
+	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -67,8 +68,11 @@ func getAPI(t *testing.T) *api.API {
 	// Create hooks service
 	hooks := hooks.NewHooks(auth, providers)
 
+	// Create handlers
+	apiHandlers := handlers.NewHandlers(apiConfig)
+
 	// Create API
-	api := api.NewAPI(apiConfig, hooks, auth, providers)
+	api := api.NewAPI(apiConfig, hooks, auth, providers, apiHandlers)
 
 	// Setup routes
 	api.Init()

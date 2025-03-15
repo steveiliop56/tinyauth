@@ -40,6 +40,7 @@ services:
     volumes:
       - ./internal:/tinyauth/internal
       - ./cmd:/tinyauth/cmd
+      - ./docs:/tinyauth/docs
       - ./main.go:/tinyauth/main.go
     ports:
       - 3000:3000
