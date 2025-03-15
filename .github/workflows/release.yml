@@ -125,9 +125,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/tinyauth
           tags: |
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}
-            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern={{version}},prefix=v
+            type=semver,pattern={{major}},prefix=v
+            type=semver,pattern={{major}}.{{minor}},prefix=v
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
