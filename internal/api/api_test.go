@@ -5,11 +5,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/docker"
+	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -19,13 +21,21 @@ import (
 
 // Simple API config for tests
 var apiConfig = types.APIConfig{
-	Port:            8080,
-	Address:         "0.0.0.0",
-	Secret:          "super-secret-api-thing-for-tests", // It is 32 chars long
-	AppURL:          "http://tinyauth.localhost",
+	Port:          8080,
+	Address:       "0.0.0.0",
+	Secret:        "super-secret-api-thing-for-tests", // It is 32 chars long
+	CookieSecure:  false,
+	SessionExpiry: 3600,
+}
+
+// Simple handlers config for tests
+var handlersConfig = types.HandlersConfig{
+	AppURL:          "http://localhost:8080",
+	Domain:          ".localhost",
 	CookieSecure:    false,
-	SessionExpiry:   3600,
 	DisableContinue: false,
+	Title:           "Tinyauth",
+	GenericName:     "Generic",
 }
 
 // Cookie
@@ -67,8 +77,11 @@ func getAPI(t *testing.T) *api.API {
 	// Create hooks service
 	hooks := hooks.NewHooks(auth, providers)
 
+	// Create handlers service
+	handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers)
+
 	// Create API
-	api := api.NewAPI(apiConfig, hooks, auth, providers)
+	api := api.NewAPI(apiConfig, handlers)
 
 	// Setup routes
 	api.Init()
@@ -120,6 +133,70 @@ func TestLogin(t *testing.T) {
 	// Check if the cookie is set
 	if cookie == "" {
 		t.Fatalf("Cookie not set")
+	}
+}
+
+// Test app context
+func TestAppContext(t *testing.T) {
+	t.Log("Testing app context")
+
+	// Get API
+	api := getAPI(t)
+
+	// Create recorder
+	recorder := httptest.NewRecorder()
+
+	// Create request
+	req, err := http.NewRequest("GET", "/api/app", nil)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error creating request: %v", err)
+	}
+
+	// Set the cookie
+	req.AddCookie(&http.Cookie{
+		Name:  "tinyauth",
+		Value: cookie,
+	})
+
+	// Serve the request
+	api.Router.ServeHTTP(recorder, req)
+
+	// Assert
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Read the body of the response
+	body, bodyErr := io.ReadAll(recorder.Body)
+
+	// Check if there was an error
+	if bodyErr != nil {
+		t.Fatalf("Error getting body: %v", bodyErr)
+	}
+
+	// Unmarshal the body into the user struct
+	var app types.AppContext
+
+	jsonErr := json.Unmarshal(body, &app)
+
+	// Check if there was an error
+	if jsonErr != nil {
+		t.Fatalf("Error unmarshalling body: %v", jsonErr)
+	}
+
+	// Create tests values
+	expected := types.AppContext{
+		Status:              200,
+		Message:             "OK",
+		ConfiguredProviders: []string{"username"},
+		DisableContinue:     false,
+		Title:               "Tinyauth",
+		GenericName:         "Generic",
+	}
+
+	// We should get the username back
+	if !reflect.DeepEqual(app, expected) {
+		t.Fatalf("Expected %v, got %v", expected, app)
 	}
 }
 

@@ -382,7 +382,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 	// Create app context struct
 	appContext := types.AppContext{
 		Status:              200,
-		Message:             "Ok",
+		Message:             "OK",
 		ConfiguredProviders: configuredProviders,
 		DisableContinue:     h.Config.DisableContinue,
 		Title:               h.Config.Title,
@@ -490,7 +490,7 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 		// Return tailscale URL (immidiately redirects to the callback)
 		c.JSON(200, gin.H{
 			"status":  200,
-			"message": "Ok",
+			"message": "OK",
 			"url":     fmt.Sprintf("%s/api/oauth/callback/tailscale?%s", h.Config.AppURL, tailscaleQuery.Encode()),
 		})
 		return
@@ -499,7 +499,7 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	// Return auth URL
 	c.JSON(200, gin.H{
 		"status":  200,
-		"message": "Ok",
+		"message": "OK",
 		"url":     authURL,
 	})
 }
