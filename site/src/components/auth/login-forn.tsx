@@ -1,6 +1,7 @@
 import { TextInput, PasswordInput, Button } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { LoginFormValues, loginSchema } from "../../schemas/login-schema";
+import { useTranslation } from "react-i18next";
 
 interface LoginFormProps {
   isLoading: boolean;
@@ -9,6 +10,7 @@ interface LoginFormProps {
 
 export const LoginForm = (props: LoginFormProps) => {
   const { isLoading, onSubmit } = props;
+  const { t } = useTranslation();
 
   const form = useForm({
     mode: "uncontrolled",
@@ -22,7 +24,7 @@ export const LoginForm = (props: LoginFormProps) => {
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
       <TextInput
-        label="Username"
+        label={t("loginUsername")}
         placeholder="user@example.com"
         required
         disabled={isLoading}
@@ -30,7 +32,7 @@ export const LoginForm = (props: LoginFormProps) => {
         {...form.getInputProps("username")}
       />
       <PasswordInput
-        label="Password"
+        label={t("loginPassword")}
         placeholder="password"
         required
         mt="md"
@@ -39,7 +41,7 @@ export const LoginForm = (props: LoginFormProps) => {
         {...form.getInputProps("password")}
       />
       <Button fullWidth mt="xl" type="submit" loading={isLoading}>
-        Login
+        {t("loginSubmit")}
       </Button>
     </form>
   );

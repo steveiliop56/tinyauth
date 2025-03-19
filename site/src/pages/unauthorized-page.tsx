@@ -2,12 +2,15 @@ import { Button, Code, Paper, Text } from "@mantine/core";
 import { Layout } from "../components/layouts/layout";
 import { Navigate } from "react-router";
 import { isQueryValid } from "../utils/utils";
+import { Trans, useTranslation } from "react-i18next";
 
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
   const params = new URLSearchParams(queryString);
   const username = params.get("username") ?? "";
   const resource = params.get("resource") ?? "";
+
+  const { t } = useTranslation();
 
   if (!isQueryValid(username)) {
     return <Navigate to="/" />;
@@ -17,16 +20,26 @@ export const UnauthorizedPage = () => {
     <Layout>
       <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
         <Text size="xl" fw={700}>
-          Unauthorized
+          {t("Unauthorized")}
         </Text>
         <Text>
-          The user with username <Code>{username}</Code> is not authorized to{" "}
           {isQueryValid(resource) ? (
-            <span>
-              access the <Code>{resource}</Code> resource.
-            </span>
+            <Text>
+              <Trans
+                i18nKey="unauthorizedResourceSubtitle"
+                t={t}
+                components={{ Code: <Code /> }}
+                values={{ resource, username }}
+              />
+            </Text>
           ) : (
-            "login."
+            <Text>
+              <Trans
+                i18nKey="unauthorizedLoginSubtitle"
+                t={t}
+                values={{ username }}
+              />
+            </Text>
           )}
         </Text>
         <Button
@@ -34,7 +47,7 @@ export const UnauthorizedPage = () => {
           mt="xl"
           onClick={() => window.location.replace("/login")}
         >
-          Try again
+          {t("unauthorizedButton")}
         </Button>
       </Paper>
     </Layout>

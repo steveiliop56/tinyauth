@@ -7,10 +7,12 @@ import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
 import { capitalize } from "../utils/utils";
 import { useAppContext } from "../context/app-context";
+import { Trans, useTranslation } from "react-i18next";
 
 export const LogoutPage = () => {
   const { isLoggedIn, username, oauth, provider } = useUserContext();
   const { genericName } = useAppContext();
+  const { t } = useTranslation();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
@@ -22,15 +24,15 @@ export const LogoutPage = () => {
     },
     onError: () => {
       notifications.show({
-        title: "Failed to logout",
-        message: "Please try again",
+        title: t("logoutFailTitle"),
+        message: t("logoutFailSubtitle"),
         color: "red",
       });
     },
     onSuccess: () => {
       notifications.show({
-        title: "Logged out",
-        message: "Goodbye!",
+        title: t("logoutSuccessTitle"),
+        message: t("logoutSuccessSubtitle"),
         color: "green",
       });
       setTimeout(() => {
@@ -43,13 +45,30 @@ export const LogoutPage = () => {
     <Layout>
       <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
         <Text size="xl" fw={700}>
-          Logout
+          {t("logoutTitle")}
         </Text>
         <Text>
-          You are currently logged in as <Code>{username}</Code>
-          {oauth &&
-            ` using ${capitalize(provider === "generic" ? genericName : provider)} OAuth`}
-          . Click the button below to log out.
+          {oauth ? (
+            <Trans
+              i18nKey="logoutOauthSubtitle"
+              t={t}
+              components={{ Code: <Code /> }}
+              values={{
+                provider:
+                  provider === "generic" ? genericName : capitalize(provider),
+                username: username,
+              }}
+            />
+          ) : (
+            <Trans
+              i18nKey="logoutUsernameSubtitle"
+              t={t}
+              components={{ Code: <Code /> }}
+              values={{
+                username: username,
+              }}
+            />
+          )}
         </Text>
         <Button
           fullWidth
@@ -57,7 +76,7 @@ export const LogoutPage = () => {
           onClick={() => logoutMutation.mutate()}
           loading={logoutMutation.isLoading}
         >
-          Logout
+          {t("logoutTitle")}
         </Button>
       </Paper>
     </Layout>

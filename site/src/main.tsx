@@ -17,6 +17,7 @@ import { UnauthorizedPage } from "./pages/unauthorized-page.tsx";
 import { InternalServerError } from "./pages/internal-server-error.tsx";
 import { TotpPage } from "./pages/totp-page.tsx";
 import { AppContextProvider } from "./context/app-context.tsx";
+import "./lib/i18n/i18n.ts";
 
 const queryClient = new QueryClient({
   defaultOptions: {

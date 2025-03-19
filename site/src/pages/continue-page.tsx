@@ -6,6 +6,7 @@ import { Layout } from "../components/layouts/layout";
 import { ReactNode } from "react";
 import { isQueryValid } from "../utils/utils";
 import { useAppContext } from "../context/app-context";
+import { Trans, useTranslation } from "react-i18next";
 
 export const ContinuePage = () => {
   const queryString = window.location.search;
@@ -14,6 +15,7 @@ export const ContinuePage = () => {
 
   const { isLoggedIn } = useUserContext();
   const { disableContinue } = useAppContext();
+  const { t } = useTranslation();
 
   if (!isLoggedIn) {
     return <Navigate to={`/login?redirect_uri=${redirectUri}`} />;
@@ -25,8 +27,8 @@ export const ContinuePage = () => {
 
   const redirect = () => {
     notifications.show({
-      title: "Redirecting",
-      message: "You should be redirected to the app soon",
+      title: t("continueRedirectingTitle"),
+      message: t("continueRedirectingSubtitle"),
       color: "blue",
     });
     setTimeout(() => {
@@ -42,12 +44,9 @@ export const ContinuePage = () => {
     return (
       <ContinuePageLayout>
         <Text size="xl" fw={700}>
-          Invalid Redirect
+          {t("Invalid redirect")}
         </Text>
-        <Text>
-          The redirect URL is invalid, please contact the app owner to fix the
-          issue.
-        </Text>
+        <Text>{t("The redirect URL is invalid")}</Text>
       </ContinuePageLayout>
     );
   }
@@ -57,9 +56,9 @@ export const ContinuePage = () => {
     return (
       <ContinuePageLayout>
         <Text size="xl" fw={700}>
-          Redirecting
+          {t("continueRedirectingTitle")}
         </Text>
-        <Text>You should be redirected to your app soon.</Text>
+        <Text>{t("continueRedirectingSubtitle")}</Text>
       </ContinuePageLayout>
     );
   }
@@ -68,14 +67,17 @@ export const ContinuePage = () => {
     return (
       <ContinuePageLayout>
         <Text size="xl" fw={700}>
-          Insecure Redirect
+          {t("continueInsecureRedirectTitle")}
         </Text>
         <Text>
-          Your are trying to redirect from <Code>https</Code> to{" "}
-          <Code>http</Code>, are you sure you want to continue?
+          <Trans
+            i18nKey="continueInsecureRedirectSubtitle"
+            t={t}
+            components={{ Code: <Code /> }}
+          />
         </Text>
         <Button fullWidth mt="xl" color="yellow" onClick={redirect}>
-          Continue
+          {t("continueTitle")}
         </Button>
       </ContinuePageLayout>
     );
@@ -84,11 +86,11 @@ export const ContinuePage = () => {
   return (
     <ContinuePageLayout>
       <Text size="xl" fw={700}>
-        Continue
+        {t("continueTitle")}
       </Text>
-      <Text>Click the button to continue to your app.</Text>
+      <Text>{t("continueSubtitle")}</Text>
       <Button fullWidth mt="xl" onClick={redirect}>
-        Continue
+        {t("continueTitle")}
       </Button>
     </ContinuePageLayout>
   );

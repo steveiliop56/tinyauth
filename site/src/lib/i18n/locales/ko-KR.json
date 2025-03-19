@@ -1,0 +1,15 @@
+{
+    "loginTitle": "Welcome back, login with",
+    "loginDivider": "Or continue with password",
+    "loginUsername": "Username",
+    "loginPassword": "Password",
+    "loginSubmit": "Login",
+    "loginFailTitle": "Failed to login",
+    "loginFailSubtitle": "Please check your username and password",
+    "loginSuccessTitle": "Logged in",
+    "loginSuccessSubtitle": "Welcome back!",
+    "loginOauthFailTitle": "Internal error",
+    "loginOauthFailSubtitle": "Failed to get OAuth URL",
+    "loginOauthSuccessTitle": "Redirecting",
+    "loginOauthSuccessSubtitle": "Redirecting to your OAuth provider"
+}

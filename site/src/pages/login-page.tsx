@@ -10,6 +10,7 @@ import { LoginFormValues } from "../schemas/login-schema";
 import { LoginForm } from "../components/auth/login-forn";
 import { isQueryValid } from "../utils/utils";
 import { useAppContext } from "../context/app-context";
+import { useTranslation } from "react-i18next";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
@@ -18,6 +19,7 @@ export const LoginPage = () => {
 
   const { isLoggedIn } = useUserContext();
   const { configuredProviders, title, genericName } = useAppContext();
+  const { t } = useTranslation();
 
   const oauthProviders = configuredProviders.filter(
     (value) => value !== "username",
@@ -33,8 +35,8 @@ export const LoginPage = () => {
     },
     onError: () => {
       notifications.show({
-        title: "Failed to login",
-        message: "Check your username and password",
+        title: t("loginFailTitle"),
+        message: t("loginFailSubtitle"),
         color: "red",
       });
     },
@@ -45,8 +47,8 @@ export const LoginPage = () => {
       }
 
       notifications.show({
-        title: "Logged in",
-        message: "Welcome back!",
+        title: t("loginSuccessTitle"),
+        message: t("loginSuccessSubtitle"),
         color: "green",
       });
 
@@ -69,15 +71,15 @@ export const LoginPage = () => {
     },
     onError: () => {
       notifications.show({
-        title: "Internal error",
-        message: "Failed to get OAuth URL",
+        title: t("loginOauthFailTitle"),
+        message: t("loginOauthFailSubtitle"),
         color: "red",
       });
     },
     onSuccess: (data) => {
       notifications.show({
-        title: "Redirecting",
-        message: "Redirecting to your OAuth provider",
+        title: t("loginOauthSuccessTitle"),
+        message: t("loginOauthSuccessSubtitle"),
         color: "blue",
       });
       setTimeout(() => {
@@ -97,7 +99,7 @@ export const LoginPage = () => {
         {oauthProviders.length > 0 && (
           <>
             <Text size="lg" fw={500} ta="center">
-              Welcome back, login with
+              {t("loginTitle")}
             </Text>
             <OAuthButtons
               oauthProviders={oauthProviders}
@@ -107,7 +109,7 @@ export const LoginPage = () => {
             />
             {configuredProviders.includes("username") && (
               <Divider
-                label="Or continue with password"
+                label={t("loginDivider")}
                 labelPosition="center"
                 my="lg"
               />

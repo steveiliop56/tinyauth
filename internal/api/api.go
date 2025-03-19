@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 	"tinyauth/internal/assets"
@@ -69,7 +70,18 @@ func (api *API) Init() {
 	router.Use(func(c *gin.Context) {
 		// If not an API request, serve the UI
 		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
+			// Check if the file exists
+			_, err := fs.Stat(dist, strings.TrimPrefix(c.Request.URL.Path, "/"))
+
+			// If the file doesn't exist, serve the index.html
+			if os.IsNotExist(err) {
+				c.Request.URL.Path = "/"
+			}
+
+			// Serve the file
 			fileServer.ServeHTTP(c.Writer, c.Request)
+
+			// Stop further processing
 			c.Abort()
 		}
 	})

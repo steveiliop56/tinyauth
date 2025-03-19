@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { notifications } from "@mantine/notifications";
 import { useAppContext } from "../context/app-context";
+import { useTranslation } from "react-i18next";
 
 export const TotpPage = () => {
   const queryString = window.location.search;
@@ -15,6 +16,7 @@ export const TotpPage = () => {
 
   const { totpPending, isLoggedIn } = useUserContext();
   const { title } = useAppContext();
+  const { t } = useTranslation();
 
   if (isLoggedIn) {
     return <Navigate to={`/logout`} />;
@@ -30,15 +32,15 @@ export const TotpPage = () => {
     },
     onError: () => {
       notifications.show({
-        title: "Failed to verify code",
-        message: "Please try again",
+        title: t("totpFailTitle"),
+        message: t("totpFailSubtitle"),
         color: "red",
       });
     },
     onSuccess: () => {
       notifications.show({
-        title: "Verified",
-        message: "Redirecting to your app",
+        title: t("totpSuccessTitle"),
+        message: t("totpSuccessSubtitle"),
         color: "green",
       });
       setTimeout(() => {
@@ -52,7 +54,7 @@ export const TotpPage = () => {
       <Title ta="center">{title}</Title>
       <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
         <Text size="lg" fw={500} mb="md" ta="center">
-          Enter your TOTP code
+          {t("totpTitle")}
         </Text>
         <TotpForm
           isLoading={totpMutation.isLoading}
