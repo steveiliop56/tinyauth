@@ -10,6 +10,7 @@
     <img alt="Commit activity" src="https://img.shields.io/github/commit-activity/w/steveiliop56/tinyauth">
     <img alt="Issues" src="https://img.shields.io/github/issues/steveiliop56/tinyauth">
     <img alt="Tinyauth CI" src="https://github.com/steveiliop56/tinyauth/actions/workflows/ci.yml/badge.svg">
+    <a title="Crowdin" target="_blank" href="https://crowdin.com"><img src="https://badges.crowdin.net/tinyauth/localized.svg"></a>
 </div>
 
 <br />
@@ -37,6 +38,10 @@ You can find documentation and guides on all available configuration of tinyauth
 ## Contributing
 
 All contributions to the codebase are welcome! If you have any recommendations on how to improve security or find a security issue in tinyauth please open an issue or pull request so it can be fixed as soon as possible!
+
+## Localization
+
+If you would like to help translating the project in more languages you can do so by visiting the [Crowdin](https://crowdin.com/project/tinyauth) page.
 
 ## License
 
