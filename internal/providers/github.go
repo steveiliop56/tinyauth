@@ -22,21 +22,21 @@ func GithubScopes() []string {
 
 func GetGithubEmail(client *http.Client) (string, error) {
 	// Get the user emails from github using the oauth http client
-	res, resErr := client.Get("https://api.github.com/user/emails")
+	res, err := client.Get("https://api.github.com/user/emails")
 
 	// Check if there was an error
-	if resErr != nil {
-		return "", resErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Got response from github")
 
 	// Read the body of the response
-	body, bodyErr := io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 
 	// Check if there was an error
-	if bodyErr != nil {
-		return "", bodyErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Read body from github")
@@ -45,11 +45,11 @@ func GetGithubEmail(client *http.Client) (string, error) {
 	var emails GithubUserInfoResponse
 
 	// Unmarshal the body into the user struct
-	jsonErr := json.Unmarshal(body, &emails)
+	err = json.Unmarshal(body, &emails)
 
 	// Check if there was an error
-	if jsonErr != nil {
-		return "", jsonErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Parsed emails from github")

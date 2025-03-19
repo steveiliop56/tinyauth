@@ -117,8 +117,8 @@ var rootCmd = &cobra.Command{
 		docker := docker.NewDocker()
 
 		// Initialize docker
-		dockerErr := docker.Init()
-		HandleError(dockerErr, "Failed to initialize docker")
+		err = docker.Init()
+		HandleError(err, "Failed to initialize docker")
 
 		// Create auth service
 		auth := auth.NewAuth(docker, users, oauthWhitelist, config.SessionExpiry)

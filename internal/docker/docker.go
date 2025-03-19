@@ -23,7 +23,7 @@ type Docker struct {
 
 func (docker *Docker) Init() error {
 	// Create a new docker client
-	apiClient, err := client.NewClientWithOpts(client.FromEnv)
+	client, err := client.NewClientWithOpts(client.FromEnv)
 
 	// Check if there was an error
 	if err != nil {
@@ -32,7 +32,7 @@ func (docker *Docker) Init() error {
 
 	// Set the context and api client
 	docker.Context = context.Background()
-	docker.Client = apiClient
+	docker.Client = client
 
 	// Done
 	return nil
@@ -81,11 +81,11 @@ func (docker *Docker) ContainerAction(appId string, runCheck func(labels appType
 	}
 
 	// Get the containers
-	containers, containersErr := docker.GetContainers()
+	containers, err := docker.GetContainers()
 
 	// If there is an error, return false
-	if containersErr != nil {
-		return false, containersErr
+	if err != nil {
+		return false, err
 	}
 
 	log.Debug().Msg("Got containers")
@@ -93,11 +93,11 @@ func (docker *Docker) ContainerAction(appId string, runCheck func(labels appType
 	// Loop through the containers
 	for _, container := range containers {
 		// Inspect the container
-		inspect, inspectErr := docker.InspectContainer(container.ID)
+		inspect, err := docker.InspectContainer(container.ID)
 
 		// If there is an error, return false
-		if inspectErr != nil {
-			return false, inspectErr
+		if err != nil {
+			return false, err
 		}
 
 		// Get the container name (for some reason it is /name)

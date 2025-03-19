@@ -102,7 +102,7 @@ func TestParseFileToLine(t *testing.T) {
 	t.Log("Testing parse file to line with a valid string")
 
 	// Test the parse file to line function with a valid string
-	content := "user1:pass1\nuser2:pass2"
+	content := "\nuser1:pass1\nuser2:pass2\n"
 	expected := "user1:pass1,user2:pass2"
 
 	result := utils.ParseFileToLine(content)

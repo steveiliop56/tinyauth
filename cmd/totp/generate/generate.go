@@ -18,7 +18,7 @@ import (
 // Interactive flag
 var interactive bool
 
-// i stands for input
+// Input user
 var iUser string
 
 var GenerateCmd = &cobra.Command{
@@ -46,18 +46,18 @@ var GenerateCmd = &cobra.Command{
 			)
 
 			// Run form
-			formErr := form.WithTheme(baseTheme).Run()
+			err := form.WithTheme(baseTheme).Run()
 
-			if formErr != nil {
-				log.Fatal().Err(formErr).Msg("Form failed")
+			if err != nil {
+				log.Fatal().Err(err).Msg("Form failed")
 			}
 		}
 
 		// Parse user
-		user, parseErr := utils.ParseUser(iUser)
+		user, err := utils.ParseUser(iUser)
 
-		if parseErr != nil {
-			log.Fatal().Err(parseErr).Msg("Failed to parse user")
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to parse user")
 		}
 
 		// Check if user was using docker escape
@@ -73,13 +73,13 @@ var GenerateCmd = &cobra.Command{
 		}
 
 		// Generate totp secret
-		key, keyErr := totp.Generate(totp.GenerateOpts{
+		key, err := totp.Generate(totp.GenerateOpts{
 			Issuer:      "Tinyauth",
 			AccountName: user.Username,
 		})
 
-		if keyErr != nil {
-			log.Fatal().Err(keyErr).Msg("Failed to generate totp secret")
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to generate totp secret")
 		}
 
 		// Create secret

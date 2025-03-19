@@ -20,21 +20,21 @@ func GoogleScopes() []string {
 
 func GetGoogleEmail(client *http.Client) (string, error) {
 	// Get the user info from google using the oauth http client
-	res, resErr := client.Get("https://www.googleapis.com/userinfo/v2/me")
+	res, err := client.Get("https://www.googleapis.com/userinfo/v2/me")
 
 	// Check if there was an error
-	if resErr != nil {
-		return "", resErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Got response from google")
 
 	// Read the body of the response
-	body, bodyErr := io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 
 	// Check if there was an error
-	if bodyErr != nil {
-		return "", bodyErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Read body from google")
@@ -43,11 +43,11 @@ func GetGoogleEmail(client *http.Client) (string, error) {
 	var user GoogleUserInfoResponse
 
 	// Unmarshal the body into the user struct
-	jsonErr := json.Unmarshal(body, &user)
+	err = json.Unmarshal(body, &user)
 
 	// Check if there was an error
-	if jsonErr != nil {
-		return "", jsonErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Parsed user from google")

@@ -53,11 +53,11 @@ func getAPI(t *testing.T) *api.API {
 	docker := docker.NewDocker()
 
 	// Initialize docker
-	dockerErr := docker.Init()
+	err := docker.Init()
 
 	// Check if there was an error
-	if dockerErr != nil {
-		t.Fatalf("Failed to initialize docker: %v", dockerErr)
+	if err != nil {
+		t.Fatalf("Failed to initialize docker: %v", err)
 	}
 
 	// Create auth service
@@ -167,21 +167,21 @@ func TestAppContext(t *testing.T) {
 	assert.Equal(t, recorder.Code, http.StatusOK)
 
 	// Read the body of the response
-	body, bodyErr := io.ReadAll(recorder.Body)
+	body, err := io.ReadAll(recorder.Body)
 
 	// Check if there was an error
-	if bodyErr != nil {
-		t.Fatalf("Error getting body: %v", bodyErr)
+	if err != nil {
+		t.Fatalf("Error getting body: %v", err)
 	}
 
 	// Unmarshal the body into the user struct
 	var app types.AppContext
 
-	jsonErr := json.Unmarshal(body, &app)
+	err = json.Unmarshal(body, &app)
 
 	// Check if there was an error
-	if jsonErr != nil {
-		t.Fatalf("Error unmarshalling body: %v", jsonErr)
+	if err != nil {
+		t.Fatalf("Error unmarshalling body: %v", err)
 	}
 
 	// Create tests values
@@ -231,11 +231,11 @@ func TestUserContext(t *testing.T) {
 	assert.Equal(t, recorder.Code, http.StatusOK)
 
 	// Read the body of the response
-	body, bodyErr := io.ReadAll(recorder.Body)
+	body, err := io.ReadAll(recorder.Body)
 
 	// Check if there was an error
-	if bodyErr != nil {
-		t.Fatalf("Error getting body: %v", bodyErr)
+	if err != nil {
+		t.Fatalf("Error getting body: %v", err)
 	}
 
 	// Unmarshal the body into the user struct
@@ -245,11 +245,11 @@ func TestUserContext(t *testing.T) {
 
 	var user User
 
-	jsonErr := json.Unmarshal(body, &user)
+	err = json.Unmarshal(body, &user)
 
 	// Check if there was an error
-	if jsonErr != nil {
-		t.Fatalf("Error unmarshalling body: %v", jsonErr)
+	if err != nil {
+		t.Fatalf("Error unmarshalling body: %v", err)
 	}
 
 	// We should get the username back

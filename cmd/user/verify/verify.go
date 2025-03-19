@@ -12,7 +12,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Interactive flag
 var interactive bool
+
+// Docker flag
 var docker bool
 
 // i stands for input
@@ -60,18 +63,18 @@ var VerifyCmd = &cobra.Command{
 			)
 
 			// Run form
-			formErr := form.WithTheme(baseTheme).Run()
+			err := form.WithTheme(baseTheme).Run()
 
-			if formErr != nil {
-				log.Fatal().Err(formErr).Msg("Form failed")
+			if err != nil {
+				log.Fatal().Err(err).Msg("Form failed")
 			}
 		}
 
 		// Parse user
-		user, userErr := utils.ParseUser(iUser)
+		user, err := utils.ParseUser(iUser)
 
-		if userErr != nil {
-			log.Fatal().Err(userErr).Msg("Failed to parse user")
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to parse user")
 		}
 
 		// Compare username
@@ -80,9 +83,9 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// Compare password
-		verifyErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(iPassword))
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(iPassword))
 
-		if verifyErr != nil {
+		if err != nil {
 			log.Fatal().Msg("Ppassword is incorrect")
 		}
 
@@ -96,9 +99,9 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// Check totp code
-		totpOk := totp.Validate(iTotp, user.TotpSecret)
+		ok := totp.Validate(iTotp, user.TotpSecret)
 
-		if !totpOk {
+		if !ok {
 			log.Fatal().Msg("Totp code incorrect")
 
 		}

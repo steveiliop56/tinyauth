@@ -31,21 +31,21 @@ var TailscaleEndpoint = oauth2.Endpoint{
 
 func GetTailscaleEmail(client *http.Client) (string, error) {
 	// Get the user info from tailscale using the oauth http client
-	res, resErr := client.Get("https://api.tailscale.com/api/v2/tailnet/-/users")
+	res, err := client.Get("https://api.tailscale.com/api/v2/tailnet/-/users")
 
 	// Check if there was an error
-	if resErr != nil {
-		return "", resErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Got response from tailscale")
 
 	// Read the body of the response
-	body, bodyErr := io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 
 	// Check if there was an error
-	if bodyErr != nil {
-		return "", bodyErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Read body from tailscale")
@@ -54,11 +54,11 @@ func GetTailscaleEmail(client *http.Client) (string, error) {
 	var users TailscaleUserInfoResponse
 
 	// Unmarshal the body into the user struct
-	jsonErr := json.Unmarshal(body, &users)
+	err = json.Unmarshal(body, &users)
 
 	// Check if there was an error
-	if jsonErr != nil {
-		return "", jsonErr
+	if err != nil {
+		return "", err
 	}
 
 	log.Debug().Msg("Parsed users from tailscale")
