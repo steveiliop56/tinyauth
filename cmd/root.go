@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/docker"
+	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -33,8 +35,8 @@ var rootCmd = &cobra.Command{
 
 		// Get config
 		var config types.Config
-		parseErr := viper.Unmarshal(&config)
-		HandleError(parseErr, "Failed to parse config")
+		err := viper.Unmarshal(&config)
+		HandleError(err, "Failed to parse config")
 
 		// Secrets
 		config.Secret = utils.GetSecret(config.Secret, config.SecretFile)
@@ -45,8 +47,8 @@ var rootCmd = &cobra.Command{
 
 		// Validate config
 		validator := validator.New()
-		validateErr := validator.Struct(config)
-		HandleError(validateErr, "Failed to validate config")
+		err = validator.Struct(config)
+		HandleError(err, "Failed to validate config")
 
 		// Logger
 		log.Logger = log.Level(zerolog.Level(config.LogLevel))
@@ -54,9 +56,8 @@ var rootCmd = &cobra.Command{
 
 		// Users
 		log.Info().Msg("Parsing users")
-		users, usersErr := utils.GetUsers(config.Users, config.UsersFile)
-
-		HandleError(usersErr, "Failed to parse users")
+		users, err := utils.GetUsers(config.Users, config.UsersFile)
+		HandleError(err, "Failed to parse users")
 
 		if len(users) == 0 && !utils.OAuthConfigured(config) {
 			HandleError(errors.New("no users or OAuth configured"), "No users or OAuth configured")
@@ -66,7 +67,14 @@ var rootCmd = &cobra.Command{
 		oauthWhitelist := utils.Filter(strings.Split(config.OAuthWhitelist, ","), func(val string) bool {
 			return val != ""
 		})
+
 		log.Debug().Msg("Parsed OAuth whitelist")
+
+		// Get domain
+		log.Debug().Msg("Getting domain")
+		domain, err := utils.GetUpperDomain(config.AppURL)
+		HandleError(err, "Failed to get upper domain")
+		log.Info().Str("domain", domain).Msg("Using domain for cookie store")
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
@@ -85,7 +93,25 @@ var rootCmd = &cobra.Command{
 			AppURL:                config.AppURL,
 		}
 
-		log.Debug().Msg("Parsed OAuth config")
+		// Create handlers config
+		serverConfig := types.HandlersConfig{
+			AppURL:          config.AppURL,
+			Domain:          fmt.Sprintf(".%s", domain),
+			CookieSecure:    config.CookieSecure,
+			DisableContinue: config.DisableContinue,
+			Title:           config.Title,
+			GenericName:     config.GenericName,
+		}
+
+		// Create api config
+		apiConfig := types.APIConfig{
+			Port:          config.Port,
+			Address:       config.Address,
+			Secret:        config.Secret,
+			CookieSecure:  config.CookieSecure,
+			SessionExpiry: config.SessionExpiry,
+			Domain:        domain,
+		}
 
 		// Create docker service
 		docker := docker.NewDocker()
@@ -106,18 +132,11 @@ var rootCmd = &cobra.Command{
 		// Create hooks service
 		hooks := hooks.NewHooks(auth, providers)
 
+		// Create handlers
+		handlers := handlers.NewHandlers(serverConfig, auth, hooks, providers)
+
 		// Create API
-		api := api.NewAPI(types.APIConfig{
-			Port:            config.Port,
-			Address:         config.Address,
-			Secret:          config.Secret,
-			AppURL:          config.AppURL,
-			CookieSecure:    config.CookieSecure,
-			DisableContinue: config.DisableContinue,
-			SessionExpiry:   config.SessionExpiry,
-			Title:           config.Title,
-			GenericName:     config.GenericName,
-		}, hooks, auth, providers)
+		api := api.NewAPI(apiConfig, handlers)
 
 		// Setup routes
 		api.Init()
@@ -134,7 +153,7 @@ func Execute() {
 }
 
 func HandleError(err error, msg string) {
-	// If error log it and exit
+	// If error, log it and exit
 	if err != nil {
 		log.Fatal().Err(err).Msg(msg)
 	}

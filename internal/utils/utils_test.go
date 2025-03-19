@@ -38,15 +38,15 @@ func TestParseUsers(t *testing.T) {
 	}
 }
 
-// Test the get root url function
-func TestGetRootURL(t *testing.T) {
-	t.Log("Testing get root url with a valid url")
+// Test the get upper domain function
+func TestGetUpperDomain(t *testing.T) {
+	t.Log("Testing get upper domain with a valid url")
 
-	// Test the get root url function with a valid url
+	// Test the get upper domain function with a valid url
 	url := "https://sub1.sub2.domain.com:8080"
 	expected := "sub2.domain.com"
 
-	result, err := utils.GetRootURL(url)
+	result, err := utils.GetUpperDomain(url)
 
 	// Check if there was an error
 	if err != nil {

@@ -69,15 +69,12 @@ type UserContext struct {
 
 // APIConfig is the configuration for the API
 type APIConfig struct {
-	Port            int
-	Address         string
-	Secret          string
-	AppURL          string
-	CookieSecure    bool
-	SessionExpiry   int
-	DisableContinue bool
-	GenericName     string
-	Title           string
+	Port          int
+	Address       string
+	Secret        string
+	CookieSecure  bool
+	SessionExpiry int
+	Domain        string
 }
 
 // OAuthConfig is the configuration for the providers
@@ -163,4 +160,14 @@ type AppContext struct {
 // Totp request is the request for the totp endpoint
 type TotpRequest struct {
 	Code string `json:"code"`
+}
+
+// Server configuration
+type HandlersConfig struct {
+	AppURL          string
+	Domain          string
+	CookieSecure    bool
+	DisableContinue bool
+	GenericName     string
+	Title           string
 }
