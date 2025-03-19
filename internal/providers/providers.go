@@ -128,11 +128,11 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 		log.Debug().Msg("Got client from github")
 
 		// Get the email from the github provider
-		email, emailErr := GetGithubEmail(client)
+		email, err := GetGithubEmail(client)
 
 		// Check if there was an error
-		if emailErr != nil {
-			return "", emailErr
+		if err != nil {
+			return "", err
 		}
 
 		log.Debug().Msg("Got email from github")
@@ -152,11 +152,11 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 		log.Debug().Msg("Got client from google")
 
 		// Get the email from the google provider
-		email, emailErr := GetGoogleEmail(client)
+		email, err := GetGoogleEmail(client)
 
 		// Check if there was an error
-		if emailErr != nil {
-			return "", emailErr
+		if err != nil {
+			return "", err
 		}
 
 		log.Debug().Msg("Got email from google")
@@ -176,11 +176,11 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 		log.Debug().Msg("Got client from tailscale")
 
 		// Get the email from the tailscale provider
-		email, emailErr := GetTailscaleEmail(client)
+		email, err := GetTailscaleEmail(client)
 
 		// Check if there was an error
-		if emailErr != nil {
-			return "", emailErr
+		if err != nil {
+			return "", err
 		}
 
 		log.Debug().Msg("Got email from tailscale")
@@ -200,11 +200,11 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 		log.Debug().Msg("Got client from generic")
 
 		// Get the email from the generic provider
-		email, emailErr := GetGenericEmail(client, providers.Config.GenericUserURL)
+		email, err := GetGenericEmail(client, providers.Config.GenericUserURL)
 
 		// Check if there was an error
-		if emailErr != nil {
-			return "", emailErr
+		if err != nil {
+			return "", err
 		}
 
 		log.Debug().Msg("Got email from generic")

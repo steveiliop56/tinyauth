@@ -144,7 +144,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to build query")
+				log.Error().Err(err).Msg("Failed to build queries")
 				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 				return
 			}
@@ -184,7 +184,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	})
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to build query")
+		log.Error().Err(err).Msg("Failed to build queries")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
@@ -323,10 +323,10 @@ func (h *Handlers) TotpHandler(c *gin.Context) {
 	}
 
 	// Check if totp is correct
-	totpOk := totp.Validate(totpReq.Code, user.TotpSecret)
+	ok := totp.Validate(totpReq.Code, user.TotpSecret)
 
 	// TOTP is incorrect
-	if !totpOk {
+	if !ok {
 		log.Debug().Msg("Totp incorrect")
 		c.JSON(401, gin.H{
 			"status":  401,
@@ -473,13 +473,13 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	// Tailscale does not have an auth url so we create a random code (does not need to be secure) to avoid caching and send it
 	if request.Provider == "tailscale" {
 		// Build tailscale query
-		tailscaleQuery, err := query.Values(types.TailscaleQuery{
+		queries, err := query.Values(types.TailscaleQuery{
 			Code: (1000 + rand.IntN(9000)),
 		})
 
 		// Handle error
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to build query")
+			log.Error().Err(err).Msg("Failed to build queries")
 			c.JSON(500, gin.H{
 				"status":  500,
 				"message": "Internal Server Error",
@@ -491,7 +491,7 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "OK",
-			"url":     fmt.Sprintf("%s/api/oauth/callback/tailscale?%s", h.Config.AppURL, tailscaleQuery.Encode()),
+			"url":     fmt.Sprintf("%s/api/oauth/callback/tailscale?%s", h.Config.AppURL, queries.Encode()),
 		})
 		return
 	}
@@ -572,19 +572,19 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 		log.Warn().Str("email", email).Msg("Email not whitelisted")
 
 		// Build query
-		unauthorizedQuery, err := query.Values(types.UnauthorizedQuery{
+		queries, err := query.Values(types.UnauthorizedQuery{
 			Username: email,
 		})
 
 		// Handle error
 		if err != nil {
-			log.Error().Msg("Failed to build query")
+			log.Error().Msg("Failed to build queries")
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 			return
 		}
 
 		// Redirect to unauthorized
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, unauthorizedQuery.Encode()))
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 	}
 
 	log.Debug().Msg("Email whitelisted")
@@ -596,10 +596,10 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	})
 
 	// Get redirect URI
-	redirectURI, redirectURIErr := c.Cookie("tinyauth_redirect_uri")
+	redirectURI, err := c.Cookie("tinyauth_redirect_uri")
 
 	// If it is empty it means that no redirect_uri was provided to the login screen so we just log in
-	if redirectURIErr != nil {
+	if err != nil {
 		c.Redirect(http.StatusPermanentRedirect, h.Config.AppURL)
 	}
 
@@ -609,7 +609,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	c.SetCookie("tinyauth_redirect_uri", "", -1, "/", h.Config.Domain, h.Config.CookieSecure, true)
 
 	// Build query
-	redirectQuery, err := query.Values(types.LoginQuery{
+	queries, err := query.Values(types.LoginQuery{
 		RedirectURI: redirectURI,
 	})
 
@@ -617,13 +617,13 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to build query")
+		log.Error().Msg("Failed to build queries")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
 	// Redirect to continue with the redirect URI
-	c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", h.Config.AppURL, redirectQuery.Encode()))
+	c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", h.Config.AppURL, queries.Encode()))
 }
 
 func (h *Handlers) HealthcheckHandler(c *gin.Context) {

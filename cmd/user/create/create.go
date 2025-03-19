@@ -12,7 +12,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Interactive flag
 var interactive bool
+
+// Docker flag
 var docker bool
 
 // i stands for input
@@ -51,10 +54,10 @@ var CreateCmd = &cobra.Command{
 			// Use simple theme
 			var baseTheme *huh.Theme = huh.ThemeBase()
 
-			formErr := form.WithTheme(baseTheme).Run()
+			err := form.WithTheme(baseTheme).Run()
 
-			if formErr != nil {
-				log.Fatal().Err(formErr).Msg("Form failed")
+			if err != nil {
+				log.Fatal().Err(err).Msg("Form failed")
 			}
 		}
 
@@ -66,10 +69,10 @@ var CreateCmd = &cobra.Command{
 		log.Info().Str("username", iUsername).Str("password", iPassword).Bool("docker", docker).Msg("Creating user")
 
 		// Hash password
-		password, passwordErr := bcrypt.GenerateFromPassword([]byte(iPassword), bcrypt.DefaultCost)
+		password, err := bcrypt.GenerateFromPassword([]byte(iPassword), bcrypt.DefaultCost)
 
-		if passwordErr != nil {
-			log.Fatal().Err(passwordErr).Msg("Failed to hash password")
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to hash password")
 		}
 
 		// Convert password to string

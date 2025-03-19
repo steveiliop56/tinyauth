@@ -160,7 +160,7 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bo
 	appId := strings.Split(host, ".")[0]
 
 	// Check if resource is allowed
-	allowed, allowedErr := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
+	allowed, err := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
 		// If the container has an oauth whitelist, check if the user is in it
 		if context.OAuth {
 			if len(labels.OAuthWhitelist) == 0 {
@@ -187,9 +187,9 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bo
 	})
 
 	// If there is an error, return false
-	if allowedErr != nil {
-		log.Error().Err(allowedErr).Msg("Error checking if resource is allowed")
-		return false, allowedErr
+	if err != nil {
+		log.Error().Err(err).Msg("Error checking if resource is allowed")
+		return false, err
 	}
 
 	// Return if the resource is allowed
@@ -205,7 +205,7 @@ func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
 	appId := strings.Split(host, ".")[0]
 
 	// Check if auth is enabled
-	enabled, enabledErr := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
+	enabled, err := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
 		// Check if the allowed label is empty
 		if labels.Allowed == "" {
 			// Auth enabled
@@ -213,12 +213,12 @@ func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
 		}
 
 		// Compile regex
-		regex, regexErr := regexp.Compile(labels.Allowed)
+		regex, err := regexp.Compile(labels.Allowed)
 
 		// If there is an error, invalid regex, auth enabled
-		if regexErr != nil {
-			log.Warn().Err(regexErr).Msg("Invalid regex")
-			return true, regexErr
+		if err != nil {
+			log.Warn().Err(err).Msg("Invalid regex")
+			return true, err
 		}
 
 		// Check if the uri matches the regex
@@ -232,9 +232,9 @@ func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
 	})
 
 	// If there is an error, auth enabled
-	if enabledErr != nil {
-		log.Error().Err(enabledErr).Msg("Error checking if auth is enabled")
-		return true, enabledErr
+	if err != nil {
+		log.Error().Err(err).Msg("Error checking if auth is enabled")
+		return true, err
 	}
 
 	return enabled, nil

@@ -29,11 +29,11 @@ func ParseUsers(users string) (types.Users, error) {
 
 	// Loop through the users and split them by colon
 	for _, user := range userList {
-		parsed, parseErr := ParseUser(user)
+		parsed, err := ParseUser(user)
 
 		// Check if there was an error
-		if parseErr != nil {
-			return types.Users{}, parseErr
+		if err != nil {
+			return types.Users{}, err
 		}
 
 		// Append the user to the users struct
@@ -69,19 +69,19 @@ func GetUpperDomain(urlSrc string) (string, error) {
 // Reads a file and returns the contents
 func ReadFile(file string) (string, error) {
 	// Check if the file exists
-	_, statErr := os.Stat(file)
+	_, err := os.Stat(file)
 
 	// Check if there was an error
-	if statErr != nil {
-		return "", statErr
+	if err != nil {
+		return "", err
 	}
 
 	// Read the file
-	data, readErr := os.ReadFile(file)
+	data, err := os.ReadFile(file)
 
 	// Check if there was an error
-	if readErr != nil {
-		return "", readErr
+	if err != nil {
+		return "", err
 	}
 
 	// Return the file contents
@@ -152,10 +152,10 @@ func GetUsers(conf string, file string) (types.Users, error) {
 	// If the file is set, read the file and append the users to the users string
 	if file != "" {
 		// Read the file
-		fileContents, fileErr := ReadFile(file)
+		contents, err := ReadFile(file)
 
 		// If there isn't an error we can append the users to the users string
-		if fileErr == nil {
+		if err == nil {
 			log.Debug().Msg("Using users from file")
 
 			// Append the users to the users string
@@ -164,7 +164,7 @@ func GetUsers(conf string, file string) (types.Users, error) {
 			}
 
 			// Parse the file contents into a comma separated list of users
-			users += ParseFileToLine(fileContents)
+			users += ParseFileToLine(contents)
 		}
 	}
 
