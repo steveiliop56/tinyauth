@@ -10,7 +10,7 @@
     <img alt="Commit activity" src="https://img.shields.io/github/commit-activity/w/steveiliop56/tinyauth">
     <img alt="Issues" src="https://img.shields.io/github/issues/steveiliop56/tinyauth">
     <img alt="Tinyauth CI" src="https://github.com/steveiliop56/tinyauth/actions/workflows/ci.yml/badge.svg">
-    <a title="Crowdin" target="_blank" href="https://crowdin.com"><img src="https://badges.crowdin.net/tinyauth/localized.svg"></a>
+    <a title="Crowdin" target="_blank" href="https://crowdin.com/project/tinyauth"><img src="https://badges.crowdin.net/tinyauth/localized.svg"></a>
 </div>
 
 <br />
