@@ -20,13 +20,13 @@ cd tinyauth
 
 ## Install requirements
 
-Although you will not need the requirements in your machine since the development will happen in docker, I still recommend to install them because this way you will not have errors, to install the go requirements, run:
+Although you will not need the requirements in your machine since the development will happen in docker, I still recommend to install them because this way you will not have import errors, to install the go requirements, run:
 
 ```sh
 go mod tidy
 ```
 
-You also need to download the frontend requirements, this can be done like so:
+You also need to download the frontend dependencies, this can be done like so:
 
 ```sh
 cd site/
@@ -35,7 +35,7 @@ bun install
 
 ## Create your `.env` file
 
-In order to ocnfigure the app you need to create an environment file, this can be done by copying the `.env.example` file to `.env` and modifying the environment variables inside to suit your needs.
+In order to configure the app you need to create an environment file, this can be done by copying the `.env.example` file to `.env` and modifying the environment variables inside to suit your needs.
 
 ## Developing
 
