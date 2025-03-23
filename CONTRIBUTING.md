@@ -29,7 +29,7 @@ go mod tidy
 You also need to download the frontend dependencies, this can be done like so:
 
 ```sh
-cd site/
+cd frontend/
 bun install
 ```
 

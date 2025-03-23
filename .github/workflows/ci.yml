@@ -26,17 +26,17 @@ jobs:
 
       - name: Install frontend dependencies
         run: |
-          cd site
+          cd frontend
           bun install
 
       - name: Build frontend
         run: |
-          cd site
+          cd frontend
           bun run build
 
       - name: Copy frontend
         run: |
-          cp -r site/dist internal/assets/dist
+          cp -r frontend/dist internal/assets/dist
 
       - name: Run tests
         run: go test -v ./...

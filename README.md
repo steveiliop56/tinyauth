@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="Tinyauth" title="Tinyauth" width="256" src="site/public/logo.png">
+    <img alt="Tinyauth" title="Tinyauth" width="256" src="frontend/public/logo.png">
     <h1>Tinyauth</h1>
     <p>The easiest way to secure your apps with a login screen.</p>
 </div>

@@ -1,22 +1,22 @@
 # Site builder
-FROM oven/bun:1.1.45-alpine AS site-builder
+FROM oven/bun:1.1.45-alpine AS frontend-builder
 
-WORKDIR /site
+WORKDIR /frontend
 
-COPY ./site/package.json ./
-COPY ./site/bun.lockb ./
+COPY ./frontend/package.json ./
+COPY ./frontend/bun.lockb ./
 
 RUN bun install
 
-COPY ./site/public ./public
-COPY ./site/src ./src
-COPY ./site/eslint.config.js ./
-COPY ./site/index.html ./
-COPY ./site/tsconfig.json ./
-COPY ./site/tsconfig.app.json ./
-COPY ./site/tsconfig.node.json ./
-COPY ./site/vite.config.ts ./
-COPY ./site/postcss.config.cjs ./
+COPY ./frontend/public ./public
+COPY ./frontend/src ./src
+COPY ./frontend/eslint.config.js ./
+COPY ./frontend/index.html ./
+COPY ./frontend/tsconfig.json ./
+COPY ./frontend/tsconfig.app.json ./
+COPY ./frontend/tsconfig.node.json ./
+COPY ./frontend/vite.config.ts ./
+COPY ./frontend/postcss.config.cjs ./
 
 RUN bun run build
 
@@ -33,7 +33,7 @@ RUN go mod download
 COPY ./main.go ./
 COPY ./cmd ./cmd
 COPY ./internal ./internal
-COPY --from=site-builder /site/dist ./internal/assets/dist
+COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
 RUN CGO_ENABLED=0 go build -ldflags "-s -w"
 

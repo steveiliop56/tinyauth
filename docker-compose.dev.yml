@@ -21,9 +21,9 @@ services:
     container_name: tinyauth-frontend
     build:
       context: .
-      dockerfile: site/Dockerfile.dev
+      dockerfile: frontend/Dockerfile.dev
     volumes:
-      - ./site/src:/site/src
+      - ./frontend/src:/frontend/src
     ports:
       - 5173:5173
     labels:

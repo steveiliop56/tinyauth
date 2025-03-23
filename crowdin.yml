@@ -6,7 +6,7 @@
 files:
   [
     {
-      "source": "/site/src/lib/i18n/locales/en.json",
-      "translation": "/site/src/lib/i18n/locales/%locale%.json",
+      "source": "/frontend/src/lib/i18n/locales/en.json",
+      "translation": "/frontend/src/lib/i18n/locales/%locale%.json",
     },
   ]
