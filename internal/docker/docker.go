@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 	"strings"
-	appTypes "tinyauth/internal/types"
+	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
 	apiTypes "github.com/docker/docker/api/types"
@@ -70,14 +70,14 @@ func (docker *Docker) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *Docker) ContainerAction(appId string, runCheck func(labels appTypes.TinyauthLabels) (bool, error)) (bool, error) {
+func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
 	// Check if we have access to the Docker API
 	isConnected := docker.DockerConnected()
 
-	// If we don't have access, it is assumed that the check passed
+	// If we don't have access, return an empty struct
 	if !isConnected {
-		log.Debug().Msg("Docker not connected, passing check")
-		return true, nil
+		log.Debug().Msg("Docker not connected, returning empty labels")
+		return types.TinyauthLabels{}, nil
 	}
 
 	// Get the containers
@@ -85,7 +85,7 @@ func (docker *Docker) ContainerAction(appId string, runCheck func(labels appType
 
 	// If there is an error, return false
 	if err != nil {
-		return false, err
+		return types.TinyauthLabels{}, err
 	}
 
 	log.Debug().Msg("Got containers")
@@ -97,11 +97,11 @@ func (docker *Docker) ContainerAction(appId string, runCheck func(labels appType
 
 		// If there is an error, return false
 		if err != nil {
-			return false, err
+			return types.TinyauthLabels{}, err
 		}
 
 		// Get the container name (for some reason it is /name)
-		containerName := strings.Split(inspect.Name, "/")[1]
+		containerName := strings.TrimPrefix(inspect.Name, "/")
 
 		// There is a container with the same name as the app ID
 		if containerName == appId {
@@ -112,14 +112,14 @@ func (docker *Docker) ContainerAction(appId string, runCheck func(labels appType
 
 			log.Debug().Msg("Got labels")
 
-			// Run the check
-			return runCheck(labels)
+			// Return labels
+			return labels, nil
 		}
 
 	}
 
-	log.Debug().Msg("No matching container found, passing check")
+	log.Debug().Msg("No matching container found, returning empty labels")
 
-	// If no matching container is found, pass check
-	return true, nil
+	// If no matching container is found, return empty labels
+	return types.TinyauthLabels{}, nil
 }

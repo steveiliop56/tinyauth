@@ -133,7 +133,7 @@ var rootCmd = &cobra.Command{
 		hooks := hooks.NewHooks(auth, providers)
 
 		// Create handlers
-		handlers := handlers.NewHandlers(serverConfig, auth, hooks, providers)
+		handlers := handlers.NewHandlers(serverConfig, auth, hooks, providers, docker)
 
 		// Create API
 		api := api.NewAPI(apiConfig, handlers)

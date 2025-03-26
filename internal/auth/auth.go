@@ -159,41 +159,35 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bo
 	// Get app id
 	appId := strings.Split(host, ".")[0]
 
-	// Check if resource is allowed
-	allowed, err := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
-		// If the container has an oauth whitelist, check if the user is in it
-		if context.OAuth {
-			if len(labels.OAuthWhitelist) == 0 {
-				return true, nil
-			}
-			log.Debug().Msg("Checking OAuth whitelist")
-			if slices.Contains(labels.OAuthWhitelist, context.Username) {
-				return true, nil
-			}
-			return false, nil
-		}
-
-		// If the container has users, check if the user is in it
-		if len(labels.Users) != 0 {
-			log.Debug().Msg("Checking users")
-			if slices.Contains(labels.Users, context.Username) {
-				return true, nil
-			}
-			return false, nil
-		}
-
-		// Allowed
-		return true, nil
-	})
+	// Get the container labels
+	labels, err := auth.Docker.GetLabels(appId)
 
 	// If there is an error, return false
 	if err != nil {
-		log.Error().Err(err).Msg("Error checking if resource is allowed")
 		return false, err
 	}
 
-	// Return if the resource is allowed
-	return allowed, nil
+	// Check if oauth is allowed
+	if context.OAuth {
+		if len(labels.OAuthWhitelist) == 0 {
+			return true, nil
+		}
+		log.Debug().Msg("Checking OAuth whitelist")
+		if slices.Contains(labels.OAuthWhitelist, context.Username) {
+			return true, nil
+		}
+	}
+
+	// Check if user is allowed
+	if len(labels.Users) != 0 {
+		log.Debug().Msg("Checking users")
+		if slices.Contains(labels.Users, context.Username) {
+			return true, nil
+		}
+	}
+
+	// Not allowed
+	return false, nil
 }
 
 func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
@@ -204,40 +198,37 @@ func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
 	// Get app id
 	appId := strings.Split(host, ".")[0]
 
-	// Check if auth is enabled
-	enabled, err := auth.Docker.ContainerAction(appId, func(labels types.TinyauthLabels) (bool, error) {
-		// Check if the allowed label is empty
-		if labels.Allowed == "" {
-			// Auth enabled
-			return true, nil
-		}
-
-		// Compile regex
-		regex, err := regexp.Compile(labels.Allowed)
-
-		// If there is an error, invalid regex, auth enabled
-		if err != nil {
-			log.Warn().Err(err).Msg("Invalid regex")
-			return true, err
-		}
-
-		// Check if the uri matches the regex
-		if regex.MatchString(uri) {
-			// Auth disabled
-			return false, nil
-		}
-
-		// Auth enabled
-		return true, nil
-	})
+	// Get the container labels
+	labels, err := auth.Docker.GetLabels(appId)
 
 	// If there is an error, auth enabled
 	if err != nil {
-		log.Error().Err(err).Msg("Error checking if auth is enabled")
 		return true, err
 	}
 
-	return enabled, nil
+	// Check if the allowed label is empty
+	if labels.Allowed == "" {
+		// Auth enabled
+		return true, nil
+	}
+
+	// Compile regex
+	regex, err := regexp.Compile(labels.Allowed)
+
+	// If there is an error, invalid regex, auth enabled
+	if err != nil {
+		log.Warn().Err(err).Msg("Invalid regex")
+		return true, err
+	}
+
+	// Check if the uri matches the regex
+	if regex.MatchString(uri) {
+		// Auth disabled
+		return false, nil
+	}
+
+	// Auth enabled
+	return true, nil
 }
 
 func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {

@@ -124,6 +124,7 @@ type TinyauthLabels struct {
 	OAuthWhitelist []string
 	Users          []string
 	Allowed        string
+	Headers        map[string]string
 }
 
 // TailscaleQuery is the query parameters for the tailscale endpoint

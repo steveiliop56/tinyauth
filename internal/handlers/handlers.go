@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/docker"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
@@ -16,12 +17,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hooks, providers *providers.Providers) *Handlers {
+func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hooks, providers *providers.Providers, docker *docker.Docker) *Handlers {
 	return &Handlers{
 		Config:    config,
 		Auth:      auth,
 		Hooks:     hooks,
 		Providers: providers,
+		Docker:    docker,
 	}
 }
 
@@ -30,6 +32,7 @@ type Handlers struct {
 	Auth      *auth.Auth
 	Hooks     *hooks.Hooks
 	Providers *providers.Providers
+	Docker    *docker.Docker
 }
 
 func (h *Handlers) AuthHandler(c *gin.Context) {
@@ -60,12 +63,39 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
 
+	// Get headers
+	uri := c.Request.Header.Get("X-Forwarded-Uri")
+	proto := c.Request.Header.Get("X-Forwarded-Proto")
+	host := c.Request.Header.Get("X-Forwarded-Host")
+
 	// Check if auth is enabled
 	authEnabled, err := h.Auth.AuthEnabled(c)
 
-	// Handle error
+	// Check if there was an error
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to check if auth is enabled")
+		log.Error().Err(err).Msg("Failed to check if app is allowed")
+
+		if proxy.Proxy == "nginx" || !isBrowser {
+			c.JSON(500, gin.H{
+				"status":  500,
+				"message": "Internal Server Error",
+			})
+			return
+		}
+
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		return
+	}
+
+	// Get the app id
+	appId := strings.Split(host, ".")[0]
+
+	// Get the container labels
+	labels, err := h.Docker.GetLabels(appId)
+
+	// Check if there was an error
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to check if app is allowed")
 
 		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(500, gin.H{
@@ -81,6 +111,10 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	// If auth is not enabled, return 200
 	if !authEnabled {
+		for key, value := range labels.Headers {
+			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
+			c.Header(key, value)
+		}
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -90,11 +124,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	// Get user context
 	userContext := h.Hooks.UseUserContext(c)
-
-	// Get headers
-	uri := c.Request.Header.Get("X-Forwarded-Uri")
-	proto := c.Request.Header.Get("X-Forwarded-Proto")
-	host := c.Request.Header.Get("X-Forwarded-Host")
 
 	// Check if user is logged in
 	if userContext.IsLoggedIn {
@@ -156,6 +185,12 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 		// Set the user header
 		c.Header("Remote-User", userContext.Username)
+
+		// Set the rest of the headers
+		for key, value := range labels.Headers {
+			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
+			c.Header(key, value)
+		}
 
 		// The user is allowed to access the app
 		c.JSON(200, gin.H{

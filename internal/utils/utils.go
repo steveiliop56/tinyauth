@@ -193,6 +193,16 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 				tinyauthLabels.Users = strings.Split(value, ",")
 			case "tinyauth.allowed":
 				tinyauthLabels.Allowed = value
+			case "tinyauth.headers":
+				tinyauthLabels.Headers = make(map[string]string)
+				headers := strings.Split(value, ",")
+				for _, header := range headers {
+					headerSplit := strings.Split(header, "=")
+					if len(headerSplit) != 2 {
+						continue
+					}
+					tinyauthLabels.Headers[headerSplit[0]] = headerSplit[1]
+				}
 			}
 		}
 	}

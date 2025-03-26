@@ -78,7 +78,7 @@ func getAPI(t *testing.T) *api.API {
 	hooks := hooks.NewHooks(auth, providers)
 
 	// Create handlers service
-	handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers)
+	handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
 
 	// Create API
 	api := api.NewAPI(apiConfig, handlers)

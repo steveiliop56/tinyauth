@@ -14,7 +14,6 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.nginx.rule: Host(`whoami.example.com`)
-      traefik.http.services.nginx.loadbalancer.server.port: 80
       traefik.http.routers.nginx.middlewares: tinyauth
 
   tinyauth-frontend:
@@ -29,7 +28,6 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.tinyauth.rule: Host(`tinyauth.example.com`)
-      traefik.http.services.tinyauth.loadbalancer.server.port: 5173
 
   tinyauth-backend:
     container_name: tinyauth-backend
@@ -41,6 +39,7 @@ services:
       - ./internal:/tinyauth/internal
       - ./cmd:/tinyauth/cmd
       - ./main.go:/tinyauth/main.go
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 3000:3000
     labels:
