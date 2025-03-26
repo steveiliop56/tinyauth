@@ -42,8 +42,13 @@ FROM alpine:3.21 AS runner
 
 WORKDIR /tinyauth
 
+RUN apk add --no-cache curl
+
 COPY --from=builder /tinyauth/tinyauth ./
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=10s --timeout=5s \
+    CMD curl -f http://localhost:3000/api/healthcheck || exit 1
 
 ENTRYPOINT ["./tinyauth"]
