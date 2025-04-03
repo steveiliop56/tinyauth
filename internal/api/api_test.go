@@ -19,13 +19,16 @@ import (
 	"github.com/magiconair/properties/assert"
 )
 
+// User
+var User = types.User{
+	Username: "user",
+	Password: "$2a$10$AvGHLTYv3xiRJ0xV9xs3XeVIlkGTygI9nqIamFYB5Xu.5.0UWF7B6", // pass
+}
+
 // Simple API config for tests
 var apiConfig = types.APIConfig{
-	Port:          8080,
-	Address:       "0.0.0.0",
-	Secret:        "super-secret-api-thing-for-tests", // It is 32 chars long
-	CookieSecure:  false,
-	SessionExpiry: 3600,
+	Port:    8080,
+	Address: "0.0.0.0",
 }
 
 // Simple handlers config for tests
@@ -38,14 +41,20 @@ var handlersConfig = types.HandlersConfig{
 	GenericName:     "Generic",
 }
 
+// Simple auth config for tests
+var authConfig = types.AuthConfig{
+	Domain:        "localhost",
+	Secret:        "super-secret-api-thing-for-tests", // It is 32 chars long
+	CookieSecure:  false,
+	SessionExpiry: 3600,
+	Users: types.Users{
+		User,
+	},
+	OAuthWhitelist: []string{},
+}
+
 // Cookie
 var cookie string
-
-// User
-var user = types.User{
-	Username: "user",
-	Password: "$2a$10$AvGHLTYv3xiRJ0xV9xs3XeVIlkGTygI9nqIamFYB5Xu.5.0UWF7B6", // pass
-}
 
 // We need all this to be able to test the API
 func getAPI(t *testing.T) *api.API {
@@ -61,12 +70,7 @@ func getAPI(t *testing.T) *api.API {
 	}
 
 	// Create auth service
-	auth := auth.NewAuth(docker, types.Users{
-		{
-			Username: user.Username,
-			Password: user.Password,
-		},
-	}, nil, apiConfig.SessionExpiry)
+	auth := auth.NewAuth(authConfig, docker)
 
 	// Create providers service
 	providers := providers.NewProviders(types.OAuthConfig{})

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -8,31 +9,27 @@ import (
 	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string, sessionExpiry int) *Auth {
+func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
 	return &Auth{
-		Docker:         docker,
-		Users:          userList,
-		OAuthWhitelist: oauthWhitelist,
-		SessionExpiry:  sessionExpiry,
+		Docker: docker,
+		Config: config,
 	}
 }
 
 type Auth struct {
-	Users          types.Users
-	Docker         *docker.Docker
-	OAuthWhitelist []string
-	SessionExpiry  int
+	Docker *docker.Docker
+	Config types.AuthConfig
 }
 
 func (auth *Auth) GetUser(username string) *types.User {
 	// Loop through users and return the user if the username matches
-	for _, user := range auth.Users {
+	for _, user := range auth.Config.Users {
 		if user.Username == username {
 			return &user
 		}
@@ -47,12 +44,12 @@ func (auth *Auth) CheckPassword(user types.User, password string) bool {
 
 func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
 	// If the whitelist is empty, allow all emails
-	if len(auth.OAuthWhitelist) == 0 {
+	if len(auth.Config.OAuthWhitelist) == 0 {
 		return true
 	}
 
 	// Loop through the whitelist and return true if the email matches
-	for _, email := range auth.OAuthWhitelist {
+	for _, email := range auth.Config.OAuthWhitelist {
 		if email == emailSrc {
 			return true
 		}
@@ -62,11 +59,35 @@ func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
 	return false
 }
 
-func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) {
+func (auth *Auth) GetCookieStore() *sessions.CookieStore {
+	// Create a new cookie store
+	store := sessions.NewCookieStore([]byte(auth.Config.Secret))
+
+	// Configure the cookie store
+	store.Options = &sessions.Options{
+		Path:     "/",
+		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
+		Secure:   auth.Config.CookieSecure,
+		MaxAge:   auth.Config.SessionExpiry,
+		HttpOnly: true,
+	}
+
+	// Set the cookie store
+	return store
+}
+
+func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {
 	log.Debug().Msg("Creating session cookie")
 
+	// Get cookie store
+	store := auth.GetCookieStore()
+
 	// Get session
-	sessions := sessions.Default(c)
+	sessions, err := store.Get(c.Request, "tinyauth")
+
+	if err != nil {
+		return err
+	}
 
 	log.Debug().Msg("Setting session cookie")
 
@@ -76,43 +97,73 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	if data.TotpPending {
 		sessionExpiry = 3600
 	} else {
-		sessionExpiry = auth.SessionExpiry
+		sessionExpiry = auth.Config.SessionExpiry
 	}
 
 	// Set data
-	sessions.Set("username", data.Username)
-	sessions.Set("provider", data.Provider)
-	sessions.Set("expiry", time.Now().Add(time.Duration(sessionExpiry)*time.Second).Unix())
-	sessions.Set("totpPending", data.TotpPending)
+	sessions.Values["username"] = data.Username
+	sessions.Values["provider"] = data.Provider
+	sessions.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
+	sessions.Values["totpPending"] = data.TotpPending
 
 	// Save session
-	sessions.Save()
+	err = sessions.Save(c.Request, c.Writer)
+
+	if err != nil {
+		return err
+	}
+
+	// Return nil
+	return nil
 }
 
-func (auth *Auth) DeleteSessionCookie(c *gin.Context) {
+func (auth *Auth) DeleteSessionCookie(c *gin.Context) error {
 	log.Debug().Msg("Deleting session cookie")
 
+	// Get cookie store
+	store := auth.GetCookieStore()
+
 	// Get session
-	sessions := sessions.Default(c)
+	sessions, err := store.Get(c.Request, "tinyauth")
+
+	if err != nil {
+		return err
+	}
 
 	// Clear session
-	sessions.Clear()
+	for key := range sessions.Values {
+		delete(sessions.Values, key)
+	}
 
 	// Save session
-	sessions.Save()
+	err = sessions.Save(c.Request, c.Writer)
+
+	if err != nil {
+		return err
+	}
+
+	// Return nil
+	return nil
 }
 
-func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
+func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) {
 	log.Debug().Msg("Getting session cookie")
 
+	// Get cookie store
+	store := auth.GetCookieStore()
+
 	// Get session
-	sessions := sessions.Default(c)
+	sessions, err := store.Get(c.Request, "tinyauth")
+
+	if err != nil {
+		return types.SessionCookie{}, err
+	}
 
 	// Get data
-	cookieUsername := sessions.Get("username")
-	cookieProvider := sessions.Get("provider")
-	cookieExpiry := sessions.Get("expiry")
-	cookieTotpPending := sessions.Get("totpPending")
+	cookieUsername := sessions.Values["username"]
+	cookieProvider := sessions.Values["provider"]
+	cookieExpiry := sessions.Values["expiry"]
+	cookieTotpPending := sessions.Values["totpPending"]
 
 	// Convert interfaces to correct types
 	username, usernameOk := cookieUsername.(string)
@@ -123,7 +174,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 	// Check if the cookie is invalid
 	if !usernameOk || !providerOk || !expiryOk || !totpPendingOk {
 		log.Warn().Msg("Session cookie invalid")
-		return types.SessionCookie{}
+		return types.SessionCookie{}, nil
 	}
 
 	// Check if the cookie has expired
@@ -134,7 +185,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 		auth.DeleteSessionCookie(c)
 
 		// Return empty cookie
-		return types.SessionCookie{}
+		return types.SessionCookie{}, nil
 	}
 
 	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Msg("Parsed cookie")
@@ -144,12 +195,12 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 		Username:    username,
 		Provider:    provider,
 		TotpPending: totpPending,
-	}
+	}, nil
 }
 
 func (auth *Auth) UserAuthConfigured() bool {
 	// If there are users, return true
-	return len(auth.Users) > 0
+	return len(auth.Config.Users) > 0
 }
 
 func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bool, error) {

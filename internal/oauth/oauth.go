@@ -14,10 +14,10 @@ func NewOAuth(config oauth2.Config) *OAuth {
 }
 
 type OAuth struct {
-	Config   oauth2.Config
+	Verifier string
 	Context  context.Context
 	Token    *oauth2.Token
-	Verifier string
+	Config   oauth2.Config
 }
 
 func (oauth *OAuth) Init() {

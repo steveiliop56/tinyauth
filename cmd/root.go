@@ -105,12 +105,8 @@ var rootCmd = &cobra.Command{
 
 		// Create api config
 		apiConfig := types.APIConfig{
-			Port:          config.Port,
-			Address:       config.Address,
-			Secret:        config.Secret,
-			CookieSecure:  config.CookieSecure,
-			SessionExpiry: config.SessionExpiry,
-			Domain:        domain,
+			Port:    config.Port,
+			Address: config.Address,
 		}
 
 		// Create docker service
@@ -121,7 +117,14 @@ var rootCmd = &cobra.Command{
 		HandleError(err, "Failed to initialize docker")
 
 		// Create auth service
-		auth := auth.NewAuth(docker, users, oauthWhitelist, config.SessionExpiry)
+		auth := auth.NewAuth(types.AuthConfig{
+			Domain:         domain,
+			Secret:         config.Secret,
+			SessionExpiry:  config.SessionExpiry,
+			CookieSecure:   config.CookieSecure,
+			Users:          users,
+			OAuthWhitelist: oauthWhitelist,
+		}, docker)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)

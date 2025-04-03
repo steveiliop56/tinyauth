@@ -19,20 +19,20 @@ import (
 
 func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hooks, providers *providers.Providers, docker *docker.Docker) *Handlers {
 	return &Handlers{
-		Config:    config,
 		Auth:      auth,
 		Hooks:     hooks,
 		Providers: providers,
 		Docker:    docker,
+		Config:    config,
 	}
 }
 
 type Handlers struct {
-	Config    types.HandlersConfig
 	Auth      *auth.Auth
 	Hooks     *hooks.Hooks
 	Providers *providers.Providers
 	Docker    *docker.Docker
+	Config    types.HandlersConfig
 }
 
 func (h *Handlers) AuthHandler(c *gin.Context) {

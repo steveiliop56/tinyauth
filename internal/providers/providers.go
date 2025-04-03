@@ -17,11 +17,11 @@ func NewProviders(config types.OAuthConfig) *Providers {
 }
 
 type Providers struct {
-	Config    types.OAuthConfig
 	Github    *oauth.OAuth
 	Google    *oauth.OAuth
 	Tailscale *oauth.OAuth
 	Generic   *oauth.OAuth
+	Config    types.OAuthConfig
 }
 
 func (providers *Providers) Init() {

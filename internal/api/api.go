@@ -11,23 +11,21 @@ import (
 	"tinyauth/internal/handlers"
 	"tinyauth/internal/types"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 func NewAPI(config types.APIConfig, handlers *handlers.Handlers) *API {
 	return &API{
-		Config:   config,
 		Handlers: handlers,
+		Config:   config,
 	}
 }
 
 type API struct {
-	Config   types.APIConfig
 	Router   *gin.Engine
 	Handlers *handlers.Handlers
+	Config   types.APIConfig
 }
 
 func (api *API) Init() {
@@ -50,21 +48,6 @@ func (api *API) Init() {
 	// Create file server
 	log.Debug().Msg("Setting up file server")
 	fileServer := http.FileServer(http.FS(dist))
-
-	// Setup cookie store
-	log.Debug().Msg("Setting up cookie store")
-	store := cookie.NewStore([]byte(api.Config.Secret))
-
-	// Use session middleware
-	store.Options(sessions.Options{
-		Domain:   api.Config.Domain,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   api.Config.CookieSecure,
-		MaxAge:   api.Config.SessionExpiry,
-	})
-
-	router.Use(sessions.Sessions("tinyauth", store))
 
 	// UI middleware
 	router.Use(func(c *gin.Context) {
