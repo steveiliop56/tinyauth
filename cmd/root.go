@@ -234,6 +234,8 @@ func init() {
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
 	viper.BindEnv("app-title", "APP_TITLE")
+	viper.BindEnv("login-timeout", "LOGIN_TIMEOUT")
+	viper.BindEnv("login-max-retries", "LOGIN_MAX_RETRIES")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())
