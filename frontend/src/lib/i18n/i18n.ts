@@ -28,7 +28,7 @@ i18n
       ],
       backendOptions: [
         {
-          loadPath: "https://cdn.tinyauth.app/i18n/{{lng}}.json",
+          loadPath: "https://cdn.tinyauth.app/i18n/v1/{{lng}}.json",
         },
       ],
     },

@@ -3,7 +3,7 @@ name: Publish translations
 on:
   push:
     branches:
-      - main
+      - i18n_v*
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,53 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  get-branches:
+    runs-on: ubuntu-latest
+    outputs:
+      i18n-branches: ${{ steps.get-branches.outputs.result }}
+    steps:
+      - name: Get branches
+        id: get-branches
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: repos } = await github.rest.repos.listBranches({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+
+            const i18nBranches = repos.filter((branch) => branch.name.startsWith("i18n_v"))
+            const i18nBranchNames = i18nBranches.map((branch) => branch.name)
+
+            return i18nBranchNames
+
+  get-translations:
+    needs: get-branches
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ${{ fromJson(needs.get-branches.outputs.i18n-branches) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+
+      - name: Get translation version
+        id: get-version
+        run: |
+          branch=${{ matrix.branch }}
+          version=${branch#i18n_}
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Upload translations
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get-version.outputs.version }}
+          path: frontend/src/lib/i18n/locales
+
   build:
+    needs: get-translations
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,10 +71,14 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Move translations
+      - name: Prepare output directory
         run: |
-          mkdir -p dist
-          mv frontend/src/lib/i18n/locales dist/i18n
+          mkdir -p dist/i18n/
+
+      - name: Download translations
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/i18n/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
