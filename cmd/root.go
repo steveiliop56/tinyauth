@@ -121,7 +121,7 @@ var rootCmd = &cobra.Command{
 		HandleError(err, "Failed to initialize docker")
 
 		// Create auth service
-		auth := auth.NewAuth(docker, users, oauthWhitelist, config.SessionExpiry)
+		auth := auth.NewAuth(docker, users, oauthWhitelist, config.SessionExpiry, config.LoginTimeout, config.LoginMaxRetries)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
@@ -198,6 +198,8 @@ func init() {
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().Int("session-expiry", 86400, "Session (cookie) expiration time in seconds.")
+	rootCmd.Flags().Int("login-timeout", 300, "Login timeout in seconds after max retries reached (0 to disable).")
+	rootCmd.Flags().Int("login-max-retries", 5, "Maximum login attempts before timeout (0 to disable).")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
 
@@ -232,6 +234,8 @@ func init() {
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
 	viper.BindEnv("app-title", "APP_TITLE")
+	viper.BindEnv("login-timeout", "LOGIN_TIMEOUT")
+	viper.BindEnv("login-max-retries", "LOGIN_MAX_RETRIES")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())

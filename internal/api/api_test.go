@@ -66,7 +66,7 @@ func getAPI(t *testing.T) *api.API {
 			Username: user.Username,
 			Password: user.Password,
 		},
-	}, nil, apiConfig.SessionExpiry)
+	}, nil, apiConfig.SessionExpiry, 300, 5)
 
 	// Create providers service
 	providers := providers.NewProviders(types.OAuthConfig{})

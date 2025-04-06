@@ -248,6 +248,26 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	}
 
 	log.Debug().Msg("Got login request")
+	
+	// Get client IP for rate limiting
+	clientIP := c.ClientIP()
+	
+	// Create an identifier for rate limiting (username or IP if username doesn't exist yet)
+	rateIdentifier := login.Username
+	if rateIdentifier == "" {
+		rateIdentifier = clientIP
+	}
+	
+	// Check if the account is locked due to too many failed attempts
+	locked, remainingTime := h.Auth.IsAccountLocked(rateIdentifier)
+	if locked {
+		log.Warn().Str("identifier", rateIdentifier).Int("remaining_seconds", remainingTime).Msg("Account is locked due to too many failed login attempts")
+		c.JSON(429, gin.H{
+			"status":  429,
+			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remainingTime),
+		})
+		return
+	}
 
 	// Get user based on username
 	user := h.Auth.GetUser(login.Username)
@@ -255,6 +275,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	// User does not exist
 	if user == nil {
 		log.Debug().Str("username", login.Username).Msg("User not found")
+		// Record failed login attempt
+		h.Auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -267,6 +289,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	// Check if password is correct
 	if !h.Auth.CheckPassword(*user, login.Password) {
 		log.Debug().Str("username", login.Username).Msg("Password incorrect")
+		// Record failed login attempt
+		h.Auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -275,6 +299,9 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	}
 
 	log.Debug().Msg("Password correct, checking totp")
+	
+	// Record successful login attempt (will reset failed attempt counter)
+	h.Auth.RecordLoginAttempt(rateIdentifier, true)
 
 	// Check if user has totp enabled
 	if user.TotpSecret != "" {
