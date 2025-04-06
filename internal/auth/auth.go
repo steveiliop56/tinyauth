@@ -227,23 +227,15 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		return types.SessionCookie{}, err
 	}
 
-	// Get data
-	cookieUsername := session.Values["username"]
-	cookieProvider := session.Values["provider"]
-	cookieExpiry := session.Values["expiry"]
-	cookieTotpPending := session.Values["totpPending"]
-	cookieRedirectURI := session.Values["redirectURI"]
+	// Get data from session
+	username, usernameOk := session.Values["username"].(string)
+	provider, providerOK := session.Values["provider"].(string)
+	redirectURI, redirectOK := session.Values["redirectURI"].(string)
+	expiry, expiryOk := session.Values["expiry"].(int64)
+	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
 
-	// Convert interfaces to correct types
-	username, usernameOk := cookieUsername.(string)
-	provider, providerOk := cookieProvider.(string)
-	expiry, expiryOk := cookieExpiry.(int64)
-	totpPending, totpPendingOk := cookieTotpPending.(bool)
-	redirectURI, redirectURIOk := cookieRedirectURI.(string)
-
-	// Check if the cookie is invalid
-	if !usernameOk || !providerOk || !expiryOk || !totpPendingOk || !redirectURIOk {
-		log.Warn().Msg("Session cookie invalid")
+	if !usernameOk || !providerOK || !expiryOk || !redirectOK || !totpPendingOk {
+		log.Warn().Msg("Session cookie is missing data")
 		return types.SessionCookie{}, nil
 	}
 
