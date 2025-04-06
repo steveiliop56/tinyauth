@@ -40,8 +40,6 @@ type Config struct {
 // Server configuration
 type HandlersConfig struct {
 	AppURL          string
-	Domain          string
-	CookieSecure    bool
 	DisableContinue bool
 	GenericName     string
 	Title           string

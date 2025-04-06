@@ -178,6 +178,7 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	session.Values["provider"] = data.Provider
 	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
 	session.Values["totpPending"] = data.TotpPending
+	session.Values["redirectURI"] = data.RedirectURI
 
 	// Save session
 	err = session.Save(c.Request, c.Writer)
@@ -231,15 +232,17 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 	cookieProvider := session.Values["provider"]
 	cookieExpiry := session.Values["expiry"]
 	cookieTotpPending := session.Values["totpPending"]
+	cookieRedirectURI := session.Values["redirectURI"]
 
 	// Convert interfaces to correct types
 	username, usernameOk := cookieUsername.(string)
 	provider, providerOk := cookieProvider.(string)
 	expiry, expiryOk := cookieExpiry.(int64)
 	totpPending, totpPendingOk := cookieTotpPending.(bool)
+	redirectURI, redirectURIOk := cookieRedirectURI.(string)
 
 	// Check if the cookie is invalid
-	if !usernameOk || !providerOk || !expiryOk || !totpPendingOk {
+	if !usernameOk || !providerOk || !expiryOk || !totpPendingOk || !redirectURIOk {
 		log.Warn().Msg("Session cookie invalid")
 		return types.SessionCookie{}, nil
 	}
@@ -262,6 +265,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		Username:    username,
 		Provider:    provider,
 		TotpPending: totpPending,
+		RedirectURI: redirectURI,
 	}, nil
 }
 

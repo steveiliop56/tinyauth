@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -94,10 +93,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Create handlers config
-		serverConfig := types.HandlersConfig{
+		handlersConfig := types.HandlersConfig{
 			AppURL:          config.AppURL,
-			Domain:          fmt.Sprintf(".%s", domain),
-			CookieSecure:    config.CookieSecure,
 			DisableContinue: config.DisableContinue,
 			Title:           config.Title,
 			GenericName:     config.GenericName,
@@ -141,7 +138,7 @@ var rootCmd = &cobra.Command{
 		hooks := hooks.NewHooks(auth, providers)
 
 		// Create handlers
-		handlers := handlers.NewHandlers(serverConfig, auth, hooks, providers, docker)
+		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
 
 		// Create API
 		api := api.NewAPI(apiConfig, handlers)

@@ -248,16 +248,16 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	}
 
 	log.Debug().Msg("Got login request")
-	
+
 	// Get client IP for rate limiting
 	clientIP := c.ClientIP()
-	
+
 	// Create an identifier for rate limiting (username or IP if username doesn't exist yet)
 	rateIdentifier := login.Username
 	if rateIdentifier == "" {
 		rateIdentifier = clientIP
 	}
-	
+
 	// Check if the account is locked due to too many failed attempts
 	locked, remainingTime := h.Auth.IsAccountLocked(rateIdentifier)
 	if locked {
@@ -299,7 +299,7 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	}
 
 	log.Debug().Msg("Password correct, checking totp")
-	
+
 	// Record successful login attempt (will reset failed attempt counter)
 	h.Auth.RecordLoginAttempt(rateIdentifier, true)
 
@@ -420,9 +420,6 @@ func (h *Handlers) LogoutHandler(c *gin.Context) {
 
 	log.Debug().Msg("Cleaning up redirect cookie")
 
-	// Clean up redirect cookie if it exists
-	c.SetCookie("tinyauth_redirect_uri", "", -1, "/", h.Config.Domain, h.Config.CookieSecure, true)
-
 	// Return logged out
 	c.JSON(200, gin.H{
 		"status":  200,
@@ -529,7 +526,9 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	// Set redirect cookie if redirect URI is provided
 	if redirectURI != "" {
 		log.Debug().Str("redirectURI", redirectURI).Msg("Setting redirect cookie")
-		c.SetCookie("tinyauth_redirect_uri", redirectURI, 3600, "/", h.Config.Domain, h.Config.CookieSecure, true)
+		h.Auth.CreateSessionCookie(c, &types.SessionCookie{
+			RedirectURI: redirectURI,
+		})
 	}
 
 	// Tailscale does not have an auth url so we create a random code (does not need to be secure) to avoid caching and send it
@@ -651,28 +650,25 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Msg("Email whitelisted")
 
-	// Create session cookie
+	// Get redirect URI
+	cookie, err := h.Auth.GetSessionCookie(c)
+
+	// Create session cookie (also cleans up redirect cookie)
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username: email,
 		Provider: providerName.Provider,
 	})
-
-	// Get redirect URI
-	redirectURI, err := c.Cookie("tinyauth_redirect_uri")
 
 	// If it is empty it means that no redirect_uri was provided to the login screen so we just log in
 	if err != nil {
 		c.Redirect(http.StatusPermanentRedirect, h.Config.AppURL)
 	}
 
-	log.Debug().Str("redirectURI", redirectURI).Msg("Got redirect URI")
-
-	// Clean up redirect cookie since we already have the value
-	c.SetCookie("tinyauth_redirect_uri", "", -1, "/", h.Config.Domain, h.Config.CookieSecure, true)
+	log.Debug().Str("redirectURI", cookie.RedirectURI).Msg("Got redirect URI")
 
 	// Build query
 	queries, err := query.Values(types.LoginQuery{
-		RedirectURI: redirectURI,
+		RedirectURI: cookie.RedirectURI,
 	})
 
 	log.Debug().Msg("Got redirect query")
