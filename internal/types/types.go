@@ -56,6 +56,8 @@ type Config struct {
 	LogLevel                  int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 	Title                     string `mapstructure:"app-title"`
 	EnvFile                   string `mapstructure:"env-file"`
+	LoginTimeout              int    `mapstructure:"login-timeout"`
+	LoginMaxRetries           int    `mapstructure:"login-max-retries"`
 }
 
 // UserContext is the context for the user

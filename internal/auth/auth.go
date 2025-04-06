@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
@@ -14,13 +15,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string, sessionExpiry int) *Auth {
+func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string, sessionExpiry int, loginTimeout int, loginMaxRetries int) *Auth {
 	return &Auth{
 		Docker:         docker,
 		Users:          userList,
 		OAuthWhitelist: oauthWhitelist,
 		SessionExpiry:  sessionExpiry,
+		LoginTimeout:   loginTimeout,
+		LoginMaxRetries: loginMaxRetries,
+		LoginAttempts:  make(map[string]*LoginAttempt),
 	}
+}
+
+// LoginAttempt tracks information about login attempts for rate limiting
+type LoginAttempt struct {
+	FailedAttempts int
+	LastAttempt    time.Time
+	LockedUntil    time.Time
 }
 
 type Auth struct {
@@ -28,6 +39,10 @@ type Auth struct {
 	Docker         *docker.Docker
 	OAuthWhitelist []string
 	SessionExpiry  int
+	LoginTimeout   int
+	LoginMaxRetries int
+	LoginAttempts  map[string]*LoginAttempt // Map of username/IP to login attempts
+	LoginMutex     sync.RWMutex            // Mutex to protect the LoginAttempts map
 }
 
 func (auth *Auth) GetUser(username string) *types.User {
@@ -43,6 +58,70 @@ func (auth *Auth) GetUser(username string) *types.User {
 func (auth *Auth) CheckPassword(user types.User, password string) bool {
 	// Compare the hashed password with the password provided
 	return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) == nil
+}
+
+// IsAccountLocked checks if a username or IP is locked due to too many failed login attempts
+func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
+	auth.LoginMutex.RLock()
+	defer auth.LoginMutex.RUnlock()
+	
+	// Return false if rate limiting is not configured
+	if auth.LoginMaxRetries <= 0 || auth.LoginTimeout <= 0 {
+		return false, 0
+	}
+	
+	// Check if the identifier exists in the map
+	attempt, exists := auth.LoginAttempts[identifier]
+	if !exists {
+		return false, 0
+	}
+	
+	// If account is locked, check if lock time has expired
+	if attempt.LockedUntil.After(time.Now()) {
+		// Calculate remaining lockout time in seconds
+		remaining := int(time.Until(attempt.LockedUntil).Seconds())
+		return true, remaining
+	}
+	
+	// Lock has expired
+	return false, 0
+}
+
+// RecordLoginAttempt records a login attempt for rate limiting
+func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
+	// Skip if rate limiting is not configured
+	if auth.LoginMaxRetries <= 0 || auth.LoginTimeout <= 0 {
+		return
+	}
+	
+	auth.LoginMutex.Lock()
+	defer auth.LoginMutex.Unlock()
+	
+	// Get current attempt record or create a new one
+	attempt, exists := auth.LoginAttempts[identifier]
+	if !exists {
+		attempt = &LoginAttempt{}
+		auth.LoginAttempts[identifier] = attempt
+	}
+	
+	// Update last attempt time
+	attempt.LastAttempt = time.Now()
+	
+	// If successful login, reset failed attempts
+	if success {
+		attempt.FailedAttempts = 0
+		attempt.LockedUntil = time.Time{} // Reset lock time
+		return
+	}
+	
+	// Increment failed attempts
+	attempt.FailedAttempts++
+	
+	// If max retries reached, lock the account
+	if attempt.FailedAttempts >= auth.LoginMaxRetries {
+		attempt.LockedUntil = time.Now().Add(time.Duration(auth.LoginTimeout) * time.Second)
+		log.Warn().Str("identifier", identifier).Int("timeout", auth.LoginTimeout).Msg("Account locked due to too many failed login attempts")
+	}
 }
 
 func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
