@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
 	"regexp"
 	"slices"
 	"strings"
@@ -9,8 +11,8 @@ import (
 	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,6 +30,30 @@ type Auth struct {
 	Docker        *docker.Docker
 	LoginAttempts map[string]*types.LoginAttempt
 	LoginMutex    sync.RWMutex
+}
+
+func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
+	// Create cookie store
+	store := sessions.NewCookieStore([]byte(auth.Config.Secret))
+
+	// Configure cookie store
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   auth.Config.SessionExpiry,
+		Secure:   auth.Config.CookieSecure,
+		HttpOnly: true,
+		SameSite: http.SameSiteDefaultMode,
+		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
+	}
+
+	// Get session
+	session, err := store.Get(c.Request, "tinyauth")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get session")
+		return nil, err
+	}
+
+	return session, nil
 }
 
 func (auth *Auth) GetUser(username string) *types.User {
@@ -126,11 +152,15 @@ func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
 	return false
 }
 
-func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) {
+func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {
 	log.Debug().Msg("Creating session cookie")
 
 	// Get session
-	sessions := sessions.Default(c)
+	session, err := auth.GetSession(c)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get session")
+		return err
+	}
 
 	log.Debug().Msg("Setting session cookie")
 
@@ -144,39 +174,63 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	}
 
 	// Set data
-	sessions.Set("username", data.Username)
-	sessions.Set("provider", data.Provider)
-	sessions.Set("expiry", time.Now().Add(time.Duration(sessionExpiry)*time.Second).Unix())
-	sessions.Set("totpPending", data.TotpPending)
+	session.Values["username"] = data.Username
+	session.Values["provider"] = data.Provider
+	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
+	session.Values["totpPending"] = data.TotpPending
 
 	// Save session
-	sessions.Save()
+	err = session.Save(c.Request, c.Writer)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to save session")
+		return err
+	}
+
+	// Return nil
+	return nil
 }
 
-func (auth *Auth) DeleteSessionCookie(c *gin.Context) {
+func (auth *Auth) DeleteSessionCookie(c *gin.Context) error {
 	log.Debug().Msg("Deleting session cookie")
 
 	// Get session
-	sessions := sessions.Default(c)
+	session, err := auth.GetSession(c)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get session")
+		return err
+	}
 
-	// Clear session
-	sessions.Clear()
+	// Delete all values in the session
+	for key := range session.Values {
+		delete(session.Values, key)
+	}
 
 	// Save session
-	sessions.Save()
+	err = session.Save(c.Request, c.Writer)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to save session")
+		return err
+	}
+
+	// Return nil
+	return nil
 }
 
-func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
+func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) {
 	log.Debug().Msg("Getting session cookie")
 
 	// Get session
-	sessions := sessions.Default(c)
+	session, err := auth.GetSession(c)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get session")
+		return types.SessionCookie{}, err
+	}
 
 	// Get data
-	cookieUsername := sessions.Get("username")
-	cookieProvider := sessions.Get("provider")
-	cookieExpiry := sessions.Get("expiry")
-	cookieTotpPending := sessions.Get("totpPending")
+	cookieUsername := session.Values["username"]
+	cookieProvider := session.Values["provider"]
+	cookieExpiry := session.Values["expiry"]
+	cookieTotpPending := session.Values["totpPending"]
 
 	// Convert interfaces to correct types
 	username, usernameOk := cookieUsername.(string)
@@ -187,7 +241,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 	// Check if the cookie is invalid
 	if !usernameOk || !providerOk || !expiryOk || !totpPendingOk {
 		log.Warn().Msg("Session cookie invalid")
-		return types.SessionCookie{}
+		return types.SessionCookie{}, nil
 	}
 
 	// Check if the cookie has expired
@@ -198,7 +252,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 		auth.DeleteSessionCookie(c)
 
 		// Return empty cookie
-		return types.SessionCookie{}
+		return types.SessionCookie{}, nil
 	}
 
 	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Msg("Parsed cookie")
@@ -208,7 +262,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 		Username:    username,
 		Provider:    provider,
 		TotpPending: totpPending,
-	}
+	}, nil
 }
 
 func (auth *Auth) UserAuthConfigured() bool {

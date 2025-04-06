@@ -66,12 +66,8 @@ type OAuthConfig struct {
 
 // APIConfig is the configuration for the API
 type APIConfig struct {
-	Port          int
-	Address       string
-	Secret        string
-	CookieSecure  bool
-	SessionExpiry int
-	Domain        string
+	Port    int
+	Address string
 }
 
 // AuthConfig is the configuration for the auth service
@@ -79,6 +75,9 @@ type AuthConfig struct {
 	Users           Users
 	OauthWhitelist  []string
 	SessionExpiry   int
+	Secret          string
+	CookieSecure    bool
+	Domain          string
 	LoginTimeout    int
 	LoginMaxRetries int
 }

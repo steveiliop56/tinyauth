@@ -23,7 +23,7 @@ type Hooks struct {
 
 func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	// Get session cookie and basic auth
-	cookie := hooks.Auth.GetSessionCookie(c)
+	cookie, err := hooks.Auth.GetSessionCookie(c)
 	basic := hooks.Auth.GetBasicAuth(c)
 
 	// Check if basic auth is set
@@ -44,6 +44,19 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 			}
 		}
 
+	}
+
+	// Check cookie error after basic auth
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get session cookie")
+		// Return empty context
+		return types.UserContext{
+			Username:    "",
+			IsLoggedIn:  false,
+			OAuth:       false,
+			Provider:    "",
+			TotpPending: false,
+		}
 	}
 
 	// Check if session cookie has totp pending

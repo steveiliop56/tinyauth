@@ -21,11 +21,8 @@ import (
 
 // Simple API config for tests
 var apiConfig = types.APIConfig{
-	Port:          8080,
-	Address:       "0.0.0.0",
-	Secret:        "super-secret-api-thing-for-tests", // It is 32 chars long
-	CookieSecure:  false,
-	SessionExpiry: 3600,
+	Port:    8080,
+	Address: "0.0.0.0",
 }
 
 // Simple handlers config for tests
@@ -42,6 +39,8 @@ var handlersConfig = types.HandlersConfig{
 var authConfig = types.AuthConfig{
 	Users:           types.Users{},
 	OauthWhitelist:  []string{},
+	Secret:          "super-secret-api-thing-for-tests", // It is 32 chars long
+	CookieSecure:    false,
 	SessionExpiry:   3600,
 	LoginTimeout:    0,
 	LoginMaxRetries: 0,
