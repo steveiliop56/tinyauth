@@ -38,6 +38,15 @@ var handlersConfig = types.HandlersConfig{
 	GenericName:     "Generic",
 }
 
+// Simple auth config for tests
+var authConfig = types.AuthConfig{
+	Users:           types.Users{},
+	OauthWhitelist:  []string{},
+	SessionExpiry:   3600,
+	LoginTimeout:    0,
+	LoginMaxRetries: 0,
+}
+
 // Cookie
 var cookie string
 
@@ -61,12 +70,13 @@ func getAPI(t *testing.T) *api.API {
 	}
 
 	// Create auth service
-	auth := auth.NewAuth(docker, types.Users{
+	authConfig.Users = types.Users{
 		{
 			Username: user.Username,
 			Password: user.Password,
 		},
-	}, nil, apiConfig.SessionExpiry, 300, 5)
+	}
+	auth := auth.NewAuth(authConfig, docker)
 
 	// Create providers service
 	providers := providers.NewProviders(types.OAuthConfig{})

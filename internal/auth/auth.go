@@ -15,39 +15,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(docker *docker.Docker, userList types.Users, oauthWhitelist []string, sessionExpiry int, loginTimeout int, loginMaxRetries int) *Auth {
+func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
 	return &Auth{
-		Docker:         docker,
-		Users:          userList,
-		OAuthWhitelist: oauthWhitelist,
-		SessionExpiry:  sessionExpiry,
-		LoginTimeout:   loginTimeout,
-		LoginMaxRetries: loginMaxRetries,
-		LoginAttempts:  make(map[string]*LoginAttempt),
+		Config:        config,
+		Docker:        docker,
+		LoginAttempts: make(map[string]*types.LoginAttempt),
 	}
 }
 
-// LoginAttempt tracks information about login attempts for rate limiting
-type LoginAttempt struct {
-	FailedAttempts int
-	LastAttempt    time.Time
-	LockedUntil    time.Time
-}
-
 type Auth struct {
-	Users          types.Users
-	Docker         *docker.Docker
-	OAuthWhitelist []string
-	SessionExpiry  int
-	LoginTimeout   int
-	LoginMaxRetries int
-	LoginAttempts  map[string]*LoginAttempt // Map of username/IP to login attempts
-	LoginMutex     sync.RWMutex            // Mutex to protect the LoginAttempts map
+	Config        types.AuthConfig
+	Docker        *docker.Docker
+	LoginAttempts map[string]*types.LoginAttempt
+	LoginMutex    sync.RWMutex
 }
 
 func (auth *Auth) GetUser(username string) *types.User {
 	// Loop through users and return the user if the username matches
-	for _, user := range auth.Users {
+	for _, user := range auth.Config.Users {
 		if user.Username == username {
 			return &user
 		}
@@ -64,25 +49,25 @@ func (auth *Auth) CheckPassword(user types.User, password string) bool {
 func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
 	auth.LoginMutex.RLock()
 	defer auth.LoginMutex.RUnlock()
-	
+
 	// Return false if rate limiting is not configured
-	if auth.LoginMaxRetries <= 0 || auth.LoginTimeout <= 0 {
+	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
 		return false, 0
 	}
-	
+
 	// Check if the identifier exists in the map
 	attempt, exists := auth.LoginAttempts[identifier]
 	if !exists {
 		return false, 0
 	}
-	
+
 	// If account is locked, check if lock time has expired
 	if attempt.LockedUntil.After(time.Now()) {
 		// Calculate remaining lockout time in seconds
 		remaining := int(time.Until(attempt.LockedUntil).Seconds())
 		return true, remaining
 	}
-	
+
 	// Lock has expired
 	return false, 0
 }
@@ -90,48 +75,48 @@ func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
 // RecordLoginAttempt records a login attempt for rate limiting
 func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
 	// Skip if rate limiting is not configured
-	if auth.LoginMaxRetries <= 0 || auth.LoginTimeout <= 0 {
+	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
 		return
 	}
-	
+
 	auth.LoginMutex.Lock()
 	defer auth.LoginMutex.Unlock()
-	
+
 	// Get current attempt record or create a new one
 	attempt, exists := auth.LoginAttempts[identifier]
 	if !exists {
-		attempt = &LoginAttempt{}
+		attempt = &types.LoginAttempt{}
 		auth.LoginAttempts[identifier] = attempt
 	}
-	
+
 	// Update last attempt time
 	attempt.LastAttempt = time.Now()
-	
+
 	// If successful login, reset failed attempts
 	if success {
 		attempt.FailedAttempts = 0
 		attempt.LockedUntil = time.Time{} // Reset lock time
 		return
 	}
-	
+
 	// Increment failed attempts
 	attempt.FailedAttempts++
-	
+
 	// If max retries reached, lock the account
-	if attempt.FailedAttempts >= auth.LoginMaxRetries {
-		attempt.LockedUntil = time.Now().Add(time.Duration(auth.LoginTimeout) * time.Second)
-		log.Warn().Str("identifier", identifier).Int("timeout", auth.LoginTimeout).Msg("Account locked due to too many failed login attempts")
+	if attempt.FailedAttempts >= auth.Config.LoginMaxRetries {
+		attempt.LockedUntil = time.Now().Add(time.Duration(auth.Config.LoginTimeout) * time.Second)
+		log.Warn().Str("identifier", identifier).Int("timeout", auth.Config.LoginTimeout).Msg("Account locked due to too many failed login attempts")
 	}
 }
 
 func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
 	// If the whitelist is empty, allow all emails
-	if len(auth.OAuthWhitelist) == 0 {
+	if len(auth.Config.OauthWhitelist) == 0 {
 		return true
 	}
 
 	// Loop through the whitelist and return true if the email matches
-	for _, email := range auth.OAuthWhitelist {
+	for _, email := range auth.Config.OauthWhitelist {
 		if email == emailSrc {
 			return true
 		}
@@ -155,7 +140,7 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	if data.TotpPending {
 		sessionExpiry = 3600
 	} else {
-		sessionExpiry = auth.SessionExpiry
+		sessionExpiry = auth.Config.SessionExpiry
 	}
 
 	// Set data
@@ -228,7 +213,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) types.SessionCookie {
 
 func (auth *Auth) UserAuthConfigured() bool {
 	// If there are users, return true
-	return len(auth.Users) > 0
+	return len(auth.Config.Users) > 0
 }
 
 func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bool, error) {

@@ -113,6 +113,15 @@ var rootCmd = &cobra.Command{
 			Domain:        domain,
 		}
 
+		// Create auth config
+		authConfig := types.AuthConfig{
+			Users:           users,
+			OauthWhitelist:  oauthWhitelist,
+			SessionExpiry:   config.SessionExpiry,
+			LoginTimeout:    config.LoginTimeout,
+			LoginMaxRetries: config.LoginMaxRetries,
+		}
+
 		// Create docker service
 		docker := docker.NewDocker()
 
@@ -121,7 +130,7 @@ var rootCmd = &cobra.Command{
 		HandleError(err, "Failed to initialize docker")
 
 		// Create auth service
-		auth := auth.NewAuth(docker, users, oauthWhitelist, config.SessionExpiry, config.LoginTimeout, config.LoginMaxRetries)
+		auth := auth.NewAuth(authConfig, docker)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
