@@ -295,6 +295,9 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bo
 	// Check if user is allowed
 	if len(labels.Users) != 0 {
 		log.Debug().Msg("Checking users")
+		if len(labels.Users) == 0 {
+			return true, nil
+		}
 		if slices.Contains(labels.Users, context.Username) {
 			return true, nil
 		}
