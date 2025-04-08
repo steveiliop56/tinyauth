@@ -61,3 +61,7 @@ Credits for the logo of this app go to:
 
 - **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=steveiliop56/tinyauth&type=Date)](https://www.star-history.com/#steveiliop56/tinyauth&Date)
