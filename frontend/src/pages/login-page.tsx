@@ -1,7 +1,7 @@
 import { Paper, Title, Text, Divider } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
@@ -33,7 +33,17 @@ export const LoginPage = () => {
     mutationFn: (login: LoginFormValues) => {
       return axios.post("/api/login", login);
     },
-    onError: () => {
+    onError: (data: AxiosError) => {
+      if (data.response) {
+        if (data.response.status === 429) {
+          notifications.show({
+            title: t("loginFailTitle"),
+            message: t("loginFailRateLimit"),
+            color: "red",
+          });
+          return;
+        }
+      }
       notifications.show({
         title: t("loginFailTitle"),
         message: t("loginFailSubtitle"),
