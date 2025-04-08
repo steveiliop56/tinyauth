@@ -25,7 +25,7 @@ export const LoginForm = (props: LoginFormProps) => {
     <form onSubmit={form.onSubmit(onSubmit)}>
       <TextInput
         label={t("loginUsername")}
-        placeholder="user@example.com"
+        placeholder="username"
         required
         disabled={isLoading}
         key={form.key("username")}
