@@ -6,6 +6,7 @@
     "loginSubmit": "Είσοδος",
     "loginFailTitle": "Αποτυχία σύνδεσης",
     "loginFailSubtitle": "Παρακαλώ ελέγξτε το όνομα χρήστη και τον κωδικό πρόσβασης",
+    "loginFailRateLimit": "You failed to login too many times, please try again later",
     "loginSuccessTitle": "Συνδεδεμένος",
     "loginSuccessSubtitle": "Καλώς ήρθατε!",
     "loginOauthFailTitle": "Εσωτερικό σφάλμα",
