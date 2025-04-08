@@ -6,6 +6,7 @@
     "loginSubmit": "Login",
     "loginFailTitle": "Failed to log in",
     "loginFailSubtitle": "Please check your username and password",
+    "loginFailRateLimit": "You failed to login too many times, please try again later",
     "loginSuccessTitle": "Logged in",
     "loginSuccessSubtitle": "Welcome back!",
     "loginOauthFailTitle": "Internal error",
