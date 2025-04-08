@@ -6,7 +6,7 @@
     "loginSubmit": "Είσοδος",
     "loginFailTitle": "Αποτυχία σύνδεσης",
     "loginFailSubtitle": "Παρακαλώ ελέγξτε το όνομα χρήστη και τον κωδικό πρόσβασης",
-    "loginFailRateLimit": "You failed to login too many times, please try again later",
+    "loginFailRateLimit": "Αποτύχατε να συνδεθείτε πάρα πολλές φορές, παρακαλώ προσπαθήστε ξανά αργότερα",
     "loginSuccessTitle": "Συνδεδεμένος",
     "loginSuccessSubtitle": "Καλώς ήρθατε!",
     "loginOauthFailTitle": "Εσωτερικό σφάλμα",
@@ -40,7 +40,7 @@
     "totpSuccessSubtitle": "Ανακατεύθυνση στην εφαρμογή σας",
     "totpTitle": "Εισάγετε τον κωδικό TOTP",
     "unauthorizedTitle": "Μη εξουσιοδοτημένο",
-    "unauthorizedResourceSubtitle": "Ο χρήστης με όνομα χρήστη {{username}} δεν είναι εξουσιοδοτημένος να έχει πρόσβαση στον πόρο <Code>{{resource}}</Code>.",
-    "unaothorizedLoginSubtitle": "Ο χρήστης με όνομα χρήστη {{username}} δεν είναι εξουσιοδοτημένος να συνδεθεί.",
+    "unauthorizedResourceSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}<Code/> δεν έχει άδεια πρόσβασης στον πόρο <Code>{{resource}}</Code>.",
+    "unaothorizedLoginSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}<Code/> δεν είναι εξουσιοδοτημένος να συνδεθεί.",
     "unauthorizedButton": "Προσπαθήστε ξανά"
 }
