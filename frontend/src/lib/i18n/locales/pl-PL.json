@@ -40,7 +40,7 @@
     "totpSuccessSubtitle": "Przekierowywanie do aplikacji",
     "totpTitle": "Wprowadź kod TOTP",
     "unauthorizedTitle": "Nieautoryzowany",
-    "unauthorizedResourceSubtitle": "Użytkownik o nazwie <Code>{{username}}<Code/> nie jest upoważniony do uzyskania dostępu do zasobu <Code>{{resource}}</Code>.",
-    "unaothorizedLoginSubtitle": "Użytkownik o nazwie <Code>{{username}}<Code/> nie jest upoważniony do logowania.",
+    "unauthorizedResourceSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to access the resource <Code>{{resource}}</Code>.",
+    "unaothorizedLoginSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to login.",
     "unauthorizedButton": "Spróbuj ponownie"
 }
