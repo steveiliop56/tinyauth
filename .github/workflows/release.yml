@@ -6,7 +6,85 @@ on:
       - "v*"
 
 jobs:
-  build:
+  binary-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "^1.23.2"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Install backend dependencies
+        run: |
+          go mod tidy
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun run build
+
+      - name: Build
+        run: |
+          cp -r frontend/dist internal/assets/dist
+          CGO_ENABLED=0 go build -ldflags "-s -w" -o tinyauth-amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinyauth-amd64
+          path: tinyauth-amd64
+
+  binary-build-arm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "^1.23.2"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Install backend dependencies
+        run: |
+          go mod tidy
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun run build
+
+      - name: Build
+        run: |
+          cp -r frontend/dist internal/assets/dist
+          CGO_ENABLED=0 go build -ldflags "-s -w" -o tinyauth-arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinyauth-arm64
+          path: tinyauth-arm64
+
+  image-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,7 +129,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  build-arm:
+  image-build-arm:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
@@ -96,11 +174,11 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  merge:
+  image-merge:
     runs-on: ubuntu-latest
     needs:
-      - build
-      - build-arm
+      - image-build
+      - image-build-arm
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -134,3 +212,18 @@ jobs:
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf 'ghcr.io/${{ github.repository_owner }}/tinyauth@sha256:%s ' *)
+
+  update-release:
+    runs-on: ubuntu-latest
+    needs:
+      - binary-build
+      - binary-build-arm
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: binaries
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: binaries/*
