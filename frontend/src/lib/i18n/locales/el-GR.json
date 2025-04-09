@@ -40,7 +40,7 @@
     "totpSuccessSubtitle": "Ανακατεύθυνση στην εφαρμογή σας",
     "totpTitle": "Εισάγετε τον κωδικό TOTP",
     "unauthorizedTitle": "Μη εξουσιοδοτημένο",
-    "unauthorizedResourceSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}<Code/> δεν έχει άδεια πρόσβασης στον πόρο <Code>{{resource}}</Code>.",
-    "unaothorizedLoginSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}<Code/> δεν είναι εξουσιοδοτημένος να συνδεθεί.",
+    "unauthorizedResourceSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}</Code> δεν έχει άδεια πρόσβασης στον πόρο <Code>{{resource}}</Code>.",
+    "unaothorizedLoginSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}</Code> δεν είναι εξουσιοδοτημένος να συνδεθεί.",
     "unauthorizedButton": "Προσπαθήστε ξανά"
 }

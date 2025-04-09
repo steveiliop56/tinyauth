@@ -40,7 +40,7 @@
     "totpSuccessSubtitle": "Redirecting to your app",
     "totpTitle": "Enter your TOTP code",
     "unauthorizedTitle": "Unauthorized",
-    "unauthorizedResourceSubtitle": "The user with username <Code>{{username}}<Code/> is not authorized to access the resource <Code>{{resource}}</Code>.",
-    "unaothorizedLoginSubtitle": "The user with username <Code>{{username}}<Code/> is not authorized to login.",
+    "unauthorizedResourceSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to access the resource <Code>{{resource}}</Code>.",
+    "unaothorizedLoginSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to login.",
     "unauthorizedButton": "Try again"
 }
