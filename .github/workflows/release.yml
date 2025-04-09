@@ -46,7 +46,7 @@ jobs:
           path: tinyauth-amd64
 
   binary-build-arm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
