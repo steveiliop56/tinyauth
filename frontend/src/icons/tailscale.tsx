@@ -1,8 +1,8 @@
-import { useMantineColorScheme } from "@mantine/core";
+import { useColorScheme } from "@mantine/hooks";
 import type { SVGProps } from "react";
 
 export function TailscaleIcon(props: SVGProps<SVGSVGElement>) {
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useColorScheme();
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
