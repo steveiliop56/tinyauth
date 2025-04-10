@@ -12,9 +12,6 @@ COPY ./internal ./internal
 COPY ./main.go ./
 COPY ./air.toml ./
 
-RUN mkdir -p ./internal/assets/dist && \
-    echo "app running" > ./internal/assets/dist/index.html
-
 RUN go install github.com/air-verse/air@v1.61.7
 
 EXPOSE 3000
