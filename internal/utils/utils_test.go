@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -123,7 +124,7 @@ func TestGetSecret(t *testing.T) {
 	expected := "test"
 
 	// Create file
-	err := os.WriteFile(file, []byte(expected), 0644)
+	err := os.WriteFile(file, []byte(fmt.Sprintf("\n\n    \n\n\n  %s   \n\n    \n  ", expected)), 0644)
 
 	// Check if there was an error
 	if err != nil {

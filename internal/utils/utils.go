@@ -130,7 +130,7 @@ func GetSecret(conf string, file string) string {
 	}
 
 	// Return the contents of the file
-	return contents
+	return ParseSecretFile(contents)
 }
 
 // Get the users from the config or file
@@ -241,21 +241,19 @@ func ParseUser(user string) (types.User, error) {
 		return types.User{}, errors.New("invalid user format")
 	}
 
-	// Check if the user has a totp secret
-	if len(userSplit) == 2 {
-		// Check for empty username or password
-		if userSplit[1] == "" || userSplit[0] == "" {
+	// Check for empty strings
+	for _, userPart := range userSplit {
+		if strings.TrimSpace(userPart) == "" {
 			return types.User{}, errors.New("invalid user format")
 		}
+	}
+
+	// Check if the user has a totp secret
+	if len(userSplit) == 2 {
 		return types.User{
 			Username: userSplit[0],
 			Password: userSplit[1],
 		}, nil
-	}
-
-	// Check for empty username, password or totp secret
-	if userSplit[2] == "" || userSplit[1] == "" || userSplit[0] == "" {
-		return types.User{}, errors.New("invalid user format")
 	}
 
 	// Return the user struct
@@ -264,4 +262,24 @@ func ParseUser(user string) (types.User, error) {
 		Password:   userSplit[1],
 		TotpSecret: userSplit[2],
 	}, nil
+}
+
+// Parse secret file
+func ParseSecretFile(contents string) string {
+	// Split to lines
+	lines := strings.Split(contents, "\n")
+
+	// Loop through the lines
+	for _, line := range lines {
+		// Check if the line is empty
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		// Return the line
+		return strings.TrimSpace(line)
+	}
+
+	// Return an empty string
+	return ""
 }
