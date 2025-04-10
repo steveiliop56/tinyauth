@@ -17,11 +17,10 @@ func NewProviders(config types.OAuthConfig) *Providers {
 }
 
 type Providers struct {
-	Config    types.OAuthConfig
-	Github    *oauth.OAuth
-	Google    *oauth.OAuth
-	Tailscale *oauth.OAuth
-	Generic   *oauth.OAuth
+	Config  types.OAuthConfig
+	Github  *oauth.OAuth
+	Google  *oauth.OAuth
+	Generic *oauth.OAuth
 }
 
 func (providers *Providers) Init() {
@@ -59,22 +58,6 @@ func (providers *Providers) Init() {
 		providers.Google.Init()
 	}
 
-	if providers.Config.TailscaleClientId != "" && providers.Config.TailscaleClientSecret != "" {
-		log.Info().Msg("Initializing Tailscale OAuth")
-
-		// Create a new oauth provider with the tailscale config
-		providers.Tailscale = oauth.NewOAuth(oauth2.Config{
-			ClientID:     providers.Config.TailscaleClientId,
-			ClientSecret: providers.Config.TailscaleClientSecret,
-			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/tailscale", providers.Config.AppURL),
-			Scopes:       TailscaleScopes(),
-			Endpoint:     TailscaleEndpoint,
-		})
-
-		// Initialize the oauth provider
-		providers.Tailscale.Init()
-	}
-
 	// If we have a client id and secret for generic oauth, initialize the oauth provider
 	if providers.Config.GenericClientId != "" && providers.Config.GenericClientSecret != "" {
 		log.Info().Msg("Initializing Generic OAuth")
@@ -103,8 +86,6 @@ func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 		return providers.Github
 	case "google":
 		return providers.Google
-	case "tailscale":
-		return providers.Tailscale
 	case "generic":
 		return providers.Generic
 	default:
@@ -163,30 +144,6 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 
 		// Return the email
 		return email, nil
-	case "tailscale":
-		// If the tailscale provider is not configured, return an error
-		if providers.Tailscale == nil {
-			log.Debug().Msg("Tailscale provider not configured")
-			return "", nil
-		}
-
-		// Get the client from the tailscale provider
-		client := providers.Tailscale.GetClient()
-
-		log.Debug().Msg("Got client from tailscale")
-
-		// Get the email from the tailscale provider
-		email, err := GetTailscaleEmail(client)
-
-		// Check if there was an error
-		if err != nil {
-			return "", err
-		}
-
-		log.Debug().Msg("Got email from tailscale")
-
-		// Return the email
-		return email, nil
 	case "generic":
 		// If the generic provider is not configured, return an error
 		if providers.Generic == nil {
@@ -224,9 +181,6 @@ func (provider *Providers) GetConfiguredProviders() []string {
 	}
 	if provider.Google != nil {
 		providers = append(providers, "google")
-	}
-	if provider.Tailscale != nil {
-		providers = append(providers, "tailscale")
 	}
 	if provider.Generic != nil {
 		providers = append(providers, "generic")

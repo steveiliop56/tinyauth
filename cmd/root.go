@@ -42,7 +42,6 @@ var rootCmd = &cobra.Command{
 		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
 		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
 		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
-		config.TailscaleClientSecret = utils.GetSecret(config.TailscaleClientSecret, config.TailscaleClientSecretFile)
 
 		// Validate config
 		validator := validator.New()
@@ -77,19 +76,17 @@ var rootCmd = &cobra.Command{
 
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
-			GithubClientId:        config.GithubClientId,
-			GithubClientSecret:    config.GithubClientSecret,
-			GoogleClientId:        config.GoogleClientId,
-			GoogleClientSecret:    config.GoogleClientSecret,
-			TailscaleClientId:     config.TailscaleClientId,
-			TailscaleClientSecret: config.TailscaleClientSecret,
-			GenericClientId:       config.GenericClientId,
-			GenericClientSecret:   config.GenericClientSecret,
-			GenericScopes:         strings.Split(config.GenericScopes, ","),
-			GenericAuthURL:        config.GenericAuthURL,
-			GenericTokenURL:       config.GenericTokenURL,
-			GenericUserURL:        config.GenericUserURL,
-			AppURL:                config.AppURL,
+			GithubClientId:      config.GithubClientId,
+			GithubClientSecret:  config.GithubClientSecret,
+			GoogleClientId:      config.GoogleClientId,
+			GoogleClientSecret:  config.GoogleClientSecret,
+			GenericClientId:     config.GenericClientId,
+			GenericClientSecret: config.GenericClientSecret,
+			GenericScopes:       strings.Split(config.GenericScopes, ","),
+			GenericAuthURL:      config.GenericAuthURL,
+			GenericTokenURL:     config.GenericTokenURL,
+			GenericUserURL:      config.GenericUserURL,
+			AppURL:              config.AppURL,
 		}
 
 		// Create handlers config
@@ -189,9 +186,6 @@ func init() {
 	rootCmd.Flags().String("google-client-id", "", "Google OAuth client ID.")
 	rootCmd.Flags().String("google-client-secret", "", "Google OAuth client secret.")
 	rootCmd.Flags().String("google-client-secret-file", "", "Google OAuth client secret file.")
-	rootCmd.Flags().String("tailscale-client-id", "", "Tailscale OAuth client ID.")
-	rootCmd.Flags().String("tailscale-client-secret", "", "Tailscale OAuth client secret.")
-	rootCmd.Flags().String("tailscale-client-secret-file", "", "Tailscale OAuth client secret file.")
 	rootCmd.Flags().String("generic-client-id", "", "Generic OAuth client ID.")
 	rootCmd.Flags().String("generic-client-secret", "", "Generic OAuth client secret.")
 	rootCmd.Flags().String("generic-client-secret-file", "", "Generic OAuth client secret file.")
@@ -223,9 +217,6 @@ func init() {
 	viper.BindEnv("google-client-id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("google-client-secret", "GOOGLE_CLIENT_SECRET")
 	viper.BindEnv("google-client-secret-file", "GOOGLE_CLIENT_SECRET_FILE")
-	viper.BindEnv("tailscale-client-id", "TAILSCALE_CLIENT_ID")
-	viper.BindEnv("tailscale-client-secret", "TAILSCALE_CLIENT_SECRET")
-	viper.BindEnv("tailscale-client-secret-file", "TAILSCALE_CLIENT_SECRET_FILE")
 	viper.BindEnv("generic-client-id", "GENERIC_CLIENT_ID")
 	viper.BindEnv("generic-client-secret", "GENERIC_CLIENT_SECRET")
 	viper.BindEnv("generic-client-secret-file", "GENERIC_CLIENT_SECRET_FILE")

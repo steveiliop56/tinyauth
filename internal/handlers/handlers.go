@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"net/http"
 	"strings"
 	"tinyauth/internal/auth"
@@ -529,32 +528,6 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 		h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 			RedirectURI: redirectURI,
 		})
-	}
-
-	// Tailscale does not have an auth url so we create a random code (does not need to be secure) to avoid caching and send it
-	if request.Provider == "tailscale" {
-		// Build tailscale query
-		queries, err := query.Values(types.TailscaleQuery{
-			Code: (1000 + rand.IntN(9000)),
-		})
-
-		// Handle error
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to build queries")
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
-			return
-		}
-
-		// Return tailscale URL (immidiately redirects to the callback)
-		c.JSON(200, gin.H{
-			"status":  200,
-			"message": "OK",
-			"url":     fmt.Sprintf("%s/api/oauth/callback/tailscale?%s", h.Config.AppURL, queries.Encode()),
-		})
-		return
 	}
 
 	// Return auth URL

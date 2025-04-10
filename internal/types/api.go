@@ -22,11 +22,6 @@ type UnauthorizedQuery struct {
 	Resource string `url:"resource"`
 }
 
-// TailscaleQuery is the query parameters for the tailscale endpoint
-type TailscaleQuery struct {
-	Code int `url:"code"`
-}
-
 // Proxy is the uri parameters for the proxy endpoint
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`

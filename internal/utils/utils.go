@@ -213,7 +213,7 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 
 // Check if any of the OAuth providers are configured based on the client id and secret
 func OAuthConfigured(config types.Config) bool {
-	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "") || (config.TailscaleClientId != "" && config.TailscaleClientSecret != "")
+	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
 }
 
 // Filter helper function
