@@ -142,13 +142,35 @@ func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
 	}
 
 	// Loop through the whitelist and return true if the email matches
-	for _, email := range auth.Config.OauthWhitelist {
-		if email == emailSrc {
-			return true
+	for _, pattern := range auth.Config.OauthWhitelist {
+		// If pattern contains wildcard, treat as regex
+		if strings.Contains(pattern, "*") {
+			// Convert wildcard pattern to regex pattern
+			regexPattern := "^" + strings.ReplaceAll(
+				strings.ReplaceAll(pattern, ".", "\\."),
+				"*", ".*",
+			) + "$"
+
+			// Compile regex
+			regex, err := regexp.Compile(regexPattern)
+			if err != nil {
+				log.Warn().Err(err).Str("pattern", pattern).Msg("Invalid email whitelist pattern")
+				continue
+			}
+
+			// Check if email matches the pattern
+			if regex.MatchString(emailSrc) {
+				return true
+			}
+		} else {
+			// Exact match
+			if pattern == emailSrc {
+				return true
+			}
 		}
 	}
 
-	// If no emails match, return false
+	// If no patterns match, return false
 	return false
 }
 
