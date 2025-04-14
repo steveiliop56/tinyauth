@@ -21,7 +21,7 @@ COPY ./frontend/postcss.config.cjs ./
 RUN bun run build
 
 # Builder
-FROM golang:1.23-alpine3.21 AS builder
+FROM golang:1.24-alpine3.21 AS builder
 
 WORKDIR /tinyauth
 
