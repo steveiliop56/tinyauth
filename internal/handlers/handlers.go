@@ -515,10 +515,16 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 
 	log.Debug().Str("provider", request.Provider).Msg("Got provider")
 
+	// Create state
+	state := provider.GenerateState()
+
 	// Get auth URL
-	authURL := provider.GetAuthURL()
+	authURL := provider.GetAuthURL(state)
 
 	log.Debug().Msg("Got auth URL")
+
+	// Set CSRF cookie
+	c.SetCookie("tinyauth-csrf", state, int(time.Hour.Seconds()), "/", "", h.Config.CookieSecure, true)
 
 	// Get redirect URI
 	redirectURI := c.Query("redirect_uri")
@@ -553,15 +559,32 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Interface("provider", providerName.Provider).Msg("Got provider name")
 
-	// Get code
-	code := c.Query("code")
+	// Get state
+	state := c.Query("state")
 
-	// Code empty so redirect to error
-	if code == "" {
-		log.Error().Msg("No code provided")
+	// Get CSRF cookie
+	csrfCookie, err := c.Cookie("tinyauth-csrf")
+
+	if err != nil {
+		log.Debug().Msg("No CSRF cookie")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
+
+	log.Debug().Str("csrfCookie", csrfCookie).Msg("Got CSRF cookie")
+
+	// Check if CSRF cookie is valid
+	if csrfCookie != state {
+		log.Warn().Msg("Invalid CSRF cookie or CSRF cookie does not match with the state")
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		return
+	}
+
+	// Clean up CSRF cookie
+	c.SetCookie("tinyauth-csrf", "", -1, "/", "", h.Config.CookieSecure, true)
+
+	// Get code
+	code := c.Query("code")
 
 	log.Debug().Msg("Got code")
 

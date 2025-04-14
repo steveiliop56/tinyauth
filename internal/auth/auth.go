@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"net/http"
 	"regexp"
 	"slices"
 	"strings"
@@ -42,7 +41,6 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 		MaxAge:   auth.Config.SessionExpiry,
 		Secure:   auth.Config.CookieSecure,
 		HttpOnly: true,
-		SameSite: http.SameSiteDefaultMode,
 		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
 	}
 
