@@ -653,6 +653,9 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
+	// Clean up redirect cookie
+	c.SetCookie("tinyauth-redirect", "", -1, "/", "", h.Config.CookieSecure, true)
+
 	// Redirect to continue with the redirect URI
 	c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", h.Config.AppURL, queries.Encode()))
 }
