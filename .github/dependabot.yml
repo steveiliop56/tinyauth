@@ -3,12 +3,12 @@ updates:
   - package-ecosystem: "bun"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
