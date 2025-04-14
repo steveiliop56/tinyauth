@@ -14,7 +14,7 @@
     "@mantine/form": "^7.16.0",
     "@mantine/hooks": "^7.16.0",
     "@mantine/notifications": "^7.16.0",
-    "@tanstack/react-query": "4",
+    "@tanstack/react-query": "5",
     "axios": "^1.7.9",
     "i18next": "^24.2.3",
     "i18next-browser-languagedetector": "^8.0.4",
