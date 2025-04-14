@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/hooks"
@@ -525,9 +526,7 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	// Set redirect cookie if redirect URI is provided
 	if redirectURI != "" {
 		log.Debug().Str("redirectURI", redirectURI).Msg("Setting redirect cookie")
-		h.Auth.CreateSessionCookie(c, &types.SessionCookie{
-			RedirectURI: redirectURI,
-		})
+		c.SetCookie("tinyauth-redirect", redirectURI, int(time.Hour.Seconds()), "/", "", h.Config.CookieSecure, true)
 	}
 
 	// Return auth URL
@@ -623,25 +622,26 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Msg("Email whitelisted")
 
-	// Get redirect URI
-	cookie, err := h.Auth.GetSessionCookie(c)
-
 	// Create session cookie (also cleans up redirect cookie)
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username: email,
 		Provider: providerName.Provider,
 	})
 
-	// If it is empty it means that no redirect_uri was provided to the login screen so we just log in
+	// Check if we have a redirect URI
+	redirectCookie, err := c.Cookie("tinyauth-redirect")
+
 	if err != nil {
+		log.Debug().Msg("No redirect cookie")
 		c.Redirect(http.StatusPermanentRedirect, h.Config.AppURL)
+		return
 	}
 
-	log.Debug().Str("redirectURI", cookie.RedirectURI).Msg("Got redirect URI")
+	log.Debug().Str("redirectURI", redirectCookie).Msg("Got redirect URI")
 
 	// Build query
 	queries, err := query.Values(types.LoginQuery{
-		RedirectURI: cookie.RedirectURI,
+		RedirectURI: redirectCookie,
 	})
 
 	log.Debug().Msg("Got redirect query")

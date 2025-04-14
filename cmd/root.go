@@ -95,6 +95,8 @@ var rootCmd = &cobra.Command{
 			DisableContinue: config.DisableContinue,
 			Title:           config.Title,
 			GenericName:     config.GenericName,
+			CookieSecure:    config.CookieSecure,
+			Domain:          domain,
 		}
 
 		// Create api config

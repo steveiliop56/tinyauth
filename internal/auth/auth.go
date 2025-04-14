@@ -178,7 +178,6 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	session.Values["provider"] = data.Provider
 	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
 	session.Values["totpPending"] = data.TotpPending
-	session.Values["redirectURI"] = data.RedirectURI
 
 	// Save session
 	err = session.Save(c.Request, c.Writer)
@@ -230,11 +229,10 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 	// Get data from session
 	username, usernameOk := session.Values["username"].(string)
 	provider, providerOK := session.Values["provider"].(string)
-	redirectURI, redirectOK := session.Values["redirectURI"].(string)
 	expiry, expiryOk := session.Values["expiry"].(int64)
 	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
 
-	if !usernameOk || !providerOK || !expiryOk || !redirectOK || !totpPendingOk {
+	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk {
 		log.Warn().Msg("Session cookie is missing data")
 		return types.SessionCookie{}, nil
 	}
@@ -257,7 +255,6 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		Username:    username,
 		Provider:    provider,
 		TotpPending: totpPending,
-		RedirectURI: redirectURI,
 	}, nil
 }
 
