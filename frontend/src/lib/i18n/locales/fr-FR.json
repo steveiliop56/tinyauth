@@ -42,5 +42,8 @@
     "unauthorizedTitle": "Non autorisé",
     "unauthorizedResourceSubtitle": "L'utilisateur avec le nom d'utilisateur <Code>{{username}}</Code> n'est pas autorisé à accéder à la ressource <Code>{{resource}}</Code>.",
     "unaothorizedLoginSubtitle": "L'utilisateur avec le nom d'utilisateur <Code>{{username}}</Code> n'est pas autorisé à se connecter.",
-    "unauthorizedButton": "Réessayer"
+    "unauthorizedButton": "Réessayer",
+    "untrustedRedirectTitle": "Untrusted redirect",
+    "untrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<Code>{{domain}}</Code>). Are you sure you want to continue?",
+    "cancelTitle": "Cancel"
 }
