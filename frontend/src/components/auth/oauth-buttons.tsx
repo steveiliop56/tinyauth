@@ -5,13 +5,13 @@ import { OAuthIcon } from "../../icons/oauth";
 
 interface OAuthButtonsProps {
   oauthProviders: string[];
-  isLoading: boolean;
+  isPending: boolean;
   mutate: (provider: string) => void;
   genericName: string;
 }
 
 export const OAuthButtons = (props: OAuthButtonsProps) => {
-  const { oauthProviders, isLoading, genericName, mutate } = props;
+  const { oauthProviders, isPending, genericName, mutate } = props;
   return (
     <Grid mb="md" mt="md" align="center" justify="center">
       {oauthProviders.includes("google") && (
@@ -21,7 +21,7 @@ export const OAuthButtons = (props: OAuthButtonsProps) => {
             leftSection={<GoogleIcon style={{ width: 14, height: 14 }} />}
             variant="default"
             onClick={() => mutate("google")}
-            loading={isLoading}
+            loading={isPending}
           >
             Google
           </Button>
@@ -34,7 +34,7 @@ export const OAuthButtons = (props: OAuthButtonsProps) => {
             leftSection={<GithubIcon style={{ width: 14, height: 14 }} />}
             variant="default"
             onClick={() => mutate("github")}
-            loading={isLoading}
+            loading={isPending}
           >
             Github
           </Button>
@@ -47,7 +47,7 @@ export const OAuthButtons = (props: OAuthButtonsProps) => {
             leftSection={<OAuthIcon style={{ width: 14, height: 14 }} />}
             variant="default"
             onClick={() => mutate("generic")}
-            loading={isLoading}
+            loading={isPending}
           >
             {genericName}
           </Button>

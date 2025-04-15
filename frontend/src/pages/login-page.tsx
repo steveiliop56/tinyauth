@@ -113,7 +113,7 @@ export const LoginPage = () => {
             </Text>
             <OAuthButtons
               oauthProviders={oauthProviders}
-              isLoading={loginOAuthMutation.isLoading}
+              isPending={loginOAuthMutation.isPending}
               mutate={loginOAuthMutation.mutate}
               genericName={genericName}
             />
@@ -128,7 +128,7 @@ export const LoginPage = () => {
         )}
         {configuredProviders.includes("username") && (
           <LoginForm
-            isLoading={loginMutation.isLoading}
+            isPending={loginMutation.isPending}
             onSubmit={handleSubmit}
           />
         )}

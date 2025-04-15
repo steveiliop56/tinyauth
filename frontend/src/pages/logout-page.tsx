@@ -74,7 +74,7 @@ export const LogoutPage = () => {
           fullWidth
           mt="xl"
           onClick={() => logoutMutation.mutate()}
-          loading={logoutMutation.isLoading}
+          loading={logoutMutation.isPending}
         >
           {t("logoutTitle")}
         </Button>

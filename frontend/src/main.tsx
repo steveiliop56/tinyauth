@@ -19,13 +19,7 @@ import { TotpPage } from "./pages/totp-page.tsx";
 import { AppContextProvider } from "./context/app-context.tsx";
 import "./lib/i18n/i18n.ts";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      suspense: true,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

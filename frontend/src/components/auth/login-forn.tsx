@@ -4,12 +4,12 @@ import { LoginFormValues, loginSchema } from "../../schemas/login-schema";
 import { useTranslation } from "react-i18next";
 
 interface LoginFormProps {
-  isLoading: boolean;
+  isPending: boolean;
   onSubmit: (values: LoginFormValues) => void;
 }
 
 export const LoginForm = (props: LoginFormProps) => {
-  const { isLoading, onSubmit } = props;
+  const { isPending, onSubmit } = props;
   const { t } = useTranslation();
 
   const form = useForm({
@@ -27,7 +27,7 @@ export const LoginForm = (props: LoginFormProps) => {
         label={t("loginUsername")}
         placeholder="username"
         required
-        disabled={isLoading}
+        disabled={isPending}
         key={form.key("username")}
         {...form.getInputProps("username")}
       />
@@ -36,11 +36,11 @@ export const LoginForm = (props: LoginFormProps) => {
         placeholder="password"
         required
         mt="md"
-        disabled={isLoading}
+        disabled={isPending}
         key={form.key("password")}
         {...form.getInputProps("password")}
       />
-      <Button fullWidth mt="xl" type="submit" loading={isLoading}>
+      <Button fullWidth mt="xl" type="submit" loading={isPending}>
         {t("loginSubmit")}
       </Button>
     </form>

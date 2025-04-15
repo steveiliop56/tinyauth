@@ -57,7 +57,7 @@ export const TotpPage = () => {
           {t("totpTitle")}
         </Text>
         <TotpForm
-          isLoading={totpMutation.isLoading}
+          isPending={totpMutation.isPending}
           onSubmit={(values) => totpMutation.mutate(values)}
         />
       </Paper>

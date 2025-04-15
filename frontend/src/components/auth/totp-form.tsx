@@ -10,11 +10,11 @@ type FormValues = z.infer<typeof schema>;
 
 interface TotpFormProps {
   onSubmit: (values: FormValues) => void;
-  isLoading: boolean;
+  isPending: boolean;
 }
 
 export const TotpForm = (props: TotpFormProps) => {
-  const { onSubmit, isLoading } = props;
+  const { onSubmit, isPending } = props;
 
   const form = useForm({
     mode: "uncontrolled",
@@ -32,7 +32,7 @@ export const TotpForm = (props: TotpFormProps) => {
         placeholder=""
         {...form.getInputProps("code")}
       />
-      <Button type="submit" mt="xl" loading={isLoading} fullWidth>
+      <Button type="submit" mt="xl" loading={isPending} fullWidth>
         Verify
       </Button>
     </form>
