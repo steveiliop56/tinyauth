@@ -46,6 +46,7 @@ type AppContext struct {
 	DisableContinue     bool     `json:"disableContinue"`
 	Title               string   `json:"title"`
 	GenericName         string   `json:"genericName"`
+	Domain              string   `json:"domain"`
 }
 
 // Totp request is the request for the totp endpoint

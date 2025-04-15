@@ -446,6 +446,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		DisableContinue:     h.Config.DisableContinue,
 		Title:               h.Config.Title,
 		GenericName:         h.Config.GenericName,
+		Domain:              h.Config.Domain,
 	}
 
 	// Return app context

@@ -4,7 +4,7 @@ import { Navigate } from "react-router";
 import { useUserContext } from "../context/user-context";
 import { Layout } from "../components/layouts/layout";
 import { ReactNode } from "react";
-import { isQueryValid } from "../utils/utils";
+import { escapeRegex, isQueryValid } from "../utils/utils";
 import { useAppContext } from "../context/app-context";
 import { Trans, useTranslation } from "react-i18next";
 
@@ -14,7 +14,7 @@ export const ContinuePage = () => {
   const redirectUri = params.get("redirect_uri") ?? "";
 
   const { isLoggedIn } = useUserContext();
-  const { disableContinue } = useAppContext();
+  const { disableContinue, domain } = useAppContext();
   const { t } = useTranslation();
 
   if (!isLoggedIn) {
@@ -51,6 +51,30 @@ export const ContinuePage = () => {
     );
   }
 
+  const regex = new RegExp(`^.*${escapeRegex(domain)}$`)
+
+  if (!regex.test(uri.hostname)) {
+    return (
+      <ContinuePageLayout>
+        <Text size="xl" fw={700}>
+          {t("untrustedRedirectTitle")}
+        </Text>
+        <Trans
+            i18nKey="untrustedRedirectSubtitle"
+            t={t}
+            components={{ Code: <Code /> }}
+            values={{ domain: domain }}
+          />
+        <Button fullWidth mt="xl" color="red" onClick={redirect}>
+          {t('continueTitle')}
+        </Button>
+        <Button fullWidth mt="sm" color="gray" onClick={() => window.location.href = "/"}>
+          {t('cancelTitle')}
+        </Button>
+      </ContinuePageLayout>
+    )
+  }
+
   if (disableContinue) {
     window.location.href = redirectUri;
     return (
@@ -78,6 +102,9 @@ export const ContinuePage = () => {
         </Text>
         <Button fullWidth mt="xl" color="yellow" onClick={redirect}>
           {t("continueTitle")}
+        </Button>
+        <Button fullWidth mt="sm" color="gray" onClick={() => window.location.href = "/"}>
+          {t('cancelTitle')}
         </Button>
       </ContinuePageLayout>
     );

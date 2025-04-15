@@ -5,6 +5,20 @@ import ChainedBackend from "i18next-chained-backend";
 import resourcesToBackend from "i18next-resources-to-backend";
 import HttpBackend from "i18next-http-backend";
 
+const backends = [
+  HttpBackend,
+  resourcesToBackend(
+    (language: string) => import(`./locales/${language}.json`),
+  ),
+]
+
+const backendOptions =  [
+  {
+    loadPath: "https://cdn.tinyauth.app/i18n/v1/{{lng}}.json",
+  },
+  {}
+]
+
 i18n
   .use(ChainedBackend)
   .use(LanguageDetector)
@@ -20,17 +34,8 @@ i18n
     load: "currentOnly",
 
     backend: {
-      backends: [
-        HttpBackend,
-        resourcesToBackend(
-          (language: string) => import(`./locales/${language}.json`),
-        ),
-      ],
-      backendOptions: [
-        {
-          loadPath: "https://cdn.tinyauth.app/i18n/v1/{{lng}}.json",
-        },
-      ],
+      backends: import.meta.env.MODE !== "development" ? backends : backends.reverse(),
+      backendOptions: import.meta.env.MODE !== "development" ? backendOptions : backendOptions.reverse()
     },
   });
 
