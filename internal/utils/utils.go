@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 	"tinyauth/internal/constants"
@@ -188,9 +189,9 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 			// Add the label value to the tinyauth labels struct
 			switch label {
 			case "tinyauth.oauth.whitelist":
-				tinyauthLabels.OAuthWhitelist = strings.Split(value, ",")
+				tinyauthLabels.OAuthWhitelist = value
 			case "tinyauth.users":
-				tinyauthLabels.Users = strings.Split(value, ",")
+				tinyauthLabels.Users = value
 			case "tinyauth.allowed":
 				tinyauthLabels.Allowed = value
 			case "tinyauth.headers":
@@ -282,4 +283,43 @@ func ParseSecretFile(contents string) string {
 
 	// Return an empty string
 	return ""
+}
+
+// Check if a string matches a regex or a whitelist
+func CheckWhitelist(whitelist string, str string) bool {
+	// Check if the whitelist is empty
+	if len(whitelist) == 0 {
+		return true
+	}
+
+	// Check if the whitelist is a regex
+	if strings.HasPrefix(whitelist, "/") && strings.HasSuffix(whitelist, "/") {
+		// Create regex
+		re, err := regexp.Compile(whitelist[1 : len(whitelist)-1])
+
+		// Check if there was an error
+		if err != nil {
+			log.Error().Err(err).Msg("Error compiling regex")
+			return false
+		}
+
+		// Check if the string matches the regex
+		if re.MatchString(str) {
+			return true
+		}
+	}
+
+	// Split the whitelist by comma
+	whitelistSplit := strings.Split(whitelist, ",")
+
+	// Loop through the whitelist
+	for _, item := range whitelistSplit {
+		// Check if the item matches with the string
+		if strings.TrimSpace(item) == str {
+			return true
+		}
+	}
+
+	// Return false if no match was found
+	return false
 }

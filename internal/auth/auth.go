@@ -3,12 +3,12 @@ package auth
 import (
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 	"sync"
 	"time"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
@@ -278,27 +278,14 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bo
 
 	// Check if oauth is allowed
 	if context.OAuth {
-		if len(labels.OAuthWhitelist) == 0 {
-			return true, nil
-		}
 		log.Debug().Msg("Checking OAuth whitelist")
-		if slices.Contains(labels.OAuthWhitelist, context.Username) {
-			return true, nil
-		}
+		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Username), nil
 	}
 
-	// Check if user is allowed
-	if len(labels.Users) != 0 {
-		log.Debug().Msg("Checking users")
-		if slices.Contains(labels.Users, context.Username) {
-			return true, nil
-		}
-	} else {
-		return true, nil
-	}
+	// Check users
+	log.Debug().Msg("Checking users")
 
-	// Not allowed
-	return false, nil
+	return utils.CheckWhitelist(labels.Users, context.Username), nil
 }
 
 func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
