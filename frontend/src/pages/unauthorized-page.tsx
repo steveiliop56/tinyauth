@@ -35,7 +35,7 @@ export const UnauthorizedPage = () => {
           ) : (
             <Text>
               <Trans
-                i18nKey="unauthorizedLoginSubtitle"
+                i18nKey="unaothorizedLoginSubtitle"
                 t={t}
                 components={{ Code: <Code /> }}
                 values={{ username }}

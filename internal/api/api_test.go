@@ -36,7 +36,7 @@ var handlersConfig = types.HandlersConfig{
 // Simple auth config for tests
 var authConfig = types.AuthConfig{
 	Users:           types.Users{},
-	OauthWhitelist:  []string{},
+	OauthWhitelist:  "",
 	Secret:          "super-secret-api-thing-for-tests", // It is 32 chars long
 	CookieSecure:    false,
 	SessionExpiry:   3600,

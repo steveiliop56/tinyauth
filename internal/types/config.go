@@ -68,7 +68,7 @@ type APIConfig struct {
 // AuthConfig is the configuration for the auth service
 type AuthConfig struct {
 	Users           Users
-	OauthWhitelist  []string
+	OauthWhitelist  string
 	SessionExpiry   int
 	Secret          string
 	CookieSecure    bool

@@ -134,20 +134,7 @@ func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
 }
 
 func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
-	// If the whitelist is empty, allow all emails
-	if len(auth.Config.OauthWhitelist) == 0 {
-		return true
-	}
-
-	// Loop through the whitelist and return true if the email matches
-	for _, email := range auth.Config.OauthWhitelist {
-		if email == emailSrc {
-			return true
-		}
-	}
-
-	// If no emails match, return false
-	return false
+	return utils.CheckWhitelist(auth.Config.OauthWhitelist, emailSrc)
 }
 
 func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {

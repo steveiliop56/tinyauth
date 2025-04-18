@@ -288,7 +288,7 @@ func ParseSecretFile(contents string) string {
 // Check if a string matches a regex or a whitelist
 func CheckWhitelist(whitelist string, str string) bool {
 	// Check if the whitelist is empty
-	if len(whitelist) == 0 {
+	if len(strings.TrimSpace(whitelist)) == 0 {
 		return true
 	}
 

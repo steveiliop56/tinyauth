@@ -10,7 +10,7 @@ import (
 
 var config = types.AuthConfig{
 	Users:          types.Users{},
-	OauthWhitelist: []string{},
+	OauthWhitelist: "",
 	SessionExpiry:  3600,
 }
 
