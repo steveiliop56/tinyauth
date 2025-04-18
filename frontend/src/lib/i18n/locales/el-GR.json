@@ -42,5 +42,8 @@
     "unauthorizedTitle": "Μη εξουσιοδοτημένο",
     "unauthorizedResourceSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}</Code> δεν έχει άδεια πρόσβασης στον πόρο <Code>{{resource}}</Code>.",
     "unaothorizedLoginSubtitle": "Ο χρήστης με όνομα χρήστη <Code>{{username}}</Code> δεν είναι εξουσιοδοτημένος να συνδεθεί.",
-    "unauthorizedButton": "Προσπαθήστε ξανά"
+    "unauthorizedButton": "Προσπαθήστε ξανά",
+    "untrustedRedirectTitle": "Μη έμπιστη ανακατεύθυνση",
+    "untrustedRedirectSubtitle": "Προσπαθείτε να ανακατευθύνετε σε έναν τομέα που δεν ταιριάζει με τον ρυθμισμένο τομέα σας (<Code>{{domain}}</Code>). Είστε βέβαιοι ότι θέλετε να συνεχίσετε;",
+    "cancelTitle": "Ακύρωση"
 }

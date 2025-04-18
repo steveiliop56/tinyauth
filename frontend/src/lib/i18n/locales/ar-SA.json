@@ -42,5 +42,8 @@
     "unauthorizedTitle": "غير مرخص",
     "unauthorizedResourceSubtitle": "المستخدم الذي يحمل اسم المستخدم <Code>{{username}}</Code> غير مصرح له بالوصول إلى المورد <Code>{{resource}}</Code>.",
     "unaothorizedLoginSubtitle": "المستخدم الذي يحمل اسم المستخدم <Code>{{username}}</Code> غير مصرح له بتسجيل الدخول.",
-    "unauthorizedButton": "حاول مجددا"
+    "unauthorizedButton": "حاول مجددا",
+    "untrustedRedirectTitle": "Untrusted redirect",
+    "untrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<Code>{{domain}}</Code>). Are you sure you want to continue?",
+    "cancelTitle": "إلغاء"
 }

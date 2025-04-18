@@ -42,5 +42,8 @@
     "unauthorizedTitle": "Nieautoryzowany",
     "unauthorizedResourceSubtitle": "Użytkownik o nazwie <Code>{{username}}</Code> nie jest upoważniony do uzyskania dostępu do zasobu <Code>{{resource}}</Code>.",
     "unaothorizedLoginSubtitle": "Użytkownik o nazwie <Code>{{username}}</Code> nie jest upoważniony do logowania.",
-    "unauthorizedButton": "Spróbuj ponownie"
+    "unauthorizedButton": "Spróbuj ponownie",
+    "untrustedRedirectTitle": "Niezaufane przekierowanie",
+    "untrustedRedirectSubtitle": "Próbujesz przekierować do domeny, która nie pasuje do skonfigurowanej przez Ciebie domeny (<Code>{{domain}}</Code>). Czy na pewno chcesz kontynuować?",
+    "cancelTitle": "Anuluj"
 }
