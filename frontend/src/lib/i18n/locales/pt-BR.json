@@ -1,5 +1,5 @@
 {
-    "loginTitle": "Bem-vindo de volta, faça o login com",
+    "loginTitle": "Bem-vindo de volta, acesse com",
     "loginDivider": "Ou continuar com uma senha",
     "loginUsername": "Nome de usuário",
     "loginPassword": "Senha",
@@ -46,5 +46,5 @@
     "untrustedRedirectTitle": "Redirecionamento não confiável",
     "untrustedRedirectSubtitle": "Você está tentando redirecionar para um domínio que não corresponde ao seu domínio configurado (<Code>{{domain}}</Code>). Tem certeza que deseja continuar?",
     "cancelTitle": "Cancelar",
-    "forgotPasswordTitle": "Forgot your password?"
+    "forgotPasswordTitle": "Esqueceu sua senha?"
 }
