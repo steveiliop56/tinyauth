@@ -45,5 +45,6 @@
     "unauthorizedButton": "حاول مجددا",
     "untrustedRedirectTitle": "Untrusted redirect",
     "untrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<Code>{{domain}}</Code>). Are you sure you want to continue?",
-    "cancelTitle": "إلغاء"
+    "cancelTitle": "إلغاء",
+    "forgotPasswordTitle": "Forgot your password?"
 }
