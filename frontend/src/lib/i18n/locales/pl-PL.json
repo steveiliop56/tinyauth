@@ -45,5 +45,6 @@
     "unauthorizedButton": "Spróbuj ponownie",
     "untrustedRedirectTitle": "Niezaufane przekierowanie",
     "untrustedRedirectSubtitle": "Próbujesz przekierować do domeny, która nie pasuje do skonfigurowanej przez Ciebie domeny (<Code>{{domain}}</Code>). Czy na pewno chcesz kontynuować?",
-    "cancelTitle": "Anuluj"
+    "cancelTitle": "Anuluj",
+    "forgotPasswordTitle": "Forgot your password?"
 }
