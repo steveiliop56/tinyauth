@@ -194,12 +194,13 @@ func TestAppContext(t *testing.T) {
 
 	// Create tests values
 	expected := types.AppContext{
-		Status:              200,
-		Message:             "OK",
-		ConfiguredProviders: []string{"username"},
-		DisableContinue:     false,
-		Title:               "Tinyauth",
-		GenericName:         "Generic",
+		Status:                200,
+		Message:               "OK",
+		ConfiguredProviders:   []string{"username"},
+		DisableContinue:       false,
+		Title:                 "Tinyauth",
+		GenericName:           "Generic",
+		ForgotPasswordMessage: "Some message",
 	}
 
 	// We should get the username back
