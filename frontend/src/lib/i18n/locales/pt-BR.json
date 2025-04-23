@@ -45,5 +45,6 @@
     "unauthorizedButton": "Tentar novamente",
     "untrustedRedirectTitle": "Redirecionamento não confiável",
     "untrustedRedirectSubtitle": "Você está tentando redirecionar para um domínio que não corresponde ao seu domínio configurado (<Code>{{domain}}</Code>). Tem certeza que deseja continuar?",
-    "cancelTitle": "Cancelar"
+    "cancelTitle": "Cancelar",
+    "forgotPasswordTitle": "Forgot your password?"
 }
