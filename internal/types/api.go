@@ -40,13 +40,14 @@ type UserContextResponse struct {
 
 // App Context is the response for the app context endpoint
 type AppContext struct {
-	Status              int      `json:"status"`
-	Message             string   `json:"message"`
-	ConfiguredProviders []string `json:"configuredProviders"`
-	DisableContinue     bool     `json:"disableContinue"`
-	Title               string   `json:"title"`
-	GenericName         string   `json:"genericName"`
-	Domain              string   `json:"domain"`
+	Status                int      `json:"status"`
+	Message               string   `json:"message"`
+	ConfiguredProviders   []string `json:"configuredProviders"`
+	DisableContinue       bool     `json:"disableContinue"`
+	Title                 string   `json:"title"`
+	GenericName           string   `json:"genericName"`
+	Domain                string   `json:"domain"`
+	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
 }
 
 // Totp request is the request for the totp endpoint

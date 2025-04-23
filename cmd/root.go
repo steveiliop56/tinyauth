@@ -84,12 +84,13 @@ var rootCmd = &cobra.Command{
 
 		// Create handlers config
 		handlersConfig := types.HandlersConfig{
-			AppURL:          config.AppURL,
-			DisableContinue: config.DisableContinue,
-			Title:           config.Title,
-			GenericName:     config.GenericName,
-			CookieSecure:    config.CookieSecure,
-			Domain:          domain,
+			AppURL:                config.AppURL,
+			DisableContinue:       config.DisableContinue,
+			Title:                 config.Title,
+			GenericName:           config.GenericName,
+			CookieSecure:          config.CookieSecure,
+			Domain:                domain,
+			ForgotPasswordMessage: config.FogotPasswordMessage,
 		}
 
 		// Create api config
@@ -196,6 +197,7 @@ func init() {
 	rootCmd.Flags().Int("login-max-retries", 5, "Maximum login attempts before timeout (0 to disable).")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
+	rootCmd.Flags().String("forgot-password-message", "You can reset your password by changing the `USERS` environment variable.", "Message to show on the forgot password page.")
 
 	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
@@ -227,6 +229,7 @@ func init() {
 	viper.BindEnv("app-title", "APP_TITLE")
 	viper.BindEnv("login-timeout", "LOGIN_TIMEOUT")
 	viper.BindEnv("login-max-retries", "LOGIN_MAX_RETRIES")
+	viper.BindEnv("forgot-password-message", "FORGOT_PASSWORD_MESSAGE")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())

@@ -32,16 +32,18 @@ type Config struct {
 	EnvFile                 string `mapstructure:"env-file"`
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
+	FogotPasswordMessage    string `mapstructure:"forgot-password-message" validate:"required"`
 }
 
 // Server configuration
 type HandlersConfig struct {
-	AppURL          string
-	Domain          string
-	CookieSecure    bool
-	DisableContinue bool
-	GenericName     string
-	Title           string
+	AppURL                string
+	Domain                string
+	CookieSecure          bool
+	DisableContinue       bool
+	GenericName           string
+	Title                 string
+	ForgotPasswordMessage string
 }
 
 // OAuthConfig is the configuration for the providers

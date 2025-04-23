@@ -6,6 +6,7 @@ export const appContextSchema = z.object({
   title: z.string(),
   genericName: z.string(),
   domain: z.string(),
+  forgotPasswordMessage: z.string(),
 });
 
 export type AppContextSchemaType = z.infer<typeof appContextSchema>;

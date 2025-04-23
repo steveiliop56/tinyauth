@@ -440,13 +440,14 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 
 	// Create app context struct
 	appContext := types.AppContext{
-		Status:              200,
-		Message:             "OK",
-		ConfiguredProviders: configuredProviders,
-		DisableContinue:     h.Config.DisableContinue,
-		Title:               h.Config.Title,
-		GenericName:         h.Config.GenericName,
-		Domain:              h.Config.Domain,
+		Status:                200,
+		Message:               "OK",
+		ConfiguredProviders:   configuredProviders,
+		DisableContinue:       h.Config.DisableContinue,
+		Title:                 h.Config.Title,
+		GenericName:           h.Config.GenericName,
+		Domain:                h.Config.Domain,
+		ForgotPasswordMessage: h.Config.ForgotPasswordMessage,
 	}
 
 	// Return app context
