@@ -27,10 +27,11 @@ var apiConfig = types.APIConfig{
 
 // Simple handlers config for tests
 var handlersConfig = types.HandlersConfig{
-	AppURL:          "http://localhost:8080",
-	DisableContinue: false,
-	Title:           "Tinyauth",
-	GenericName:     "Generic",
+	AppURL:                "http://localhost:8080",
+	DisableContinue:       false,
+	Title:                 "Tinyauth",
+	GenericName:           "Generic",
+	ForgotPasswordMessage: "Some message",
 }
 
 // Simple auth config for tests
