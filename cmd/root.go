@@ -131,7 +131,7 @@ var rootCmd = &cobra.Command{
 		hooks := hooks.NewHooks(auth, providers)
 
 		// Create handlers
-		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
+		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker, config.AutoOidcLogin)
 
 		// Create API
 		api := api.NewAPI(apiConfig, handlers)
@@ -223,6 +223,7 @@ func init() {
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("generic-name", "GENERIC_NAME")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
+	viper.BindEnv("auto-oidc-login", "AUTO_OIDC_LOGIN")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")

@@ -44,6 +44,7 @@ type AppContext struct {
 	Message               string   `json:"message"`
 	ConfiguredProviders   []string `json:"configuredProviders"`
 	DisableContinue       bool     `json:"disableContinue"`
+	AutoOidcLogin         bool     `json:"autoOidcLogin"`
 	Title                 string   `json:"title"`
 	GenericName           string   `json:"genericName"`
 	Domain                string   `json:"domain"`

@@ -17,36 +17,36 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hooks, providers *providers.Providers, docker *docker.Docker) *Handlers {
+func NewHandlers(handlersConfig types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hooks, providers *providers.Providers, docker *docker.Docker, autoOidcLogin bool) *Handlers {
 	return &Handlers{
-		Config:    config,
-		Auth:      auth,
-		Hooks:     hooks,
-		Providers: providers,
-		Docker:    docker,
+		Config:        handlersConfig,
+		Auth:          auth,
+		Hooks:         hooks,
+		Providers:     providers,
+		Docker:        docker,
+		AutoOidcLogin: autoOidcLogin,
 	}
 }
 
 type Handlers struct {
-	Config    types.HandlersConfig
-	Auth      *auth.Auth
-	Hooks     *hooks.Hooks
-	Providers *providers.Providers
-	Docker    *docker.Docker
+	Config        types.HandlersConfig
+	Auth          *auth.Auth
+	Hooks         *hooks.Hooks
+	Providers     *providers.Providers
+	Docker        *docker.Docker
+	AutoOidcLogin bool
 }
 
 func (h *Handlers) AuthHandler(c *gin.Context) {
-    var proxy types.Proxy // Declaration for proxy
-    err := c.BindUri(&proxy)
-    if err != nil {
-        log.Error().Err(err).Msg("Failed to bind URI")
-        c.JSON(400, gin.H{"status": 400,"message": "Bad Request"})
-        return
-    }
+	var proxy types.Proxy // Declaration for proxy
+	err := c.BindUri(&proxy)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI")
+		c.JSON(400, gin.H{"status": 400, "message": "Bad Request"})
+		return
+	}
 
-    isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html") 
-
-
+	isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
 
 	log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
 
@@ -93,49 +93,86 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		// --- ADD CLAIMS HEADER LOGIC ---
 		if userContext.Claims != nil {
-			log.Debug().Msg("Setting headers from claims")
-			for key, value := range userContext.Claims {
-				// Sanitize header key slightly (replace common disallowed chars, case is handled by Go's http library)
-				headerKeySanitized := strings.ReplaceAll(key, ".", "-")
-				headerKeySanitized = strings.ReplaceAll(headerKeySanitized, "_", "-")
-				headerName := fmt.Sprintf("X-Claim-%s", headerKeySanitized)
-				headerValue := ""
+			log.Debug().Msg("Setting specific headers from claims")
 
-				switch v := value.(type) {
-				case string:
-					headerValue = v
-				case bool:
-					headerValue = fmt.Sprintf("%t", v)
-				case float64: // Numbers often parse as float64 from JSON
-					// Format as integer if it has no fractional part
-					if v == float64(int64(v)) {
-						headerValue = fmt.Sprintf("%d", int64(v))
-					} else {
-						headerValue = fmt.Sprintf("%f", v)
+			// Helper function to safely get string claim from the map
+			getStringClaim := func(key string) string {
+				if val, ok := userContext.Claims[key]; ok {
+					// Try asserting as string directly
+					if strVal, ok := val.(string); ok {
+						return strVal
 					}
-				// Add cases for int, etc. if needed and they aren't covered by float64
-				case []interface{}:
-					strValues := make([]string, len(v))
-					for i, item := range v {
-						strValues[i] = fmt.Sprintf("%v", item)
-					}
-					headerValue = strings.Join(strValues, ",")
-				default:
-					// Attempt to convert other types, might result in "[value]" or similar
-					headerValue = fmt.Sprintf("%v", v)
-					log.Warn().Str("key", key).Str("type", fmt.Sprintf("%T", v)).Msg("Unhandled claim type, using default string conversion for header")
+					// Handle cases where it might be parsed as something else but convertible
+					return fmt.Sprintf("%v", val) // Fallback conversion
 				}
+				return "" // Return empty string if claim doesn't exist
+			}
 
-				if headerValue != "" {
-					log.Debug().Str("key", headerName).Str("value", headerValue).Msg("Setting claim header")
-					// Use Set to overwrite if duplicate claim keys map to same sanitized header
-					c.Header(headerName, headerValue)
+			// 1. Set X-Remote-User from preferred_username
+			preferredUsername := getStringClaim("preferred_username")
+			if preferredUsername != "" {
+				log.Debug().Str("key", "X-Remote-User").Str("value", preferredUsername).Msg("Setting header")
+				c.Header("X-Remote-User", preferredUsername)
+			} else {
+				log.Warn().Msg("Claim 'preferred_username' not found or not a string, 'X-Remote-User' header not set.")
+			}
+
+			// 2. Set X-Remote-Name from given_name and family_name (or fallback to name)
+			givenName := getStringClaim("given_name")
+			familyName := getStringClaim("family_name")
+			fullName := strings.TrimSpace(givenName + " " + familyName)
+			if fullName != "" {
+				log.Debug().Str("key", "X-Remote-Name").Str("value", fullName).Msg("Setting header")
+				c.Header("X-Remote-Name", fullName)
+			} else {
+				nameClaim := getStringClaim("name")
+				if nameClaim != "" {
+					log.Debug().Str("key", "X-Remote-Name").Str("value", nameClaim).Msg("Setting header (using 'name' claim fallback)")
+					c.Header("X-Remote-Name", nameClaim)
+				} else {
+					log.Warn().Msg("Claims 'given_name'/'family_name' and 'name' not found or not strings, 'X-Remote-Name' header not set.")
 				}
 			}
+
+			// 3. Set X-Remote-Email from email
+			email := getStringClaim("email")
+			if email != "" {
+				log.Debug().Str("key", "X-Remote-Email").Str("value", email).Msg("Setting header")
+				c.Header("X-Remote-Email", email)
+			} else {
+				log.Warn().Msg("Claim 'email' not found or not a string, 'X-Remote-Email' header not set.")
+			}
+
+			// 4. Example: Set X-Remote-Groups (optional, based on your needs and provider image)
+			if groupsVal, ok := userContext.Claims["groups"]; ok {
+				if groupsArray, ok := groupsVal.([]interface{}); ok {
+					groupStrings := []string{}
+					for _, group := range groupsArray {
+						if groupStr, ok := group.(string); ok { // Ensure each element is a string
+							groupStrings = append(groupStrings, groupStr)
+						}
+					}
+					if len(groupStrings) > 0 {
+						// Join groups with a comma (or choose another separator like ';')
+						groupsHeaderValue := strings.Join(groupStrings, ",")
+						log.Debug().Str("key", "X-Remote-Groups").Str("value", groupsHeaderValue).Msg("Setting header")
+						c.Header("X-Remote-Groups", groupsHeaderValue)
+					}
+				} else {
+					log.Warn().Str("type", fmt.Sprintf("%T", groupsVal)).Msg("Claim 'groups' exists but is not an array, 'X-Remote-Groups' header not set.")
+				}
+			}
+
+			// Can add more specific claims here if needed following the pattern:
+			// claimValue := getStringClaim("some_other_claim")
+			// if claimValue != "" {
+			//    c.Header("X-Remote-Some-Other-Claim", claimValue)
+			// }
+
+		} else {
+			log.Debug().Msg("No claims found in user context to set specific headers.")
 		}
-		// --- END CLAIMS HEADER LOGIC ---
 
 		// Set standard headers (Remote-User and from docker labels)
 		c.Header("Remote-User", userContext.Username)
@@ -393,6 +430,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		Message:               "OK",
 		ConfiguredProviders:   configuredProviders,
 		DisableContinue:       h.Config.DisableContinue,
+		AutoOidcLogin:         h.AutoOidcLogin,
 		Title:                 h.Config.Title,
 		GenericName:           h.Config.GenericName,
 		Domain:                h.Config.Domain,

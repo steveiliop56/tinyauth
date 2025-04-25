@@ -25,6 +25,7 @@ type Config struct {
 	GenericUserURL          string `mapstructure:"generic-user-url"`
 	GenericName             string `mapstructure:"generic-name"`
 	DisableContinue         bool   `mapstructure:"disable-continue"`
+	AutoOidcLogin           bool   `mapstructure:"auto-oidc-login"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	SessionExpiry           int    `mapstructure:"session-expiry"`
 	LogLevel                int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
