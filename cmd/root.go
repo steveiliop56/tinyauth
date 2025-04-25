@@ -111,6 +111,11 @@ var rootCmd = &cobra.Command{
 			LoginMaxRetries: config.LoginMaxRetries,
 		}
 
+		// Create hooks config
+		hooksConfig := types.HooksConfig{
+			Domain: domain,
+		}
+
 		// Create docker service
 		docker := docker.NewDocker()
 
@@ -128,7 +133,7 @@ var rootCmd = &cobra.Command{
 		providers.Init()
 
 		// Create hooks service
-		hooks := hooks.NewHooks(auth, providers)
+		hooks := hooks.NewHooks(hooksConfig, auth, providers)
 
 		// Create handlers
 		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)

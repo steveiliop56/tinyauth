@@ -323,3 +323,8 @@ func CheckWhitelist(whitelist string, str string) bool {
 	// Return false if no match was found
 	return false
 }
+
+// Capitalize just the first letter of a string
+func Capitalize(str string) string {
+	return strings.ToUpper(string([]rune(str)[0])) + string([]rune(str)[1:])
+}

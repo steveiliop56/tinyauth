@@ -25,6 +25,8 @@ type OAuthProviders struct {
 // SessionCookie is the cookie for the session (exculding the expiry)
 type SessionCookie struct {
 	Username    string
+	Name        string
+	Email       string
 	Provider    string
 	TotpPending bool
 }
@@ -40,6 +42,8 @@ type TinyauthLabels struct {
 // UserContext is the context for the user
 type UserContext struct {
 	Username    string
+	Name        string
+	Email       string
 	IsLoggedIn  bool
 	OAuth       bool
 	Provider    string

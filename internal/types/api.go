@@ -33,6 +33,8 @@ type UserContextResponse struct {
 	Message     string `json:"message"`
 	IsLoggedIn  bool   `json:"isLoggedIn"`
 	Username    string `json:"username"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
 	Provider    string `json:"provider"`
 	Oauth       bool   `json:"oauth"`
 	TotpPending bool   `json:"totpPending"`

@@ -10,6 +10,7 @@ import (
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -183,8 +184,9 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		// Set the user header
 		c.Header("Remote-User", userContext.Username)
+		c.Header("Remote-Name", userContext.Name)
+		c.Header("Remote-Email", userContext.Email)
 
 		// Set the rest of the headers
 		for key, value := range labels.Headers {
@@ -310,6 +312,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 		// Set totp pending cookie
 		h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 			Username:    login.Username,
+			Name:        utils.Capitalize(login.Username),
+			Email:       fmt.Sprintf("%s@%s", strings.ToLower(login.Username), h.Config.Domain),
 			Provider:    "username",
 			TotpPending: true,
 		})
@@ -328,6 +332,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	// Create session cookie with username as provider
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username: login.Username,
+		Name:     utils.Capitalize(login.Username),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(login.Username), h.Config.Domain),
 		Provider: "username",
 	})
 
@@ -402,6 +408,8 @@ func (h *Handlers) TotpHandler(c *gin.Context) {
 	// Create session cookie with username as provider
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username: user.Username,
+		Name:     utils.Capitalize(user.Username),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), h.Config.Domain),
 		Provider: "username",
 	})
 
@@ -465,6 +473,8 @@ func (h *Handlers) UserHandler(c *gin.Context) {
 		Status:      200,
 		IsLoggedIn:  userContext.IsLoggedIn,
 		Username:    userContext.Username,
+		Name:        userContext.Name,
+		Email:       userContext.Email,
 		Provider:    userContext.Provider,
 		Oauth:       userContext.OAuth,
 		TotpPending: userContext.TotpPending,
@@ -654,9 +664,29 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Msg("Email whitelisted")
 
+	// Get username
+	var username string
+
+	if user.PreferredUsername != "" {
+		username = user.PreferredUsername
+	} else {
+		username = fmt.Sprintf("%s_%s", strings.Split(user.Email, "@")[0], strings.Split(user.Email, "@")[1])
+	}
+
+	// Get name
+	var name string
+
+	if user.Name != "" {
+		name = user.Name
+	} else {
+		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
+	}
+
 	// Create session cookie (also cleans up redirect cookie)
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
-		Username: user.Email,
+		Username: username,
+		Name:     name,
+		Email:    user.Email,
 		Provider: providerName.Provider,
 	})
 

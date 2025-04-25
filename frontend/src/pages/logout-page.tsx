@@ -10,7 +10,7 @@ import { useAppContext } from "../context/app-context";
 import { Trans, useTranslation } from "react-i18next";
 
 export const LogoutPage = () => {
-  const { isLoggedIn, username, oauth, provider } = useUserContext();
+  const { isLoggedIn, oauth, provider, email } = useUserContext();
   const { genericName } = useAppContext();
   const { t } = useTranslation();
 
@@ -56,7 +56,7 @@ export const LogoutPage = () => {
               values={{
                 provider:
                   provider === "generic" ? genericName : capitalize(provider),
-                username: username,
+                username: email,
               }}
             />
           ) : (
@@ -65,7 +65,7 @@ export const LogoutPage = () => {
               t={t}
               components={{ Code: <Code /> }}
               values={{
-                username: username,
+                username: email,
               }}
             />
           )}

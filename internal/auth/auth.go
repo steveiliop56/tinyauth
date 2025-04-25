@@ -160,6 +160,8 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 
 	// Set data
 	session.Values["username"] = data.Username
+	session.Values["name"] = data.Name
+	session.Values["email"] = data.Email
 	session.Values["provider"] = data.Provider
 	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
 	session.Values["totpPending"] = data.TotpPending
@@ -211,14 +213,23 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		return types.SessionCookie{}, err
 	}
 
+	log.Debug().Interface("session", session).Msg("Got session")
+
 	// Get data from session
 	username, usernameOk := session.Values["username"].(string)
+	email, emailOk := session.Values["email"].(string)
+	name, nameOk := session.Values["name"].(string)
 	provider, providerOK := session.Values["provider"].(string)
 	expiry, expiryOk := session.Values["expiry"].(int64)
 	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
 
-	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk {
-		log.Warn().Msg("Session cookie is missing data")
+	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk || !emailOk || !nameOk {
+		log.Warn().Msg("Session cookie is invalid")
+
+		// If any data is missing, delete the session cookie
+		auth.DeleteSessionCookie(c)
+
+		// Return empty cookie
 		return types.SessionCookie{}, nil
 	}
 
@@ -233,11 +244,13 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		return types.SessionCookie{}, nil
 	}
 
-	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Msg("Parsed cookie")
+	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Str("name", name).Str("email", email).Msg("Parsed cookie")
 
 	// Return the cookie
 	return types.SessionCookie{
 		Username:    username,
+		Name:        name,
+		Email:       email,
 		Provider:    provider,
 		TotpPending: totpPending,
 	}, nil

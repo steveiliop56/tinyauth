@@ -78,3 +78,8 @@ type AuthConfig struct {
 	LoginTimeout    int
 	LoginMaxRetries int
 }
+
+// HooksConfig is the configuration for the hooks service
+type HooksConfig struct {
+	Domain string
+}
