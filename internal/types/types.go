@@ -22,11 +22,13 @@ type OAuthProviders struct {
 	Microsoft *oauth.OAuth
 }
 
-// SessionCookie is the cookie for the session (exculding the expiry)
+// SessionCookie is the cookie for the session (excluding the expiry)
 type SessionCookie struct {
 	Username    string
 	Provider    string
 	TotpPending bool
+	// Added Claims field
+	Claims map[string]interface{} `json:"claims,omitempty"`
 }
 
 // TinyauthLabels is the labels for the tinyauth container
@@ -44,6 +46,8 @@ type UserContext struct {
 	OAuth       bool
 	Provider    string
 	TotpPending bool
+	// Added Claims field
+	Claims map[string]interface{} `json:"claims,omitempty"`
 }
 
 // LoginAttempt tracks information about login attempts for rate limiting

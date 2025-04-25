@@ -33,20 +33,21 @@ func (oauth *OAuth) GetAuthURL(state string) string {
 	return oauth.Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(oauth.Verifier))
 }
 
-func (oauth *OAuth) ExchangeToken(code string) (string, error) {
+func (oauth *OAuth) ExchangeToken(code string) (*oauth2.Token, error) {
 	// Exchange the code for a token
 	token, err := oauth.Config.Exchange(oauth.Context, code, oauth2.VerifierOption(oauth.Verifier))
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		// Return nil token on error
+		return nil, err
 	}
 
-	// Set the token
+	// Set the token internally (optional, depending on if you need it stored in the OAuth struct later)
 	oauth.Token = token
 
-	// Return the access token
-	return oauth.Token.AccessToken, nil
+	// Return the full token object
+	return token, nil
 }
 
 func (oauth *OAuth) GetClient() *http.Client {

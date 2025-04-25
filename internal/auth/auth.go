@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/gob"
 	"fmt"
 	"regexp"
 	"strings"
@@ -15,6 +16,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// ADD GOB REGISTRATION FOR THE CLAIMS MAP TYPE
+func init() {
+	gob.Register(map[string]interface{}{})
+}
 
 func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
 	return &Auth{
@@ -147,13 +153,12 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 		return err
 	}
 
-	log.Debug().Msg("Setting session cookie")
+	log.Debug().Msg("Setting session cookie values")
 
 	// Calculate expiry
 	var sessionExpiry int
-
 	if data.TotpPending {
-		sessionExpiry = 3600
+		sessionExpiry = 3600 // Shorter expiry for pending TOTP
 	} else {
 		sessionExpiry = auth.Config.SessionExpiry
 	}
@@ -163,6 +168,14 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	session.Values["provider"] = data.Provider
 	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
 	session.Values["totpPending"] = data.TotpPending
+	// ADD saving claims
+	if data.Claims != nil {
+		session.Values["claims"] = data.Claims
+		log.Debug().Interface("claims", data.Claims).Msg("Adding claims to session")
+	} else {
+		// Ensure claims field is removed if not provided
+		delete(session.Values, "claims")
+	}
 
 	// Save session
 	err = session.Save(c.Request, c.Writer)
@@ -171,7 +184,7 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 		return err
 	}
 
-	// Return nil
+	log.Debug().Msg("Session cookie created/updated")
 	return nil
 }
 
@@ -211,35 +224,61 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		return types.SessionCookie{}, err
 	}
 
-	// Get data from session
+	// Get core data from session
 	username, usernameOk := session.Values["username"].(string)
 	provider, providerOK := session.Values["provider"].(string)
 	expiry, expiryOk := session.Values["expiry"].(int64)
 	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
 
+	// Basic check for essential fields
 	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk {
-		log.Warn().Msg("Session cookie is missing data")
+		log.Warn().Msg("Session cookie is missing essential data")
+		// Clear potentially inconsistent session
+		auth.DeleteSessionCookie(c)
 		return types.SessionCookie{}, nil
 	}
 
 	// Check if the cookie has expired
 	if time.Now().Unix() > expiry {
 		log.Warn().Msg("Session cookie expired")
-
-		// If it has, delete it
 		auth.DeleteSessionCookie(c)
-
-		// Return empty cookie
 		return types.SessionCookie{}, nil
 	}
 
-	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Msg("Parsed cookie")
+	// --- ADD retrieving claims ---
+	var claims map[string]interface{}
+	claimsInterface, claimsOk := session.Values["claims"]
+	if claimsOk && claimsInterface != nil {
+		// Perform type assertion
+		claims, claimsOk = claimsInterface.(map[string]interface{})
+		if !claimsOk {
+			log.Warn().Msg("Session cookie 'claims' field is not of type map[string]interface{}")
+			// Optionally clear the session if claims are corrupted
+			// auth.DeleteSessionCookie(c)
+			// return types.SessionCookie{}, errors.New("corrupted claims data in session")
+			claims = nil // Treat as if claims are not present
+		}
+	} else {
+		// Claims not present or nil, which is fine
+		claims = nil
+	}
+	// --- END retrieving claims ---
+
+
+	log.Debug().
+		Str("username", username).
+		Str("provider", provider).
+		Int64("expiry", expiry).
+		Bool("totpPending", totpPending).
+		Interface("claims", claims). // Log claims for debugging
+		Msg("Parsed cookie")
 
 	// Return the cookie
 	return types.SessionCookie{
 		Username:    username,
 		Provider:    provider,
 		TotpPending: totpPending,
+		Claims:      claims, // Add claims here
 	}, nil
 }
 

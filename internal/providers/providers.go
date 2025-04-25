@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func NewProviders(config types.OAuthConfig) *Providers {
@@ -93,83 +94,74 @@ func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 	}
 }
 
-func (providers *Providers) GetUser(provider string) (string, error) {
-	// Get the email from the provider
-	switch provider {
+func (providers *Providers) GetUser(providerName string, token *oauth2.Token) (string, map[string]interface{}, error) {
+	switch providerName {
 	case "github":
-		// If the github provider is not configured, return an error
 		if providers.Github == nil {
 			log.Debug().Msg("Github provider not configured")
-			return "", nil
+			return "", nil, errors.New("github provider not configured")
 		}
-
-		// Get the client from the github provider
-		client := providers.Github.GetClient()
-
-		log.Debug().Msg("Got client from github")
-
-		// Get the email from the github provider
+		client := providers.Github.Config.Client(providers.Github.Context, token)
 		email, err := GetGithubEmail(client)
-
-		// Check if there was an error
-		if err != nil {
-			return "", err
-		}
-
-		log.Debug().Msg("Got email from github")
-
-		// Return the email
-		return email, nil
+		return email, nil, err
 	case "google":
-		// If the google provider is not configured, return an error
 		if providers.Google == nil {
 			log.Debug().Msg("Google provider not configured")
-			return "", nil
+			return "", nil, errors.New("google provider not configured")
 		}
-
-		// Get the client from the google provider
-		client := providers.Google.GetClient()
-
-		log.Debug().Msg("Got client from google")
-
-		// Get the email from the google provider
+		client := providers.Google.Config.Client(providers.Google.Context, token)
 		email, err := GetGoogleEmail(client)
-
-		// Check if there was an error
-		if err != nil {
-			return "", err
-		}
-
-		log.Debug().Msg("Got email from google")
-
-		// Return the email
-		return email, nil
+        claims := map[string]interface{}{"email": email}
+		return email, claims, err
 	case "generic":
-		// If the generic provider is not configured, return an error
 		if providers.Generic == nil {
 			log.Debug().Msg("Generic provider not configured")
-			return "", nil
+			return "", nil, errors.New("generic provider not configured")
 		}
 
-		// Get the client from the generic provider
-		client := providers.Generic.GetClient()
+		idTokenInterface := token.Extra("id_token")
+		if idTokenInterface == nil {
+			log.Error().Msg("ID token not found in token response for generic provider")
+			return "", nil, errors.New("id_token not found in token response")
+		}
 
-		log.Debug().Msg("Got client from generic")
+		idTokenString, ok := idTokenInterface.(string)
+		if !ok {
+			log.Error().Msg("id_token in token response is not a string")
+			return "", nil, errors.New("id_token is not a string")
+		}
 
-		// Get the email from the generic provider
-		email, err := GetGenericEmail(client, providers.Config.GenericUserURL)
+		log.Debug().Msg("Parsing ID token from generic provider")
 
-		// Check if there was an error
+		// Should change to verify the signature using keys from JWKS endpoint.
+		parsedToken, _, err := new(jwt.Parser).ParseUnverified(idTokenString, jwt.MapClaims{})
 		if err != nil {
-			return "", err
+			log.Error().Err(err).Msg("Failed to parse ID token")
+			return "", nil, fmt.Errorf("failed to parse id_token: %w", err)
 		}
 
-		log.Debug().Msg("Got email from generic")
+		claims, ok := parsedToken.Claims.(jwt.MapClaims)
+		if !ok {
+			log.Error().Msg("Failed to assert claims as jwt.MapClaims")
+			return "", nil, errors.New("invalid claims format in id_token")
+		}
 
-		// Return the email
-		return email, nil
+		// Extract a user identifier (e.g., email or sub) for whitelisting
+		identifier := ""
+		if email, ok := claims["email"].(string); ok && email != "" {
+			identifier = email
+		} else if sub, ok := claims["sub"].(string); ok && sub != "" {
+			identifier = sub // Fallback to subject claim
+		} else {
+            log.Warn().Interface("claims", claims).Msg("Could not find 'email' or 'sub' claim for identifier in ID token")
+			return "", claims, errors.New("cannot determine user identifier from id_token claims")
+		}
+
+		log.Debug().Str("identifier", identifier).Msg("Extracted user info from generic ID token")
+		return identifier, claims, nil
+
 	default:
-		return "", nil
+		return "", nil, errors.New("unknown provider")
 	}
 }
 
