@@ -608,7 +608,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to exchange token")
+		log.Error().Err(err).Msg("Failed to exchange token")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
@@ -620,7 +620,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to get email")
+		log.Error().Err(err).Msg("Failed to get email")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
@@ -636,7 +636,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 		// Handle error
 		if err != nil {
-			log.Error().Msg("Failed to build queries")
+			log.Error().Err(err).Msg("Failed to build queries")
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 			return
 		}
@@ -673,7 +673,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to build queries")
+		log.Error().Err(err).Msg("Failed to build queries")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
