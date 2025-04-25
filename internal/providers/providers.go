@@ -1,14 +1,15 @@
 package providers
 
 import (
+	"errors"
 	"fmt"
 	"tinyauth/internal/oauth"
 	"tinyauth/internal/types"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func NewProviders(config types.OAuthConfig) *Providers {
@@ -111,7 +112,7 @@ func (providers *Providers) GetUser(providerName string, token *oauth2.Token) (s
 		}
 		client := providers.Google.Config.Client(providers.Google.Context, token)
 		email, err := GetGoogleEmail(client)
-        claims := map[string]interface{}{"email": email}
+		claims := map[string]interface{}{"email": email}
 		return email, claims, err
 	case "generic":
 		if providers.Generic == nil {
@@ -153,7 +154,7 @@ func (providers *Providers) GetUser(providerName string, token *oauth2.Token) (s
 		} else if sub, ok := claims["sub"].(string); ok && sub != "" {
 			identifier = sub // Fallback to subject claim
 		} else {
-            log.Warn().Interface("claims", claims).Msg("Could not find 'email' or 'sub' claim for identifier in ID token")
+			log.Warn().Interface("claims", claims).Msg("Could not find 'email' or 'sub' claim for identifier in ID token")
 			return "", claims, errors.New("cannot determine user identifier from id_token claims")
 		}
 
