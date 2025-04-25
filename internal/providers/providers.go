@@ -2,6 +2,7 @@ package providers
 
 import (
 	"fmt"
+	"tinyauth/internal/constants"
 	"tinyauth/internal/oauth"
 	"tinyauth/internal/types"
 
@@ -93,9 +94,9 @@ func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 	}
 }
 
-func (providers *Providers) GetUser(provider string) (map[string]interface{}, error) {
+func (providers *Providers) GetUser(provider string) (constants.Claims, error) {
 	// Create user struct
-	user := make(map[string]interface{})
+	var user constants.Claims
 
 	// Get the user from the provider
 	switch provider {

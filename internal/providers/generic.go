@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"tinyauth/internal/constants"
 
 	"github.com/rs/zerolog/log"
 )
 
-func GetGenericUser(client *http.Client, url string) (map[string]interface{}, error) {
+func GetGenericUser(client *http.Client, url string) (constants.Claims, error) {
 	// Create user struct
-	user := make(map[string]interface{})
+	var user constants.Claims
 
 	// Using the oauth client get the user info url
 	res, err := client.Get(url)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"tinyauth/internal/constants"
 
 	"github.com/rs/zerolog/log"
 )
@@ -13,9 +14,9 @@ func GoogleScopes() []string {
 	return []string{"https://www.googleapis.com/auth/userinfo.email"}
 }
 
-func GetGoogleUser(client *http.Client) (map[string]interface{}, error) {
+func GetGoogleUser(client *http.Client) (constants.Claims, error) {
 	// Create user struct
-	user := make(map[string]interface{})
+	var user constants.Claims
 
 	// Get the user info from google using the oauth http client
 	res, err := client.Get("https://www.googleapis.com/userinfo/v2/me")

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"tinyauth/internal/constants"
 
 	"github.com/rs/zerolog/log"
 )
@@ -20,9 +21,9 @@ func GithubScopes() []string {
 	return []string{"user:email"}
 }
 
-func GetGithubUser(client *http.Client) (map[string]interface{}, error) {
+func GetGithubUser(client *http.Client) (constants.Claims, error) {
 	// Create user struct
-	user := make(map[string]interface{})
+	var user constants.Claims
 
 	// Get the user emails from github using the oauth http client
 	res, err := client.Get("https://api.github.com/user/emails")
@@ -60,7 +61,7 @@ func GetGithubUser(client *http.Client) (map[string]interface{}, error) {
 	// Find and return the primary email
 	for _, email := range emails {
 		if email.Primary {
-			user["email"] = email.Email
+			user.Email = email.Email
 			return user, nil
 		}
 	}

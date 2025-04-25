@@ -7,3 +7,14 @@ var TinyauthLabels = []string{
 	"tinyauth.allowed",
 	"tinyauth.headers",
 }
+
+// Claims are the OIDC supported claims
+type Claims struct {
+	Name       string `json:"name"`
+	FamilyName string `json:"family_name"`
+	GivenName  string `json:"given_name"`
+	MiddleName string `json:"middle_name"`
+	Nickname   string `json:"nickname"`
+	Picture    string `json:"picture"`
+	Email      string `json:"email"`
+}

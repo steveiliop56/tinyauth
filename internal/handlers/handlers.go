@@ -625,22 +625,20 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Msg("Got user")
 
-	// Get email
-	email, ok := user["email"].(string)
-
-	if !ok {
-		log.Error().Msg("Failed to get email from user")
+	// Check that email is not empty
+	if user.Email == "" {
+		log.Warn().Msg("Email is empty")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
 	// Email is not whitelisted
-	if !h.Auth.EmailWhitelisted(email) {
-		log.Warn().Str("email", email).Msg("Email not whitelisted")
+	if !h.Auth.EmailWhitelisted(user.Email) {
+		log.Warn().Str("email", user.Email).Msg("Email not whitelisted")
 
 		// Build query
 		queries, err := query.Values(types.UnauthorizedQuery{
-			Username: email,
+			Username: user.Email,
 		})
 
 		// Handle error
@@ -658,7 +656,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Create session cookie (also cleans up redirect cookie)
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
-		Username: email,
+		Username: user.Email,
 		Provider: providerName.Provider,
 	})
 
