@@ -25,7 +25,7 @@ export const LoginForm = (props: LoginFormProps) => {
     <form onSubmit={form.onSubmit(onSubmit)}>
       <TextInput
         label={t("loginUsername")}
-        placeholder="username"
+        placeholder="Username"
         disabled={isPending}
         required
         withAsterisk={false}
@@ -43,7 +43,7 @@ export const LoginForm = (props: LoginFormProps) => {
       </Group>
       <PasswordInput
         className="password-input"
-        placeholder="password"
+        placeholder="Password"
         required
         disabled={isPending}
         key={form.key("password")}
