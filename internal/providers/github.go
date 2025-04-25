@@ -20,13 +20,16 @@ func GithubScopes() []string {
 	return []string{"user:email"}
 }
 
-func GetGithubEmail(client *http.Client) (string, error) {
+func GetGithubUser(client *http.Client) (map[string]interface{}, error) {
+	// Create user struct
+	user := make(map[string]interface{})
+
 	// Get the user emails from github using the oauth http client
 	res, err := client.Get("https://api.github.com/user/emails")
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Got response from github")
@@ -36,7 +39,7 @@ func GetGithubEmail(client *http.Client) (string, error) {
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Read body from github")
@@ -49,7 +52,7 @@ func GetGithubEmail(client *http.Client) (string, error) {
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Parsed emails from github")
@@ -57,10 +60,11 @@ func GetGithubEmail(client *http.Client) (string, error) {
 	// Find and return the primary email
 	for _, email := range emails {
 		if email.Primary {
-			return email.Email, nil
+			user["email"] = email.Email
+			return user, nil
 		}
 	}
 
 	// User does not have a primary email?
-	return "", errors.New("no primary email found")
+	return user, errors.New("no primary email found")
 }

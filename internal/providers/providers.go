@@ -93,14 +93,17 @@ func (providers *Providers) GetProvider(provider string) *oauth.OAuth {
 	}
 }
 
-func (providers *Providers) GetUser(provider string) (string, error) {
-	// Get the email from the provider
+func (providers *Providers) GetUser(provider string) (map[string]interface{}, error) {
+	// Create user struct
+	user := make(map[string]interface{})
+
+	// Get the user from the provider
 	switch provider {
 	case "github":
 		// If the github provider is not configured, return an error
 		if providers.Github == nil {
 			log.Debug().Msg("Github provider not configured")
-			return "", nil
+			return user, nil
 		}
 
 		// Get the client from the github provider
@@ -108,23 +111,23 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 
 		log.Debug().Msg("Got client from github")
 
-		// Get the email from the github provider
-		email, err := GetGithubEmail(client)
+		// Get the user from the github provider
+		user, err := GetGithubUser(client)
 
 		// Check if there was an error
 		if err != nil {
-			return "", err
+			return user, err
 		}
 
-		log.Debug().Msg("Got email from github")
+		log.Debug().Msg("Got user from github")
 
-		// Return the email
-		return email, nil
+		// Return the user
+		return user, nil
 	case "google":
 		// If the google provider is not configured, return an error
 		if providers.Google == nil {
 			log.Debug().Msg("Google provider not configured")
-			return "", nil
+			return user, nil
 		}
 
 		// Get the client from the google provider
@@ -132,23 +135,23 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 
 		log.Debug().Msg("Got client from google")
 
-		// Get the email from the google provider
-		email, err := GetGoogleEmail(client)
+		// Get the user from the google provider
+		user, err := GetGoogleUser(client)
 
 		// Check if there was an error
 		if err != nil {
-			return "", err
+			return user, err
 		}
 
-		log.Debug().Msg("Got email from google")
+		log.Debug().Msg("Got user from google")
 
-		// Return the email
-		return email, nil
+		// Return the user
+		return user, nil
 	case "generic":
 		// If the generic provider is not configured, return an error
 		if providers.Generic == nil {
 			log.Debug().Msg("Generic provider not configured")
-			return "", nil
+			return user, nil
 		}
 
 		// Get the client from the generic provider
@@ -156,20 +159,20 @@ func (providers *Providers) GetUser(provider string) (string, error) {
 
 		log.Debug().Msg("Got client from generic")
 
-		// Get the email from the generic provider
-		email, err := GetGenericEmail(client, providers.Config.GenericUserURL)
+		// Get the user from the generic provider
+		user, err := GetGenericUser(client, providers.Config.GenericUserURL)
 
 		// Check if there was an error
 		if err != nil {
-			return "", err
+			return user, err
 		}
 
-		log.Debug().Msg("Got email from generic")
+		log.Debug().Msg("Got user from generic")
 
 		// Return the email
-		return email, nil
+		return user, nil
 	default:
-		return "", nil
+		return user, nil
 	}
 }
 

@@ -8,18 +8,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// We are assuming that the generic provider will return a JSON object with an email field
-type GenericUserInfoResponse struct {
-	Email string `json:"email"`
-}
+func GetGenericUser(client *http.Client, url string) (map[string]interface{}, error) {
+	// Create user struct
+	user := make(map[string]interface{})
 
-func GetGenericEmail(client *http.Client, url string) (string, error) {
 	// Using the oauth client get the user info url
 	res, err := client.Get(url)
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Got response from generic provider")
@@ -29,24 +27,21 @@ func GetGenericEmail(client *http.Client, url string) (string, error) {
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Read body from generic provider")
-
-	// Parse the body into a user struct
-	var user GenericUserInfoResponse
 
 	// Unmarshal the body into the user struct
 	err = json.Unmarshal(body, &user)
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Parsed user from generic provider")
 
-	// Return the email
-	return user.Email, nil
+	// Return the user
+	return user, nil
 }

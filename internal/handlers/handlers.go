@@ -613,14 +613,23 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	// Get email
-	email, err := h.Providers.GetUser(providerName.Provider)
-
-	log.Debug().Str("email", email).Msg("Got email")
+	// Get user
+	user, err := h.Providers.GetUser(providerName.Provider)
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to get email")
+		log.Error().Msg("Failed to get user")
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		return
+	}
+
+	log.Debug().Msg("Got user")
+
+	// Get email
+	email, ok := user["email"].(string)
+
+	if !ok {
+		log.Error().Msg("Failed to get email from user")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}

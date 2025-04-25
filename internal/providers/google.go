@@ -8,23 +8,21 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Google works the same as the generic provider
-type GoogleUserInfoResponse struct {
-	Email string `json:"email"`
-}
-
 // The scopes required for the google provider
 func GoogleScopes() []string {
 	return []string{"https://www.googleapis.com/auth/userinfo.email"}
 }
 
-func GetGoogleEmail(client *http.Client) (string, error) {
+func GetGoogleUser(client *http.Client) (map[string]interface{}, error) {
+	// Create user struct
+	user := make(map[string]interface{})
+
 	// Get the user info from google using the oauth http client
 	res, err := client.Get("https://www.googleapis.com/userinfo/v2/me")
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Got response from google")
@@ -34,24 +32,21 @@ func GetGoogleEmail(client *http.Client) (string, error) {
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Read body from google")
-
-	// Parse the body into a user struct
-	var user GoogleUserInfoResponse
 
 	// Unmarshal the body into the user struct
 	err = json.Unmarshal(body, &user)
 
 	// Check if there was an error
 	if err != nil {
-		return "", err
+		return user, err
 	}
 
 	log.Debug().Msg("Parsed user from google")
 
-	// Return the email
-	return user.Email, nil
+	// Return the user
+	return user, nil
 }
