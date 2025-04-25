@@ -1,8 +1,8 @@
-import { useEffect } from "react"; // <--- Added Import
-import { Paper, Title, Text, Divider, Loader, Center } from "@mantine/core"; // <--- Added Loader, Center
+import { useEffect } from "react";
+import { Paper, Title, Text, Divider, Loader, Center } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
-import axios, { type AxiosError, type AxiosResponse } from "axios"; // <--- Added AxiosResponse (optional but good practice)
+import axios, { type AxiosError, type AxiosResponse } from "axios";
 import { useUserContext } from "../context/user-context";
 import { Navigate } from "react-router";
 import { Layout } from "../components/layouts/layout";
@@ -35,7 +35,6 @@ export const LoginPage = () => {
     string         // Type of variable passed to mutate (provider name)
    >({
     mutationFn: (provider: string) => {
-      // Ensure redirectUri is included if present and encode it
       const apiUrl = redirectUri
          ? `/api/oauth/url/${provider}?redirect_uri=${encodeURIComponent(redirectUri)}`
          : `/api/oauth/url/${provider}`;
@@ -47,7 +46,6 @@ export const LoginPage = () => {
         message: t("loginOauthFailSubtitle"),
         color: "red",
       });
-      // Consider adding state to show an error message instead of loader if redirect fails
     },
     onSuccess: (data) => {
       // Check if data.data.url exists before redirecting
@@ -57,7 +55,6 @@ export const LoginPage = () => {
             message: t("loginOauthSuccessSubtitle"),
             color: "blue",
           });
-          // Consider removing setTimeout if you want instant redirect
           setTimeout(() => {
             window.location.href = data.data.url;
           }, 500);
@@ -65,14 +62,13 @@ export const LoginPage = () => {
           // Handle case where URL is missing in response
            notifications.show({
              title: t("loginOauthFailTitle"),
-             message: "OAuth URL missing in response.", // Or a translated message
+             message: "OAuth URL missing in response.", 
              color: "red",
            });
       }
     },
   });
 
-  // --- ADD useEffect FOR AUTO REDIRECT ---
   useEffect(() => {
     // Don't run if already logged in (context is loaded due to Suspense)
     if (isLoggedIn) {
@@ -80,8 +76,7 @@ export const LoginPage = () => {
     }
 
     // Check conditions for auto-redirect
-    // Ensure configuredProviders and autoOidcLogin are available (they should be due to Suspense)
-    const oidcProvidersForCheck = configuredProviders?.filter(p => p !== 'username') ?? []; // Add nullish coalescing for safety
+    const oidcProvidersForCheck = configuredProviders?.filter(p => p !== 'username') ?? []; 
     if (autoOidcLogin === true && oidcProvidersForCheck.length === 1) {
       const providerToRedirect = oidcProvidersForCheck[0];
       // Check if mutation is not already running to prevent loops
@@ -90,18 +85,14 @@ export const LoginPage = () => {
          loginOAuthMutation.mutate(providerToRedirect);
       }
     }
-    // Add dependencies: run when these values change (or on initial load after Suspense)
-    // Note: loginOAuthMutation object itself is stable, mutate function reference is stable
-  }, [autoOidcLogin, configuredProviders, isLoggedIn, loginOAuthMutation.mutate, loginOAuthMutation.isPending]);
-  // --- END useEffect ---
 
+  }, [autoOidcLogin, configuredProviders, isLoggedIn, loginOAuthMutation.mutate, loginOAuthMutation.isPending]);
 
   if (isLoggedIn) {
     // Already logged in, redirect away from login page
-    return <Navigate to="/logout" />; // Or maybe "/" or "/continue?redirect_uri=..."
+    return <Navigate to="/logout" />;
   }
 
-  // --- Optional: Loading state while auto-redirect mutation is pending ---
   // Show loader only if the mutation is running AND it was likely triggered by auto-login logic
   const shouldShowLoader = loginOAuthMutation.isPending && (autoOidcLogin === true && oauthProviders.length === 1);
   if (shouldShowLoader) {
@@ -114,8 +105,6 @@ export const LoginPage = () => {
           </Layout>
       );
   }
-  // --- End Optional Loading State ---
-
 
   // Mutation hook for username/password login
   const loginMutation = useMutation<
@@ -126,7 +115,7 @@ export const LoginPage = () => {
     mutationFn: (login: LoginFormValues) => {
       return axios.post("/api/login", login);
     },
-    onError: (error: AxiosError) => { // Changed variable name from data to error
+    onError: (error: AxiosError) => {
       if (error.response) {
         if (error.response.status === 429) {
           notifications.show({
@@ -143,9 +132,7 @@ export const LoginPage = () => {
         color: "red",
       });
     },
-    onSuccess: async (data: AxiosResponse) => { // Ensure data is AxiosResponse
-      // Check the actual data structure from your API
-      // It's likely nested under `data.data`
+    onSuccess: async (data: AxiosResponse) => {
       if (data?.data?.totpPending) {
         window.location.replace(`/totp?redirect_uri=${redirectUri}`);
         return;
@@ -203,7 +190,7 @@ export const LoginPage = () => {
         {configuredProviders.includes("username") && (
           <LoginForm
             isPending={loginMutation.isPending}
-            onSubmit={handleSubmit} // Pass the handler here
+            onSubmit={handleSubmit}
           />
         )}
       </Paper>
