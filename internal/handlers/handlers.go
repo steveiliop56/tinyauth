@@ -644,7 +644,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to exchange token")
+		log.Error().Err(err).Msg("Failed to exchange token")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
@@ -663,7 +663,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Check that email is not empty
 	if user.Email == "" {
-		log.Warn().Msg("Email is empty")
+		log.Error().Msg("Email is empty")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
@@ -679,7 +679,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 		// Handle error
 		if err != nil {
-			log.Error().Msg("Failed to build queries")
+			log.Error().Err(err).Msg("Failed to build queries")
 			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 			return
 		}
@@ -737,7 +737,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to build queries")
+		log.Error().Err(err).Msg("Failed to build queries")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
