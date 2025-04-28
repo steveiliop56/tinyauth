@@ -204,6 +204,8 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 					}
 					tinyauthLabels.Headers[headerSplit[0]] = headerSplit[1]
 				}
+			case "tinyauth.oauth.groups":
+				tinyauthLabels.OAuthGroups = value
 			}
 		}
 	}

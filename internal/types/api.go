@@ -20,6 +20,7 @@ type OAuthRequest struct {
 type UnauthorizedQuery struct {
 	Username string `url:"username"`
 	Resource string `url:"resource"`
+	GroupErr bool   `url:"groupErr"`
 }
 
 // Proxy is the uri parameters for the proxy endpoint

@@ -69,12 +69,15 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// Check if auth is enabled
-	authEnabled, err := h.Auth.AuthEnabled(c)
+	// Get the app id
+	appId := strings.Split(host, ".")[0]
+
+	// Get the container labels
+	labels, err := h.Docker.GetLabels(appId)
 
 	// Check if there was an error
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to check if app is allowed")
+		log.Error().Err(err).Msg("Failed to get container labels")
 
 		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(500, gin.H{
@@ -88,11 +91,8 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		return
 	}
 
-	// Get the app id
-	appId := strings.Split(host, ".")[0]
-
-	// Get the container labels
-	labels, err := h.Docker.GetLabels(appId)
+	// Check if auth is enabled
+	authEnabled, err := h.Auth.AuthEnabled(c, labels)
 
 	// Check if there was an error
 	if err != nil {
@@ -131,23 +131,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		log.Debug().Msg("Authenticated")
 
 		// Check if user is allowed to access subdomain, if request is nginx.example.com the subdomain (resource) is nginx
-		appAllowed, err := h.Auth.ResourceAllowed(c, userContext)
-
-		// Check if there was an error
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to check if app is allowed")
-
-			if proxy.Proxy == "nginx" || !isBrowser {
-				c.JSON(500, gin.H{
-					"status":  500,
-					"message": "Internal Server Error",
-				})
-				return
-			}
-
-			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
-			return
-		}
+		appAllowed := h.Auth.ResourceAllowed(c, userContext, labels)
 
 		log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if app is allowed")
 
@@ -184,9 +168,51 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
+		log.Debug().Interface("labels", labels).Msg("Got labels")
+
+		// Check if user is in required groups
+		groupOk := h.Auth.OAuthGroup(c, userContext, labels)
+
+		log.Debug().Bool("groupOk", groupOk).Msg("Checking if user is in required groups")
+
+		// The user is not allowed to access the app
+		if !groupOk {
+			log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User is not in required groups")
+
+			// Set WWW-Authenticate header
+			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+
+			if proxy.Proxy == "nginx" || !isBrowser {
+				c.JSON(401, gin.H{
+					"status":  401,
+					"message": "Unauthorized",
+				})
+				return
+			}
+
+			// Build query
+			queries, err := query.Values(types.UnauthorizedQuery{
+				Username: userContext.Username,
+				Resource: strings.Split(host, ".")[0],
+				GroupErr: true,
+			})
+
+			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to build queries")
+				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+				return
+			}
+
+			// We are using caddy/traefik so redirect
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+			return
+		}
+
 		c.Header("Remote-User", userContext.Username)
 		c.Header("Remote-Name", userContext.Name)
 		c.Header("Remote-Email", userContext.Email)
+		c.Header("Remote-Groups", userContext.OAuthGroups)
 
 		// Set the rest of the headers
 		for key, value := range labels.Headers {
@@ -684,10 +710,11 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Create session cookie (also cleans up redirect cookie)
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
-		Username: username,
-		Name:     name,
-		Email:    user.Email,
-		Provider: providerName.Provider,
+		Username:    username,
+		Name:        name,
+		Email:       user.Email,
+		Provider:    providerName.Provider,
+		OAuthGroups: strings.Join(user.Groups, ","),
 	})
 
 	// Check if we have a redirect URI

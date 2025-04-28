@@ -114,12 +114,13 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 		// Return user context since we are logged in with oauth
 		return types.UserContext{
-			Username:   cookie.Username,
-			Name:       cookie.Name,
-			Email:      cookie.Email,
-			IsLoggedIn: true,
-			OAuth:      true,
-			Provider:   cookie.Provider,
+			Username:    cookie.Username,
+			Name:        cookie.Name,
+			Email:       cookie.Email,
+			IsLoggedIn:  true,
+			OAuth:       true,
+			Provider:    cookie.Provider,
+			OAuthGroups: cookie.OAuthGroups,
 		}
 	}
 
