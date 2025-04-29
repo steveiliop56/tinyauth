@@ -1,138 +1,100 @@
-import { Paper, Title, Text, Divider } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { useMutation } from "@tanstack/react-query";
-import axios, { type AxiosError } from "axios";
-import { useUserContext } from "../context/user-context";
-import { Navigate } from "react-router";
-import { Layout } from "../components/layouts/layout";
-import { OAuthButtons } from "../components/auth/oauth-buttons";
-import { LoginFormValues } from "../schemas/login-schema";
-import { LoginForm } from "../components/auth/login-forn";
-import { isQueryValid } from "../utils/utils";
-import { useAppContext } from "../context/app-context";
+import { OAuthButton } from "@/components/auth/oauth-button";
+import { GenericIcon } from "@/components/icons/generic";
+import { GithubIcon } from "@/components/icons/github";
+import { GoogleIcon } from "@/components/icons/google";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useTranslation } from "react-i18next";
 
 export const LoginPage = () => {
-  const queryString = window.location.search;
-  const params = new URLSearchParams(queryString);
-  const redirectUri = params.get("redirect_uri") ?? "";
-
-  const { isLoggedIn } = useUserContext();
-  const { configuredProviders, title, genericName } = useAppContext();
   const { t } = useTranslation();
+  const configuredProviders = ["google", "github", "generic", "username"];
+  const title = "Tinyauth";
 
-  const oauthProviders = configuredProviders.filter(
-    (value) => value !== "username",
-  );
-
-  if (isLoggedIn) {
-    return <Navigate to="/logout" />;
-  }
-
-  const loginMutation = useMutation({
-    mutationFn: (login: LoginFormValues) => {
-      return axios.post("/api/login", login);
-    },
-    onError: (data: AxiosError) => {
-      if (data.response) {
-        if (data.response.status === 429) {
-          notifications.show({
-            title: t("loginFailTitle"),
-            message: t("loginFailRateLimit"),
-            color: "red",
-          });
-          return;
-        }
-      }
-      notifications.show({
-        title: t("loginFailTitle"),
-        message: t("loginFailSubtitle"),
-        color: "red",
-      });
-    },
-    onSuccess: async (data) => {
-      if (data.data.totpPending) {
-        window.location.replace(`/totp?redirect_uri=${redirectUri}`);
-        return;
-      }
-
-      notifications.show({
-        title: t("loginSuccessTitle"),
-        message: t("loginSuccessSubtitle"),
-        color: "green",
-      });
-
-      setTimeout(() => {
-        if (!isQueryValid(redirectUri)) {
-          window.location.replace("/");
-          return;
-        }
-
-        window.location.replace(`/continue?redirect_uri=${redirectUri}`);
-      }, 500);
-    },
-  });
-
-  const loginOAuthMutation = useMutation({
-    mutationFn: (provider: string) => {
-      return axios.get(
-        `/api/oauth/url/${provider}?redirect_uri=${redirectUri}`,
-      );
-    },
-    onError: () => {
-      notifications.show({
-        title: t("loginOauthFailTitle"),
-        message: t("loginOauthFailSubtitle"),
-        color: "red",
-      });
-    },
-    onSuccess: (data) => {
-      notifications.show({
-        title: t("loginOauthSuccessTitle"),
-        message: t("loginOauthSuccessSubtitle"),
-        color: "blue",
-      });
-      setTimeout(() => {
-        window.location.href = data.data.url;
-      }, 500);
-    },
-  });
-
-  const handleSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate(values);
-  };
+  const oauthConfigured =
+    configuredProviders.filter((provider) => provider !== "username").length >
+    0;
+  const userAuthConfigured = configuredProviders.includes("username");
 
   return (
-    <Layout>
-      <Title ta="center">{title}</Title>
-      <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
-        {oauthProviders.length > 0 && (
-          <>
-            <Text size="lg" fw={500} ta="center">
-              {t("loginTitle")}
-            </Text>
-            <OAuthButtons
-              oauthProviders={oauthProviders}
-              isPending={loginOAuthMutation.isPending}
-              mutate={loginOAuthMutation.mutate}
-              genericName={genericName}
-            />
-            {configuredProviders.includes("username") && (
-              <Divider
-                label={t("loginDivider")}
-                labelPosition="center"
-                my="lg"
-              />
+    <Card className="max-w-xs md:max-w-sm">
+      <CardHeader>
+        <CardTitle className="text-center text-3xl">{title}</CardTitle>
+        {configuredProviders.length > 0 && (
+          <CardDescription className="text-center">
+            {oauthConfigured ? t("loginTitle") : t("loginTitleSimple")}
+          </CardDescription>
+        )}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {oauthConfigured && (
+          <div className="flex flex-row gap-3 flex-wrap items-center justify-center">
+            {configuredProviders.includes("google") && (
+              <OAuthButton title="Google" icon={<GoogleIcon />} />
             )}
-          </>
+            {configuredProviders.includes("github") && (
+              <OAuthButton title="Github" icon={<GithubIcon />} />
+            )}
+            {configuredProviders.includes("generic") && (
+              <OAuthButton title="Generic" icon={<GenericIcon />} />
+            )}
+          </div>
         )}
-        {configuredProviders.includes("username") && (
-          <LoginForm
-            isPending={loginMutation.isPending}
-            onSubmit={handleSubmit}
-          />
+        {userAuthConfigured && oauthConfigured && (
+          <div className="flex items-center gap-4">
+            <Separator className="flex-1" />
+            <span className="text-sm text-muted-foreground">
+              {t("loginDivider")}
+            </span>
+            <Separator className="flex-1" />
+          </div>
         )}
-      </Paper>
-    </Layout>
+        {userAuthConfigured && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <Label htmlFor="#username">{t("loginUsername")}</Label>
+              <Input
+                id="username"
+                placeholder={t("loginUsername")}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="#password">
+                <div className="flex flex-row min-w-full items-center justify-between">
+                  <span>{t("loginPassword")}</span>
+                  <a
+                    href="/forgot"
+                    className="text-muted-foreground font-normal"
+                  >
+                    {t("forgotPasswordTitle")}
+                  </a>
+                </div>
+              </Label>
+              <Input
+                id="password"
+                placeholder={t("loginPassword")}
+                className="mt-2"
+              />
+            </div>
+            <Button>{t("loginSubmit")}</Button>
+          </div>
+        )}
+        {configuredProviders.length == 0 && (
+          <h3 className="text-center text-xl text-red-600">
+            {t("failedToFetchProvidersTitle")}
+          </h3>
+        )}
+      </CardContent>
+    </Card>
   );
 };

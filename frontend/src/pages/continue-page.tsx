@@ -1,134 +1,120 @@
-import { Button, Code, Paper, Text } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { Navigate } from "react-router";
-import { useUserContext } from "../context/user-context";
-import { Layout } from "../components/layouts/layout";
-import { ReactNode } from "react";
-import { escapeRegex, isQueryValid } from "../utils/utils";
-import { useAppContext } from "../context/app-context";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
+import { Navigate, useNavigate } from "react-router";
 
 export const ContinuePage = () => {
-  const queryString = window.location.search;
-  const params = new URLSearchParams(queryString);
-  const redirectUri = params.get("redirect_uri") ?? "";
-
-  const { isLoggedIn } = useUserContext();
-  const { disableContinue, domain } = useAppContext();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(window.location.search);
 
-  if (!isLoggedIn) {
-    return <Navigate to={`/login?redirect_uri=${redirectUri}`} />;
-  }
+  const redirectURI = params.get("redirect_uri") ?? "";
 
-  if (!isQueryValid(redirectUri)) {
+  //psuedo
+  const domain = "127.0.0.1";
+  const disableContinue = false;
+
+  if (redirectURI === "") {
     return <Navigate to="/" />;
   }
 
-  const redirect = () => {
-    notifications.show({
-      title: t("continueRedirectingTitle"),
-      message: t("continueRedirectingSubtitle"),
-      color: "blue",
-    });
-    setTimeout(() => {
-      window.location.href = redirectUri;
-    }, 500);
-  };
-
-  let uri;
-
-  try {
-    uri = new URL(redirectUri);
-  } catch {
-    return (
-      <ContinuePageLayout>
-        <Text size="xl" fw={700}>
-          {t("Invalid redirect")}
-        </Text>
-        <Text>{t("The redirect URL is invalid")}</Text>
-      </ContinuePageLayout>
-    );
-  }
-
-  const regex = new RegExp(`^.*${escapeRegex(domain)}$`)
-
-  if (!regex.test(uri.hostname)) {
-    return (
-      <ContinuePageLayout>
-        <Text size="xl" fw={700}>
-          {t("untrustedRedirectTitle")}
-        </Text>
-        <Trans
-            i18nKey="untrustedRedirectSubtitle"
-            t={t}
-            components={{ Code: <Code /> }}
-            values={{ domain: domain }}
-          />
-        <Button fullWidth mt="xl" color="red" onClick={redirect}>
-          {t('continueTitle')}
-        </Button>
-        <Button fullWidth mt="sm" color="gray" onClick={() => window.location.href = "/"}>
-          {t('cancelTitle')}
-        </Button>
-      </ContinuePageLayout>
-    )
+  if (!isValidUrl(redirectURI)) {
+    return <Navigate to="/" />;
   }
 
   if (disableContinue) {
-    window.location.href = redirectUri;
+    window.location.href = redirectURI;
+  }
+
+  const url = new URL(redirectURI);
+
+  if (!url.hostname.includes(domain)) {
     return (
-      <ContinuePageLayout>
-        <Text size="xl" fw={700}>
-          {t("continueRedirectingTitle")}
-        </Text>
-        <Text>{t("continueRedirectingSubtitle")}</Text>
-      </ContinuePageLayout>
+      <Card className="min-w-xs md:max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-3xl">
+            {t("untrustedRedirectTitle")}
+          </CardTitle>
+          <CardDescription>
+            <Trans
+              i18nKey="untrustedRedirectSubtitle"
+              t={t}
+              components={{
+                code: (
+                  <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold" />
+                ),
+              }}
+              values={{ domain }}
+            />
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 items-stretch">
+          <Button
+            onClick={() => window.location.replace(redirectURI)}
+            variant="destructive"
+          >
+            {t("continueTitle")}
+          </Button>
+          <Button onClick={() => navigate("/")} variant="outline">
+            {t("cancelTitle")}
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (window.location.protocol === "https:" && uri.protocol === "http:") {
+  if (url.protocol === "http:" && window.location.protocol === "https:") {
     return (
-      <ContinuePageLayout>
-        <Text size="xl" fw={700}>
-          {t("continueInsecureRedirectTitle")}
-        </Text>
-        <Text>
-          <Trans
-            i18nKey="continueInsecureRedirectSubtitle"
-            t={t}
-            components={{ Code: <Code /> }}
-          />
-        </Text>
-        <Button fullWidth mt="xl" color="yellow" onClick={redirect}>
+      <Card className="min-w-xs md:max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-3xl">
+            {t("continueInsecureRedirectTitle")}
+          </CardTitle>
+          <CardDescription>
+            <Trans
+              i18nKey="continueInsecureRedirectSubtitle"
+              t={t}
+              components={{
+                code: (
+                  <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold" />
+                ),
+              }}
+            />
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 items-stretch">
+          <Button
+            onClick={() => window.location.replace(redirectURI)}
+            variant="warning"
+          >
+            {t("continueTitle")}
+          </Button>
+          <Button onClick={() => navigate("/")} variant="outline">
+            {t("cancelTitle")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="min-w-xs md:max-w-sm">
+      <CardHeader>
+        <CardTitle className="text-3xl">{t("continueTitle")}</CardTitle>
+        <CardDescription>{t("continueSubtitle")}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-stretch">
+        <Button onClick={() => window.location.replace(redirectURI)}>
           {t("continueTitle")}
         </Button>
-        <Button fullWidth mt="sm" color="gray" onClick={() => window.location.href = "/"}>
-          {t('cancelTitle')}
-        </Button>
-      </ContinuePageLayout>
-    );
-  }
-
-  return (
-    <ContinuePageLayout>
-      <Text size="xl" fw={700}>
-        {t("continueTitle")}
-      </Text>
-      <Text>{t("continueSubtitle")}</Text>
-      <Button fullWidth mt="xl" onClick={redirect}>
-        {t("continueTitle")}
-      </Button>
-    </ContinuePageLayout>
-  );
-};
-
-export const ContinuePageLayout = ({ children }: { children: ReactNode }) => {
-  return (
-    <Layout>
-      <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
-        {children}
-      </Paper>
-    </Layout>
+      </CardContent>
+    </Card>
   );
 };
