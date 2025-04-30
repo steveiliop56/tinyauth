@@ -114,7 +114,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	if !authEnabled {
 		for key, value := range labels.Headers {
 			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
-			c.Header(key, value)
+			c.Header(key, utils.SanitizeHeader(value))
 		}
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -209,15 +209,15 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		c.Header("Remote-User", userContext.Username)
-		c.Header("Remote-Name", userContext.Name)
-		c.Header("Remote-Email", userContext.Email)
-		c.Header("Remote-Groups", userContext.OAuthGroups)
+		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
+		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
+		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
+		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
 		// Set the rest of the headers
 		for key, value := range labels.Headers {
 			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
-			c.Header(key, value)
+			c.Header(key, utils.SanitizeHeader(value))
 		}
 
 		// The user is allowed to access the app

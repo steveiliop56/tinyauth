@@ -467,3 +467,65 @@ func TestCheckWhitelist(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 }
+
+// Test capitalize
+func TestCapitalize(t *testing.T) {
+	t.Log("Testing capitalize with a valid string")
+
+	// Create variables
+	str := "test"
+	expected := "Test"
+
+	// Test the capitalize function
+	result := utils.Capitalize(str)
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing capitalize with an empty string")
+
+	// Create variables
+	str = ""
+	expected = ""
+
+	// Test the capitalize function
+	result = utils.Capitalize(str)
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}
+
+// Test the header sanitizer
+func TestSanitizeHeader(t *testing.T) {
+	t.Log("Testing sanitize header with a valid string")
+
+	// Create variables
+	str := "X-Header=value"
+	expected := "X-Header=value"
+
+	// Test the sanitize header function
+	result := utils.SanitizeHeader(str)
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing sanitize header with an invalid string")
+
+	// Create variables
+	str = "X-Header=val\nue"
+	expected = "X-Header=value"
+
+	// Test the sanitize header function
+	result = utils.SanitizeHeader(str)
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}

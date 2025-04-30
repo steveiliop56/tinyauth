@@ -268,7 +268,7 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, lab
 	// Check if oauth is allowed
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
-		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Username)
+		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Email)
 	}
 
 	// Check users

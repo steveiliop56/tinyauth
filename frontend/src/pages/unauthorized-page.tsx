@@ -21,12 +21,12 @@ export const UnauthorizedPage = () => {
   if (isQueryValid(resource) && !isQueryValid(groupErr)) {
     return (
       <UnauthorizedLayout>
-          <Trans
-            i18nKey="unauthorizedResourceSubtitle"
-            t={t}
-            components={{ Code: <Code /> }}
-            values={{ resource, username }}
-          />
+        <Trans
+          i18nKey="unauthorizedResourceSubtitle"
+          t={t}
+          components={{ Code: <Code /> }}
+          values={{ resource, username }}
+        />
       </UnauthorizedLayout>
     );
   }
@@ -35,19 +35,19 @@ export const UnauthorizedPage = () => {
     return (
       <UnauthorizedLayout>
         <Trans
-        i18nKey="unauthorizedGroupsSubtitle"
-        t={t}
-        components={{ Code: <Code /> }}
-        values={{ username, resource }}
-         />
+          i18nKey="unauthorizedGroupsSubtitle"
+          t={t}
+          components={{ Code: <Code /> }}
+          values={{ username, resource }}
+        />
       </UnauthorizedLayout>
-    )
+    );
   }
 
   return (
     <UnauthorizedLayout>
       <Trans
-        i18nKey="unaothorizedLoginSubtitle"
+        i18nKey="unauthorizedLoginSubtitle"
         t={t}
         components={{ Code: <Code /> }}
         values={{ username }}
@@ -65,9 +65,7 @@ const UnauthorizedLayout = ({ children }: { children: React.ReactNode }) => {
         <Text size="xl" fw={700}>
           {t("Unauthorized")}
         </Text>
-        <Text>
-        {children}
-        </Text>
+        <Text>{children}</Text>
         <Button
           fullWidth
           mt="xl"
