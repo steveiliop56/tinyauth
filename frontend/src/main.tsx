@@ -19,6 +19,7 @@ import { TotpPage } from "./pages/totp-page.tsx";
 import { AppContextProvider } from "./context/app-context.tsx";
 import "./lib/i18n/i18n.ts";
 import { ForgotPasswordPage } from "./pages/forgot-password-page.tsx";
+import "./index.css";
 
 const queryClient = new QueryClient();
 
@@ -38,7 +39,10 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/continue" element={<ContinuePage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
                 <Route path="/error" element={<InternalServerError />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </BrowserRouter>

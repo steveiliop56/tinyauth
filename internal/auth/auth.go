@@ -283,6 +283,12 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 		return true
 	}
 
+	// Check if we are using the generic oauth provider
+	if context.Provider != "generic" {
+		log.Debug().Msg("Not using generic provider, skipping group check")
+		return true
+	}
+
 	// Split the groups by comma (no need to parse since they are from the API response)
 	oauthGroups := strings.Split(context.OAuthGroups, ",")
 

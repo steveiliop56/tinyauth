@@ -4,14 +4,21 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"tinyauth/internal/constants"
 
 	"github.com/rs/zerolog/log"
 )
 
+// Response for the google user endpoint
+type GoogleUserInfoResponse struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 // The scopes required for the google provider
 func GoogleScopes() []string {
-	return []string{"https://www.googleapis.com/auth/userinfo.email"}
+	return []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"}
 }
 
 func GetGoogleUser(client *http.Client) (constants.Claims, error) {
@@ -38,8 +45,11 @@ func GetGoogleUser(client *http.Client) (constants.Claims, error) {
 
 	log.Debug().Msg("Read body from google")
 
+	// Create a new user info struct
+	var userInfo GoogleUserInfoResponse
+
 	// Unmarshal the body into the user struct
-	err = json.Unmarshal(body, &user)
+	err = json.Unmarshal(body, &userInfo)
 
 	// Check if there was an error
 	if err != nil {
@@ -47,6 +57,11 @@ func GetGoogleUser(client *http.Client) (constants.Claims, error) {
 	}
 
 	log.Debug().Msg("Parsed user from google")
+
+	// Map the user info to the user struct
+	user.PreferredUsername = strings.Split(userInfo.Email, "@")[0]
+	user.Name = userInfo.Name
+	user.Email = userInfo.Email
 
 	// Return the user
 	return user, nil

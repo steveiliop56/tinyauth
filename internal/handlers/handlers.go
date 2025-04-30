@@ -150,11 +150,20 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				return
 			}
 
-			// Build query
-			queries, err := query.Values(types.UnauthorizedQuery{
-				Username: userContext.Username,
+			// Values
+			values := types.UnauthorizedQuery{
 				Resource: strings.Split(host, ".")[0],
-			})
+			}
+
+			// Use either username or email
+			if userContext.OAuth {
+				values.Username = userContext.Email
+			} else {
+				values.Username = userContext.Username
+			}
+
+			// Build query
+			queries, err := query.Values(values)
 
 			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 			if err != nil {
@@ -190,12 +199,21 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				return
 			}
 
-			// Build query
-			queries, err := query.Values(types.UnauthorizedQuery{
-				Username: userContext.Username,
+			// Values
+			values := types.UnauthorizedQuery{
 				Resource: strings.Split(host, ".")[0],
 				GroupErr: true,
-			})
+			}
+
+			// Use either username or email
+			if userContext.OAuth {
+				values.Username = userContext.Email
+			} else {
+				values.Username = userContext.Username
+			}
+
+			// Build query
+			queries, err := query.Values(values)
 
 			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 			if err != nil {
