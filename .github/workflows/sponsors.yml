@@ -15,7 +15,7 @@ jobs:
       - name: Generate Sponsors
         uses: JamesIves/github-sponsors-readme-action@v1
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.SPONSORS_GENERATOR_PAT }}
           file: README.md
 
       - name: Create Pull Request
