@@ -21,6 +21,8 @@ func GetGenericUser(client *http.Client, url string) (constants.Claims, error) {
 		return user, err
 	}
 
+	defer res.Body.Close()
+
 	log.Debug().Msg("Got response from generic provider")
 
 	// Read the body of the response

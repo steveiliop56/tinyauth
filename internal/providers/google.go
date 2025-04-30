@@ -33,6 +33,8 @@ func GetGoogleUser(client *http.Client) (constants.Claims, error) {
 		return user, err
 	}
 
+	defer res.Body.Close()
+
 	log.Debug().Msg("Got response from google")
 
 	// Read the body of the response

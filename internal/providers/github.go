@@ -39,6 +39,8 @@ func GetGithubUser(client *http.Client) (constants.Claims, error) {
 		return user, err
 	}
 
+	defer res.Body.Close()
+
 	log.Debug().Msg("Got user response from github")
 
 	// Read the body of the response
@@ -69,6 +71,8 @@ func GetGithubUser(client *http.Client) (constants.Claims, error) {
 	if err != nil {
 		return user, err
 	}
+
+	defer res.Body.Close()
 
 	log.Debug().Msg("Got email response from github")
 
