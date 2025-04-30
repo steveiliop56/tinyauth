@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="Tinyauth" title="Tinyauth" width="256" src="frontend/public/logo.png">
+    <img alt="Tinyauth" title="Tinyauth" height="646" src="frontend/public/logo.png">
     <h1>Tinyauth</h1>
     <p>The easiest way to secure your apps with a login screen.</p>
 </div>
@@ -53,9 +53,7 @@ Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You ma
 
 Thanks a lot to the following people for providing me with more coffee:
 
-| <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/47644445?v=4" alt="Nicolas"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/4255748?v=4" alt="Erwin"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/7935041?v=4" alt="SimpleHomelab"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/30562276?v=4" alt="jmadden91"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/19151933?v=4" alt="tribor"></div> |
-| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| <div align="center"><a href="https://github.com/nicotsx">Nicolas</a></div>                                           | <div align="center"><a href="https://github.com/erwinkramer">Erwin</a></div>                                      | <div align="center"><a href="https://github.com/SimpleHomelab">SimpleHomelab</a></div>                                    | <div align="center"><a href="https://github.com/jmadden91">jmadden91</a></div>                                         | <div align="center"><a href="https://github.com/tribor">tribor</a></div>                                            |
+<!-- sponsors --><!-- sponsors -->
 
 ## Acknowledgements
 
