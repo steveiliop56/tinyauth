@@ -45,6 +45,11 @@ var authConfig = types.AuthConfig{
 	LoginMaxRetries: 0,
 }
 
+// Simple hooks config for tests
+var hooksConfig = types.HooksConfig{
+	Domain: "localhost",
+}
+
 // Cookie
 var cookie string
 
@@ -83,7 +88,7 @@ func getAPI(t *testing.T) *api.API {
 	providers.Init()
 
 	// Create hooks service
-	hooks := hooks.NewHooks(auth, providers)
+	hooks := hooks.NewHooks(hooksConfig, auth, providers)
 
 	// Create handlers service
 	handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)

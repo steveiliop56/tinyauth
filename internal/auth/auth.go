@@ -160,9 +160,12 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 
 	// Set data
 	session.Values["username"] = data.Username
+	session.Values["name"] = data.Name
+	session.Values["email"] = data.Email
 	session.Values["provider"] = data.Provider
 	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
 	session.Values["totpPending"] = data.TotpPending
+	session.Values["oauthGroups"] = data.OAuthGroups
 
 	// Save session
 	err = session.Save(c.Request, c.Writer)
@@ -211,14 +214,24 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		return types.SessionCookie{}, err
 	}
 
+	log.Debug().Msg("Got session")
+
 	// Get data from session
 	username, usernameOk := session.Values["username"].(string)
+	email, emailOk := session.Values["email"].(string)
+	name, nameOk := session.Values["name"].(string)
 	provider, providerOK := session.Values["provider"].(string)
 	expiry, expiryOk := session.Values["expiry"].(int64)
 	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
+	oauthGroups, oauthGroupsOk := session.Values["oauthGroups"].(string)
 
-	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk {
-		log.Warn().Msg("Session cookie is missing data")
+	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk || !emailOk || !nameOk || !oauthGroupsOk {
+		log.Warn().Msg("Session cookie is invalid")
+
+		// If any data is missing, delete the session cookie
+		auth.DeleteSessionCookie(c)
+
+		// Return empty cookie
 		return types.SessionCookie{}, nil
 	}
 
@@ -233,13 +246,16 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 		return types.SessionCookie{}, nil
 	}
 
-	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Msg("Parsed cookie")
+	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Str("name", name).Str("email", email).Str("oauthGroups", oauthGroups).Msg("Parsed cookie")
 
 	// Return the cookie
 	return types.SessionCookie{
 		Username:    username,
+		Name:        name,
+		Email:       email,
 		Provider:    provider,
 		TotpPending: totpPending,
+		OAuthGroups: oauthGroups,
 	}, nil
 }
 
@@ -248,48 +264,52 @@ func (auth *Auth) UserAuthConfigured() bool {
 	return len(auth.Config.Users) > 0
 }
 
-func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext) (bool, error) {
-	// Get headers
-	host := c.Request.Header.Get("X-Forwarded-Host")
-
-	// Get app id
-	appId := strings.Split(host, ".")[0]
-
-	// Get the container labels
-	labels, err := auth.Docker.GetLabels(appId)
-
-	// If there is an error, return false
-	if err != nil {
-		return false, err
-	}
-
+func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.TinyauthLabels) bool {
 	// Check if oauth is allowed
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
-		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Username), nil
+		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Email)
 	}
 
 	// Check users
 	log.Debug().Msg("Checking users")
 
-	return utils.CheckWhitelist(labels.Users, context.Username), nil
+	return utils.CheckWhitelist(labels.Users, context.Username)
 }
 
-func (auth *Auth) AuthEnabled(c *gin.Context) (bool, error) {
+func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.TinyauthLabels) bool {
+	// Check if groups are required
+	if labels.OAuthGroups == "" {
+		return true
+	}
+
+	// Check if we are using the generic oauth provider
+	if context.Provider != "generic" {
+		log.Debug().Msg("Not using generic provider, skipping group check")
+		return true
+	}
+
+	// Split the groups by comma (no need to parse since they are from the API response)
+	oauthGroups := strings.Split(context.OAuthGroups, ",")
+
+	// For every group check if it is in the required groups
+	for _, group := range oauthGroups {
+		if utils.CheckWhitelist(labels.OAuthGroups, group) {
+			log.Debug().Str("group", group).Msg("Group is in required groups")
+			return true
+		}
+	}
+
+	// No groups matched
+	log.Debug().Msg("No groups matched")
+
+	// Return false
+	return false
+}
+
+func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool, error) {
 	// Get headers
 	uri := c.Request.Header.Get("X-Forwarded-Uri")
-	host := c.Request.Header.Get("X-Forwarded-Host")
-
-	// Get app id
-	appId := strings.Split(host, ".")[0]
-
-	// Get the container labels
-	labels, err := auth.Docker.GetLabels(appId)
-
-	// If there is an error, auth enabled
-	if err != nil {
-		return true, err
-	}
 
 	// Check if the allowed label is empty
 	if labels.Allowed == "" {

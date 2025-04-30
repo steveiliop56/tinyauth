@@ -6,4 +6,13 @@ var TinyauthLabels = []string{
 	"tinyauth.users",
 	"tinyauth.allowed",
 	"tinyauth.headers",
+	"tinyauth.oauth.groups",
+}
+
+// Claims are the OIDC supported claims (including preferd username for some reason)
+type Claims struct {
+	Name              string   `json:"name"`
+	Email             string   `json:"email"`
+	PreferredUsername string   `json:"preferred_username"`
+	Groups            []string `json:"groups"`
 }

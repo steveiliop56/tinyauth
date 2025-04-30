@@ -25,8 +25,11 @@ type OAuthProviders struct {
 // SessionCookie is the cookie for the session (exculding the expiry)
 type SessionCookie struct {
 	Username    string
+	Name        string
+	Email       string
 	Provider    string
 	TotpPending bool
+	OAuthGroups string
 }
 
 // TinyauthLabels is the labels for the tinyauth container
@@ -35,15 +38,19 @@ type TinyauthLabels struct {
 	Users          string
 	Allowed        string
 	Headers        map[string]string
+	OAuthGroups    string
 }
 
 // UserContext is the context for the user
 type UserContext struct {
 	Username    string
+	Name        string
+	Email       string
 	IsLoggedIn  bool
 	OAuth       bool
 	Provider    string
 	TotpPending bool
+	OAuthGroups string
 }
 
 // LoginAttempt tracks information about login attempts for rate limiting

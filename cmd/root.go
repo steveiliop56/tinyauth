@@ -111,6 +111,11 @@ var rootCmd = &cobra.Command{
 			LoginMaxRetries: config.LoginMaxRetries,
 		}
 
+		// Create hooks config
+		hooksConfig := types.HooksConfig{
+			Domain: domain,
+		}
+
 		// Create docker service
 		docker := docker.NewDocker()
 
@@ -128,7 +133,7 @@ var rootCmd = &cobra.Command{
 		providers.Init()
 
 		// Create hooks service
-		hooks := hooks.NewHooks(auth, providers)
+		hooks := hooks.NewHooks(hooksConfig, auth, providers)
 
 		// Create handlers
 		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
@@ -189,7 +194,7 @@ func init() {
 	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
-	rootCmd.Flags().String("generic-name", "Other", "Generic OAuth provider name.")
+	rootCmd.Flags().String("generic-name", "Generic", "Generic OAuth provider name.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().Int("session-expiry", 86400, "Session (cookie) expiration time in seconds.")
