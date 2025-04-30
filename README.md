@@ -53,7 +53,7 @@ Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You ma
 
 Thanks a lot to the following people for providing me with more coffee:
 
-<!-- sponsors --><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/nicotsx"><img src="https:&#x2F;&#x2F;github.com&#x2F;nicotsx.png" width="60px" alt="User avatar: Nico" /></a><a href="https://github.com/SimpleHomelab"><img src="https:&#x2F;&#x2F;github.com&#x2F;SimpleHomelab.png" width="60px" alt="User avatar: SimpleHomelab" /></a><a href="https://github.com/jmadden91"><img src="https:&#x2F;&#x2F;github.com&#x2F;jmadden91.png" width="60px" alt="User avatar: " /></a><a href="https://github.com/tribor"><img src="https:&#x2F;&#x2F;github.com&#x2F;tribor.png" width="60px" alt="User avatar: " /></a><!-- sponsors -->
 
 ## Acknowledgements
 
