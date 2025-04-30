@@ -14,6 +14,7 @@ jobs:
         with:
           token: ${{ secrets.SPONSORS_GENERATOR_PAT }}
           file: README.md
+          template: '<a href="https://github.com/{{{ login }}}"><img src="{{{ avatarUrl }}}" width="64px" alt="User avatar: {{{ login }}}" /></a>&nbsp;&nbsp;'
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
