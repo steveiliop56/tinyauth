@@ -1,9 +1,9 @@
 import { Button, Code, Paper, Text } from "@mantine/core";
 import { Layout } from "../components/layouts/layout";
 import { Navigate } from "react-router";
-import { isQueryValid } from "../utils/utils";
 import { Trans, useTranslation } from "react-i18next";
 import React from "react";
+import { isValidQuery } from "../utils/utils";
 
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
@@ -14,11 +14,11 @@ export const UnauthorizedPage = () => {
 
   const { t } = useTranslation();
 
-  if (!isQueryValid(username)) {
+  if (!isValidQuery(username)) {
     return <Navigate to="/" />;
   }
 
-  if (isQueryValid(resource) && !isQueryValid(groupErr)) {
+  if (isValidQuery(resource) && !isValidQuery(groupErr)) {
     return (
       <UnauthorizedLayout>
         <Trans
@@ -31,7 +31,7 @@ export const UnauthorizedPage = () => {
     );
   }
 
-  if (isQueryValid(groupErr) && isQueryValid(resource)) {
+  if (isValidQuery(groupErr) && isValidQuery(resource)) {
     return (
       <UnauthorizedLayout>
         <Trans

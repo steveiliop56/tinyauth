@@ -8,9 +8,11 @@ import { Layout } from "../components/layouts/layout";
 import { OAuthButtons } from "../components/auth/oauth-buttons";
 import { LoginFormValues } from "../schemas/login-schema";
 import { LoginForm } from "../components/auth/login-forn";
-import { isQueryValid } from "../utils/utils";
 import { useAppContext } from "../context/app-context";
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
+import { useIsMounted } from "../lib/hooks/use-is-mounted";
+import { isValidRedirectUri } from "../utils/utils";
 
 export const LoginPage = () => {
   const queryString = window.location.search;
@@ -18,16 +20,29 @@ export const LoginPage = () => {
   const redirectUri = params.get("redirect_uri") ?? "";
 
   const { isLoggedIn } = useUserContext();
-  const { configuredProviders, title, genericName } = useAppContext();
+
+  if (isLoggedIn) {
+    return <Navigate to="/logout" />;
+  }
+
+  const {
+    configuredProviders,
+    title,
+    genericName,
+    oauthAutoRedirect: oauthAutoRedirectContext,
+  } = useAppContext();
+
   const { t } = useTranslation();
+
+  const [oauthAutoRedirect, setOAuthAutoRedirect] = useState(
+    oauthAutoRedirectContext,
+  );
 
   const oauthProviders = configuredProviders.filter(
     (value) => value !== "username",
   );
 
-  if (isLoggedIn) {
-    return <Navigate to="/logout" />;
-  }
+  const isMounted = useIsMounted();
 
   const loginMutation = useMutation({
     mutationFn: (login: LoginFormValues) => {
@@ -63,7 +78,7 @@ export const LoginPage = () => {
       });
 
       setTimeout(() => {
-        if (!isQueryValid(redirectUri)) {
+        if (!isValidRedirectUri(redirectUri)) {
           window.location.replace("/");
           return;
         }
@@ -85,6 +100,7 @@ export const LoginPage = () => {
         message: t("loginOauthFailSubtitle"),
         color: "red",
       });
+      setOAuthAutoRedirect("none");
     },
     onSuccess: (data) => {
       notifications.show({
@@ -101,6 +117,33 @@ export const LoginPage = () => {
   const handleSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);
   };
+
+  useEffect(() => {
+    if (isMounted()) {
+      if (
+        oauthProviders.includes(oauthAutoRedirect) &&
+        isValidRedirectUri(redirectUri)
+      ) {
+        loginOAuthMutation.mutate(oauthAutoRedirect);
+      }
+    }
+  }, []);
+
+  if (
+    oauthProviders.includes(oauthAutoRedirect) &&
+    isValidRedirectUri(redirectUri)
+  ) {
+    return (
+      <Layout>
+        <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
+          <Text size="xl" fw={700}>
+            {t("continueRedirectingTitle")}
+          </Text>
+          <Text>{t("loginOauthSuccessSubtitle")}</Text>
+        </Paper>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

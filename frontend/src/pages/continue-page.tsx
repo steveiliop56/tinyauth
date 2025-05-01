@@ -4,7 +4,7 @@ import { Navigate } from "react-router";
 import { useUserContext } from "../context/user-context";
 import { Layout } from "../components/layouts/layout";
 import { ReactNode } from "react";
-import { escapeRegex, isQueryValid } from "../utils/utils";
+import { escapeRegex, isValidRedirectUri } from "../utils/utils";
 import { useAppContext } from "../context/app-context";
 import { Trans, useTranslation } from "react-i18next";
 
@@ -21,7 +21,7 @@ export const ContinuePage = () => {
     return <Navigate to={`/login?redirect_uri=${redirectUri}`} />;
   }
 
-  if (!isQueryValid(redirectUri)) {
+  if (!isValidRedirectUri(redirectUri)) {
     return <Navigate to="/" />;
   }
 
@@ -51,7 +51,7 @@ export const ContinuePage = () => {
     );
   }
 
-  const regex = new RegExp(`^.*${escapeRegex(domain)}$`)
+  const regex = new RegExp(`^.*${escapeRegex(domain)}$`);
 
   if (!regex.test(uri.hostname)) {
     return (
@@ -60,19 +60,24 @@ export const ContinuePage = () => {
           {t("untrustedRedirectTitle")}
         </Text>
         <Trans
-            i18nKey="untrustedRedirectSubtitle"
-            t={t}
-            components={{ Code: <Code /> }}
-            values={{ domain: domain }}
-          />
+          i18nKey="untrustedRedirectSubtitle"
+          t={t}
+          components={{ Code: <Code /> }}
+          values={{ domain: domain }}
+        />
         <Button fullWidth mt="xl" color="red" onClick={redirect}>
-          {t('continueTitle')}
+          {t("continueTitle")}
         </Button>
-        <Button fullWidth mt="sm" color="gray" onClick={() => window.location.href = "/"}>
-          {t('cancelTitle')}
+        <Button
+          fullWidth
+          mt="sm"
+          color="gray"
+          onClick={() => (window.location.href = "/")}
+        >
+          {t("cancelTitle")}
         </Button>
       </ContinuePageLayout>
-    )
+    );
   }
 
   if (disableContinue) {
@@ -103,8 +108,13 @@ export const ContinuePage = () => {
         <Button fullWidth mt="xl" color="yellow" onClick={redirect}>
           {t("continueTitle")}
         </Button>
-        <Button fullWidth mt="sm" color="gray" onClick={() => window.location.href = "/"}>
-          {t('cancelTitle')}
+        <Button
+          fullWidth
+          mt="sm"
+          color="gray"
+          onClick={() => (window.location.href = "/")}
+        >
+          {t("cancelTitle")}
         </Button>
       </ContinuePageLayout>
     );
