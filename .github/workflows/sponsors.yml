@@ -13,7 +13,8 @@ jobs:
         uses: JamesIves/github-sponsors-readme-action@v1
         with:
           token: ${{ secrets.SPONSORS_GENERATOR_PAT }}
-          file: README.md
+          active-only: false
+          file: "README.md"
           template: '<a href="https://github.com/{{{ login }}}"><img src="{{{ avatarUrl }}}" width="64px" alt="User avatar: {{{ login }}}" /></a>&nbsp;&nbsp;'
 
       - name: Create Pull Request
