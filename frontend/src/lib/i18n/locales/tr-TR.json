@@ -41,9 +41,11 @@
     "totpTitle": "Enter your TOTP code",
     "unauthorizedTitle": "Unauthorized",
     "unauthorizedResourceSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to access the resource <Code>{{resource}}</Code>.",
-    "unaothorizedLoginSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to login.",
+    "unauthorizedLoginSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to login.",
+    "unauthorizedGroupsSubtitle": "The user with username <Code>{{username}}</Code> is not in the groups required by the resource <Code>{{resource}}</Code>.",
     "unauthorizedButton": "Try again",
     "untrustedRedirectTitle": "Untrusted redirect",
     "untrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<Code>{{domain}}</Code>). Are you sure you want to continue?",
-    "cancelTitle": "İptal"
+    "cancelTitle": "İptal",
+    "forgotPasswordTitle": "Forgot your password?"
 }
