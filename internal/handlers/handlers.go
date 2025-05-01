@@ -75,6 +75,8 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	// Get the container labels
 	labels, err := h.Docker.GetLabels(appId)
 
+	log.Debug().Interface("labels", labels).Msg("Got labels")
+
 	// Check if there was an error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get container labels")
@@ -183,54 +185,55 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		log.Debug().Interface("labels", labels).Msg("Got labels")
+		// Check groups if using OAuth
+		if userContext.OAuth {
+			// Check if user is in required groups
+			groupOk := h.Auth.OAuthGroup(c, userContext, labels)
 
-		// Check if user is in required groups
-		groupOk := h.Auth.OAuthGroup(c, userContext, labels)
+			log.Debug().Bool("groupOk", groupOk).Msg("Checking if user is in required groups")
 
-		log.Debug().Bool("groupOk", groupOk).Msg("Checking if user is in required groups")
+			// The user is not allowed to access the app
+			if !groupOk {
+				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User is not in required groups")
 
-		// The user is not allowed to access the app
-		if !groupOk {
-			log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User is not in required groups")
+				// Set WWW-Authenticate header
+				c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 
-			// Set WWW-Authenticate header
-			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
+				if proxy.Proxy == "nginx" || !isBrowser {
+					c.JSON(401, gin.H{
+						"status":  401,
+						"message": "Unauthorized",
+					})
+					return
+				}
 
-			if proxy.Proxy == "nginx" || !isBrowser {
-				c.JSON(401, gin.H{
-					"status":  401,
-					"message": "Unauthorized",
-				})
+				// Values
+				values := types.UnauthorizedQuery{
+					Resource: strings.Split(host, ".")[0],
+					GroupErr: true,
+				}
+
+				// Use either username or email
+				if userContext.OAuth {
+					values.Username = userContext.Email
+				} else {
+					values.Username = userContext.Username
+				}
+
+				// Build query
+				queries, err := query.Values(values)
+
+				// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to build queries")
+					c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+					return
+				}
+
+				// We are using caddy/traefik so redirect
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 				return
 			}
-
-			// Values
-			values := types.UnauthorizedQuery{
-				Resource: strings.Split(host, ".")[0],
-				GroupErr: true,
-			}
-
-			// Use either username or email
-			if userContext.OAuth {
-				values.Username = userContext.Email
-			} else {
-				values.Username = userContext.Username
-			}
-
-			// Build query
-			queries, err := query.Values(values)
-
-			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to build queries")
-				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
-				return
-			}
-
-			// We are using caddy/traefik so redirect
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
-			return
 		}
 
 		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))

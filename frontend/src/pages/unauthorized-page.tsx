@@ -2,8 +2,9 @@ import { Button, Code, Paper, Text } from "@mantine/core";
 import { Layout } from "../components/layouts/layout";
 import { Navigate } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
-import React from "react";
+import React, { useEffect } from "react";
 import { isValidQuery } from "../utils/utils";
+import { useIsMounted } from "../lib/hooks/use-is-mounted";
 
 export const UnauthorizedPage = () => {
   const queryString = window.location.search;
@@ -12,13 +13,31 @@ export const UnauthorizedPage = () => {
   const groupErr = params.get("groupErr") ?? "";
   const resource = params.get("resource") ?? "";
 
+  const [isGroupErr, setIsGroupErr] = React.useState(false);
+
+  const useMounted = useIsMounted();
+
+  useEffect(() => {
+    if (useMounted()) {
+      if (isValidQuery(groupErr)) {
+        if (groupErr === "true") {
+          setIsGroupErr(true);
+          return;
+        }
+        setIsGroupErr(false);
+        return;
+      }
+      setIsGroupErr(false);
+    }
+  }, []);
+
   const { t } = useTranslation();
 
   if (!isValidQuery(username)) {
     return <Navigate to="/" />;
   }
 
-  if (isValidQuery(resource) && !isValidQuery(groupErr)) {
+  if (isValidQuery(resource) && !isGroupErr) {
     return (
       <UnauthorizedLayout>
         <Trans
@@ -31,7 +50,7 @@ export const UnauthorizedPage = () => {
     );
   }
 
-  if (isValidQuery(groupErr) && isValidQuery(resource)) {
+  if (isGroupErr && isValidQuery(resource)) {
     return (
       <UnauthorizedLayout>
         <Trans

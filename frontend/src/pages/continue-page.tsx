@@ -70,7 +70,7 @@ export const ContinuePage = () => {
         </Button>
         <Button
           fullWidth
-          mt="sm"
+          mt="xs"
           color="gray"
           onClick={() => (window.location.href = "/")}
         >
@@ -110,7 +110,7 @@ export const ContinuePage = () => {
         </Button>
         <Button
           fullWidth
-          mt="sm"
+          mt="xs"
           color="gray"
           onClick={() => (window.location.href = "/")}
         >
