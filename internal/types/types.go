@@ -51,6 +51,7 @@ type UserContext struct {
 	Provider    string
 	TotpPending bool
 	OAuthGroups string
+	TotpEnabled bool
 }
 
 // LoginAttempt tracks information about login attempts for rate limiting

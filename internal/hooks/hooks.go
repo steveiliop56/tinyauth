@@ -35,17 +35,27 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if basic != nil {
 		log.Debug().Msg("Got basic auth")
 
-		// Check if user exists and password is correct
+		// Get user
 		user := hooks.Auth.GetUser(basic.Username)
 
-		if user != nil && hooks.Auth.CheckPassword(*user, basic.Password) {
+		// Check we have a user
+		if user == nil {
+			log.Error().Str("username", basic.Username).Msg("User does not exist")
+
+			// Return empty context
+			return types.UserContext{}
+		}
+
+		// Check if the user has a correct password
+		if hooks.Auth.CheckPassword(*user, basic.Password) {
 			// Return user context since we are logged in with basic auth
 			return types.UserContext{
-				Username:   basic.Username,
-				Name:       utils.Capitalize(basic.Username),
-				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), hooks.Config.Domain),
-				IsLoggedIn: true,
-				Provider:   "basic",
+				Username:    basic.Username,
+				Name:        utils.Capitalize(basic.Username),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), hooks.Config.Domain),
+				IsLoggedIn:  true,
+				Provider:    "basic",
+				TotpEnabled: user.TotpSecret != "",
 			}
 		}
 

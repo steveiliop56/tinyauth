@@ -126,6 +126,12 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	// Get user context
 	userContext := h.Hooks.UseUserContext(c)
 
+	// If we are using basic auth, we need to check if the user has totp and if it does then disable basic auth
+	if userContext.Provider == "basic" && userContext.TotpEnabled {
+		log.Warn().Str("username", userContext.Username).Msg("User has totp enabled, disabling basic auth")
+		userContext.IsLoggedIn = false
+	}
+
 	// Check if user is logged in
 	if userContext.IsLoggedIn {
 		log.Debug().Msg("Authenticated")
