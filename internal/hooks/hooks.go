@@ -110,8 +110,8 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		log.Debug().Msg("Provider exists")
 
 		// Check if the oauth email is whitelisted
-		if !hooks.Auth.EmailWhitelisted(cookie.Username) {
-			log.Error().Str("email", cookie.Username).Msg("Email is not whitelisted")
+		if !hooks.Auth.EmailWhitelisted(cookie.Email) {
+			log.Error().Str("email", cookie.Email).Msg("Email is not whitelisted")
 
 			// It isn't so we delete the cookie and return an empty context
 			hooks.Auth.DeleteSessionCookie(c)

@@ -103,6 +103,7 @@ func GetGithubUser(client *http.Client) (constants.Claims, error) {
 	for _, email := range emails {
 		if email.Primary {
 			// Set the email then exit
+			log.Debug().Str("email", email.Email).Msg("Found primary email")
 			user.Email = email.Email
 			break
 		}
@@ -115,6 +116,7 @@ func GetGithubUser(client *http.Client) (constants.Claims, error) {
 
 	// Set the email if it is not set picking the first one
 	if user.Email == "" {
+		log.Warn().Str("email", emails[0].Email).Msg("No primary email found, using first email")
 		user.Email = emails[0].Email
 	}
 
