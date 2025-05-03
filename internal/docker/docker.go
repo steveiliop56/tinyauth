@@ -29,8 +29,13 @@ func (docker *Docker) Init() error {
 		return err
 	}
 
-	// Set the context and api client
+	// Create the context
 	docker.Context = context.Background()
+
+	// Negotiate API version
+	client.NegotiateAPIVersion(docker.Context)
+
+	// Set client
 	docker.Client = client
 
 	// Done
