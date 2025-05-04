@@ -10,7 +10,7 @@
     "loginSuccessTitle": "Logged in",
     "loginSuccessSubtitle": "Welcome back!",
     "loginOauthFailTitle": "Internal error",
-    "loginOauthFailSubtitle": "Failed to get OAuth URL",
+    "loginOauthFailSubtitle": "Error al obtener la URL de OAuth",
     "loginOauthSuccessTitle": "Redirecting",
     "loginOauthSuccessSubtitle": "Redirecting to your OAuth provider",
     "continueRedirectingTitle": "Redirecting...",
