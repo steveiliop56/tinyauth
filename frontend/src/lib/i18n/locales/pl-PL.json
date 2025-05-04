@@ -41,7 +41,7 @@
     "totpTitle": "Wprowadź kod TOTP",
     "unauthorizedTitle": "Nieautoryzowany",
     "unauthorizedResourceSubtitle": "Użytkownik o nazwie <Code>{{username}}</Code> nie jest upoważniony do uzyskania dostępu do zasobu <Code>{{resource}}</Code>.",
-    "unauthorizedLoginSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to login.",
+    "unauthorizedLoginSubtitle": "Użytkownik <Code>{{username}}</Code> nie ma uprawnień do logowania.",
     "unauthorizedGroupsSubtitle": "Użytkownik <Code>{{username}}</Code> nie należy do grup wymaganych przez zasób <Code>{{resource}}</Code>.",
     "unauthorizedButton": "Spróbuj ponownie",
     "untrustedRedirectTitle": "Niezaufane przekierowanie",
