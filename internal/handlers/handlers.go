@@ -147,9 +147,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		if !appAllowed {
 			log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
 
-			// Set WWW-Authenticate header
-			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
-
 			if proxy.Proxy == "nginx" || !isBrowser {
 				c.JSON(401, gin.H{
 					"status":  401,
@@ -195,9 +192,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			// The user is not allowed to access the app
 			if !groupOk {
 				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User is not in required groups")
-
-				// Set WWW-Authenticate header
-				c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 
 				if proxy.Proxy == "nginx" || !isBrowser {
 					c.JSON(401, gin.H{
@@ -257,9 +251,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	// The user is not logged in
 	log.Debug().Msg("Unauthorized")
-
-	// Set www-authenticate header
-	c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 
 	if proxy.Proxy == "nginx" || !isBrowser {
 		c.JSON(401, gin.H{
@@ -534,10 +525,9 @@ func (h *Handlers) UserHandler(c *gin.Context) {
 		TotpPending: userContext.TotpPending,
 	}
 
-	// If we are not logged in we set the status to 401 and add the WWW-Authenticate header else we set it to 200
+	// If we are not logged in we set the status to 401 else we set it to 200
 	if !userContext.IsLoggedIn {
 		log.Debug().Msg("Unauthorized")
-		c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 		userContextResponse.Message = "Unauthorized"
 	} else {
 		log.Debug().Interface("userContext", userContext).Msg("Authenticated")
