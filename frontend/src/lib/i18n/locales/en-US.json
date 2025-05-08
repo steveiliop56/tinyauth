@@ -39,7 +39,7 @@
     "totpFailSubtitle": "Please check your code and try again",
     "totpSuccessTitle": "Verified",
     "totpSuccessSubtitle": "Redirecting to your app",
-    "totpTitle": "TOTP Verification",
+    "totpTitle": "Enter your TOTP code",
     "totpSubtitle": "Please enter the code from your authenticator app.",
     "unauthorizedTitle": "Unauthorized",
     "unauthorizedResourceSubtitle": "The user with username <code>{{username}}</code> is not authorized to access the resource <code>{{resource}}</code>.",

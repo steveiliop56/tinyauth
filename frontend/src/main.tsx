@@ -9,6 +9,7 @@ import { ErrorPage } from "./pages/error-page.tsx";
 import { NotFoundPage } from "./pages/not-found-page.tsx";
 import { ContinuePage } from "./pages/continue-page.tsx";
 import { TotpPage } from "./pages/totp-page.tsx";
+import { ForgotPasswordPage } from "./pages/forgot-password.tsx";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,11 @@ const router = createBrowserRouter([
   {
     path: "/totp",
     element: <TotpPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
     errorElement: <ErrorPage />,
   },
   {

@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,9 +19,9 @@ export const NotFoundPage = () => {
         <CardTitle className="text-3xl">{t("notFoundTitle")}</CardTitle>
         <CardDescription>{t("notFoundSubtitle")}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-stretch">
+      <CardFooter className="flex flex-col items-stretch">
         <Button onClick={() => navigate("/")}>{t("notFoundButton")}</Button>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 };

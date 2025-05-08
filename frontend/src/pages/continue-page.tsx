@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -55,7 +55,7 @@ export const ContinuePage = () => {
             />
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2 items-stretch">
+        <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
             onClick={() => window.location.replace(redirectURI)}
             variant="destructive"
@@ -65,7 +65,7 @@ export const ContinuePage = () => {
           <Button onClick={() => navigate("/")} variant="outline">
             {t("cancelTitle")}
           </Button>
-        </CardContent>
+        </CardFooter>
       </Card>
     );
   }
@@ -89,7 +89,7 @@ export const ContinuePage = () => {
             />
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2 items-stretch">
+        <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
             onClick={() => window.location.replace(redirectURI)}
             variant="warning"
@@ -99,7 +99,7 @@ export const ContinuePage = () => {
           <Button onClick={() => navigate("/")} variant="outline">
             {t("cancelTitle")}
           </Button>
-        </CardContent>
+        </CardFooter>
       </Card>
     );
   }
@@ -110,11 +110,11 @@ export const ContinuePage = () => {
         <CardTitle className="text-3xl">{t("continueTitle")}</CardTitle>
         <CardDescription>{t("continueSubtitle")}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-stretch">
+      <CardFooter className="flex flex-col items-stretch">
         <Button onClick={() => window.location.replace(redirectURI)}>
           {t("continueTitle")}
         </Button>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 };

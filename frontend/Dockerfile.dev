@@ -1,0 +1,22 @@
+FROM oven/bun:1.1.45-alpine
+
+WORKDIR /frontend
+
+COPY ./frontend/package.json ./
+COPY ./frontend/bun.lock ./
+
+RUN bun install
+
+COPY ./frontend/public ./public
+COPY ./frontend/src ./src
+
+COPY ./frontend/eslint.config.js ./
+COPY ./frontend/index.html ./
+COPY ./frontend/tsconfig.json ./
+COPY ./frontend/tsconfig.app.json ./
+COPY ./frontend/tsconfig.node.json ./
+COPY ./frontend/vite.config.ts ./
+
+EXPOSE 5173
+
+ENTRYPOINT ["bun", "run", "dev"]

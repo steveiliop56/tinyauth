@@ -1,8 +1,7 @@
-import { OAuthButton } from "@/components/auth/oauth-button";
+import { LoginForm } from "@/components/auth/login-form";
 import { GenericIcon } from "@/components/icons/generic";
 import { GithubIcon } from "@/components/icons/github";
 import { GoogleIcon } from "@/components/icons/google";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardHeader,
@@ -10,9 +9,8 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { OAuthButton } from "@/components/ui/oauth-button";
+import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useTranslation } from "react-i18next";
 
 export const LoginPage = () => {
@@ -35,9 +33,9 @@ export const LoginPage = () => {
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-5">
         {oauthConfigured && (
-          <div className="flex flex-row gap-3 flex-wrap items-center justify-center">
+          <div className="flex flex-row flex-wrap gap-3 items-center justify-center">
             {configuredProviders.includes("google") && (
               <OAuthButton title="Google" icon={<GoogleIcon />} />
             )}
@@ -50,45 +48,9 @@ export const LoginPage = () => {
           </div>
         )}
         {userAuthConfigured && oauthConfigured && (
-          <div className="flex items-center gap-4">
-            <Separator className="flex-1" />
-            <span className="text-sm text-muted-foreground">
-              {t("loginDivider")}
-            </span>
-            <Separator className="flex-1" />
-          </div>
+          <SeperatorWithChildren>{t("loginDivider")}</SeperatorWithChildren>
         )}
-        {userAuthConfigured && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <Label htmlFor="#username">{t("loginUsername")}</Label>
-              <Input
-                id="username"
-                placeholder={t("loginUsername")}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label htmlFor="#password">
-                <div className="flex flex-row min-w-full items-center justify-between">
-                  <span>{t("loginPassword")}</span>
-                  <a
-                    href="/forgot"
-                    className="text-muted-foreground font-normal"
-                  >
-                    {t("forgotPasswordTitle")}
-                  </a>
-                </div>
-              </Label>
-              <Input
-                id="password"
-                placeholder={t("loginPassword")}
-                className="mt-2"
-              />
-            </div>
-            <Button>{t("loginSubmit")}</Button>
-          </div>
-        )}
+        {userAuthConfigured && <LoginForm />}
         {configuredProviders.length == 0 && (
           <h3 className="text-center text-xl text-red-600">
             {t("failedToFetchProvidersTitle")}
