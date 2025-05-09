@@ -11,12 +11,12 @@ import {
 } from "@/components/ui/card";
 import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
+import { useAppContext } from "@/context/app-context";
 import { useTranslation } from "react-i18next";
 
 export const LoginPage = () => {
+  const { configuredProviders, title } = useAppContext();
   const { t } = useTranslation();
-  const configuredProviders = ["google", "github", "generic", "username"];
-  const title = "Tinyauth";
 
   const oauthConfigured =
     configuredProviders.filter((provider) => provider !== "username").length >

@@ -7,22 +7,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Code } from "@/components/ui/code";
+import { useAppContext } from "@/context/app-context";
 import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
 
 export const ContinuePage = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
+  const redirectURI = params.get("redirect_uri");
 
-  const redirectURI = params.get("redirect_uri") ?? "";
+  const { domain, disableContinue } = useAppContext();
+  const { t } = useTranslation();
 
-  //psuedo
-  const domain = "127.0.0.1";
-  const disableContinue = false;
+  const navigate = useNavigate();
 
-  if (redirectURI === "") {
+  if (!redirectURI) {
     return <Navigate to="/" />;
   }
 

@@ -4,10 +4,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAppContext } from "@/context/app-context";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 
 export const ForgotPasswordPage = () => {
+  const { forgotPasswordMessage } = useAppContext();
   const { t } = useTranslation();
 
   return (
@@ -15,10 +17,7 @@ export const ForgotPasswordPage = () => {
       <CardHeader>
         <CardTitle className="text-3xl">{t("forgotPasswordTitle")}</CardTitle>
         <CardDescription>
-          <Markdown>
-            You can reset your password by changing the `USERS` environment
-            variable.
-          </Markdown>
+          <Markdown>{forgotPasswordMessage}</Markdown>
         </CardDescription>
       </CardHeader>
     </Card>

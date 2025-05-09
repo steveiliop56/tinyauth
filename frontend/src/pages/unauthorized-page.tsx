@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Code } from "@/components/ui/code";
 import { Trans, useTranslation } from "react-i18next";
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 
 export const UnauthorizedPage = () => {
   const searchParams = new URLSearchParams(window.location.search);
@@ -17,6 +17,7 @@ export const UnauthorizedPage = () => {
   const groupErr = searchParams.get("groupErr");
 
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (!username) {
     return <Navigate to="/" />;
@@ -51,7 +52,7 @@ export const UnauthorizedPage = () => {
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={() => window.location.replace("/")}>
+        <Button onClick={() => navigate("/login")}>
           {t("unauthorizedButton")}
         </Button>
       </CardFooter>

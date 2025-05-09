@@ -12,6 +12,8 @@ import { TotpPage } from "./pages/totp-page.tsx";
 import { ForgotPasswordPage } from "./pages/forgot-password-page.tsx";
 import { LogoutPage } from "./pages/logout-page.tsx";
 import { UnauthorizedPage } from "./pages/unauthorized-page.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AppContextProvider } from "./context/app-context.tsx";
 
 const router = createBrowserRouter([
   {
@@ -56,10 +58,16 @@ const router = createBrowserRouter([
   },
 ]);
 
+const queryClient = new QueryClient();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Layout>
-      <RouterProvider router={router} />
-    </Layout>
+    <QueryClientProvider client={queryClient}>
+      <AppContextProvider>
+        <Layout>
+          <RouterProvider router={router} />
+        </Layout>
+      </AppContextProvider>
+    </QueryClientProvider>
   </StrictMode>,
 );

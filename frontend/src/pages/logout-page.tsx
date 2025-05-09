@@ -7,14 +7,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Code } from "@/components/ui/code";
-import { capitalize } from "@/utils/utils";
+import { useAppContext } from "@/context/app-context";
+import { capitalize } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 
 export const LogoutPage = () => {
+  const { genericName } = useAppContext();
   const { t } = useTranslation();
 
   const provider = "google";
-  const genericName = "generic";
   const username = "username";
   const email = "smbd@example.com";
 
