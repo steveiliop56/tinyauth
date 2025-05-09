@@ -51,24 +51,24 @@ export const LoginForm = (props: Props) => {
           name="password"
           render={({ field }) => (
             <FormItem className="mb-4">
-              <FormLabel className="flex flex-row justify-between">
-                <span>{t("loginPassword")}</span>
+              <div className="relative">
+                <FormLabel className="mb-2">{t("loginPassword")}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t("loginPassword")}
+                    type="password"
+                    disabled={loading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
                 <a
                   href="/forgot-password"
-                  className="text-muted-foreground font-normal"
+                  className="text-muted-foreground text-sm absolute right-0 bottom-10"
                 >
                   {t("forgotPasswordTitle")}
                 </a>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t("loginPassword")}
-                  type="password"
-                  disabled={loading}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
+              </div>
             </FormItem>
           )}
         />
