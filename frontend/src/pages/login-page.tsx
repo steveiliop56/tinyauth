@@ -12,18 +12,56 @@ import {
 import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useAppContext } from "@/context/app-context";
+import { useUserContext } from "@/context/user-context";
+import { LoginSchema } from "@/schemas/login-schema";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
+import { toast } from "sonner";
 
 export const LoginPage = () => {
-  const { configuredProviders, title } = useAppContext();
+  const searchParams = new URLSearchParams(window.location.search);
+  const redirectUri = searchParams.get("redirect_uri");
 
-  console.log("Configured providers:", configuredProviders);
+  const { isLoggedIn } = useUserContext();
+  const { configuredProviders, title } = useAppContext();
   const { t } = useTranslation();
+
+  if (isLoggedIn) {
+    return <Navigate to="/logout" />;
+  }
 
   const oauthConfigured =
     configuredProviders.filter((provider) => provider !== "username").length >
     0;
   const userAuthConfigured = configuredProviders.includes("username");
+
+  const loginMutation = useMutation({
+    mutationFn: (values: LoginSchema) => axios.post("/api/login", values),
+    mutationKey: ["login"],
+    onSuccess: (data) => {
+      if (data.data.totpPending) {
+        window.location.replace(`/totp?redirect_uri=${redirectUri}`);
+        return;
+      }
+
+      toast.success(t("loginSuccessTitle"), {
+        description: t("loginSuccessSubtitle"),
+      });
+
+      setTimeout(() => {
+        window.location.replace(`/continue?redirect_uri=${redirectUri}`);
+      }, 500);
+    },
+    onError: (error: Error) => {
+      toast.error(t("loginFailTitle"), {
+        description: error.message.includes("429")
+          ? t("loginFailRateLimit")
+          : t("loginFailSubtitle"),
+      });
+    },
+  });
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
@@ -64,7 +102,12 @@ export const LoginPage = () => {
         {userAuthConfigured && oauthConfigured && (
           <SeperatorWithChildren>{t("loginDivider")}</SeperatorWithChildren>
         )}
-        {userAuthConfigured && <LoginForm />}
+        {userAuthConfigured && (
+          <LoginForm
+            onSubmit={(values) => loginMutation.mutate(values)}
+            loading={loginMutation.isPending}
+          />
+        )}
         {configuredProviders.length == 0 && (
           <h3 className="text-center text-xl text-red-600">
             {t("failedToFetchProvidersTitle")}

@@ -20,23 +20,23 @@ export const ContinuePage = () => {
   const { domain, disableContinue } = useAppContext();
   const { t } = useTranslation();
 
-  const navigate = useNavigate();
-
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
 
   if (!redirectURI) {
-    return <Navigate to="/" />;
+    return <Navigate to="/logout" />;
   }
 
   if (!isValidUrl(redirectURI)) {
-    return <Navigate to="/" />;
+    return <Navigate to="/logout" />;
   }
 
   if (disableContinue) {
     window.location.href = redirectURI;
   }
+
+  const navigate = useNavigate();
 
   const url = new URL(redirectURI);
 
@@ -60,12 +60,12 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() => window.location.replace(redirectURI)}
+            onClick={() => (window.location.href = redirectURI)}
             variant="destructive"
           >
             {t("continueTitle")}
           </Button>
-          <Button onClick={() => navigate("/")} variant="outline">
+          <Button onClick={() => navigate("/logout")} variant="outline">
             {t("cancelTitle")}
           </Button>
         </CardFooter>
@@ -92,12 +92,12 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() => window.location.replace(redirectURI)}
+            onClick={() => (window.location.href = redirectURI)}
             variant="warning"
           >
             {t("continueTitle")}
           </Button>
-          <Button onClick={() => navigate("/")} variant="outline">
+          <Button onClick={() => navigate("/logout")} variant="outline">
             {t("cancelTitle")}
           </Button>
         </CardFooter>
@@ -112,7 +112,7 @@ export const ContinuePage = () => {
         <CardDescription>{t("continueSubtitle")}</CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={() => window.location.replace(redirectURI)}>
+        <Button onClick={() => (window.location.href = redirectURI)}>
           {t("continueTitle")}
         </Button>
       </CardFooter>

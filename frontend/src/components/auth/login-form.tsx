@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -12,25 +11,20 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Button } from "../ui/button";
+import { loginSchema, LoginSchema } from "@/schemas/login-schema";
 
-export const LoginForm = () => {
+interface Props {
+  onSubmit: (data: LoginSchema) => void;
+  loading?: boolean;
+}
+
+export const LoginForm = (props: Props) => {
+  const { onSubmit, loading } = props;
   const { t } = useTranslation();
 
-  const schema = z.object({
-    username: z.string(),
-    password: z.string(),
+  const form = useForm<LoginSchema>({
+    resolver: zodResolver(loginSchema),
   });
-
-  type LoginFormType = z.infer<typeof schema>;
-
-  const form = useForm<LoginFormType>({
-    resolver: zodResolver(schema),
-  });
-
-  const onSubmit = (data: LoginFormType) => {
-    // Handle login logic here
-    console.log("Login data:", data);
-  };
 
   return (
     <Form {...form}>
@@ -42,7 +36,11 @@ export const LoginForm = () => {
             <FormItem className="mb-4">
               <FormLabel>{t("loginUsername")}</FormLabel>
               <FormControl>
-                <Input placeholder={t("loginUsername")} {...field} />
+                <Input
+                  placeholder={t("loginUsername")}
+                  disabled={loading}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -66,6 +64,7 @@ export const LoginForm = () => {
                 <Input
                   placeholder={t("loginPassword")}
                   type="password"
+                  disabled={loading}
                   {...field}
                 />
               </FormControl>
@@ -73,7 +72,7 @@ export const LoginForm = () => {
             </FormItem>
           )}
         />
-        <Button className="w-full" type="submit">
+        <Button className="w-full" type="submit" loading={loading}>
           {t("loginSubmit")}
         </Button>
       </form>

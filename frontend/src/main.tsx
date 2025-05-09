@@ -15,6 +15,7 @@ import { UnauthorizedPage } from "./pages/unauthorized-page.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppContextProvider } from "./context/app-context.tsx";
 import { UserContextProvider } from "./context/user-context.tsx";
+import { Toaster } from "@/components/ui/sonner";
 
 const router = createBrowserRouter([
   {
@@ -53,6 +54,11 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
   },
   {
+    path: "/error",
+    element: <ErrorPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
     path: "*",
     element: <NotFoundPage />,
     errorElement: <ErrorPage />,
@@ -68,6 +74,7 @@ createRoot(document.getElementById("root")!).render(
         <UserContextProvider>
           <Layout>
             <RouterProvider router={router} />
+            <Toaster />
           </Layout>
         </UserContextProvider>
       </AppContextProvider>

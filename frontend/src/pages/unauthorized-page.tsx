@@ -16,11 +16,12 @@ export const UnauthorizedPage = () => {
   const groupErr = searchParams.get("groupErr");
 
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   if (!username) {
     return <Navigate to="/" />;
   }
+
+  const navigate = useNavigate();
 
   let i18nKey = "unaothorizedLoginSubtitle";
 
@@ -44,8 +45,8 @@ export const UnauthorizedPage = () => {
               code: <code />,
             }}
             values={{
-              username: username,
-              resource: resource,
+              username,
+              resource,
             }}
           />
         </CardDescription>

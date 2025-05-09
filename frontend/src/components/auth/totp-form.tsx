@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Form, FormControl, FormField, FormItem } from "../ui/form";
 import {
   InputOTP,
@@ -8,23 +7,19 @@ import {
 } from "../ui/input-otp";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { totpSchema, TotpSchema } from "@/schemas/totp-schema";
 
 interface Props {
   formId: string;
-  onSubmit: (code: FormValues) => void;
+  onSubmit: (code: TotpSchema) => void;
+  loading?: boolean;
 }
 
-const schema = z.object({
-  code: z.string(),
-});
-
-export type FormValues = z.infer<typeof schema>;
-
 export const TotpForm = (props: Props) => {
-  const { formId, onSubmit } = props;
+  const { formId, onSubmit, loading } = props;
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<TotpSchema>({
+    resolver: zodResolver(totpSchema),
   });
 
   return (
@@ -36,7 +31,7 @@ export const TotpForm = (props: Props) => {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <InputOTP maxLength={6} {...field}>
+                <InputOTP maxLength={6} disabled={loading} {...field}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
