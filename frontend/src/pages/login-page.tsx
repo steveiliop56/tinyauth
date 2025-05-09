@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 
 export const LoginPage = () => {
   const { configuredProviders, title } = useAppContext();
+
+  console.log("Configured providers:", configuredProviders);
   const { t } = useTranslation();
 
   const oauthConfigured =

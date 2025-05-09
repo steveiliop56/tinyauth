@@ -6,8 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Code } from "@/components/ui/code";
 import { useAppContext } from "@/context/app-context";
+import { useUserContext } from "@/context/user-context";
 import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
@@ -16,10 +16,15 @@ export const ContinuePage = () => {
   const params = new URLSearchParams(window.location.search);
   const redirectURI = params.get("redirect_uri");
 
+  const { isLoggedIn } = useUserContext();
   const { domain, disableContinue } = useAppContext();
   const { t } = useTranslation();
 
   const navigate = useNavigate();
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
 
   if (!redirectURI) {
     return <Navigate to="/" />;
@@ -37,7 +42,7 @@ export const ContinuePage = () => {
 
   if (!url.hostname.includes(domain)) {
     return (
-      <Card className="min-w-xs md:max-w-sm">
+      <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
           <CardTitle className="text-3xl">
             {t("untrustedRedirectTitle")}
@@ -47,7 +52,7 @@ export const ContinuePage = () => {
               i18nKey="untrustedRedirectSubtitle"
               t={t}
               components={{
-                code: <Code />,
+                code: <code />,
               }}
               values={{ domain }}
             />
@@ -70,7 +75,7 @@ export const ContinuePage = () => {
 
   if (url.protocol === "http:" && window.location.protocol === "https:") {
     return (
-      <Card className="min-w-xs md:max-w-sm">
+      <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
           <CardTitle className="text-3xl">
             {t("continueInsecureRedirectTitle")}
@@ -80,7 +85,7 @@ export const ContinuePage = () => {
               i18nKey="continueInsecureRedirectSubtitle"
               t={t}
               components={{
-                code: <Code />,
+                code: <code />,
               }}
             />
           </CardDescription>

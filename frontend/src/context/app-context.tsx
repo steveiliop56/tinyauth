@@ -1,6 +1,6 @@
 import { AppContextSchema } from "@/schemas/app-context-schema";
 import { createContext, useContext } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 const AppContext = createContext<AppContextSchema | null>(null);
@@ -10,16 +10,12 @@ export const AppContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { isPending, isError, data, error } = useQuery({
-    queryKey: ["status"],
+  const { isFetching, data, error } = useSuspenseQuery({
+    queryKey: ["app"],
     queryFn: () => axios.get("/api/app").then((res) => res.data),
   });
 
-  if (isPending) {
-    return;
-  }
-
-  if (isError) {
+  if (error && !isFetching) {
     throw error;
   }
 

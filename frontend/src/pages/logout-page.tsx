@@ -6,18 +6,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Code } from "@/components/ui/code";
 import { useAppContext } from "@/context/app-context";
+import { useUserContext } from "@/context/user-context";
 import { capitalize } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
 
 export const LogoutPage = () => {
+  const { provider, username, email, isLoggedIn } = useUserContext();
   const { genericName } = useAppContext();
   const { t } = useTranslation();
 
-  const provider = "google";
-  const username = "username";
-  const email = "smbd@example.com";
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
@@ -29,7 +31,7 @@ export const LogoutPage = () => {
               i18nKey="logoutOauthSubtitle"
               t={t}
               components={{
-                code: <Code />,
+                code: <code />,
               }}
               values={{
                 username: email,
@@ -42,7 +44,7 @@ export const LogoutPage = () => {
               i18nKey="logoutUsernameSubtitle"
               t={t}
               components={{
-                code: <Code />,
+                code: <code />,
               }}
               values={{
                 username: username,

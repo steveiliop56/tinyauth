@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Code } from "@/components/ui/code";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
 
@@ -42,7 +41,7 @@ export const UnauthorizedPage = () => {
             i18nKey={i18nKey}
             t={t}
             components={{
-              code: <Code />,
+              code: <code />,
             }}
             values={{
               username: username,
