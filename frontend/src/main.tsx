@@ -9,7 +9,9 @@ import { ErrorPage } from "./pages/error-page.tsx";
 import { NotFoundPage } from "./pages/not-found-page.tsx";
 import { ContinuePage } from "./pages/continue-page.tsx";
 import { TotpPage } from "./pages/totp-page.tsx";
-import { ForgotPasswordPage } from "./pages/forgot-password.tsx";
+import { ForgotPasswordPage } from "./pages/forgot-password-page.tsx";
+import { LogoutPage } from "./pages/logout-page.tsx";
+import { UnauthorizedPage } from "./pages/unauthorized-page.tsx";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +22,11 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/logout",
+    element: <LogoutPage />,
     errorElement: <ErrorPage />,
   },
   {
@@ -35,6 +42,11 @@ const router = createBrowserRouter([
   {
     path: "/forgot-password",
     element: <ForgotPasswordPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/unauthorized",
+    element: <UnauthorizedPage />,
     errorElement: <ErrorPage />,
   },
   {

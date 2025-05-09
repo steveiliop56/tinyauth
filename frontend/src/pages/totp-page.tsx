@@ -20,7 +20,7 @@ export const TotpPage = () => {
   };
 
   return (
-    <Card className="min-w-xs md:max-w-sm">
+    <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
         <CardTitle className="text-3xl">{t("totpTitle")}</CardTitle>
         <CardDescription>{t("totpSubtitle")}</CardDescription>

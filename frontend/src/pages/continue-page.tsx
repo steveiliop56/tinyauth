@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Code } from "@/components/ui/code";
 import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
@@ -47,9 +48,7 @@ export const ContinuePage = () => {
               i18nKey="untrustedRedirectSubtitle"
               t={t}
               components={{
-                code: (
-                  <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold" />
-                ),
+                code: <Code />,
               }}
               values={{ domain }}
             />
@@ -82,9 +81,7 @@ export const ContinuePage = () => {
               i18nKey="continueInsecureRedirectSubtitle"
               t={t}
               components={{
-                code: (
-                  <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold" />
-                ),
+                code: <Code />,
               }}
             />
           </CardDescription>
@@ -105,7 +102,7 @@ export const ContinuePage = () => {
   }
 
   return (
-    <Card className="min-w-xs md:max-w-sm">
+    <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
         <CardTitle className="text-3xl">{t("continueTitle")}</CardTitle>
         <CardDescription>{t("continueSubtitle")}</CardDescription>

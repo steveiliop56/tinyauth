@@ -24,7 +24,7 @@ export const LoginPage = () => {
   const userAuthConfigured = configuredProviders.includes("username");
 
   return (
-    <Card className="max-w-xs md:max-w-sm">
+    <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
         <CardTitle className="text-center text-3xl">{title}</CardTitle>
         {configuredProviders.length > 0 && (
@@ -33,17 +33,29 @@ export const LoginPage = () => {
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-4">
         {oauthConfigured && (
-          <div className="flex flex-row flex-wrap gap-3 items-center justify-center">
+          <div className="flex flex-col gap-2 items-center justify-center">
             {configuredProviders.includes("google") && (
-              <OAuthButton title="Google" icon={<GoogleIcon />} />
+              <OAuthButton
+                title="Google"
+                icon={<GoogleIcon />}
+                className="w-full"
+              />
             )}
             {configuredProviders.includes("github") && (
-              <OAuthButton title="Github" icon={<GithubIcon />} />
+              <OAuthButton
+                title="Github"
+                icon={<GithubIcon />}
+                className="w-full"
+              />
             )}
             {configuredProviders.includes("generic") && (
-              <OAuthButton title="Generic" icon={<GenericIcon />} />
+              <OAuthButton
+                title="Generic"
+                icon={<GenericIcon />}
+                className="w-full"
+              />
             )}
           </div>
         )}

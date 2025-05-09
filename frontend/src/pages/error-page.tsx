@@ -10,7 +10,7 @@ export const ErrorPage = () => {
   const { t } = useTranslation();
 
   return (
-    <Card className="min-w-xs md:max-w-sm">
+    <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
         <CardTitle className="text-3xl">{t("errorTitle")}</CardTitle>
         <CardDescription>{t("errorSubtitle")}</CardDescription>
