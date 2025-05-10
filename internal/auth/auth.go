@@ -10,6 +10,8 @@ import (
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
+	"encoding/base64"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
@@ -337,20 +339,33 @@ func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool
 }
 
 func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
-	// Get the Authorization header
-	username, password, ok := c.Request.BasicAuth()
-
-	// If not ok, return an empty user
-	if !ok {
+	// Get the X-TinyAuth-Authorization header
+	authHeader := c.Request.Header.Get("X-TinyAuth-Authorization")
+	if authHeader == "" {
 		return nil
 	}
 
-	fmt.Println("user", username)
-	fmt.Println("passwrod", password)
+	// Parse Basic Auth from header
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Basic" {
+		return nil
+	}
+
+	// Decode base64
+	payload, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil
+	}
+
+	// Split username and password
+	pair := strings.SplitN(string(payload), ":", 2)
+	if len(pair) != 2 {
+		return nil
+	}
 
 	// Return the user
 	return &types.User{
-		Username: username,
-		Password: password,
+		Username: pair[0],
+		Password: pair[1],
 	}
 }
