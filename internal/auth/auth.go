@@ -363,6 +363,9 @@ func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 		return nil
 	}
 
+	fmt.Println("user", pair[0])
+	fmt.Println("password", pair[1])
+
 	// Return the user
 	return &types.User{
 		Username: pair[0],
