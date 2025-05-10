@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: remnawave-tinyauth
+  IMAGE_NAME: ${{ github.repository_owner }}/remnawave-tinyauth
 
 jobs:
   build-and-push:
