@@ -340,7 +340,7 @@ func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool
 
 func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 	// Get the X-TinyAuth-Authorization header
-	authHeader := c.Request.Header.Get("X-TinyAuth-Authorization")
+	authHeader := c.Request.Header.Get("X-Api-Key")
 	if authHeader == "" {
 		return nil
 	}
