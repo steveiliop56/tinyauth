@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="Tinyauth" title="Tinyauth" width="256" src="frontend/public/logo.png">
+    <img alt="Tinyauth" title="Tinyauth" width="96" src="docs/logo-rounded.png">
     <h1>Tinyauth</h1>
     <p>The easiest way to secure your apps with a login screen.</p>
 </div>
@@ -15,19 +15,19 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It is designed for traefik but it can be extended to work with all reverse proxies like caddy and nginx.
+Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It is designed for traefik but it can be extended to work with other reverse proxies like caddy and nginx.
 
-![Login](assets/screenshot.png)
+![Screenshot](docs/screenshot.png)
 
 > [!WARNING]
 > Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
 
 > [!NOTE]
-> Tinyauth is intended for homelab use and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io).
+> Tinyauth is intended for homelab use only and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io) instead.
 
 ## Discord
 
-I just made a Discord server for Tinyauth! It is not only for Tinyauth but general self-hosting because I just like chatting with people! The link is [here](https://discord.gg/eHzVaCzRRd), see you there!
+I just made a Discord server for tinyauth! It is not only for tinyauth but general self-hosting and homelabbing. [See you there!](https://discord.gg/eHzVaCzRRd).
 
 ## Getting Started
 
@@ -35,7 +35,7 @@ You can easily get started with tinyauth by following the guide in the [document
 
 ## Documentation
 
-You can find documentation and guides on all of the available configuration of tinyauth [here](https://tinyauth.app).
+You can find documentation and guides on all of the available configuration of tinyauth in the [website](https://tinyauth.app).
 
 ## Contributing
 
@@ -53,9 +53,7 @@ Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You ma
 
 Thanks a lot to the following people for providing me with more coffee:
 
-| <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/47644445?v=4" alt="Nicolas"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/4255748?v=4" alt="Erwin"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/7935041?v=4" alt="SimpleHomelab"></div> | <div align="center"><img height="64" src="https://avatars.githubusercontent.com/u/30562276?v=4" alt="jmadden91"></div> |
-| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| <div align="center"><a href="https://github.com/nicotsx">Nicolas</a></div>                                           | <div align="center"><a href="https://github.com/erwinkramer">Erwin</a></div>                                      | <div align="center"><a href="https://github.com/SimpleHomelab">SimpleHomelab</a></div>                                    | <div align="center"><a href="https://github.com/jmadden91">jmadden91</a></div>                                         |
+<!-- sponsors --><a href="https://github.com/erwinkramer"><img src="https:&#x2F;&#x2F;github.com&#x2F;erwinkramer.png" width="64px" alt="User avatar: erwinkramer" /></a>&nbsp;&nbsp;<a href="https://github.com/nicotsx"><img src="https:&#x2F;&#x2F;github.com&#x2F;nicotsx.png" width="64px" alt="User avatar: nicotsx" /></a>&nbsp;&nbsp;<a href="https://github.com/SimpleHomelab"><img src="https:&#x2F;&#x2F;github.com&#x2F;SimpleHomelab.png" width="64px" alt="User avatar: SimpleHomelab" /></a>&nbsp;&nbsp;<a href="https://github.com/jmadden91"><img src="https:&#x2F;&#x2F;github.com&#x2F;jmadden91.png" width="64px" alt="User avatar: jmadden91" /></a>&nbsp;&nbsp;<a href="https://github.com/tribor"><img src="https:&#x2F;&#x2F;github.com&#x2F;tribor.png" width="64px" alt="User avatar: tribor" /></a>&nbsp;&nbsp;<a href="https://github.com/eliasbenb"><img src="https:&#x2F;&#x2F;github.com&#x2F;eliasbenb.png" width="64px" alt="User avatar: eliasbenb" /></a>&nbsp;&nbsp;<!-- sponsors -->
 
 ## Acknowledgements
 
@@ -63,6 +61,7 @@ Credits for the logo of this app go to:
 
 - **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
+- **Coderabbit AI** for providing free AI code reviews.
 
 ## Star History
 
