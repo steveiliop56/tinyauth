@@ -3,8 +3,8 @@ import { z } from "zod";
 export const userContextSchema = z.object({
     isLoggedIn: z.boolean(),
     username: z.string(),
-    name: z.string(),
-    email: z.string(),
+    // name: z.string(), not yet implemented
+    // email: z.string(),
     provider: z.string(),
     oauth: z.boolean(),
     totpPending: z.boolean(),    

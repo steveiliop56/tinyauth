@@ -13,9 +13,11 @@ import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
+import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { toast } from "sonner";
@@ -25,7 +27,7 @@ export const LoginPage = () => {
   const redirectUri = searchParams.get("redirect_uri");
 
   const { isLoggedIn } = useUserContext();
-  const { configuredProviders, title } = useAppContext();
+  const { configuredProviders, title, oauthAutoRedirect } = useAppContext();
   const { t } = useTranslation();
 
   if (isLoggedIn) {
@@ -36,6 +38,27 @@ export const LoginPage = () => {
     configuredProviders.filter((provider) => provider !== "username").length >
     0;
   const userAuthConfigured = configuredProviders.includes("username");
+
+  const isMounted = useIsMounted();
+
+  const oauthMutation = useMutation({
+    mutationFn: (provider: string) => axios.get(`/api/oauth/url/${provider}`),
+    mutationKey: ["oauth"],
+    onSuccess: (data) => {
+      toast.info(t("loginOauthSuccessTitle"), {
+        description: t("loginOauthSuccessSubtitle"),
+      });
+
+      setTimeout(() => {
+        window.location.href = data.data.url;
+      }, 500);
+    },
+    onError: () => {
+      toast.error(t("loginOauthFailTitle"), {
+        description: t("loginOauthFailSubtitle"),
+      });
+    },
+  });
 
   const loginMutation = useMutation({
     mutationFn: (values: LoginSchema) => axios.post("/api/login", values),
@@ -63,6 +86,14 @@ export const LoginPage = () => {
     },
   });
 
+  useEffect(() => {
+    if (isMounted()) {
+      if (oauthConfigured && configuredProviders.includes(oauthAutoRedirect)) {
+        oauthMutation.mutate(oauthAutoRedirect);
+      }
+    }
+  });
+
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
@@ -81,6 +112,7 @@ export const LoginPage = () => {
                 title="Google"
                 icon={<GoogleIcon />}
                 className="w-full"
+                onClick={() => oauthMutation.mutate("google")}
               />
             )}
             {configuredProviders.includes("github") && (
@@ -88,6 +120,7 @@ export const LoginPage = () => {
                 title="Github"
                 icon={<GithubIcon />}
                 className="w-full"
+                onClick={() => oauthMutation.mutate("github")}
               />
             )}
             {configuredProviders.includes("generic") && (
@@ -95,6 +128,7 @@ export const LoginPage = () => {
                 title="Generic"
                 icon={<GenericIcon />}
                 className="w-full"
+                onClick={() => oauthMutation.mutate("generic")}
               />
             )}
           </div>

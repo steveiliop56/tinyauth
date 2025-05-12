@@ -16,7 +16,7 @@ import { Navigate } from "react-router";
 import { toast } from "sonner";
 
 export const LogoutPage = () => {
-  const { provider, username, email, isLoggedIn } = useUserContext();
+  const { provider, username, isLoggedIn } = useUserContext();
   const { genericName } = useAppContext();
   const { t } = useTranslation();
 
@@ -56,7 +56,7 @@ export const LogoutPage = () => {
                 code: <code />,
               }}
               values={{
-                username: email,
+                username: username,
                 provider:
                   provider === "generic" ? genericName : capitalize(provider),
               }}
