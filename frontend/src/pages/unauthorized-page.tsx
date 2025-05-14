@@ -7,10 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Trans, useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate, useLocation, useNavigate } from "react-router";
 
 export const UnauthorizedPage = () => {
-  const searchParams = new URLSearchParams(window.location.search);
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
   const username = searchParams.get("username");
   const resource = searchParams.get("resource");
   const groupErr = searchParams.get("groupErr");
@@ -23,7 +24,7 @@ export const UnauthorizedPage = () => {
 
   const navigate = useNavigate();
 
-  let i18nKey = "unaothorizedLoginSubtitle";
+  let i18nKey = "unauthorizedLoginSubtitle";
 
   if (resource) {
     i18nKey = "unauthorizedResourceSubtitle";

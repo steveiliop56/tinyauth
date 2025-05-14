@@ -19,11 +19,12 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
 
 export const LoginPage = () => {
-  const searchParams = new URLSearchParams(window.location.search);
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
 
   const { isLoggedIn } = useUserContext();
@@ -65,7 +66,9 @@ export const LoginPage = () => {
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {
-        window.location.replace(`/totp?redirect_uri=${redirectUri}`);
+        window.location.replace(
+          `/totp?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        );
         return;
       }
 
@@ -74,7 +77,9 @@ export const LoginPage = () => {
       });
 
       setTimeout(() => {
-        window.location.replace(`/continue?redirect_uri=${redirectUri}`);
+        window.location.replace(
+          `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        );
       }, 500);
     },
     onError: (error: Error) => {
@@ -93,14 +98,6 @@ export const LoginPage = () => {
       }
     }
   });
-
-  useEffect(() => {
-    if (isMounted()) {
-      if (oauthConfigured && configuredProviders.includes(oauthAutoRedirect)) {
-        oauthMutation.mutate(oauthAutoRedirect);
-      }
-    }
-  }, []);
 
   return (
     <Card className="min-w-xs sm:min-w-sm">

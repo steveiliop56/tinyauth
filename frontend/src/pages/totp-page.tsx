@@ -13,11 +13,12 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export const TotpPage = () => {
-  const searchParams = new URLSearchParams(window.location.search);
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
 
   const { t } = useTranslation();
@@ -33,7 +34,9 @@ export const TotpPage = () => {
       });
 
       setTimeout(() => {
-        navigate(`/continue?redirect_uri=${redirectUri}`);
+        navigate(
+          `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        );
       }, 500);
     },
     onError: () => {

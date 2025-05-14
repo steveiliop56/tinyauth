@@ -10,12 +10,13 @@ import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
 import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import DOMPurify from "dompurify";
 
 export const ContinuePage = () => {
-  const params = new URLSearchParams(window.location.search);
-  const redirectURI = params.get("redirect_uri");
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+  const redirectURI = searchParams.get("redirect_uri");
 
   const { isLoggedIn } = useUserContext();
   const { domain, disableContinue } = useAppContext();
@@ -41,7 +42,7 @@ export const ContinuePage = () => {
 
   const url = new URL(redirectURI);
 
-  if (!url.hostname.includes(domain)) {
+  if (!(url.hostname == domain) || !url.hostname.endsWith(`.${domain}`)) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>

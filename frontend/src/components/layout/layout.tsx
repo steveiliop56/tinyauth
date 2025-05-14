@@ -6,9 +6,13 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div
-      className={`flex flex-col justify-center items-center min-h-svh bg-[url(${backgroundImage})] bg-cover`}
+      className="relative flex flex-col justify-center items-center min-h-svh"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
-      <img></img>
       <LanguageSelector />
       {children}
     </div>

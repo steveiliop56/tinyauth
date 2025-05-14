@@ -40,7 +40,7 @@
     "totpSubtitle": "Please enter the code from your authenticator app.",
     "unauthorizedTitle": "Unauthorized",
     "unauthorizedResourceSubtitle": "The user with username <code>{{username}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
-    "unaothorizedLoginSubtitle": "The user with username <code>{{username}}</code> is not authorized to login.",
+    "unauthorizedLoginSubtitle": "The user with username <code>{{username}}</code> is not authorized to login.",
     "unauthorizedGroupsSubtitle": "The user with username <code>{{username}}</code> is not in the groups required by the resource <code>{{resource}}</code>.",
     "unauthorizedButton": "Try again",
     "untrustedRedirectTitle": "Untrusted redirect",

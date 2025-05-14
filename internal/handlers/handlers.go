@@ -225,7 +225,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				}
 
 				// We are using caddy/traefik so redirect
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 				return
 			}
 		}
