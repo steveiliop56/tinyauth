@@ -48,6 +48,7 @@ type AppContext struct {
 	GenericName           string   `json:"genericName"`
 	Domain                string   `json:"domain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
+	BackgroundImage       string   `json:"backgroundImage"`
 }
 
 // Totp request is the request for the totp endpoint

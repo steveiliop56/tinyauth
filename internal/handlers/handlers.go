@@ -448,6 +448,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		GenericName:           h.Config.GenericName,
 		Domain:                h.Config.Domain,
 		ForgotPasswordMessage: h.Config.ForgotPasswordMessage,
+		BackgroundImage:       h.Config.BackgroundImage,
 	}
 
 	// Return app context

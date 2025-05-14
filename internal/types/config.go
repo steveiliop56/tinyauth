@@ -33,6 +33,7 @@ type Config struct {
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
 	FogotPasswordMessage    string `mapstructure:"forgot-password-message" validate:"required"`
+	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
 }
 
 // Server configuration
@@ -44,6 +45,7 @@ type HandlersConfig struct {
 	GenericName           string
 	Title                 string
 	ForgotPasswordMessage string
+	BackgroundImage       string
 }
 
 // OAuthConfig is the configuration for the providers
