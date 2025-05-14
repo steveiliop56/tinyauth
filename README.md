@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="Tinyauth" title="Tinyauth" width="96" src="docs/logo-rounded.png">
+    <img alt="Tinyauth" title="Tinyauth" width="96" src="assets/logo-rounded.png">
     <h1>Tinyauth</h1>
     <p>The easiest way to secure your apps with a login screen.</p>
 </div>
@@ -17,7 +17,7 @@
 
 Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It is designed for traefik but it can be extended to work with other reverse proxies like caddy and nginx.
 
-![Screenshot](docs/screenshot.png)
+![Screenshot](assets/screenshot.png)
 
 > [!WARNING]
 > Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
