@@ -11,6 +11,7 @@ import { useUserContext } from "@/context/user-context";
 import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
+import DOMPurify from "dompurify";
 
 export const ContinuePage = () => {
   const params = new URLSearchParams(window.location.search);
@@ -33,7 +34,7 @@ export const ContinuePage = () => {
   }
 
   if (disableContinue) {
-    window.location.href = redirectURI;
+    window.location.href = DOMPurify.sanitize(redirectURI);
   }
 
   const navigate = useNavigate();
@@ -60,7 +61,9 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() => (window.location.href = redirectURI)}
+            onClick={() =>
+              (window.location.href = DOMPurify.sanitize(redirectURI))
+            }
             variant="destructive"
           >
             {t("continueTitle")}
@@ -92,7 +95,9 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() => (window.location.href = redirectURI)}
+            onClick={() =>
+              (window.location.href = DOMPurify.sanitize(redirectURI))
+            }
             variant="warning"
           >
             {t("continueTitle")}
@@ -112,7 +117,11 @@ export const ContinuePage = () => {
         <CardDescription>{t("continueSubtitle")}</CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={() => (window.location.href = redirectURI)}>
+        <Button
+          onClick={() =>
+            (window.location.href = DOMPurify.sanitize(redirectURI))
+          }
+        >
           {t("continueTitle")}
         </Button>
       </CardFooter>
