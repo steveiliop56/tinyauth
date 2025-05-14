@@ -204,6 +204,8 @@ func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
 					}
 					tinyauthLabels.Headers[headerSplit[0]] = headerSplit[1]
 				}
+			case "tinyauth.oauth.groups":
+				tinyauthLabels.OAuthGroups = value
 			}
 		}
 	}
@@ -322,4 +324,23 @@ func CheckWhitelist(whitelist string, str string) bool {
 
 	// Return false if no match was found
 	return false
+}
+
+// Capitalize just the first letter of a string
+func Capitalize(str string) string {
+	if len(str) == 0 {
+		return ""
+	}
+	return strings.ToUpper(string([]rune(str)[0])) + string([]rune(str)[1:])
+}
+
+// Sanitize header removes all control characters from a string
+func SanitizeHeader(header string) string {
+	return strings.Map(func(r rune) rune {
+		// Allow only printable ASCII characters (32-126) and safe whitespace (space, tab)
+		if r == ' ' || r == '\t' || (r >= 32 && r <= 126) {
+			return r
+		}
+		return -1
+	}, header)
 }

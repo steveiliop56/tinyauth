@@ -26,6 +26,7 @@ type Config struct {
 	GenericName             string `mapstructure:"generic-name"`
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
+	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
 	SessionExpiry           int    `mapstructure:"session-expiry"`
 	LogLevel                int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 	Title                   string `mapstructure:"app-title"`
@@ -46,6 +47,7 @@ type HandlersConfig struct {
 	Title                 string
 	ForgotPasswordMessage string
 	BackgroundImage       string
+	OAuthAutoRedirect     string
 }
 
 // OAuthConfig is the configuration for the providers
@@ -79,4 +81,9 @@ type AuthConfig struct {
 	Domain          string
 	LoginTimeout    int
 	LoginMaxRetries int
+}
+
+// HooksConfig is the configuration for the hooks service
+type HooksConfig struct {
+	Domain string
 }

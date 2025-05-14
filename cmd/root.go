@@ -92,6 +92,7 @@ var rootCmd = &cobra.Command{
 			Domain:                domain,
 			ForgotPasswordMessage: config.FogotPasswordMessage,
 			BackgroundImage:       config.BackgroundImage,
+			OAuthAutoRedirect:     config.OAuthAutoRedirect,
 		}
 
 		// Create api config
@@ -112,6 +113,11 @@ var rootCmd = &cobra.Command{
 			LoginMaxRetries: config.LoginMaxRetries,
 		}
 
+		// Create hooks config
+		hooksConfig := types.HooksConfig{
+			Domain: domain,
+		}
+
 		// Create docker service
 		docker := docker.NewDocker()
 
@@ -129,7 +135,7 @@ var rootCmd = &cobra.Command{
 		providers.Init()
 
 		// Create hooks service
-		hooks := hooks.NewHooks(auth, providers)
+		hooks := hooks.NewHooks(hooksConfig, auth, providers)
 
 		// Create handlers
 		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
@@ -190,9 +196,10 @@ func init() {
 	rootCmd.Flags().String("generic-auth-url", "", "Generic OAuth auth URL.")
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
-	rootCmd.Flags().String("generic-name", "Other", "Generic OAuth provider name.")
+	rootCmd.Flags().String("generic-name", "Generic", "Generic OAuth provider name.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
+	rootCmd.Flags().String("oauth-auto-redirect", "none", "Auto redirect to the specified OAuth provider if configured. (available providers: github, google, generic)")
 	rootCmd.Flags().Int("session-expiry", 86400, "Session (cookie) expiration time in seconds.")
 	rootCmd.Flags().Int("login-timeout", 300, "Login timeout in seconds after max retries reached (0 to disable).")
 	rootCmd.Flags().Int("login-max-retries", 5, "Maximum login attempts before timeout (0 to disable).")
@@ -226,6 +233,7 @@ func init() {
 	viper.BindEnv("generic-name", "GENERIC_NAME")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
+	viper.BindEnv("oauth-auto-redirect", "OAUTH_AUTO_REDIRECT")
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
 	viper.BindEnv("app-title", "APP_TITLE")

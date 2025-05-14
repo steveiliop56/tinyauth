@@ -94,6 +94,14 @@ export const LoginPage = () => {
     }
   });
 
+  useEffect(() => {
+    if (isMounted()) {
+      if (oauthConfigured && configuredProviders.includes(oauthAutoRedirect)) {
+        oauthMutation.mutate(oauthAutoRedirect);
+      }
+    }
+  }, []);
+
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>

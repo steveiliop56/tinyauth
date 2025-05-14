@@ -6,8 +6,7 @@ import (
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
-	apiTypes "github.com/docker/docker/api/types"
-	containerTypes "github.com/docker/docker/api/types/container"
+	container "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/rs/zerolog/log"
 )
@@ -30,17 +29,22 @@ func (docker *Docker) Init() error {
 		return err
 	}
 
-	// Set the context and api client
+	// Create the context
 	docker.Context = context.Background()
+
+	// Negotiate API version
+	client.NegotiateAPIVersion(docker.Context)
+
+	// Set client
 	docker.Client = client
 
 	// Done
 	return nil
 }
 
-func (docker *Docker) GetContainers() ([]apiTypes.Container, error) {
+func (docker *Docker) GetContainers() ([]container.Summary, error) {
 	// Get the list of containers
-	containers, err := docker.Client.ContainerList(docker.Context, containerTypes.ListOptions{})
+	containers, err := docker.Client.ContainerList(docker.Context, container.ListOptions{})
 
 	// Check if there was an error
 	if err != nil {
@@ -51,13 +55,13 @@ func (docker *Docker) GetContainers() ([]apiTypes.Container, error) {
 	return containers, nil
 }
 
-func (docker *Docker) InspectContainer(containerId string) (apiTypes.ContainerJSON, error) {
+func (docker *Docker) InspectContainer(containerId string) (container.InspectResponse, error) {
 	// Inspect the container
 	inspect, err := docker.Client.ContainerInspect(docker.Context, containerId)
 
 	// Check if there was an error
 	if err != nil {
-		return apiTypes.ContainerJSON{}, err
+		return container.InspectResponse{}, err
 	}
 
 	// Return the inspect

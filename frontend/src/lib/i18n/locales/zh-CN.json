@@ -41,9 +41,11 @@
     "totpTitle": "输入您的 TOTP 代码",
     "unauthorizedTitle": "未授权",
     "unauthorizedResourceSubtitle": "用户 <Code>{{username}}</Code> 无权访问资源 <Code>{{resource}}</Code>。",
-    "unaothorizedLoginSubtitle": "用户名 <Code>{{username}}</Code> 无登录权限。",
+    "unauthorizedLoginSubtitle": "The user with username <Code>{{username}}</Code> is not authorized to login.",
+    "unauthorizedGroupsSubtitle": "The user with username <Code>{{username}}</Code> is not in the groups required by the resource <Code>{{resource}}</Code>.",
     "unauthorizedButton": "重试",
     "untrustedRedirectTitle": "Untrusted redirect",
     "untrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<Code>{{domain}}</Code>). Are you sure you want to continue?",
-    "cancelTitle": "Cancel"
+    "cancelTitle": "Cancel",
+    "forgotPasswordTitle": "Forgot your password?"
 }

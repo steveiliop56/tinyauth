@@ -10,6 +10,7 @@ import (
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -68,12 +69,17 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// Check if auth is enabled
-	authEnabled, err := h.Auth.AuthEnabled(c)
+	// Get the app id
+	appId := strings.Split(host, ".")[0]
+
+	// Get the container labels
+	labels, err := h.Docker.GetLabels(appId)
+
+	log.Debug().Interface("labels", labels).Msg("Got labels")
 
 	// Check if there was an error
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to check if app is allowed")
+		log.Error().Err(err).Msg("Failed to get container labels")
 
 		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(500, gin.H{
@@ -87,11 +93,8 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		return
 	}
 
-	// Get the app id
-	appId := strings.Split(host, ".")[0]
-
-	// Get the container labels
-	labels, err := h.Docker.GetLabels(appId)
+	// Check if auth is enabled
+	authEnabled, err := h.Auth.AuthEnabled(c, labels)
 
 	// Check if there was an error
 	if err != nil {
@@ -113,7 +116,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	if !authEnabled {
 		for key, value := range labels.Headers {
 			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
-			c.Header(key, value)
+			c.Header(key, utils.SanitizeHeader(value))
 		}
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -125,37 +128,24 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	// Get user context
 	userContext := h.Hooks.UseUserContext(c)
 
+	// If we are using basic auth, we need to check if the user has totp and if it does then disable basic auth
+	if userContext.Provider == "basic" && userContext.TotpEnabled {
+		log.Warn().Str("username", userContext.Username).Msg("User has totp enabled, disabling basic auth")
+		userContext.IsLoggedIn = false
+	}
+
 	// Check if user is logged in
 	if userContext.IsLoggedIn {
 		log.Debug().Msg("Authenticated")
 
 		// Check if user is allowed to access subdomain, if request is nginx.example.com the subdomain (resource) is nginx
-		appAllowed, err := h.Auth.ResourceAllowed(c, userContext)
-
-		// Check if there was an error
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to check if app is allowed")
-
-			if proxy.Proxy == "nginx" || !isBrowser {
-				c.JSON(500, gin.H{
-					"status":  500,
-					"message": "Internal Server Error",
-				})
-				return
-			}
-
-			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
-			return
-		}
+		appAllowed := h.Auth.ResourceAllowed(c, userContext, labels)
 
 		log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if app is allowed")
 
 		// The user is not allowed to access the app
 		if !appAllowed {
 			log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
-
-			// Set WWW-Authenticate header
-			c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 
 			if proxy.Proxy == "nginx" || !isBrowser {
 				c.JSON(401, gin.H{
@@ -165,11 +155,20 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				return
 			}
 
-			// Build query
-			queries, err := query.Values(types.UnauthorizedQuery{
-				Username: userContext.Username,
+			// Values
+			values := types.UnauthorizedQuery{
 				Resource: strings.Split(host, ".")[0],
-			})
+			}
+
+			// Use either username or email
+			if userContext.OAuth {
+				values.Username = userContext.Email
+			} else {
+				values.Username = userContext.Username
+			}
+
+			// Build query
+			queries, err := query.Values(values)
 
 			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 			if err != nil {
@@ -183,13 +182,63 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		// Set the user header
-		c.Header("Remote-User", userContext.Username)
+		// Check groups if using OAuth
+		if userContext.OAuth {
+			// Check if user is in required groups
+			groupOk := h.Auth.OAuthGroup(c, userContext, labels)
+
+			log.Debug().Bool("groupOk", groupOk).Msg("Checking if user is in required groups")
+
+			// The user is not allowed to access the app
+			if !groupOk {
+				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User is not in required groups")
+
+				if proxy.Proxy == "nginx" || !isBrowser {
+					c.JSON(401, gin.H{
+						"status":  401,
+						"message": "Unauthorized",
+					})
+					return
+				}
+
+				// Values
+				values := types.UnauthorizedQuery{
+					Resource: strings.Split(host, ".")[0],
+					GroupErr: true,
+				}
+
+				// Use either username or email
+				if userContext.OAuth {
+					values.Username = userContext.Email
+				} else {
+					values.Username = userContext.Username
+				}
+
+				// Build query
+				queries, err := query.Values(values)
+
+				// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to build queries")
+					c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+					return
+				}
+
+				// We are using caddy/traefik so redirect
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+				return
+			}
+		}
+
+		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
+		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
+		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
+		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
 		// Set the rest of the headers
 		for key, value := range labels.Headers {
 			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
-			c.Header(key, value)
+			c.Header(key, utils.SanitizeHeader(value))
 		}
 
 		// The user is allowed to access the app
@@ -202,9 +251,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	// The user is not logged in
 	log.Debug().Msg("Unauthorized")
-
-	// Set www-authenticate header
-	c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 
 	if proxy.Proxy == "nginx" || !isBrowser {
 		c.JSON(401, gin.H{
@@ -310,6 +356,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 		// Set totp pending cookie
 		h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 			Username:    login.Username,
+			Name:        utils.Capitalize(login.Username),
+			Email:       fmt.Sprintf("%s@%s", strings.ToLower(login.Username), h.Config.Domain),
 			Provider:    "username",
 			TotpPending: true,
 		})
@@ -328,6 +376,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	// Create session cookie with username as provider
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username: login.Username,
+		Name:     utils.Capitalize(login.Username),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(login.Username), h.Config.Domain),
 		Provider: "username",
 	})
 
@@ -402,6 +452,8 @@ func (h *Handlers) TotpHandler(c *gin.Context) {
 	// Create session cookie with username as provider
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username: user.Username,
+		Name:     utils.Capitalize(user.Username),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), h.Config.Domain),
 		Provider: "username",
 	})
 
@@ -449,6 +501,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		Domain:                h.Config.Domain,
 		ForgotPasswordMessage: h.Config.ForgotPasswordMessage,
 		BackgroundImage:       h.Config.BackgroundImage,
+		OAuthAutoRedirect:     h.Config.OAuthAutoRedirect,
 	}
 
 	// Return app context
@@ -466,15 +519,16 @@ func (h *Handlers) UserHandler(c *gin.Context) {
 		Status:      200,
 		IsLoggedIn:  userContext.IsLoggedIn,
 		Username:    userContext.Username,
+		Name:        userContext.Name,
+		Email:       userContext.Email,
 		Provider:    userContext.Provider,
 		Oauth:       userContext.OAuth,
 		TotpPending: userContext.TotpPending,
 	}
 
-	// If we are not logged in we set the status to 401 and add the WWW-Authenticate header else we set it to 200
+	// If we are not logged in we set the status to 401 else we set it to 200
 	if !userContext.IsLoggedIn {
 		log.Debug().Msg("Unauthorized")
-		c.Header("WWW-Authenticate", "Basic realm=\"tinyauth\"")
 		userContextResponse.Message = "Unauthorized"
 	} else {
 		log.Debug().Interface("userContext", userContext).Msg("Authenticated")
@@ -614,25 +668,32 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	// Get email
-	email, err := h.Providers.GetUser(providerName.Provider)
-
-	log.Debug().Str("email", email).Msg("Got email")
+	// Get user
+	user, err := h.Providers.GetUser(providerName.Provider)
 
 	// Handle error
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get email")
+		log.Error().Msg("Failed to get user")
+		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		return
+	}
+
+	log.Debug().Msg("Got user")
+
+	// Check that email is not empty
+	if user.Email == "" {
+		log.Error().Msg("Email is empty")
 		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
 	// Email is not whitelisted
-	if !h.Auth.EmailWhitelisted(email) {
-		log.Warn().Str("email", email).Msg("Email not whitelisted")
+	if !h.Auth.EmailWhitelisted(user.Email) {
+		log.Warn().Str("email", user.Email).Msg("Email not whitelisted")
 
 		// Build query
 		queries, err := query.Values(types.UnauthorizedQuery{
-			Username: email,
+			Username: user.Email,
 		})
 
 		// Handle error
@@ -648,10 +709,31 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Msg("Email whitelisted")
 
+	// Get username
+	var username string
+
+	if user.PreferredUsername != "" {
+		username = user.PreferredUsername
+	} else {
+		username = fmt.Sprintf("%s_%s", strings.Split(user.Email, "@")[0], strings.Split(user.Email, "@")[1])
+	}
+
+	// Get name
+	var name string
+
+	if user.Name != "" {
+		name = user.Name
+	} else {
+		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
+	}
+
 	// Create session cookie (also cleans up redirect cookie)
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
-		Username: email,
-		Provider: providerName.Provider,
+		Username:    username,
+		Name:        name,
+		Email:       user.Email,
+		Provider:    providerName.Provider,
+		OAuthGroups: strings.Join(user.Groups, ","),
 	})
 
 	// Check if we have a redirect URI

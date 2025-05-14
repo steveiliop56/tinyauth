@@ -1,22 +1,27 @@
 package hooks
 
 import (
+	"fmt"
+	"strings"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/types"
+	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
-func NewHooks(auth *auth.Auth, providers *providers.Providers) *Hooks {
+func NewHooks(config types.HooksConfig, auth *auth.Auth, providers *providers.Providers) *Hooks {
 	return &Hooks{
+		Config:    config,
 		Auth:      auth,
 		Providers: providers,
 	}
 }
 
 type Hooks struct {
+	Config    types.HooksConfig
 	Auth      *auth.Auth
 	Providers *providers.Providers
 }
@@ -30,17 +35,27 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if basic != nil {
 		log.Debug().Msg("Got basic auth")
 
-		// Check if user exists and password is correct
+		// Get user
 		user := hooks.Auth.GetUser(basic.Username)
 
-		if user != nil && hooks.Auth.CheckPassword(*user, basic.Password) {
+		// Check we have a user
+		if user == nil {
+			log.Error().Str("username", basic.Username).Msg("User does not exist")
+
+			// Return empty context
+			return types.UserContext{}
+		}
+
+		// Check if the user has a correct password
+		if hooks.Auth.CheckPassword(*user, basic.Password) {
 			// Return user context since we are logged in with basic auth
 			return types.UserContext{
 				Username:    basic.Username,
+				Name:        utils.Capitalize(basic.Username),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), hooks.Config.Domain),
 				IsLoggedIn:  true,
-				OAuth:       false,
 				Provider:    "basic",
-				TotpPending: false,
+				TotpEnabled: user.TotpSecret != "",
 			}
 		}
 
@@ -50,13 +65,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get session cookie")
 		// Return empty context
-		return types.UserContext{
-			Username:    "",
-			IsLoggedIn:  false,
-			OAuth:       false,
-			Provider:    "",
-			TotpPending: false,
-		}
+		return types.UserContext{}
 	}
 
 	// Check if session cookie has totp pending
@@ -65,8 +74,8 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		// Return empty context since we are pending totp
 		return types.UserContext{
 			Username:    cookie.Username,
-			IsLoggedIn:  false,
-			OAuth:       false,
+			Name:        cookie.Name,
+			Email:       cookie.Email,
 			Provider:    cookie.Provider,
 			TotpPending: true,
 		}
@@ -82,11 +91,11 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 			// It exists so we are logged in
 			return types.UserContext{
-				Username:    cookie.Username,
-				IsLoggedIn:  true,
-				OAuth:       false,
-				Provider:    "username",
-				TotpPending: false,
+				Username:   cookie.Username,
+				Name:       cookie.Name,
+				Email:      cookie.Email,
+				IsLoggedIn: true,
+				Provider:   "username",
 			}
 		}
 	}
@@ -101,20 +110,14 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		log.Debug().Msg("Provider exists")
 
 		// Check if the oauth email is whitelisted
-		if !hooks.Auth.EmailWhitelisted(cookie.Username) {
-			log.Error().Str("email", cookie.Username).Msg("Email is not whitelisted")
+		if !hooks.Auth.EmailWhitelisted(cookie.Email) {
+			log.Error().Str("email", cookie.Email).Msg("Email is not whitelisted")
 
 			// It isn't so we delete the cookie and return an empty context
 			hooks.Auth.DeleteSessionCookie(c)
 
 			// Return empty context
-			return types.UserContext{
-				Username:    "",
-				IsLoggedIn:  false,
-				OAuth:       false,
-				Provider:    "",
-				TotpPending: false,
-			}
+			return types.UserContext{}
 		}
 
 		log.Debug().Msg("Email is whitelisted")
@@ -122,19 +125,15 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		// Return user context since we are logged in with oauth
 		return types.UserContext{
 			Username:    cookie.Username,
+			Name:        cookie.Name,
+			Email:       cookie.Email,
 			IsLoggedIn:  true,
 			OAuth:       true,
 			Provider:    cookie.Provider,
-			TotpPending: false,
+			OAuthGroups: cookie.OAuthGroups,
 		}
 	}
 
 	// Neither basic auth or oauth is set so we return an empty context
-	return types.UserContext{
-		Username:    "",
-		IsLoggedIn:  false,
-		OAuth:       false,
-		Provider:    "",
-		TotpPending: false,
-	}
+	return types.UserContext{}
 }

@@ -20,6 +20,7 @@ type OAuthRequest struct {
 type UnauthorizedQuery struct {
 	Username string `url:"username"`
 	Resource string `url:"resource"`
+	GroupErr bool   `url:"groupErr"`
 }
 
 // Proxy is the uri parameters for the proxy endpoint
@@ -33,6 +34,8 @@ type UserContextResponse struct {
 	Message     string `json:"message"`
 	IsLoggedIn  bool   `json:"isLoggedIn"`
 	Username    string `json:"username"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
 	Provider    string `json:"provider"`
 	Oauth       bool   `json:"oauth"`
 	TotpPending bool   `json:"totpPending"`
@@ -49,6 +52,7 @@ type AppContext struct {
 	Domain                string   `json:"domain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
 	BackgroundImage       string   `json:"backgroundImage"`
+	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
 }
 
 // Totp request is the request for the totp endpoint
