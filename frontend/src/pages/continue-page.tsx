@@ -29,7 +29,7 @@ export const ContinuePage = () => {
     return <Navigate to="/logout" />;
   }
 
-  if (!isValidUrl(redirectURI)) {
+  if (!isValidUrl(DOMPurify.sanitize(redirectURI))) {
     return <Navigate to="/logout" />;
   }
 
