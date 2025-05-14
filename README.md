@@ -62,6 +62,7 @@ Credits for the logo of this app go to:
 - **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
 - **Coderabbit AI** for providing free AI code reviews.
+- **Kurt Cotoaga** for providing the bacgkround image of the app.
 
 ## Star History
 
