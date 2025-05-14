@@ -43,7 +43,10 @@ export const LoginPage = () => {
   const isMounted = useIsMounted();
 
   const oauthMutation = useMutation({
-    mutationFn: (provider: string) => axios.get(`/api/oauth/url/${provider}`),
+    mutationFn: (provider: string) =>
+      axios.get(
+        `/api/oauth/url/${provider}?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+      ),
     mutationKey: ["oauth"],
     onSuccess: (data) => {
       toast.info(t("loginOauthSuccessTitle"), {

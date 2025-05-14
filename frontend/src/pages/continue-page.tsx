@@ -42,7 +42,7 @@ export const ContinuePage = () => {
 
   const url = new URL(redirectURI);
 
-  if (!(url.hostname == domain) || !url.hostname.endsWith(`.${domain}`)) {
+  if (!(url.hostname == domain) && !url.hostname.endsWith(`.${domain}`)) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
