@@ -1,5 +1,5 @@
 <div align="center">
-    <img alt="Tinyauth" title="Tinyauth" height="256" src="frontend/public/logo.png">
+    <img alt="Tinyauth" title="Tinyauth" width="96" src="assets/logo-rounded.png">
     <h1>Tinyauth</h1>
     <p>The easiest way to secure your apps with a login screen.</p>
 </div>
@@ -14,19 +14,19 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It is designed for traefik but it can be extended to work with all reverse proxies like caddy and nginx.
+Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It is designed for traefik but it can be extended to work with other reverse proxies like caddy and nginx.
 
-![Login](assets/screenshot.png)
+![Screenshot](assets/screenshot.png)
 
 > [!WARNING]
 > Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
 
 > [!NOTE]
-> Tinyauth is intended for homelab use and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io).
+> Tinyauth is intended for homelab use only and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io) instead.
 
 ## Discord
 
-I just made a Discord server for Tinyauth! It is not only for Tinyauth but general self-hosting because I just like chatting with people! The link is [here](https://discord.gg/eHzVaCzRRd), see you there!
+I just made a Discord server for tinyauth! It is not only for tinyauth but general self-hosting and homelabbing. [See you there!](https://discord.gg/eHzVaCzRRd).
 
 ## Getting Started
 
@@ -34,7 +34,7 @@ You can easily get started with tinyauth by following the guide in the [document
 
 ## Documentation
 
-You can find documentation and guides on all of the available configuration of tinyauth [here](https://tinyauth.app).
+You can find documentation and guides on all of the available configuration of tinyauth in the [website](https://tinyauth.app).
 
 ## Contributing
 
@@ -60,6 +60,8 @@ Credits for the logo of this app go to:
 
 - **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
+- **Coderabbit AI** for providing free AI code reviews.
+- **Kurt Cotoaga** for providing the bacgkround image of the app.
 
 ## Star History
 

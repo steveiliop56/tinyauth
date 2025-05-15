@@ -1,25 +1,25 @@
-import { Paper, Text, TypographyStylesProvider } from "@mantine/core";
-import { Layout } from "../components/layouts/layout";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAppContext } from "@/context/app-context";
 import { useTranslation } from "react-i18next";
-import { useAppContext } from "../context/app-context";
-import Markdown from 'react-markdown'
+import Markdown from "react-markdown";
 
 export const ForgotPasswordPage = () => {
-  const { t } = useTranslation();
   const { forgotPasswordMessage } = useAppContext();
+  const { t } = useTranslation();
 
   return (
-    <Layout>
-      <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
-        <Text size="xl" fw={700}>
-          {t("forgotPasswordTitle")}
-        </Text>
-        <TypographyStylesProvider>
-            <Markdown>
-                {forgotPasswordMessage}
-            </Markdown>
-        </TypographyStylesProvider>
-      </Paper>
-    </Layout>
+    <Card className="min-w-xs sm:min-w-sm">
+      <CardHeader>
+        <CardTitle className="text-3xl">{t("forgotPasswordTitle")}</CardTitle>
+        <CardDescription>
+          <Markdown>{forgotPasswordMessage}</Markdown>
+        </CardDescription>
+      </CardHeader>
+    </Card>
   );
 };

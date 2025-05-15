@@ -2,19 +2,21 @@ version: 2
 updates:
   - package-ecosystem: "bun"
     directory: "/frontend"
-    minor-patch:
-      update-types:
-        - "patch"
-        - "minor"
+    groups:
+      minor-patch:
+        update-types:
+          - "patch"
+          - "minor"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "gomod"
     directory: "/"
-    minor-patch:
-      update-types:
-        - "patch"
-        - "minor"
+    groups:
+      minor-patch:
+        update-types:
+          - "patch"
+          - "minor"
     schedule:
       interval: "daily"
 
