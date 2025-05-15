@@ -6,8 +6,11 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Delete old release
-        run: gh release delete --cleanup-tag --yes nightly
+        run: gh release delete --cleanup-tag --yes nightly || echo release not found
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
