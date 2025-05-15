@@ -122,6 +122,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build
         with:
+          context: .
           platforms: linux/amd64
           labels: ${{ steps.meta.outputs.labels }}
           tags: ghcr.io/${{ github.repository_owner }}/tinyauth
@@ -171,6 +172,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build
         with:
+          context: .
           platforms: linux/arm64
           labels: ${{ steps.meta.outputs.labels }}
           tags: ghcr.io/${{ github.repository_owner }}/tinyauth
