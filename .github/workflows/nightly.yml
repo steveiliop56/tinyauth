@@ -1,16 +1,31 @@
-name: Release
+name: Nightly Release
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old release
+        run: gh release delete --cleanup-tag --yes nightly
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          tag_name: nightly
+
   binary-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: nightly
 
       - name: Install bun
         uses: oven-sh/setup-bun@v2
@@ -31,7 +46,7 @@ jobs:
 
       - name: Set version
         run: |
-          echo ${{ github.ref_name }} > internal/assets/version
+          echo nightly > internal/assets/version
 
       - name: Build frontend
         run: |
@@ -54,6 +69,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: nightly
 
       - name: Install bun
         uses: oven-sh/setup-bun@v2
@@ -74,7 +91,7 @@ jobs:
 
       - name: Set version
         run: |
-          echo ${{ github.ref_name }} > internal/assets/version
+          echo nightly > internal/assets/version
 
       - name: Build frontend
         run: |
@@ -97,6 +114,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: nightly
 
       - name: Docker meta
         id: meta
@@ -116,7 +135,7 @@ jobs:
 
       - name: Set version
         run: |
-          echo ${{ github.ref_name }} > internal/assets/version
+          echo nightly > internal/assets/version
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -146,6 +165,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: nightly
 
       - name: Docker meta
         id: meta
@@ -165,7 +186,7 @@ jobs:
 
       - name: Set version
         run: |
-          echo ${{ github.ref_name }} > internal/assets/version
+          echo nightly > internal/assets/version
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -219,9 +240,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/tinyauth
           tags: |
-            type=semver,pattern={{version}},prefix=v
-            type=semver,pattern={{major}},prefix=v
-            type=semver,pattern={{major}}.{{minor}},prefix=v
+            type=raw,nightly
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
@@ -245,3 +264,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: binaries/*
+          tag_name: nightly

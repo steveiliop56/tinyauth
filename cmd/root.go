@@ -50,7 +50,7 @@ var rootCmd = &cobra.Command{
 
 		// Logger
 		log.Logger = log.Level(zerolog.Level(config.LogLevel))
-		log.Info().Str("version", assets.Version).Msg("Starting tinyauth")
+		log.Info().Str("version", strings.TrimSpace(assets.Version)).Msg("Starting tinyauth")
 
 		// Users
 		log.Info().Msg("Parsing users")

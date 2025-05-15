@@ -25,3 +25,6 @@ secret_oauth.txt
 
 # tmp directory
 tmp
+
+# version files
+internal/assets/version
