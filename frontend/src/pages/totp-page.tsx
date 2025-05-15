@@ -17,13 +17,13 @@ import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export const TotpPage = () => {
+  const { t } = useTranslation();
   const { search } = useLocation();
+  const navigate = useNavigate();
+  const formId = useId();
+
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
-
-  const { t } = useTranslation();
-  const formId = useId();
-  const navigate = useNavigate();
 
   const totpMutation = useMutation({
     mutationFn: (values: TotpSchema) => axios.post("/api/totp", values),

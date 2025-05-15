@@ -14,17 +14,17 @@ import { Navigate, useLocation, useNavigate } from "react-router";
 import DOMPurify from "dompurify";
 
 export const ContinuePage = () => {
-  const { search } = useLocation();
-  const searchParams = new URLSearchParams(search);
-  const redirectURI = searchParams.get("redirect_uri");
-
   const { isLoggedIn } = useUserContext();
-  const { domain, disableContinue } = useAppContext();
-  const { t } = useTranslation();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
+
+  const { domain, disableContinue } = useAppContext();
+  const { search } = useLocation();
+
+  const searchParams = new URLSearchParams(search);
+  const redirectURI = searchParams.get("redirect_uri");
 
   if (!redirectURI) {
     return <Navigate to="/logout" />;
@@ -38,6 +38,7 @@ export const ContinuePage = () => {
     window.location.href = DOMPurify.sanitize(redirectURI);
   }
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const url = new URL(redirectURI);

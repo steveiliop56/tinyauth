@@ -11,17 +11,17 @@ import { Navigate, useLocation, useNavigate } from "react-router";
 
 export const UnauthorizedPage = () => {
   const { search } = useLocation();
+
   const searchParams = new URLSearchParams(search);
   const username = searchParams.get("username");
   const resource = searchParams.get("resource");
   const groupErr = searchParams.get("groupErr");
 
-  const { t } = useTranslation();
-
   if (!username) {
     return <Navigate to="/" />;
   }
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   let i18nKey = "unauthorizedLoginSubtitle";

@@ -17,12 +17,13 @@ import { toast } from "sonner";
 
 export const LogoutPage = () => {
   const { provider, username, isLoggedIn, email } = useUserContext();
-  const { genericName } = useAppContext();
-  const { t } = useTranslation();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
+
+  const { genericName } = useAppContext();
+  const { t } = useTranslation();
 
   const logoutMutation = useMutation({
     mutationFn: () => axios.post("/api/logout"),

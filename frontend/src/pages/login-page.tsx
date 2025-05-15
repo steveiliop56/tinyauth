@@ -23,24 +23,24 @@ import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
 
 export const LoginPage = () => {
-  const { search } = useLocation();
-  const searchParams = new URLSearchParams(search);
-  const redirectUri = searchParams.get("redirect_uri");
-
   const { isLoggedIn } = useUserContext();
-  const { configuredProviders, title, oauthAutoRedirect } = useAppContext();
-  const { t } = useTranslation();
 
   if (isLoggedIn) {
     return <Navigate to="/logout" />;
   }
 
+  const { configuredProviders, title, oauthAutoRedirect } = useAppContext();
+  const { search } = useLocation();
+  const { t } = useTranslation();
+  const isMounted = useIsMounted();
+
+  const searchParams = new URLSearchParams(search);
+  const redirectUri = searchParams.get("redirect_uri");
+
   const oauthConfigured =
     configuredProviders.filter((provider) => provider !== "username").length >
     0;
   const userAuthConfigured = configuredProviders.includes("username");
-
-  const isMounted = useIsMounted();
 
   const oauthMutation = useMutation({
     mutationFn: (provider: string) =>
