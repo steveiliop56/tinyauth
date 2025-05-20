@@ -1,4 +1,7 @@
-import { AppContextSchema } from "@/schemas/app-context-schema";
+import {
+  appContextSchema,
+  AppContextSchema,
+} from "@/schemas/app-context-schema";
 import { createContext, useContext } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -19,7 +22,15 @@ export const AppContextProvider = ({
     throw error;
   }
 
-  return <AppContext.Provider value={data}>{children}</AppContext.Provider>;
+  const validated = appContextSchema.safeParse(data);
+
+  if (validated.success === false) {
+    throw validated.error;
+  }
+
+  return (
+    <AppContext.Provider value={validated.data}>{children}</AppContext.Provider>
+  );
 };
 
 export const useAppContext = () => {

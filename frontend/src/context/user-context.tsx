@@ -1,4 +1,7 @@
-import { UserContextSchema } from "@/schemas/user-context-schema";
+import {
+  userContextSchema,
+  UserContextSchema,
+} from "@/schemas/user-context-schema";
 import { createContext, useContext } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -19,7 +22,17 @@ export const UserContextProvider = ({
     throw error;
   }
 
-  return <UserContext.Provider value={data}>{children}</UserContext.Provider>;
+  const validated = userContextSchema.safeParse(data);
+
+  if (validated.success === false) {
+    throw validated.error;
+  }
+
+  return (
+    <UserContext.Provider value={validated.data}>
+      {children}
+    </UserContext.Provider>
+  );
 };
 
 export const useUserContext = () => {
