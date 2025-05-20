@@ -1,3 +1,6 @@
 # Ignore artifacts:
-build
-coverage
+dist
+node_modules
+bun.lock
+package.json
+src/lib/i18n/locales

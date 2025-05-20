@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 export const userContextSchema = z.object({
-    isLoggedIn: z.boolean(),
-    username: z.string(),
-    name: z.string(),
-    email: z.string(),
-    provider: z.string(),
-    oauth: z.boolean(),
-    totpPending: z.boolean(),    
-})
+  isLoggedIn: z.boolean(),
+  username: z.string(),
+  name: z.string(),
+  email: z.string(),
+  provider: z.string(),
+  oauth: z.boolean(),
+  totpPending: z.boolean(),
+});
 
 export type UserContextSchema = z.infer<typeof userContextSchema>;
