@@ -1,41 +1,47 @@
+import {
+  userContextSchema,
+  UserContextSchema,
+} from "@/schemas/user-context-schema";
+import { createContext, useContext } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import React, { createContext, useContext } from "react";
 import axios from "axios";
-import { UserContextSchemaType } from "../schemas/user-context-schema";
 
-const UserContext = createContext<UserContextSchemaType | null>(null);
+const UserContext = createContext<UserContextSchema | null>(null);
 
 export const UserContextProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const {
-    data: userContext,
-    isLoading,
-    error,
-  } = useSuspenseQuery({
-    queryKey: ["userContext"],
-    queryFn: async () => {
-      const res = await axios.get("/api/user");
-      return res.data;
-    },
+  const { isFetching, data, error } = useSuspenseQuery({
+    queryKey: ["user"],
+    queryFn: () => axios.get("/api/user").then((res) => res.data),
   });
 
-  if (error && !isLoading) {
+  if (error && !isFetching) {
     throw error;
   }
 
+  const validated = userContextSchema.safeParse(data);
+
+  if (validated.success === false) {
+    throw validated.error;
+  }
+
   return (
-    <UserContext.Provider value={userContext}>{children}</UserContext.Provider>
+    <UserContext.Provider value={validated.data}>
+      {children}
+    </UserContext.Provider>
   );
 };
 
 export const useUserContext = () => {
   const context = useContext(UserContext);
 
-  if (context === null) {
-    throw new Error("useUserContext must be used within a UserContextProvider");
+  if (!context) {
+    throw new Error(
+      "useUserContext must be used within an UserContextProvider",
+    );
   }
 
   return context;

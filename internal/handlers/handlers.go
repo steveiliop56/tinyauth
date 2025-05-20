@@ -178,7 +178,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			}
 
 			// We are using caddy/traefik so redirect
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 			return
 		}
 
@@ -225,7 +225,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				}
 
 				// We are using caddy/traefik so redirect
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 				return
 			}
 		}
@@ -273,7 +273,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
 
 	// Redirect to login
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/?%s", h.Config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", h.Config.AppURL, queries.Encode()))
 }
 
 func (h *Handlers) LoginHandler(c *gin.Context) {
@@ -500,6 +500,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		GenericName:           h.Config.GenericName,
 		Domain:                h.Config.Domain,
 		ForgotPasswordMessage: h.Config.ForgotPasswordMessage,
+		BackgroundImage:       h.Config.BackgroundImage,
 		OAuthAutoRedirect:     h.Config.OAuthAutoRedirect,
 	}
 

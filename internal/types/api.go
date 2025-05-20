@@ -51,6 +51,7 @@ type AppContext struct {
 	GenericName           string   `json:"genericName"`
 	Domain                string   `json:"domain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
+	BackgroundImage       string   `json:"backgroundImage"`
 	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
 }
 

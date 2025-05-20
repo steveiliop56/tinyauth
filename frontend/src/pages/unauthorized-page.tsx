@@ -1,98 +1,62 @@
-import { Button, Code, Paper, Text } from "@mantine/core";
-import { Layout } from "../components/layouts/layout";
-import { Navigate } from "react-router";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Trans, useTranslation } from "react-i18next";
-import React, { useEffect } from "react";
-import { isValidQuery } from "../utils/utils";
-import { useIsMounted } from "../lib/hooks/use-is-mounted";
+import { Navigate, useLocation, useNavigate } from "react-router";
 
 export const UnauthorizedPage = () => {
-  const queryString = window.location.search;
-  const params = new URLSearchParams(queryString);
-  const username = params.get("username") ?? "";
-  const groupErr = params.get("groupErr") ?? "";
-  const resource = params.get("resource") ?? "";
+  const { search } = useLocation();
 
-  const [isGroupErr, setIsGroupErr] = React.useState(false);
+  const searchParams = new URLSearchParams(search);
+  const username = searchParams.get("username");
+  const resource = searchParams.get("resource");
+  const groupErr = searchParams.get("groupErr");
 
-  const useMounted = useIsMounted();
-
-  useEffect(() => {
-    if (useMounted()) {
-      if (isValidQuery(groupErr)) {
-        if (groupErr === "true") {
-          setIsGroupErr(true);
-          return;
-        }
-        setIsGroupErr(false);
-        return;
-      }
-      setIsGroupErr(false);
-    }
-  }, []);
-
-  const { t } = useTranslation();
-
-  if (!isValidQuery(username)) {
+  if (!username) {
     return <Navigate to="/" />;
   }
 
-  if (isValidQuery(resource) && !isGroupErr) {
-    return (
-      <UnauthorizedLayout>
-        <Trans
-          i18nKey="unauthorizedResourceSubtitle"
-          t={t}
-          components={{ Code: <Code /> }}
-          values={{ resource, username }}
-        />
-      </UnauthorizedLayout>
-    );
-  }
-
-  if (isGroupErr && isValidQuery(resource)) {
-    return (
-      <UnauthorizedLayout>
-        <Trans
-          i18nKey="unauthorizedGroupsSubtitle"
-          t={t}
-          components={{ Code: <Code /> }}
-          values={{ username, resource }}
-        />
-      </UnauthorizedLayout>
-    );
-  }
-
-  return (
-    <UnauthorizedLayout>
-      <Trans
-        i18nKey="unauthorizedLoginSubtitle"
-        t={t}
-        components={{ Code: <Code /> }}
-        values={{ username }}
-      />
-    </UnauthorizedLayout>
-  );
-};
-
-const UnauthorizedLayout = ({ children }: { children: React.ReactNode }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  let i18nKey = "unauthorizedLoginSubtitle";
+
+  if (resource) {
+    i18nKey = "unauthorizedResourceSubtitle";
+  }
+
+  if (groupErr === "true") {
+    i18nKey = "unauthorizedGroupsSubtitle";
+  }
 
   return (
-    <Layout>
-      <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
-        <Text size="xl" fw={700}>
-          {t("Unauthorized")}
-        </Text>
-        <Text>{children}</Text>
-        <Button
-          fullWidth
-          mt="xl"
-          onClick={() => window.location.replace("/login")}
-        >
+    <Card className="min-w-xs sm:min-w-sm">
+      <CardHeader>
+        <CardTitle className="text-3xl">{t("unauthorizedTitle")}</CardTitle>
+        <CardDescription>
+          <Trans
+            i18nKey={i18nKey}
+            t={t}
+            components={{
+              code: <code />,
+            }}
+            values={{
+              username,
+              resource,
+            }}
+          />
+        </CardDescription>
+      </CardHeader>
+      <CardFooter className="flex flex-col items-stretch">
+        <Button onClick={() => navigate("/login")}>
           {t("unauthorizedButton")}
         </Button>
-      </Paper>
-    </Layout>
+      </CardFooter>
+    </Card>
   );
 };

@@ -9,7 +9,7 @@ FROM oven/bun:1.2.12-alpine AS frontend-builder
 WORKDIR /frontend
 
 COPY ./frontend/package.json ./
-COPY ./frontend/bun.lockb ./
+COPY ./frontend/bun.lock ./
 
 RUN bun install
 
@@ -21,7 +21,6 @@ COPY ./frontend/tsconfig.json ./
 COPY ./frontend/tsconfig.app.json ./
 COPY ./frontend/tsconfig.node.json ./
 COPY ./frontend/vite.config.ts ./
-COPY ./frontend/postcss.config.cjs ./
 
 RUN bun run build
 

@@ -1,181 +1,166 @@
-import { Paper, Title, Text, Divider } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { LoginForm } from "@/components/auth/login-form";
+import { GenericIcon } from "@/components/icons/generic";
+import { GithubIcon } from "@/components/icons/github";
+import { GoogleIcon } from "@/components/icons/google";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { OAuthButton } from "@/components/ui/oauth-button";
+import { SeperatorWithChildren } from "@/components/ui/separator";
+import { useAppContext } from "@/context/app-context";
+import { useUserContext } from "@/context/user-context";
+import { useIsMounted } from "@/lib/hooks/use-is-mounted";
+import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
-import axios, { type AxiosError } from "axios";
-import { useUserContext } from "../context/user-context";
-import { Navigate } from "react-router";
-import { Layout } from "../components/layouts/layout";
-import { OAuthButtons } from "../components/auth/oauth-buttons";
-import { LoginFormValues } from "../schemas/login-schema";
-import { LoginForm } from "../components/auth/login-forn";
-import { useAppContext } from "../context/app-context";
+import axios, { AxiosError } from "axios";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
-import { useIsMounted } from "../lib/hooks/use-is-mounted";
-import { isValidRedirectUri } from "../utils/utils";
+import { Navigate, useLocation } from "react-router";
+import { toast } from "sonner";
 
 export const LoginPage = () => {
-  const queryString = window.location.search;
-  const params = new URLSearchParams(queryString);
-  const redirectUri = params.get("redirect_uri") ?? "";
-
   const { isLoggedIn } = useUserContext();
 
   if (isLoggedIn) {
     return <Navigate to="/logout" />;
   }
 
-  const {
-    configuredProviders,
-    title,
-    genericName,
-    oauthAutoRedirect: oauthAutoRedirectContext,
-  } = useAppContext();
-
+  const { configuredProviders, title, oauthAutoRedirect } = useAppContext();
+  const { search } = useLocation();
   const { t } = useTranslation();
-
-  const [oauthAutoRedirect, setOAuthAutoRedirect] = useState(
-    oauthAutoRedirectContext,
-  );
-
-  const oauthProviders = configuredProviders.filter(
-    (value) => value !== "username",
-  );
-
   const isMounted = useIsMounted();
 
-  const loginMutation = useMutation({
-    mutationFn: (login: LoginFormValues) => {
-      return axios.post("/api/login", login);
-    },
-    onError: (data: AxiosError) => {
-      if (data.response) {
-        if (data.response.status === 429) {
-          notifications.show({
-            title: t("loginFailTitle"),
-            message: t("loginFailRateLimit"),
-            color: "red",
-          });
-          return;
-        }
-      }
-      notifications.show({
-        title: t("loginFailTitle"),
-        message: t("loginFailSubtitle"),
-        color: "red",
-      });
-    },
-    onSuccess: async (data) => {
-      if (data.data.totpPending) {
-        window.location.replace(`/totp?redirect_uri=${redirectUri}`);
-        return;
-      }
+  const searchParams = new URLSearchParams(search);
+  const redirectUri = searchParams.get("redirect_uri");
 
-      notifications.show({
-        title: t("loginSuccessTitle"),
-        message: t("loginSuccessSubtitle"),
-        color: "green",
-      });
+  const oauthConfigured =
+    configuredProviders.filter((provider) => provider !== "username").length >
+    0;
+  const userAuthConfigured = configuredProviders.includes("username");
 
-      setTimeout(() => {
-        if (!isValidRedirectUri(redirectUri)) {
-          window.location.replace("/");
-          return;
-        }
-
-        window.location.replace(`/continue?redirect_uri=${redirectUri}`);
-      }, 500);
-    },
-  });
-
-  const loginOAuthMutation = useMutation({
-    mutationFn: (provider: string) => {
-      return axios.get(
-        `/api/oauth/url/${provider}?redirect_uri=${redirectUri}`,
-      );
-    },
-    onError: () => {
-      notifications.show({
-        title: t("loginOauthFailTitle"),
-        message: t("loginOauthFailSubtitle"),
-        color: "red",
-      });
-      setOAuthAutoRedirect("none");
-    },
+  const oauthMutation = useMutation({
+    mutationFn: (provider: string) =>
+      axios.get(
+        `/api/oauth/url/${provider}?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+      ),
+    mutationKey: ["oauth"],
     onSuccess: (data) => {
-      notifications.show({
-        title: t("loginOauthSuccessTitle"),
-        message: t("loginOauthSuccessSubtitle"),
-        color: "blue",
+      toast.info(t("loginOauthSuccessTitle"), {
+        description: t("loginOauthSuccessSubtitle"),
       });
+
       setTimeout(() => {
         window.location.href = data.data.url;
       }, 500);
     },
+    onError: () => {
+      toast.error(t("loginOauthFailTitle"), {
+        description: t("loginOauthFailSubtitle"),
+      });
+    },
   });
 
-  const handleSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate(values);
-  };
+  const loginMutation = useMutation({
+    mutationFn: (values: LoginSchema) => axios.post("/api/login", values),
+    mutationKey: ["login"],
+    onSuccess: (data) => {
+      if (data.data.totpPending) {
+        window.location.replace(
+          `/totp?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        );
+        return;
+      }
+
+      toast.success(t("loginSuccessTitle"), {
+        description: t("loginSuccessSubtitle"),
+      });
+
+      setTimeout(() => {
+        window.location.replace(
+          `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        );
+      }, 500);
+    },
+    onError: (error: AxiosError) => {
+      toast.error(t("loginFailTitle"), {
+        description:
+          error.response?.status === 429
+            ? t("loginFailRateLimit")
+            : t("loginFailSubtitle"),
+      });
+    },
+  });
 
   useEffect(() => {
     if (isMounted()) {
       if (
-        oauthProviders.includes(oauthAutoRedirect) &&
-        isValidRedirectUri(redirectUri)
+        oauthConfigured &&
+        configuredProviders.includes(oauthAutoRedirect) &&
+        redirectUri
       ) {
-        loginOAuthMutation.mutate(oauthAutoRedirect);
+        oauthMutation.mutate(oauthAutoRedirect);
       }
     }
   }, []);
 
-  if (
-    oauthProviders.includes(oauthAutoRedirect) &&
-    isValidRedirectUri(redirectUri)
-  ) {
-    return (
-      <Layout>
-        <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
-          <Text size="xl" fw={700}>
-            {t("continueRedirectingTitle")}
-          </Text>
-          <Text>{t("loginOauthSuccessSubtitle")}</Text>
-        </Paper>
-      </Layout>
-    );
-  }
-
   return (
-    <Layout>
-      <Title ta="center">{title}</Title>
-      <Paper shadow="md" p="xl" mt={30} radius="md" withBorder>
-        {oauthProviders.length > 0 && (
-          <>
-            <Text size="lg" fw={500} ta="center">
-              {t("loginTitle")}
-            </Text>
-            <OAuthButtons
-              oauthProviders={oauthProviders}
-              isPending={loginOAuthMutation.isPending}
-              mutate={loginOAuthMutation.mutate}
-              genericName={genericName}
-            />
-            {configuredProviders.includes("username") && (
-              <Divider
-                label={t("loginDivider")}
-                labelPosition="center"
-                my="lg"
+    <Card className="min-w-xs sm:min-w-sm">
+      <CardHeader>
+        <CardTitle className="text-center text-3xl">{title}</CardTitle>
+        {configuredProviders.length > 0 && (
+          <CardDescription className="text-center">
+            {oauthConfigured ? t("loginTitle") : t("loginTitleSimple")}
+          </CardDescription>
+        )}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {oauthConfigured && (
+          <div className="flex flex-col gap-2 items-center justify-center">
+            {configuredProviders.includes("google") && (
+              <OAuthButton
+                title="Google"
+                icon={<GoogleIcon />}
+                className="w-full"
+                onClick={() => oauthMutation.mutate("google")}
               />
             )}
-          </>
+            {configuredProviders.includes("github") && (
+              <OAuthButton
+                title="Github"
+                icon={<GithubIcon />}
+                className="w-full"
+                onClick={() => oauthMutation.mutate("github")}
+              />
+            )}
+            {configuredProviders.includes("generic") && (
+              <OAuthButton
+                title="Generic"
+                icon={<GenericIcon />}
+                className="w-full"
+                onClick={() => oauthMutation.mutate("generic")}
+              />
+            )}
+          </div>
         )}
-        {configuredProviders.includes("username") && (
+        {userAuthConfigured && oauthConfigured && (
+          <SeperatorWithChildren>{t("loginDivider")}</SeperatorWithChildren>
+        )}
+        {userAuthConfigured && (
           <LoginForm
-            isPending={loginMutation.isPending}
-            onSubmit={handleSubmit}
+            onSubmit={(values) => loginMutation.mutate(values)}
+            loading={loginMutation.isPending}
           />
         )}
-      </Paper>
-    </Layout>
+        {configuredProviders.length == 0 && (
+          <h3 className="text-center text-xl text-red-600">
+            {t("failedToFetchProvidersTitle")}
+          </h3>
+        )}
+      </CardContent>
+    </Card>
   );
 };
