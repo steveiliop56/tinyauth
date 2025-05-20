@@ -16,7 +16,7 @@ import { useUserContext } from "@/context/user-context";
 import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
@@ -85,11 +85,12 @@ export const LoginPage = () => {
         );
       }, 500);
     },
-    onError: (error: Error) => {
+    onError: (error: AxiosError) => {
       toast.error(t("loginFailTitle"), {
-        description: error.message.includes("429")
-          ? t("loginFailRateLimit")
-          : t("loginFailSubtitle"),
+        description:
+          error.response?.status === 429
+            ? t("loginFailRateLimit")
+            : t("loginFailSubtitle"),
       });
     },
   });

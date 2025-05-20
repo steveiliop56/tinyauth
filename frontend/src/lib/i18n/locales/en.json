@@ -49,5 +49,5 @@
     "forgotPasswordTitle": "Forgot your password?",
     "failedToFetchProvidersTitle": "Failed to load authentication providers. Please check your configuration.",
     "errorTitle": "An error occurred",
-    "errorSubtitle": "An error occured while trying to perform this action. Please check the console for more information."
+    "errorSubtitle": "An error occurred while trying to perform this action. Please check the console for more information."
 }
