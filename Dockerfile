@@ -4,7 +4,7 @@ ARG COMMIT_HASH
 ARG BUILD_TIMESTAMP
 
 # Site builder
-FROM oven/bun:1.2.12-alpine AS frontend-builder
+FROM oven/bun:1.2.13-alpine AS frontend-builder
 
 WORKDIR /frontend
 
