@@ -1,6 +1,6 @@
 # Contributing
 
-Contributing is relatively easy, you just need to follow the steps carefully and you will be up and running with a development server in less than 5 minutes.
+Contributing is relatively easy, you just need to follow the steps below and you will be up and running with a development server in less than five minutes.
 
 ## Requirements
 
@@ -20,7 +20,7 @@ cd tinyauth
 
 ## Install requirements
 
-Although you will not need the requirements in your machine since the development will happen in docker, I still recommend to install them because this way you will not have import errors, to install the go requirements, run:
+Although you will not need the requirements in your machine since the development will happen in docker, I still recommend to install them because this way you will not have import errors. To install the go requirements run:
 
 ```sh
 go mod tidy
@@ -35,7 +35,7 @@ bun install
 
 ## Create your `.env` file
 
-In order to configure the app you need to create an environment file, this can be done by copying the `.env.example` file to `.env` and modifying the environment variables inside to suit your needs.
+In order to configure the app you need to create an environment file, this can be done by copying the `.env.example` file to `.env` and modifying the environment variables to suit your needs.
 
 ## Developing
 
@@ -46,11 +46,14 @@ I have designed the development workflow to be entirely in docker, this is becau
 dev.example.com -> 127.0.0.1
 ```
 
-Then you can just make sure the domains are correct in the example docker compose file and run:
+> [!TIP]
+> You can use [sslip.io](https://sslip.io) as a domain if you don't have one to develop with.
+
+Then you can just make sure the domains are correct in the development docker compose file and run:
 
 ```sh
 docker compose -f docker-compose.dev.yml up --build
 ```
 
 > [!NOTE]
-> I would recommend copying the example `docker-compose.dev.yml` into a `docker-compose.test.yml` file, so as you don't accidentally commit any sensitive information.
+> I recommend copying the example `docker-compose.dev.yml` into a `docker-compose.test.yml` file, so as you don't accidentally commit any sensitive information.
