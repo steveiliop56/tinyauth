@@ -8,8 +8,8 @@ import (
 	totpCmd "tinyauth/cmd/totp"
 	userCmd "tinyauth/cmd/user"
 	"tinyauth/internal/api"
-	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/constants"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
@@ -50,7 +50,7 @@ var rootCmd = &cobra.Command{
 
 		// Logger
 		log.Logger = log.Level(zerolog.Level(config.LogLevel))
-		log.Info().Str("version", strings.TrimSpace(assets.Version)).Msg("Starting tinyauth")
+		log.Info().Str("version", strings.TrimSpace(constants.Version)).Msg("Starting tinyauth")
 
 		// Users
 		log.Info().Msg("Parsing users")

@@ -16,3 +16,8 @@ type Claims struct {
 	PreferredUsername string   `json:"preferred_username"`
 	Groups            []string `json:"groups"`
 }
+
+// Version information
+var Version = "development"
+var CommitHash = "n/a"
+var BuildTimestamp = "n/a"

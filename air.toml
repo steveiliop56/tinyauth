@@ -2,7 +2,7 @@ root = "/tinyauth"
 tmp_dir = "tmp"
 
 [build]
-pre_cmd = ["mkdir -p internal/assets/dist", "echo 'backend running' > internal/assets/dist/index.html", "echo development > internal/assets/version"]
+pre_cmd = ["mkdir -p internal/assets/dist", "echo 'backend running' > internal/assets/dist/index.html"]
 cmd = "go build -o ./tmp/tinyauth ."
 bin = "tmp/tinyauth"
 include_ext = ["go"]
