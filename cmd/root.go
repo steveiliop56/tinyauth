@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -67,6 +68,12 @@ var rootCmd = &cobra.Command{
 		HandleError(err, "Failed to get upper domain")
 		log.Info().Str("domain", domain).Msg("Using domain for cookie store")
 
+		// Generate cookie name
+		cookieId := utils.GenerateIdentifier(strings.Split(domain, ".")[0])
+		sessionCookieName := fmt.Sprintf("%s-%s", constants.SessionCookieName, cookieId)
+		csrfCookieName := fmt.Sprintf("%s-%s", constants.CsrfCookieName, cookieId)
+		redirectCookieName := fmt.Sprintf("%s-%s", constants.RedirectCookieName, cookieId)
+
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
 			GithubClientId:      config.GithubClientId,
@@ -93,6 +100,8 @@ var rootCmd = &cobra.Command{
 			ForgotPasswordMessage: config.FogotPasswordMessage,
 			BackgroundImage:       config.BackgroundImage,
 			OAuthAutoRedirect:     config.OAuthAutoRedirect,
+			CsrfCookieName:        csrfCookieName,
+			RedirectCookieName:    redirectCookieName,
 		}
 
 		// Create api config
@@ -103,14 +112,15 @@ var rootCmd = &cobra.Command{
 
 		// Create auth config
 		authConfig := types.AuthConfig{
-			Users:           users,
-			OauthWhitelist:  config.OAuthWhitelist,
-			Secret:          config.Secret,
-			CookieSecure:    config.CookieSecure,
-			SessionExpiry:   config.SessionExpiry,
-			Domain:          domain,
-			LoginTimeout:    config.LoginTimeout,
-			LoginMaxRetries: config.LoginMaxRetries,
+			Users:             users,
+			OauthWhitelist:    config.OAuthWhitelist,
+			Secret:            config.Secret,
+			CookieSecure:      config.CookieSecure,
+			SessionExpiry:     config.SessionExpiry,
+			Domain:            domain,
+			LoginTimeout:      config.LoginTimeout,
+			LoginMaxRetries:   config.LoginMaxRetries,
+			SessionCookieName: sessionCookieName,
 		}
 
 		// Create hooks config
