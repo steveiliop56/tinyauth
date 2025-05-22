@@ -52,7 +52,4 @@ COPY --from=builder /tinyauth/tinyauth ./
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=10s --timeout=5s \
-    CMD curl -f http://localhost:3000/api/healthcheck || exit 1
-
 ENTRYPOINT ["./tinyauth"]
