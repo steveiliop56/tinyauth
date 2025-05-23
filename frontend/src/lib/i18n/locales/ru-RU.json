@@ -27,7 +27,7 @@
     "logoutSuccessTitle": "Выход",
     "logoutSuccessSubtitle": "Вы вышли из системы",
     "logoutTitle": "Выйти",
-    "logoutUsernameSubtitle": "You are currently logged in as <code>{{username}}</code>. Click the button below to logout.",
+    "logoutUsernameSubtitle": "Вход выполнен как <code>{{username}}</code>, нажмите на кнопку ниже, чтобы выйти.",
     "logoutOauthSubtitle": "You are currently logged in as <code>{{username}}</code> using the {{provider}} OAuth provider. Click the button below to logout.",
     "notFoundTitle": "Страница не найдена",
     "notFoundSubtitle": "Эта страница не существует.",
