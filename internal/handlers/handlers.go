@@ -581,7 +581,7 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	log.Debug().Msg("Got auth URL")
 
 	// Set CSRF cookie
-	c.SetCookie("tinyauth-csrf", state, int(time.Hour.Seconds()), "/", "", h.Config.CookieSecure, true)
+	c.SetCookie(h.Config.CsrfCookieName, state, int(time.Hour.Seconds()), "/", "", h.Config.CookieSecure, true)
 
 	// Get redirect URI
 	redirectURI := c.Query("redirect_uri")
@@ -589,7 +589,7 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	// Set redirect cookie if redirect URI is provided
 	if redirectURI != "" {
 		log.Debug().Str("redirectURI", redirectURI).Msg("Setting redirect cookie")
-		c.SetCookie("tinyauth-redirect", redirectURI, int(time.Hour.Seconds()), "/", "", h.Config.CookieSecure, true)
+		c.SetCookie(h.Config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", "", h.Config.CookieSecure, true)
 	}
 
 	// Return auth URL
@@ -620,7 +620,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	state := c.Query("state")
 
 	// Get CSRF cookie
-	csrfCookie, err := c.Cookie("tinyauth-csrf")
+	csrfCookie, err := c.Cookie(h.Config.CsrfCookieName)
 
 	if err != nil {
 		log.Debug().Msg("No CSRF cookie")
@@ -638,7 +638,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	}
 
 	// Clean up CSRF cookie
-	c.SetCookie("tinyauth-csrf", "", -1, "/", "", h.Config.CookieSecure, true)
+	c.SetCookie(h.Config.CsrfCookieName, "", -1, "/", "", h.Config.CookieSecure, true)
 
 	// Get code
 	code := c.Query("code")
@@ -737,7 +737,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	})
 
 	// Check if we have a redirect URI
-	redirectCookie, err := c.Cookie("tinyauth-redirect")
+	redirectCookie, err := c.Cookie(h.Config.RedirectCookieName)
 
 	if err != nil {
 		log.Debug().Msg("No redirect cookie")
@@ -762,7 +762,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	}
 
 	// Clean up redirect cookie
-	c.SetCookie("tinyauth-redirect", "", -1, "/", "", h.Config.CookieSecure, true)
+	c.SetCookie(h.Config.RedirectCookieName, "", -1, "/", "", h.Config.CookieSecure, true)
 
 	// Redirect to continue with the redirect URI
 	c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", h.Config.AppURL, queries.Encode()))

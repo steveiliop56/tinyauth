@@ -28,21 +28,29 @@ var apiConfig = types.APIConfig{
 // Simple handlers config for tests
 var handlersConfig = types.HandlersConfig{
 	AppURL:                "http://localhost:8080",
+	Domain:                "localhost",
 	DisableContinue:       false,
+	CookieSecure:          false,
 	Title:                 "Tinyauth",
 	GenericName:           "Generic",
 	ForgotPasswordMessage: "Some message",
+	CsrfCookieName:        "tinyauth-csrf",
+	RedirectCookieName:    "tinyauth-redirect",
+	BackgroundImage:       "https://example.com/image.png",
+	OAuthAutoRedirect:     "none",
 }
 
 // Simple auth config for tests
 var authConfig = types.AuthConfig{
-	Users:           types.Users{},
-	OauthWhitelist:  "",
-	Secret:          "super-secret-api-thing-for-tests", // It is 32 chars long
-	CookieSecure:    false,
-	SessionExpiry:   3600,
-	LoginTimeout:    0,
-	LoginMaxRetries: 0,
+	Users:             types.Users{},
+	OauthWhitelist:    "",
+	Secret:            "super-secret-api-thing-for-tests", // It is 32 chars long
+	CookieSecure:      false,
+	SessionExpiry:     3600,
+	LoginTimeout:      0,
+	LoginMaxRetries:   0,
+	SessionCookieName: "tinyauth-session",
+	Domain:            "localhost",
 }
 
 // Simple hooks config for tests
@@ -206,6 +214,9 @@ func TestAppContext(t *testing.T) {
 		Title:                 "Tinyauth",
 		GenericName:           "Generic",
 		ForgotPasswordMessage: "Some message",
+		BackgroundImage:       "https://example.com/image.png",
+		OAuthAutoRedirect:     "none",
+		Domain:                "localhost",
 	}
 
 	// We should get the username back
@@ -234,7 +245,7 @@ func TestUserContext(t *testing.T) {
 
 	// Set the cookie
 	req.AddCookie(&http.Cookie{
-		Name:  "tinyauth",
+		Name:  "tinyauth-session",
 		Value: cookie,
 	})
 

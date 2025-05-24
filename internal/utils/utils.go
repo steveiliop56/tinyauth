@@ -10,6 +10,7 @@ import (
 	"tinyauth/internal/constants"
 	"tinyauth/internal/types"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -343,4 +344,19 @@ func SanitizeHeader(header string) string {
 		}
 		return -1
 	}, header)
+}
+
+// Generate a static identifier from a string
+func GenerateIdentifier(str string) string {
+	// Create a new UUID
+	uuid := uuid.NewSHA1(uuid.NameSpaceURL, []byte(str))
+
+	// Convert the UUID to a string
+	uuidString := uuid.String()
+
+	// Show the UUID
+	log.Debug().Str("uuid", uuidString).Msg("Generated UUID")
+
+	// Convert the UUID to a string
+	return strings.Split(uuidString, "-")[0]
 }
