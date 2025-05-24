@@ -29,7 +29,7 @@ export const LoginPage = () => {
     return <Navigate to="/logout" />;
   }
 
-  const { configuredProviders, title, oauthAutoRedirect } = useAppContext();
+  const { configuredProviders, title, oauthAutoRedirect, genericName } = useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
@@ -138,7 +138,7 @@ export const LoginPage = () => {
             )}
             {configuredProviders.includes("generic") && (
               <OAuthButton
-                title="Generic"
+                title={genericName}
                 icon={<GenericIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("generic")}
