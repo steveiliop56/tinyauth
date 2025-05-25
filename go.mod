@@ -3,7 +3,7 @@ module tinyauth
 go 1.23.2
 
 require (
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
