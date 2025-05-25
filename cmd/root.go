@@ -198,7 +198,7 @@ func init() {
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().String("generic-name", "Generic", "Generic OAuth provider name.")
-	rootCmd.Flags().Bool("generic-skip-ssl", false, "Skip SSL verification for generic OAuth provider.")
+	rootCmd.Flags().Bool("generic-skip-ssl", false, "Skip SSL verification for the generic OAuth provider.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().String("oauth-auto-redirect", "none", "Auto redirect to the specified OAuth provider if configured. (available providers: github, google, generic)")
