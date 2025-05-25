@@ -48,6 +48,8 @@ type HandlersConfig struct {
 	ForgotPasswordMessage string
 	BackgroundImage       string
 	OAuthAutoRedirect     string
+	CsrfCookieName        string
+	RedirectCookieName    string
 }
 
 // OAuthConfig is the configuration for the providers
@@ -73,14 +75,15 @@ type APIConfig struct {
 
 // AuthConfig is the configuration for the auth service
 type AuthConfig struct {
-	Users           Users
-	OauthWhitelist  string
-	SessionExpiry   int
-	Secret          string
-	CookieSecure    bool
-	Domain          string
-	LoginTimeout    int
-	LoginMaxRetries int
+	Users             Users
+	OauthWhitelist    string
+	SessionExpiry     int
+	Secret            string
+	CookieSecure      bool
+	Domain            string
+	LoginTimeout      int
+	LoginMaxRetries   int
+	SessionCookieName string
 }
 
 // HooksConfig is the configuration for the hooks service

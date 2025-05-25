@@ -21,3 +21,8 @@ type Claims struct {
 var Version = "development"
 var CommitHash = "n/a"
 var BuildTimestamp = "n/a"
+
+// Cookie names
+var SessionCookieName = "tinyauth-session"
+var CsrfCookieName = "tinyauth-csrf"
+var RedirectCookieName = "tinyauth-redirect"
