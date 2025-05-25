@@ -24,6 +24,7 @@ type Config struct {
 	GenericTokenURL         string `mapstructure:"generic-token-url"`
 	GenericUserURL          string `mapstructure:"generic-user-url"`
 	GenericName             string `mapstructure:"generic-name"`
+	GenericSkipSSL          bool   `mapstructure:"generic-skip-ssl"`
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
@@ -62,6 +63,7 @@ type OAuthConfig struct {
 	GenericAuthURL      string
 	GenericTokenURL     string
 	GenericUserURL      string
+	GenericSkipSSL      bool
 	AppURL              string
 }
 

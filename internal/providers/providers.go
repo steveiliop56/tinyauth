@@ -36,7 +36,7 @@ func (providers *Providers) Init() {
 			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/github", providers.Config.AppURL),
 			Scopes:       GithubScopes(),
 			Endpoint:     endpoints.GitHub,
-		})
+		}, false)
 
 		// Initialize the oauth provider
 		providers.Github.Init()
@@ -53,7 +53,7 @@ func (providers *Providers) Init() {
 			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/google", providers.Config.AppURL),
 			Scopes:       GoogleScopes(),
 			Endpoint:     endpoints.Google,
-		})
+		}, false)
 
 		// Initialize the oauth provider
 		providers.Google.Init()
@@ -73,7 +73,7 @@ func (providers *Providers) Init() {
 				AuthURL:  providers.Config.GenericAuthURL,
 				TokenURL: providers.Config.GenericTokenURL,
 			},
-		})
+		}, providers.Config.GenericSkipSSL)
 
 		// Initialize the oauth provider
 		providers.Generic.Init()
