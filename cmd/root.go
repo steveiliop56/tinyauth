@@ -86,6 +86,7 @@ var rootCmd = &cobra.Command{
 			GenericAuthURL:      config.GenericAuthURL,
 			GenericTokenURL:     config.GenericTokenURL,
 			GenericUserURL:      config.GenericUserURL,
+			GenericSkipSSL:      config.GenericSkipSSL,
 			AppURL:              config.AppURL,
 		}
 
@@ -207,6 +208,7 @@ func init() {
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().String("generic-name", "Generic", "Generic OAuth provider name.")
+	rootCmd.Flags().Bool("generic-skip-ssl", false, "Skip SSL verification for the generic OAuth provider.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().String("oauth-auto-redirect", "none", "Auto redirect to the specified OAuth provider if configured. (available providers: github, google, generic)")
@@ -241,6 +243,7 @@ func init() {
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("generic-name", "GENERIC_NAME")
+	viper.BindEnv("generic-skip-ssl", "GENERIC_SKIP_SSL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("oauth-auto-redirect", "OAUTH_AUTO_REDIRECT")
