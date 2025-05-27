@@ -30,6 +30,7 @@ func (oauth *OAuth) Init() {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: oauth.InsecureSkipVerify,
+			MinVersion:         tls.VersionTLS12,
 		},
 	}
 
@@ -43,7 +44,6 @@ func (oauth *OAuth) Init() {
 
 	// Set the HTTP client in the context
 	oauth.Context = context.WithValue(oauth.Context, oauth2.HTTPClient, httpClient)
-
 	// Create the verifier
 	oauth.Verifier = oauth2.GenerateVerifier()
 }
