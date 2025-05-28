@@ -21,7 +21,7 @@ jobs:
       - name: Generate metadata
         id: metadata
         run: |
-          echo "VERSION=nightly" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           echo "COMMIT_HASH=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "BUILD_TIMESTAMP=$(date '+%Y-%m-%dT%H:%M:%S')" >> "$GITHUB_OUTPUT"
 
