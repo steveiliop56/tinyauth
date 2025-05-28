@@ -1,8 +1,3 @@
-# Arguments
-ARG VERSION
-ARG COMMIT_HASH
-ARG BUILD_TIMESTAMP
-
 # Site builder
 FROM oven/bun:1.2.14-alpine AS frontend-builder
 
@@ -26,6 +21,10 @@ RUN bun run build
 
 # Builder
 FROM golang:1.24-alpine3.21 AS builder
+
+ARG VERSION
+ARG COMMIT_HASH
+ARG BUILD_TIMESTAMP
 
 WORKDIR /tinyauth
 
