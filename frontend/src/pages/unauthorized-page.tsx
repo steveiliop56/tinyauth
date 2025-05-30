@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router";
 
@@ -23,6 +24,12 @@ export const UnauthorizedPage = () => {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleRedirect = () => {
+    setLoading(true);
+    navigate("/login");
+  };
 
   let i18nKey = "unauthorizedLoginSubtitle";
 
@@ -53,7 +60,7 @@ export const UnauthorizedPage = () => {
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={() => navigate("/login")}>
+        <Button onClick={handleRedirect} loading={loading}>
           {t("unauthorizedButton")}
         </Button>
       </CardFooter>

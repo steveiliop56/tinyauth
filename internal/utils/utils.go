@@ -255,16 +255,16 @@ func ParseUser(user string) (types.User, error) {
 	// Check if the user has a totp secret
 	if len(userSplit) == 2 {
 		return types.User{
-			Username: userSplit[0],
-			Password: userSplit[1],
+			Username: strings.TrimSpace(userSplit[0]),
+			Password: strings.TrimSpace(userSplit[1]),
 		}, nil
 	}
 
 	// Return the user struct
 	return types.User{
-		Username:   userSplit[0],
-		Password:   userSplit[1],
-		TotpSecret: userSplit[2],
+		Username:   strings.TrimSpace(userSplit[0]),
+		Password:   strings.TrimSpace(userSplit[1]),
+		TotpSecret: strings.TrimSpace(userSplit[2]),
 	}, nil
 }
 

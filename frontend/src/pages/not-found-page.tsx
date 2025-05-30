@@ -6,12 +6,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 export const NotFoundPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleRedirect = () => {
+    setLoading(true);
+    navigate("/");
+  };
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
@@ -20,7 +27,7 @@ export const NotFoundPage = () => {
         <CardDescription>{t("notFoundSubtitle")}</CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={() => navigate("/")}>{t("notFoundButton")}</Button>
+        <Button onClick={handleRedirect} loading={loading}>{t("notFoundButton")}</Button>
       </CardFooter>
     </Card>
   );

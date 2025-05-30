@@ -12,6 +12,7 @@ import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import DOMPurify from "dompurify";
+import { useState } from "react";
 
 export const ContinuePage = () => {
   const { isLoggedIn } = useUserContext();
@@ -22,6 +23,7 @@ export const ContinuePage = () => {
 
   const { domain, disableContinue } = useAppContext();
   const { search } = useLocation();
+  const [loading, setLoading] = useState(false);
 
   const searchParams = new URLSearchParams(search);
   const redirectURI = searchParams.get("redirect_uri");
@@ -34,8 +36,13 @@ export const ContinuePage = () => {
     return <Navigate to="/logout" />;
   }
 
-  if (disableContinue) {
+  const handleRedirect = () => {
+    setLoading(true);
     window.location.href = DOMPurify.sanitize(redirectURI);
+  }
+
+  if (disableContinue) {
+    handleRedirect();
   }
 
   const { t } = useTranslation();
@@ -63,14 +70,13 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() =>
-              (window.location.href = DOMPurify.sanitize(redirectURI))
-            }
+            onClick={handleRedirect}
+            loading={loading}
             variant="destructive"
           >
             {t("continueTitle")}
           </Button>
-          <Button onClick={() => navigate("/logout")} variant="outline">
+          <Button onClick={() => navigate("/logout")} variant="outline" disabled={loading}>
             {t("cancelTitle")}
           </Button>
         </CardFooter>
@@ -97,14 +103,13 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() =>
-              (window.location.href = DOMPurify.sanitize(redirectURI))
-            }
+            onClick={handleRedirect}
+            loading={loading}
             variant="warning"
           >
             {t("continueTitle")}
           </Button>
-          <Button onClick={() => navigate("/logout")} variant="outline">
+          <Button onClick={() => navigate("/logout")} variant="outline" disabled={loading}>
             {t("cancelTitle")}
           </Button>
         </CardFooter>
@@ -120,9 +125,8 @@ export const ContinuePage = () => {
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
         <Button
-          onClick={() =>
-            (window.location.href = DOMPurify.sanitize(redirectURI))
-          }
+          onClick={handleRedirect}
+          loading={loading}
         >
           {t("continueTitle")}
         </Button>

@@ -136,7 +136,7 @@ h4 {
 }
 
 p {
-  @apply leading-7 [&:not(:first-child)]:mt-6;
+  @apply leading-6 [&:not(:first-child)]:mt-6;
 }
 
 blockquote {

@@ -8,18 +8,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useUserContext } from "@/context/user-context";
 import { TotpSchema } from "@/schemas/totp-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
 
 export const TotpPage = () => {
+  const { totpPending } = useUserContext();
+
+  if (!totpPending) {
+    return <Navigate to="/" />;
+  }
+
   const { t } = useTranslation();
   const { search } = useLocation();
-  const navigate = useNavigate();
   const formId = useId();
 
   const searchParams = new URLSearchParams(search);
@@ -34,7 +40,7 @@ export const TotpPage = () => {
       });
 
       setTimeout(() => {
-        navigate(
+        window.location.replace(
           `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
         );
       }, 500);

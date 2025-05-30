@@ -126,6 +126,8 @@ export const LoginPage = () => {
                 icon={<GoogleIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("google")}
+                loading={oauthMutation.isPending && oauthMutation.variables === "google"}
+                disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
             {configuredProviders.includes("github") && (
@@ -134,6 +136,8 @@ export const LoginPage = () => {
                 icon={<GithubIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("github")}
+                loading={oauthMutation.isPending && oauthMutation.variables === "github"}
+                disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
             {configuredProviders.includes("generic") && (
@@ -142,6 +146,8 @@ export const LoginPage = () => {
                 icon={<GenericIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("generic")}
+                loading={oauthMutation.isPending && oauthMutation.variables === "generic"}
+                disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
           </div>
@@ -152,7 +158,7 @@ export const LoginPage = () => {
         {userAuthConfigured && (
           <LoginForm
             onSubmit={(values) => loginMutation.mutate(values)}
-            loading={loginMutation.isPending}
+            loading={loginMutation.isPending || oauthMutation.isPending}
           />
         )}
         {configuredProviders.length == 0 && (
