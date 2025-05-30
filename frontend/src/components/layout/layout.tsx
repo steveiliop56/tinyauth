@@ -1,7 +1,8 @@
 import { useAppContext } from "@/context/app-context";
 import { LanguageSelector } from "../language/language";
+import { Outlet } from "react-router";
 
-export const Layout = ({ children }: { children: React.ReactNode }) => {
+export const Layout = () => {
   const { backgroundImage } = useAppContext();
 
   return (
@@ -14,7 +15,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       <LanguageSelector />
-      {children}
+      <Outlet />
     </div>
   );
 };
