@@ -15,8 +15,8 @@
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
-    "@tailwindcss/vite": "^4.1.7",
-    "@tanstack/react-query": "^5.77.2",
+    "@tailwindcss/vite": "^4.1.8",
+    "@tanstack/react-query": "^5.79.0",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -35,13 +35,13 @@
     "react-router": "^7.6.1",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss": "^4.1.7",
-    "zod": "^3.25.32"
+    "tailwindcss": "^4.1.8",
+    "zod": "^3.25.42"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
     "@tanstack/eslint-plugin-query": "^5.78.0",
-    "@types/node": "^22.15.23",
+    "@types/node": "^22.15.27",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "@vitejs/plugin-react": "^4.5.0",
@@ -50,7 +50,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.2.0",
     "prettier": "3.5.3",
-    "tw-animate-css": "^1.3.0",
+    "tw-animate-css": "^1.3.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.33.0",
     "vite": "^6.3.1"
