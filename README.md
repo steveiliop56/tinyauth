@@ -14,19 +14,16 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It is designed for traefik but it can be extended to work with other reverse proxies like caddy and nginx.
+Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It supports all the popular proxies like Traefik, Nginx and Caddy.
 
 ![Screenshot](assets/screenshot.png)
 
 > [!WARNING]
 > Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
 
-> [!NOTE]
-> Tinyauth is intended for homelab use only and it is not made for production use cases. If you are looking for something production ready please use [authentik](https://goauthentik.io) instead.
-
 ## Getting Started
 
-You can easily get started with tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started.html). There is also an available [docker compose file](./docker-compose.example.yml) that has traefik, whoami and tinyauth to demonstrate its capabilities.
+You can easily get started with tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started.html). There is also an available [docker compose](./docker-compose.example.yml) file that has traefik, whoami and tinyauth to demonstrate its capabilities.
 
 ## Demo
 
@@ -38,15 +35,15 @@ You can find documentation and guides on all of the available configuration of t
 
 ## Discord
 
-I just made a Discord server for tinyauth! It is not only for tinyauth but general self-hosting and homelabbing. [See you there!](https://discord.gg/eHzVaCzRRd).
+Tinyauth has a [discord](https://discord.gg/eHzVaCzRRd) server. Feel free to hop in to chat about self-hosting, homelabs and of course tinyauth. See you there!
 
 ## Contributing
 
-All contributions to the codebase are welcome! If you have any recommendations on how to improve security or find a security issue in tinyauth please open an issue or pull request so it can be fixed as soon as possible!
+All contributions to the codebase are welcome! If you have any free time feel free to pick up an [Issue](https://github.com/steveiliop56/tinyauth/issues) or add your own missing features. Make sure to check out the [contributing guide](./CONTRIBUTING.md) for instructions on how to get the development server up and running.
 
 ## Localization
 
-If you would like to help translating the project in more languages you can do so by visiting the [Crowdin](https://crowdin.com/project/tinyauth) page.
+If you would like to help translating tinyauth into more languages, visit the [Crowdin](https://crowdin.com/project/tinyauth) page.
 
 ## License
 
@@ -59,8 +56,6 @@ Thanks a lot to the following people for providing me with more coffee:
 <!-- sponsors --><a href="https://github.com/erwinkramer"><img src="https:&#x2F;&#x2F;github.com&#x2F;erwinkramer.png" width="64px" alt="User avatar: erwinkramer" /></a>&nbsp;&nbsp;<a href="https://github.com/nicotsx"><img src="https:&#x2F;&#x2F;github.com&#x2F;nicotsx.png" width="64px" alt="User avatar: nicotsx" /></a>&nbsp;&nbsp;<a href="https://github.com/SimpleHomelab"><img src="https:&#x2F;&#x2F;github.com&#x2F;SimpleHomelab.png" width="64px" alt="User avatar: SimpleHomelab" /></a>&nbsp;&nbsp;<a href="https://github.com/jmadden91"><img src="https:&#x2F;&#x2F;github.com&#x2F;jmadden91.png" width="64px" alt="User avatar: jmadden91" /></a>&nbsp;&nbsp;<a href="https://github.com/tribor"><img src="https:&#x2F;&#x2F;github.com&#x2F;tribor.png" width="64px" alt="User avatar: tribor" /></a>&nbsp;&nbsp;<a href="https://github.com/eliasbenb"><img src="https:&#x2F;&#x2F;github.com&#x2F;eliasbenb.png" width="64px" alt="User avatar: eliasbenb" /></a>&nbsp;&nbsp;<!-- sponsors -->
 
 ## Acknowledgements
-
-Credits for the logo of this app go to:
 
 - **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
