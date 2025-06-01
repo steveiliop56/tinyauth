@@ -14,7 +14,7 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic provider to all of your docker apps. It supports all the popular proxies like Traefik, Nginx and Caddy.
+Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github and any provider to all of your docker apps. It supports all the popular proxies like Traefik, Nginx and Caddy.
 
 ![Screenshot](assets/screenshot.png)
 
@@ -43,7 +43,7 @@ All contributions to the codebase are welcome! If you have any free time feel fr
 
 ## Localization
 
-If you would like to help translating tinyauth into more languages, visit the [Crowdin](https://crowdin.com/project/tinyauth) page.
+If you would like to help translate tinyauth into more languages, visit the [Crowdin](https://crowdin.com/project/tinyauth) page.
 
 ## License
 
@@ -60,7 +60,7 @@ Thanks a lot to the following people for providing me with more coffee:
 - **Freepik** for providing the police hat and badge.
 - **Renee French** for the original gopher logo.
 - **Coderabbit AI** for providing free AI code reviews.
-- **Syrhu** for providing the bacgkround image of the app.
+- **Syrhu** for providing the background image of the app.
 
 ## Star History
 
