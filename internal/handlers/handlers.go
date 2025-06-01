@@ -89,7 +89,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			return
 		}
 
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -173,12 +173,12 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to build queries")
-				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 				return
 			}
 
 			// We are using caddy/traefik so redirect
-			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 			return
 		}
 
@@ -220,12 +220,12 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to build queries")
-					c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 					return
 				}
 
 				// We are using caddy/traefik so redirect
-				c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 				return
 			}
 		}
@@ -266,7 +266,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to build queries")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -610,7 +610,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind URI")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -624,7 +624,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Debug().Msg("No CSRF cookie")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -633,7 +633,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Check if CSRF cookie is valid
 	if csrfCookie != state {
 		log.Warn().Msg("Invalid CSRF cookie or CSRF cookie does not match with the state")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -652,7 +652,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Provider does not exist
 	if provider == nil {
-		c.Redirect(http.StatusPermanentRedirect, "/not-found")
+		c.Redirect(http.StatusTemporaryRedirect, "/not-found")
 		return
 	}
 
@@ -664,7 +664,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to exchange token")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -674,7 +674,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Handle error
 	if err != nil {
 		log.Error().Msg("Failed to get user")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -683,7 +683,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Check that email is not empty
 	if user.Email == "" {
 		log.Error().Msg("Email is empty")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -699,12 +699,12 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 		// Handle error
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to build queries")
-			c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 			return
 		}
 
 		// Redirect to unauthorized
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 	}
 
 	log.Debug().Msg("Email whitelisted")
@@ -741,7 +741,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Debug().Msg("No redirect cookie")
-		c.Redirect(http.StatusPermanentRedirect, h.Config.AppURL)
+		c.Redirect(http.StatusTemporaryRedirect, h.Config.AppURL)
 		return
 	}
 
@@ -757,7 +757,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to build queries")
-		c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
@@ -765,7 +765,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	c.SetCookie(h.Config.RedirectCookieName, "", -1, "/", "", h.Config.CookieSecure, true)
 
 	// Redirect to continue with the redirect URI
-	c.Redirect(http.StatusPermanentRedirect, fmt.Sprintf("%s/continue?%s", h.Config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", h.Config.AppURL, queries.Encode()))
 }
 
 func (h *Handlers) HealthcheckHandler(c *gin.Context) {
