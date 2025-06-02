@@ -41,7 +41,7 @@ COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 RUN go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${VERSION} -X tinyauth/internal/constants.CommitHash=${COMMIT_HASH} -X tinyauth/internal/constants.BuildTimestamp=${BUILD_TIMESTAMP}" 
  
 # Runner
-FROM alpine:3.21 AS runner
+FROM alpine:3.22 AS runner
 
 WORKDIR /tinyauth
 
