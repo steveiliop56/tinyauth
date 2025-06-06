@@ -1,7 +1,7 @@
 {
     "loginTitle": "Willkommen zurück, logge dich ein mit",
-    "loginTitleSimple": "Welcome back, please login",
-    "loginDivider": "Or",
+    "loginTitleSimple": "Willkommen zurück, bitte anmelden",
+    "loginDivider": "Oder",
     "loginUsername": "Benutzername",
     "loginPassword": "Passwort",
     "loginSubmit": "Anmelden",
