@@ -1,7 +1,7 @@
 {
     "loginTitle": "Willkommen zurück, logge dich ein mit",
-    "loginTitleSimple": "Welcome back, please login",
-    "loginDivider": "Or",
+    "loginTitleSimple": "Willkommen zurück, bitte anmelden",
+    "loginDivider": "Oder",
     "loginUsername": "Benutzername",
     "loginPassword": "Passwort",
     "loginSubmit": "Anmelden",
@@ -10,7 +10,7 @@
     "loginFailRateLimit": "You failed to login too many times. Please try again later",
     "loginSuccessTitle": "Angemeldet",
     "loginSuccessSubtitle": "Willkommen zurück!",
-    "loginOauthFailTitle": "An error occurred",
+    "loginOauthFailTitle": "Ein Fehler ist aufgetreten",
     "loginOauthFailSubtitle": "Fehler beim Abrufen der OAuth-URL",
     "loginOauthSuccessTitle": "Leite weiter",
     "loginOauthSuccessSubtitle": "Weiterleitung zu Ihrem OAuth-Provider",
