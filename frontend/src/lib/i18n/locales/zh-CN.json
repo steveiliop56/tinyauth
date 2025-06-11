@@ -1,7 +1,7 @@
 {
     "loginTitle": "欢迎回来，请登录",
     "loginTitleSimple": "Welcome back, please login",
-    "loginDivider": "Or",
+    "loginDivider": "或",
     "loginUsername": "用户名",
     "loginPassword": "密码",
     "loginSubmit": "登录",
