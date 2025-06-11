@@ -79,6 +79,8 @@ jobs:
         run: |
           cp -r frontend/dist internal/assets/dist
           go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/constants.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/constants.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-amd64
+        env:
+          CGO_ENABLED: 0
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -123,6 +125,8 @@ jobs:
         run: |
           cp -r frontend/dist internal/assets/dist
           go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/constants.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/constants.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-arm64
+        env:
+          CGO_ENABLED: 0
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

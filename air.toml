@@ -3,7 +3,7 @@ tmp_dir = "tmp"
 
 [build]
 pre_cmd = ["mkdir -p internal/assets/dist", "echo 'backend running' > internal/assets/dist/index.html"]
-cmd = "go build -o ./tmp/tinyauth ."
+cmd = "CGO_ENABLED=0 go build -o ./tmp/tinyauth ."
 bin = "tmp/tinyauth"
 include_ext = ["go"]
 exclude_dir = ["internal/assets/dist"]
