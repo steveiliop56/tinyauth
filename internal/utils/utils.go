@@ -186,7 +186,7 @@ func ParseHeaders(headers []string) map[string]string {
 			log.Warn().Str("header", header).Msg("Invalid header format, skipping")
 			continue
 		}
-		headerMap[headerSplit[0]] = headerSplit[1]
+		headerMap[headerSplit[0]] = SanitizeHeader(headerSplit[1])
 	}
 
 	// Return the header map
