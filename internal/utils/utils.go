@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"slices"
 	"strings"
-	"tinyauth/internal/constants"
 	"tinyauth/internal/types"
+
+	"github.com/traefik/paerser/parser"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -174,45 +174,41 @@ func GetUsers(conf string, file string) (types.Users, error) {
 	return ParseUsers(users)
 }
 
-// Parse the docker labels to the tinyauth labels struct
-func GetTinyauthLabels(labels map[string]string) types.TinyauthLabels {
-	// Create a new tinyauth labels struct
-	var tinyauthLabels types.TinyauthLabels
+// Parse the headers in a map[string]string format
+func ParseHeaders(headers []string) map[string]string {
+	// Create a map to store the headers
+	headerMap := make(map[string]string)
 
-	// Loop through the labels
-	for label, value := range labels {
-
-		// Check if the label is in the tinyauth labels
-		if slices.Contains(constants.TinyauthLabels, label) {
-
-			log.Debug().Str("label", label).Msg("Found label")
-
-			// Add the label value to the tinyauth labels struct
-			switch label {
-			case "tinyauth.oauth.whitelist":
-				tinyauthLabels.OAuthWhitelist = value
-			case "tinyauth.users":
-				tinyauthLabels.Users = value
-			case "tinyauth.allowed":
-				tinyauthLabels.Allowed = value
-			case "tinyauth.headers":
-				tinyauthLabels.Headers = make(map[string]string)
-				headers := strings.Split(value, ",")
-				for _, header := range headers {
-					headerSplit := strings.Split(header, "=")
-					if len(headerSplit) != 2 {
-						continue
-					}
-					tinyauthLabels.Headers[headerSplit[0]] = headerSplit[1]
-				}
-			case "tinyauth.oauth.groups":
-				tinyauthLabels.OAuthGroups = value
-			}
+	// Loop through the headers
+	for _, header := range headers {
+		headerSplit := strings.Split(header, "=")
+		if len(headerSplit) != 2 {
+			log.Warn().Str("header", header).Msg("Invalid header format, skipping")
+			continue
 		}
+		headerMap[headerSplit[0]] = headerSplit[1]
 	}
 
-	// Return the tinyauth labels
-	return tinyauthLabels
+	// Return the header map
+	return headerMap
+}
+
+// Get labels parses a map of labels into a struct with only the needed labels
+func GetLabels(labels map[string]string) (types.Labels, error) {
+	// Create a new labels struct
+	var labelsParsed types.Labels
+
+	// Decode the labels into the labels struct
+	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.oauth")
+
+	// Check if there was an error
+	if err != nil {
+		log.Error().Err(err).Msg("Error parsing labels")
+		return types.Labels{}, err
+	}
+
+	// Return the labels struct
+	return labelsParsed, nil
 }
 
 // Check if any of the OAuth providers are configured based on the client id and secret

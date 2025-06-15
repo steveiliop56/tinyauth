@@ -74,14 +74,14 @@ func (docker *Docker) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
+func (docker *Docker) GetLabels(appId string) (types.Labels, error) {
 	// Check if we have access to the Docker API
 	isConnected := docker.DockerConnected()
 
 	// If we don't have access, return an empty struct
 	if !isConnected {
 		log.Debug().Msg("Docker not connected, returning empty labels")
-		return types.TinyauthLabels{}, nil
+		return types.Labels{}, nil
 	}
 
 	// Get the containers
@@ -89,7 +89,7 @@ func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
 
 	// If there is an error, return false
 	if err != nil {
-		return types.TinyauthLabels{}, err
+		return types.Labels{}, err
 	}
 
 	log.Debug().Msg("Got containers")
@@ -99,9 +99,9 @@ func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
 		// Inspect the container
 		inspect, err := docker.InspectContainer(container.ID)
 
-		// If there is an error, return false
+		// Check if there was an error
 		if err != nil {
-			return types.TinyauthLabels{}, err
+			return types.Labels{}, err
 		}
 
 		// Get the container name (for some reason it is /name)
@@ -112,7 +112,13 @@ func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
 			log.Debug().Str("container", containerName).Msg("Found container")
 
 			// Get only the tinyauth labels in a struct
-			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
+			labels, err := utils.GetLabels(inspect.Config.Labels)
+
+			// Check if there was an error
+			if err != nil {
+				log.Error().Err(err).Msg("Error parsing labels")
+				return types.Labels{}, err
+			}
 
 			log.Debug().Msg("Got labels")
 
@@ -125,5 +131,5 @@ func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
 	log.Debug().Msg("No matching container found, returning empty labels")
 
 	// If no matching container is found, return empty labels
-	return types.TinyauthLabels{}, nil
+	return types.Labels{}, nil
 }

@@ -114,7 +114,8 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	// If auth is not enabled, return 200
 	if !authEnabled {
-		for key, value := range labels.Headers {
+		headersParsed := utils.ParseHeaders(labels.Headers)
+		for key, value := range headersParsed {
 			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
 			c.Header(key, utils.SanitizeHeader(value))
 		}
@@ -236,7 +237,8 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
 		// Set the rest of the headers
-		for key, value := range labels.Headers {
+		parsedHeaders := utils.ParseHeaders(labels.Headers)
+		for key, value := range parsedHeaders {
 			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
 			c.Header(key, utils.SanitizeHeader(value))
 		}
