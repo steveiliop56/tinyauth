@@ -92,3 +92,17 @@ type AuthConfig struct {
 type HooksConfig struct {
 	Domain string
 }
+
+// OAuthLabels is a list of labels that can be used in a tinyauth protected container
+type OAuthLabels struct {
+	Whitelist string
+	Groups    string
+}
+
+// Labels is a struct that contains the labels for a tinyauth protected container
+type Labels struct {
+	Users   string
+	Allowed string
+	Headers []string
+	OAuth   OAuthLabels
+}

@@ -279,29 +279,35 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
-// Test the tinyauth labels function
-func TestGetTinyauthLabels(t *testing.T) {
-	t.Log("Testing get tinyauth labels with a valid map")
+// Test the get labels function
+func TestGetLabels(t *testing.T) {
+	t.Log("Testing get labels with a valid map")
 
 	// Test the get tinyauth labels function with a valid map
 	labels := map[string]string{
 		"tinyauth.users":           "user1,user2",
 		"tinyauth.oauth.whitelist": "/regex/",
 		"tinyauth.allowed":         "random",
-		"random":                   "random",
 		"tinyauth.headers":         "X-Header=value",
+		"tinyauth.oauth.groups":    "group1,group2",
 	}
 
-	expected := types.TinyauthLabels{
-		Users:          "user1,user2",
-		OAuthWhitelist: "/regex/",
-		Allowed:        "random",
-		Headers: map[string]string{
-			"X-Header": "value",
+	expected := types.Labels{
+		Users:   "user1,user2",
+		Allowed: "random",
+		Headers: []string{"X-Header=value"},
+		OAuth: types.OAuthLabels{
+			Whitelist: "/regex/",
+			Groups:    "group1,group2",
 		},
 	}
 
-	result := utils.GetTinyauthLabels(labels)
+	result, err := utils.GetLabels(labels)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error getting labels: %v", err)
+	}
 
 	// Check if the result is equal to the expected
 	if !reflect.DeepEqual(expected, result) {

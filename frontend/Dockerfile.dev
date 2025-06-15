@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.45-alpine
+FROM oven/bun:1.2.16-alpine
 
 WORKDIR /frontend
 

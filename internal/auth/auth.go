@@ -264,11 +264,11 @@ func (auth *Auth) UserAuthConfigured() bool {
 	return len(auth.Config.Users) > 0
 }
 
-func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.TinyauthLabels) bool {
+func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.Labels) bool {
 	// Check if oauth is allowed
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
-		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Email)
+		return utils.CheckWhitelist(labels.OAuth.Whitelist, context.Email)
 	}
 
 	// Check users
@@ -277,9 +277,9 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, lab
 	return utils.CheckWhitelist(labels.Users, context.Username)
 }
 
-func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.TinyauthLabels) bool {
+func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.Labels) bool {
 	// Check if groups are required
-	if labels.OAuthGroups == "" {
+	if labels.OAuth.Groups == "" {
 		return true
 	}
 
@@ -294,7 +294,7 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 
 	// For every group check if it is in the required groups
 	for _, group := range oauthGroups {
-		if utils.CheckWhitelist(labels.OAuthGroups, group) {
+		if utils.CheckWhitelist(labels.OAuth.Groups, group) {
 			log.Debug().Str("group", group).Msg("Group is in required groups")
 			return true
 		}
@@ -307,7 +307,7 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 	return false
 }
 
-func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool, error) {
+func (auth *Auth) AuthEnabled(c *gin.Context, labels types.Labels) (bool, error) {
 	// Get headers
 	uri := c.Request.Header.Get("X-Forwarded-Uri")
 

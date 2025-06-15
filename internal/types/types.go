@@ -32,15 +32,6 @@ type SessionCookie struct {
 	OAuthGroups string
 }
 
-// TinyauthLabels is the labels for the tinyauth container
-type TinyauthLabels struct {
-	OAuthWhitelist string
-	Users          string
-	Allowed        string
-	Headers        map[string]string
-	OAuthGroups    string
-}
-
 // UserContext is the context for the user
 type UserContext struct {
 	Username    string
