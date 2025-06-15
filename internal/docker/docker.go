@@ -101,7 +101,8 @@ func (docker *Docker) GetLabels(appId string) (types.Labels, error) {
 
 		// Check if there was an error
 		if err != nil {
-			return types.Labels{}, err
+			log.Warn().Str("id", container.ID).Err(err).Msg("Error inspecting container, skipping")
+			continue
 		}
 
 		// Get the container name (for some reason it is /name)
