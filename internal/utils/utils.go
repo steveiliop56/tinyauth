@@ -181,12 +181,14 @@ func ParseHeaders(headers []string) map[string]string {
 
 	// Loop through the headers
 	for _, header := range headers {
-		headerSplit := strings.Split(header, "=")
-		if len(headerSplit) != 2 {
+		split := strings.SplitN(header, "=", 2)
+		if len(split) != 2 {
 			log.Warn().Str("header", header).Msg("Invalid header format, skipping")
 			continue
 		}
-		headerMap[headerSplit[0]] = SanitizeHeader(headerSplit[1])
+		key := SanitizeHeader(strings.TrimSpace(split[0]))
+		value := SanitizeHeader(strings.TrimSpace(split[1]))
+		headerMap[key] = value
 	}
 
 	// Return the header map
