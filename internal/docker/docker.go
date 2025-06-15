@@ -74,7 +74,7 @@ func (docker *Docker) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *Docker) GetLabels(appId string) (types.Labels, error) {
+func (docker *Docker) GetLabels(id string, domain string) (types.Labels, error) {
 	// Check if we have access to the Docker API
 	isConnected := docker.DockerConnected()
 
@@ -85,14 +85,15 @@ func (docker *Docker) GetLabels(appId string) (types.Labels, error) {
 	}
 
 	// Get the containers
+	log.Debug().Msg("Getting containers")
+
 	containers, err := docker.GetContainers()
 
 	// If there is an error, return false
 	if err != nil {
+		log.Error().Err(err).Msg("Error getting containers")
 		return types.Labels{}, err
 	}
-
-	log.Debug().Msg("Got containers")
 
 	// Loop through the containers
 	for _, container := range containers {
@@ -105,28 +106,22 @@ func (docker *Docker) GetLabels(appId string) (types.Labels, error) {
 			continue
 		}
 
-		// Get the container name (for some reason it is /name)
-		containerName := strings.TrimPrefix(inspect.Name, "/")
+		// Get the labels
+		log.Debug().Str("id", inspect.ID).Msg("Getting labels for container")
 
-		// There is a container with the same name as the app ID
-		if containerName == appId {
-			log.Debug().Str("container", containerName).Msg("Found container")
+		labels, err := utils.GetLabels(inspect.Config.Labels)
 
-			// Get only the tinyauth labels in a struct
-			labels, err := utils.GetLabels(inspect.Config.Labels)
-
-			// Check if there was an error
-			if err != nil {
-				log.Error().Err(err).Msg("Error parsing labels")
-				return types.Labels{}, err
-			}
-
-			log.Debug().Msg("Got labels")
-
-			// Return labels
-			return labels, nil
+		// Check if there was an error
+		if err != nil {
+			log.Warn().Str("id", container.ID).Err(err).Msg("Error getting container labels, skipping")
+			continue
 		}
 
+		// Check if the labels match the id or the domain
+		if strings.TrimPrefix(inspect.Name, "/") == id || labels.Domain == domain {
+			log.Debug().Str("id", inspect.ID).Msg("Found matching container")
+			return labels, nil
+		}
 	}
 
 	log.Debug().Msg("No matching container found, returning empty labels")

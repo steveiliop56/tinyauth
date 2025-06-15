@@ -69,11 +69,11 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// Get the app id
-	appId := strings.Split(host, ".")[0]
+	// Get the id
+	id := strings.Split(host, ".")[0]
 
 	// Get the container labels
-	labels, err := h.Docker.GetLabels(appId)
+	labels, err := h.Docker.GetLabels(id, host)
 
 	log.Debug().Interface("labels", labels).Msg("Got labels")
 
