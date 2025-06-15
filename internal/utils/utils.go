@@ -201,7 +201,7 @@ func GetLabels(labels map[string]string) (types.Labels, error) {
 	var labelsParsed types.Labels
 
 	// Decode the labels into the labels struct
-	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.oauth")
+	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.oauth")
 
 	// Check if there was an error
 	if err != nil {

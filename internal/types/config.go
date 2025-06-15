@@ -104,5 +104,6 @@ type Labels struct {
 	Users   string
 	Allowed string
 	Headers []string
+	Domain  string
 	OAuth   OAuthLabels
 }
