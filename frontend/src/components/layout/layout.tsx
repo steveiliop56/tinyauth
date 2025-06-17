@@ -7,7 +7,7 @@ export const Layout = () => {
 
   return (
     <div
-      className="relative flex flex-col justify-center items-center min-h-svh"
+      className="relative flex flex-col justify-center items-center min-h-dvh"
       style={{
         backgroundImage: `url(${backgroundImage})`,
         backgroundSize: "cover",
