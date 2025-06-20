@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/url"
 	"os"
@@ -201,7 +202,7 @@ func GetLabels(labels map[string]string) (types.Labels, error) {
 	var labelsParsed types.Labels
 
 	// Decode the labels into the labels struct
-	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.oauth")
+	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth")
 
 	// Check if there was an error
 	if err != nil {
@@ -357,4 +358,13 @@ func GenerateIdentifier(str string) string {
 
 	// Convert the UUID to a string
 	return strings.Split(uuidString, "-")[0]
+}
+
+// Get a basic auth header from a username and password
+func GetBasicAuth(username string, password string) string {
+	// Create the auth string
+	auth := username + ":" + password
+
+	// Encode the auth string to base64
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }

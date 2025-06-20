@@ -119,8 +119,12 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	if !authEnabled {
 		headersParsed := utils.ParseHeaders(labels.Headers)
 		for key, value := range headersParsed {
-			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
-			c.Header(key, utils.SanitizeHeader(value))
+			log.Debug().Str("key", key).Msg("Setting header")
+			c.Header(key, value)
+		}
+		if labels.Basic.User != "" && labels.Basic.Password != "" {
+			log.Debug().Str("username", labels.Basic.User).Msg("Setting basic auth headers")
+			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.User, labels.Basic.Password)))
 		}
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -242,8 +246,14 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		// Set the rest of the headers
 		parsedHeaders := utils.ParseHeaders(labels.Headers)
 		for key, value := range parsedHeaders {
-			log.Debug().Str("key", key).Str("value", value).Msg("Setting header")
-			c.Header(key, utils.SanitizeHeader(value))
+			log.Debug().Str("key", key).Msg("Setting header")
+			c.Header(key, value)
+		}
+
+		// Set basic auth headers if configured
+		if labels.Basic.User != "" && labels.Basic.Password != "" {
+			log.Debug().Str("username", labels.Basic.User).Msg("Setting basic auth headers")
+			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.User, labels.Basic.Password)))
 		}
 
 		// The user is allowed to access the app

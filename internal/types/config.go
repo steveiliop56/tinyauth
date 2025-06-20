@@ -99,11 +99,18 @@ type OAuthLabels struct {
 	Groups    string
 }
 
+// Basic auth labels for a tinyauth protected container
+type BasicLabels struct {
+	User     string
+	Password string
+}
+
 // Labels is a struct that contains the labels for a tinyauth protected container
 type Labels struct {
 	Users   string
 	Allowed string
 	Headers []string
 	Domain  string
+	Basic   BasicLabels
 	OAuth   OAuthLabels
 }
