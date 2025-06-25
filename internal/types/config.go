@@ -105,6 +105,12 @@ type BasicLabels struct {
 	Password string
 }
 
+// IP labels for a tinyauth protected container
+type IPLabels struct {
+	Allow []string
+	Block []string
+}
+
 // Labels is a struct that contains the labels for a tinyauth protected container
 type Labels struct {
 	Users   string
@@ -113,4 +119,5 @@ type Labels struct {
 	Domain  string
 	Basic   BasicLabels
 	OAuth   OAuthLabels
+	IP      IPLabels
 }
