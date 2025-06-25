@@ -42,6 +42,7 @@
     "unauthorizedResourceSubtitle": "El usuario con nombre de usuario <code>{{username}}</code> no está autorizado para acceder al recurso <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "El usuario con nombre de usuario <code>{{username}}</code> no está autorizado a iniciar sesión.",
     "unauthorizedGroupsSubtitle": "El usuario con nombre de usuario <code>{{username}}</code> no está en los grupos requeridos por el recurso <code>{{resource}}</code>.",
+    "unauthorizedIpSubtitle": "Your IP address <code>{{ip}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
     "unauthorizedButton": "Inténtelo de nuevo",
     "untrustedRedirectTitle": "Redirección no confiable",
     "untrustedRedirectSubtitle": "Está intentando redirigir a un dominio que no coincide con su dominio configurado (<code>{{domain}}</code>). ¿Está seguro que desea continuar?",
