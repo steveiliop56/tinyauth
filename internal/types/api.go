@@ -21,6 +21,7 @@ type UnauthorizedQuery struct {
 	Username string `url:"username"`
 	Resource string `url:"resource"`
 	GroupErr bool   `url:"groupErr"`
+	IP       string `url:"ip"`
 }
 
 // Proxy is the uri parameters for the proxy endpoint

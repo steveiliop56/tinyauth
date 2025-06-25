@@ -17,9 +17,10 @@ export const UnauthorizedPage = () => {
   const username = searchParams.get("username");
   const resource = searchParams.get("resource");
   const groupErr = searchParams.get("groupErr");
+  const ip = searchParams.get("ip");
 
-  if (!username) {
-    return <Navigate to="/" />;
+  if (!username && !ip) {
+    return <Navigate to="/login" />;
   }
 
   const { t } = useTranslation();
@@ -41,6 +42,10 @@ export const UnauthorizedPage = () => {
     i18nKey = "unauthorizedGroupsSubtitle";
   }
 
+  if (ip) {
+    i18nKey = "unauthorizedIpSubtitle";
+  }
+
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
@@ -55,6 +60,7 @@ export const UnauthorizedPage = () => {
             values={{
               username,
               resource,
+              ip,
             }}
           />
         </CardDescription>

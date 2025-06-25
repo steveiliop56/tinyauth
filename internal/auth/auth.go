@@ -351,3 +351,44 @@ func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 		Password: password,
 	}
 }
+
+func (auth *Auth) CheckIP(c *gin.Context, labels types.Labels) bool {
+	// Get the IP address from the request
+	ip := c.ClientIP()
+
+	// Check if the IP is in block list
+	for _, blocked := range labels.IP.Block {
+		res, err := utils.FilterIP(blocked, ip)
+		if err != nil {
+			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
+			continue
+		}
+		if res {
+			log.Warn().Str("ip", ip).Str("item", blocked).Msg("IP is in blocked list, denying access")
+			return false
+		}
+	}
+
+	// For every IP in the allow list, check if the IP matches
+	for _, allowed := range labels.IP.Allow {
+		res, err := utils.FilterIP(allowed, ip)
+		if err != nil {
+			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
+			continue
+		}
+		if res {
+			log.Debug().Str("ip", ip).Str("item", allowed).Msg("IP is in allowed list, allowing access")
+			return true
+		}
+	}
+
+	// If not in allowed range and allowed range is not empty, deny access
+	if len(labels.IP.Allow) > 0 {
+		log.Warn().Str("ip", ip).Msg("IP not in allow list, denying access")
+		return false
+	}
+
+	log.Debug().Str("ip", ip).Msg("IP not in allow or block list, allowing by default")
+
+	return true
+}

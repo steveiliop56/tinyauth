@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/base64"
 	"errors"
+	"net"
 	"net/url"
 	"os"
 	"regexp"
@@ -202,7 +203,7 @@ func GetLabels(labels map[string]string) (types.Labels, error) {
 	var labelsParsed types.Labels
 
 	// Decode the labels into the labels struct
-	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth")
+	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth", "tinyauth.ip")
 
 	// Check if there was an error
 	if err != nil {
@@ -367,4 +368,40 @@ func GetBasicAuth(username string, password string) string {
 
 	// Encode the auth string to base64
 	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+// Check if an IP is contained in a CIDR range/matches a single IP
+func FilterIP(filter string, ip string) (bool, error) {
+	// Convert the check IP to an IP instance
+	ipAddr := net.ParseIP(ip)
+
+	// Check if the filter is a CIDR range
+	if strings.Contains(filter, "/") {
+		// Parse the CIDR range
+		_, cidr, err := net.ParseCIDR(filter)
+
+		// Check if there was an error
+		if err != nil {
+			return false, err
+		}
+
+		// Check if the IP is in the CIDR range
+		return cidr.Contains(ipAddr), nil
+	}
+
+	// Parse the filter as a single IP
+	ipFilter := net.ParseIP(filter)
+
+	// Check if the IP is valid
+	if ipFilter == nil {
+		return false, errors.New("invalid IP address in filter")
+	}
+
+	// Check if the IP matches the filter
+	if ipFilter.Equal(ipAddr) {
+		return true, nil
+	}
+
+	// If the filter is not a CIDR range or a single IP, return false
+	return false, nil
 }

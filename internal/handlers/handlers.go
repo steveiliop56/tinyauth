@@ -96,6 +96,38 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		return
 	}
 
+	// Check if the IP is allowed/blocked
+	ip := c.ClientIP()
+	if !h.Auth.CheckIP(c, labels) {
+		log.Warn().Str("ip", ip).Msg("IP not allowed")
+
+		if proxy.Proxy == "nginx" || !isBrowser {
+			c.JSON(403, gin.H{
+				"status":  403,
+				"message": "Forbidden",
+			})
+			return
+		}
+
+		values := types.UnauthorizedQuery{
+			Resource: strings.Split(host, ".")[0],
+			IP:       ip,
+		}
+
+		// Build query
+		queries, err := query.Values(values)
+
+		// Handle error
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to build queries")
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
+		return
+	}
+
 	// Check if auth is enabled
 	authEnabled, err := h.Auth.AuthEnabled(c, labels)
 
