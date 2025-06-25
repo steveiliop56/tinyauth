@@ -42,6 +42,7 @@
     "unauthorizedResourceSubtitle": "The user with username <code>{{username}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "The user with username <code>{{username}}</code> is not authorized to login.",
     "unauthorizedGroupsSubtitle": "The user with username <code>{{username}}</code> is not in the groups required by the resource <code>{{resource}}</code>.",
+    "unauthorizedIpSubtitle": "Your IP address <code>{{ip}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
     "unauthorizedButton": "Opnieuw proberen",
     "untrustedRedirectTitle": "Untrusted redirect",
     "untrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{domain}}</code>). Are you sure you want to continue?",
