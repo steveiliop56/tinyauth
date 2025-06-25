@@ -20,7 +20,7 @@ export const UnauthorizedPage = () => {
   const ip = searchParams.get("ip");
 
   if (!username && !ip) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/" />;
   }
 
   const { t } = useTranslation();
