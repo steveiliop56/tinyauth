@@ -42,6 +42,7 @@
     "unauthorizedResourceSubtitle": "用户名为<code>{{username}}</code>的用户无权访问资源<code>{{resource}}</code>。",
     "unauthorizedLoginSubtitle": "用户名为<code>{{username}}</code>的用户无权登录。",
     "unauthorizedGroupsSubtitle": "用户名为<code>{{username}}</code>的用户不在资源<code>{{resource}}</code>所需的组中。",
+    "unauthorizedIpSubtitle": "Your IP address <code>{{ip}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
     "unauthorizedButton": "重试",
     "untrustedRedirectTitle": "不可信的重定向",
     "untrustedRedirectSubtitle": "您正在尝试重定向到一个与您已配置的域名 (<code>{{domain}}</code>) 不匹配的域名。您确定要继续吗？",
