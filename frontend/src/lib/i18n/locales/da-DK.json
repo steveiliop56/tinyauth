@@ -42,6 +42,7 @@
     "unauthorizedResourceSubtitle": "Brugeren med brugernavnet <code>{{username}}</code> har ikke tilladelse til at tilgå ressourcen <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "Brugeren med brugernavnet <code>{{username}}</code> har ikke tilladelse til at logge ind.",
     "unauthorizedGroupsSubtitle": "Brugeren med brugernavnet <code>{{username}}</code> er ikke i de grupper, som ressourcen <code>{{resource}}</code> kræver.",
+    "unauthorizedIpSubtitle": "Your IP address <code>{{ip}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
     "unauthorizedButton": "Prøv igen",
     "untrustedRedirectTitle": "Usikker omdirigering",
     "untrustedRedirectSubtitle": "Du forsøger at omdirigere til et domæne, der ikke matcher dit konfigurerede domæne (<code>{{domain}}</code>). Er du sikker på, at du vil fortsætte?",
