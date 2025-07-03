@@ -11,12 +11,6 @@ import (
 	"golang.org/x/oauth2/endpoints"
 )
 
-func NewProviders(config types.OAuthConfig) *Providers {
-	return &Providers{
-		Config: config,
-	}
-}
-
 type Providers struct {
 	Config  types.OAuthConfig
 	Github  *oauth.OAuth
@@ -24,60 +18,57 @@ type Providers struct {
 	Generic *oauth.OAuth
 }
 
-func (providers *Providers) Init() {
+func NewProviders(config types.OAuthConfig) *Providers {
+	providers := &Providers{
+		Config: config,
+	}
+
 	// If we have a client id and secret for github, initialize the oauth provider
-	if providers.Config.GithubClientId != "" && providers.Config.GithubClientSecret != "" {
+	if config.GithubClientId != "" && config.GithubClientSecret != "" {
 		log.Info().Msg("Initializing Github OAuth")
 
 		// Create a new oauth provider with the github config
 		providers.Github = oauth.NewOAuth(oauth2.Config{
-			ClientID:     providers.Config.GithubClientId,
-			ClientSecret: providers.Config.GithubClientSecret,
-			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/github", providers.Config.AppURL),
+			ClientID:     config.GithubClientId,
+			ClientSecret: config.GithubClientSecret,
+			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/github", config.AppURL),
 			Scopes:       GithubScopes(),
 			Endpoint:     endpoints.GitHub,
 		}, false)
-
-		// Initialize the oauth provider
-		providers.Github.Init()
 	}
 
 	// If we have a client id and secret for google, initialize the oauth provider
-	if providers.Config.GoogleClientId != "" && providers.Config.GoogleClientSecret != "" {
+	if config.GoogleClientId != "" && config.GoogleClientSecret != "" {
 		log.Info().Msg("Initializing Google OAuth")
 
 		// Create a new oauth provider with the google config
 		providers.Google = oauth.NewOAuth(oauth2.Config{
-			ClientID:     providers.Config.GoogleClientId,
-			ClientSecret: providers.Config.GoogleClientSecret,
-			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/google", providers.Config.AppURL),
+			ClientID:     config.GoogleClientId,
+			ClientSecret: config.GoogleClientSecret,
+			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/google", config.AppURL),
 			Scopes:       GoogleScopes(),
 			Endpoint:     endpoints.Google,
 		}, false)
-
-		// Initialize the oauth provider
-		providers.Google.Init()
 	}
 
 	// If we have a client id and secret for generic oauth, initialize the oauth provider
-	if providers.Config.GenericClientId != "" && providers.Config.GenericClientSecret != "" {
+	if config.GenericClientId != "" && config.GenericClientSecret != "" {
 		log.Info().Msg("Initializing Generic OAuth")
 
 		// Create a new oauth provider with the generic config
 		providers.Generic = oauth.NewOAuth(oauth2.Config{
-			ClientID:     providers.Config.GenericClientId,
-			ClientSecret: providers.Config.GenericClientSecret,
-			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/generic", providers.Config.AppURL),
-			Scopes:       providers.Config.GenericScopes,
+			ClientID:     config.GenericClientId,
+			ClientSecret: config.GenericClientSecret,
+			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/generic", config.AppURL),
+			Scopes:       config.GenericScopes,
 			Endpoint: oauth2.Endpoint{
-				AuthURL:  providers.Config.GenericAuthURL,
-				TokenURL: providers.Config.GenericTokenURL,
+				AuthURL:  config.GenericAuthURL,
+				TokenURL: config.GenericTokenURL,
 			},
-		}, providers.Config.GenericSkipSSL)
-
-		// Initialize the oauth provider
-		providers.Generic.Init()
+		}, config.GenericSkipSSL)
 	}
+
+	return providers
 }
 
 func (providers *Providers) GetProvider(provider string) *oauth.OAuth {

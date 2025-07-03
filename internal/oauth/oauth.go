@@ -10,32 +10,24 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func NewOAuth(config oauth2.Config, insecureSkipVerify bool) *OAuth {
-	return &OAuth{
-		Config:             config,
-		InsecureSkipVerify: insecureSkipVerify,
-	}
-}
-
 type OAuth struct {
-	Config             oauth2.Config
-	Context            context.Context
-	Token              *oauth2.Token
-	Verifier           string
-	InsecureSkipVerify bool
+	Config   oauth2.Config
+	Context  context.Context
+	Token    *oauth2.Token
+	Verifier string
 }
 
-func (oauth *OAuth) Init() {
+func NewOAuth(config oauth2.Config, insecureSkipVerify bool) *OAuth {
 	// Create transport with TLS
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: oauth.InsecureSkipVerify,
+			InsecureSkipVerify: insecureSkipVerify,
 			MinVersion:         tls.VersionTLS12,
 		},
 	}
 
 	// Create a new context
-	oauth.Context = context.Background()
+	ctx := context.Background()
 
 	// Create the HTTP client with the transport
 	httpClient := &http.Client{
@@ -43,9 +35,16 @@ func (oauth *OAuth) Init() {
 	}
 
 	// Set the HTTP client in the context
-	oauth.Context = context.WithValue(oauth.Context, oauth2.HTTPClient, httpClient)
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
+
 	// Create the verifier
-	oauth.Verifier = oauth2.GenerateVerifier()
+	verifier := oauth2.GenerateVerifier()
+
+	return &OAuth{
+		Config:   config,
+		Context:  ctx,
+		Verifier: verifier,
+	}
 }
 
 func (oauth *OAuth) GetAuthURL(state string) string {

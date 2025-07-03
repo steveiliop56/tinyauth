@@ -12,18 +12,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type Hooks struct {
+	Config    types.HooksConfig
+	Auth      *auth.Auth
+	Providers *providers.Providers
+}
+
 func NewHooks(config types.HooksConfig, auth *auth.Auth, providers *providers.Providers) *Hooks {
 	return &Hooks{
 		Config:    config,
 		Auth:      auth,
 		Providers: providers,
 	}
-}
-
-type Hooks struct {
-	Config    types.HooksConfig
-	Auth      *auth.Auth
-	Providers *providers.Providers
 }
 
 func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {

@@ -69,8 +69,8 @@ type OAuthConfig struct {
 	AppURL              string
 }
 
-// APIConfig is the configuration for the API
-type APIConfig struct {
+// ServerConfig is the configuration for the server
+type ServerConfig struct {
 	Port    int
 	Address string
 }
