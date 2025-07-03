@@ -42,7 +42,7 @@
     "unauthorizedResourceSubtitle": "Użytkownik o nazwie użytkownika <code>{{username}}</code> nie ma uprawnień dostępu do zasobu <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "Użytkownik o nazwie <code>{{username}}</code> nie jest upoważniony do zalogowania się.",
     "unauthorizedGroupsSubtitle": "Użytkownik o nazwie <code>{{username}}</code> nie należy do grup wymaganych przez zasób <code>{{resource}}</code>.",
-    "unauthorizedIpSubtitle": "Your IP address <code>{{ip}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
+    "unauthorizedIpSubtitle": "Twój adres IP <code>{{ip}}</code> nie ma autoryzacji do dostępu do zasobu <code>{{resource}}</code>.",
     "unauthorizedButton": "Spróbuj ponownie",
     "untrustedRedirectTitle": "Niezaufane przekierowanie",
     "untrustedRedirectSubtitle": "Próbujesz przekierować do domeny, która nie pasuje do Twojej skonfigurowanej domeny (<code>{{domain}}</code>). Czy na pewno chcesz kontynuować?",
