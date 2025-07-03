@@ -39,4 +39,9 @@ jobs:
           cp -r frontend/dist internal/assets/dist
 
       - name: Run tests
-        run: go test -v ./...
+        run: go test -coverprofile=coverage.txt -v ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
