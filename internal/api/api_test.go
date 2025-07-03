@@ -44,8 +44,8 @@ var handlersConfig = types.HandlersConfig{
 var authConfig = types.AuthConfig{
 	Users:             types.Users{},
 	OauthWhitelist:    "",
-	HMACSecret:        "super-secret-api-thing-for-tests",
-	EncryptionSecret:  "super-secret-api-thing-for-tests",
+	HMACSecret:        "super-secret-api-thing-for-test1",
+	EncryptionSecret:  "super-secret-api-thing-for-test2",
 	CookieSecure:      false,
 	SessionExpiry:     3600,
 	LoginTimeout:      0,

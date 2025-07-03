@@ -51,7 +51,7 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 		log.Warn().Err(err).Msg("Invalid session, clearing cookie and retrying")
 
 		// Delete the session cookie if there is an error
-		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", auth.Config.Domain, auth.Config.CookieSecure, true)
+		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.CookieSecure, true)
 
 		// Try to get the session again
 		session, err = store.Get(c.Request, auth.Config.SessionCookieName)

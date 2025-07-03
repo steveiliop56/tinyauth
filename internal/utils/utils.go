@@ -418,7 +418,7 @@ func DeriveKey(secret string, info string) (string, error) {
 	hkdf := hkdf.New(hash, []byte(secret), nil, []byte(info)) // I am not using a salt because I just want two different keys from one secret, maybe bad practice
 
 	// Create a new key
-	key := make([]byte, 32)
+	key := make([]byte, 24)
 
 	// Read the key from the HKDF
 	_, err := io.ReadFull(hkdf, key)
@@ -428,7 +428,7 @@ func DeriveKey(secret string, info string) (string, error) {
 	}
 
 	// Verify the key is not empty
-	if bytes.Equal(key, make([]byte, 32)) {
+	if bytes.Equal(key, make([]byte, 24)) {
 		return "", errors.New("derived key is empty")
 	}
 
@@ -436,5 +436,5 @@ func DeriveKey(secret string, info string) (string, error) {
 	encodedKey := base64.StdEncoding.EncodeToString(key)
 
 	// Return the key as a base64 encoded string
-	return encodedKey[:32], nil
+	return encodedKey, nil
 }
