@@ -18,6 +18,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type Handlers struct {
+	Config    types.HandlersConfig
+	Auth      *auth.Auth
+	Hooks     *hooks.Hooks
+	Providers *providers.Providers
+	Docker    *docker.Docker
+}
+
 func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hooks, providers *providers.Providers, docker *docker.Docker) *Handlers {
 	return &Handlers{
 		Config:    config,
@@ -26,14 +34,6 @@ func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hook
 		Providers: providers,
 		Docker:    docker,
 	}
-}
-
-type Handlers struct {
-	Config    types.HandlersConfig
-	Auth      *auth.Auth
-	Hooks     *hooks.Hooks
-	Providers *providers.Providers
-	Docker    *docker.Docker
 }
 
 func (h *Handlers) AuthHandler(c *gin.Context) {

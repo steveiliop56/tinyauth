@@ -1,4 +1,4 @@
-package api_test
+package server_test
 
 import (
 	"encoding/json"
@@ -8,19 +8,19 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
+	"tinyauth/internal/server"
 	"tinyauth/internal/types"
 
 	"github.com/magiconair/properties/assert"
 )
 
-// Simple API config for tests
-var apiConfig = types.APIConfig{
+// Simple server config for tests
+var serverConfig = types.ServerConfig{
 	Port:    8080,
 	Address: "0.0.0.0",
 }
@@ -68,15 +68,11 @@ var user = types.User{
 	Password: "$2a$10$AvGHLTYv3xiRJ0xV9xs3XeVIlkGTygI9nqIamFYB5Xu.5.0UWF7B6", // pass
 }
 
-// We need all this to be able to test the API
-func getAPI(t *testing.T) *api.API {
+// We need all this to be able to test the server
+func getServer(t *testing.T) *server.Server {
 	// Create docker service
-	docker := docker.NewDocker()
+	docker, err := docker.NewDocker()
 
-	// Initialize docker
-	err := docker.Init()
-
-	// Check if there was an error
 	if err != nil {
 		t.Fatalf("Failed to initialize docker: %v", err)
 	}
@@ -93,31 +89,29 @@ func getAPI(t *testing.T) *api.API {
 	// Create providers service
 	providers := providers.NewProviders(types.OAuthConfig{})
 
-	// Initialize providers
-	providers.Init()
-
 	// Create hooks service
 	hooks := hooks.NewHooks(hooksConfig, auth, providers)
 
 	// Create handlers service
 	handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
 
-	// Create API
-	api := api.NewAPI(apiConfig, handlers)
+	// Create server
+	srv, err := server.NewServer(serverConfig, handlers)
 
-	// Setup routes
-	api.Init()
-	api.SetupRoutes()
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
-	return api
+	// Return the server
+	return srv
 }
 
-// Test login (we will need this for the other tests)
+// Test login
 func TestLogin(t *testing.T) {
 	t.Log("Testing login")
 
-	// Get API
-	api := getAPI(t)
+	// Get server
+	api := getServer(t)
 
 	// Create recorder
 	recorder := httptest.NewRecorder()
@@ -162,8 +156,8 @@ func TestLogin(t *testing.T) {
 func TestAppContext(t *testing.T) {
 	t.Log("Testing app context")
 
-	// Get API
-	api := getAPI(t)
+	// Get server
+	api := getServer(t)
 
 	// Create recorder
 	recorder := httptest.NewRecorder()
@@ -230,8 +224,8 @@ func TestAppContext(t *testing.T) {
 func TestUserContext(t *testing.T) {
 	t.Log("Testing user context")
 
-	// Get API
-	api := getAPI(t)
+	// Get server
+	api := getServer(t)
 
 	// Create recorder
 	recorder := httptest.NewRecorder()
@@ -288,8 +282,8 @@ func TestUserContext(t *testing.T) {
 func TestLogout(t *testing.T) {
 	t.Log("Testing logout")
 
-	// Get API
-	api := getAPI(t)
+	// Get server
+	api := getServer(t)
 
 	// Create recorder
 	recorder := httptest.NewRecorder()
@@ -319,5 +313,3 @@ func TestLogout(t *testing.T) {
 		t.Fatalf("Cookie not flushed")
 	}
 }
-
-// TODO: Testing for the oauth stuff

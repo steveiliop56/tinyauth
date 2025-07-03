@@ -8,13 +8,13 @@ import (
 	"time"
 	totpCmd "tinyauth/cmd/totp"
 	userCmd "tinyauth/cmd/user"
-	"tinyauth/internal/api"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/constants"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
+	"tinyauth/internal/server"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -114,8 +114,8 @@ var rootCmd = &cobra.Command{
 			RedirectCookieName:    redirectCookieName,
 		}
 
-		// Create api config
-		apiConfig := types.APIConfig{
+		// Create server config
+		serverConfig := types.ServerConfig{
 			Port:    config.Port,
 			Address: config.Address,
 		}
@@ -140,10 +140,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Create docker service
-		docker := docker.NewDocker()
-
-		// Initialize docker
-		err = docker.Init()
+		docker, err := docker.NewDocker()
 		HandleError(err, "Failed to initialize docker")
 
 		// Create auth service
@@ -152,24 +149,19 @@ var rootCmd = &cobra.Command{
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
 
-		// Initialize providers
-		providers.Init()
-
 		// Create hooks service
 		hooks := hooks.NewHooks(hooksConfig, auth, providers)
 
 		// Create handlers
 		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
 
-		// Create API
-		api := api.NewAPI(apiConfig, handlers)
+		// Create server
+		srv, err := server.NewServer(serverConfig, handlers)
+		HandleError(err, "Failed to create server")
 
-		// Setup routes
-		api.Init()
-		api.SetupRoutes()
-
-		// Start
-		api.Run()
+		// Start server
+		err = srv.Start()
+		HandleError(err, "Failed to start server")
 	},
 }
 

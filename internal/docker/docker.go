@@ -11,35 +11,30 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewDocker() *Docker {
-	return &Docker{}
-}
-
 type Docker struct {
 	Client  *client.Client
 	Context context.Context
 }
 
-func (docker *Docker) Init() error {
+func NewDocker() (*Docker, error) {
 	// Create a new docker client
 	client, err := client.NewClientWithOpts(client.FromEnv)
 
 	// Check if there was an error
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create the context
-	docker.Context = context.Background()
+	ctx := context.Background()
 
 	// Negotiate API version
-	client.NegotiateAPIVersion(docker.Context)
+	client.NegotiateAPIVersion(ctx)
 
-	// Set client
-	docker.Client = client
-
-	// Done
-	return nil
+	return &Docker{
+		Client:  client,
+		Context: ctx,
+	}, nil
 }
 
 func (docker *Docker) GetContainers() ([]container.Summary, error) {

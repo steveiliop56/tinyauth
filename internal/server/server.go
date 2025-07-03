@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"fmt"
@@ -15,20 +15,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewAPI(config types.APIConfig, handlers *handlers.Handlers) *API {
-	return &API{
-		Config:   config,
-		Handlers: handlers,
-	}
-}
-
-type API struct {
-	Config   types.APIConfig
-	Router   *gin.Engine
+type Server struct {
+	Config   types.ServerConfig
 	Handlers *handlers.Handlers
+	Router   *gin.Engine
 }
 
-func (api *API) Init() {
+func NewServer(config types.ServerConfig, handlers *handlers.Handlers) (*Server, error) {
 	// Disable gin logs
 	gin.SetMode(gin.ReleaseMode)
 
@@ -42,7 +35,7 @@ func (api *API) Init() {
 	dist, err := fs.Sub(assets.Assets, "dist")
 
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to get UI assets")
+		return nil, err
 	}
 
 	// Create file server
@@ -69,41 +62,38 @@ func (api *API) Init() {
 		}
 	})
 
-	// Set router
-	api.Router = router
+	// Proxy routes
+	router.GET("/api/auth/:proxy", handlers.AuthHandler)
+
+	// Auth routes
+	router.POST("/api/login", handlers.LoginHandler)
+	router.POST("/api/totp", handlers.TotpHandler)
+	router.POST("/api/logout", handlers.LogoutHandler)
+
+	// Context routes
+	router.GET("/api/app", handlers.AppHandler)
+	router.GET("/api/user", handlers.UserHandler)
+
+	// OAuth routes
+	router.GET("/api/oauth/url/:provider", handlers.OauthUrlHandler)
+	router.GET("/api/oauth/callback/:provider", handlers.OauthCallbackHandler)
+
+	// App routes
+	router.GET("/api/healthcheck", handlers.HealthcheckHandler)
+
+	// Return the server
+	return &Server{
+		Config:   config,
+		Handlers: handlers,
+		Router:   router,
+	}, nil
 }
 
-func (api *API) SetupRoutes() {
-	// Proxy
-	api.Router.GET("/api/auth/:proxy", api.Handlers.AuthHandler)
-
-	// Auth
-	api.Router.POST("/api/login", api.Handlers.LoginHandler)
-	api.Router.POST("/api/totp", api.Handlers.TotpHandler)
-	api.Router.POST("/api/logout", api.Handlers.LogoutHandler)
-
-	// Context
-	api.Router.GET("/api/app", api.Handlers.AppHandler)
-	api.Router.GET("/api/user", api.Handlers.UserHandler)
-
-	// OAuth
-	api.Router.GET("/api/oauth/url/:provider", api.Handlers.OauthUrlHandler)
-	api.Router.GET("/api/oauth/callback/:provider", api.Handlers.OauthCallbackHandler)
-
-	// App
-	api.Router.GET("/api/healthcheck", api.Handlers.HealthcheckHandler)
-}
-
-func (api *API) Run() {
-	log.Info().Str("address", api.Config.Address).Int("port", api.Config.Port).Msg("Starting server")
-
+func (s *Server) Start() error {
 	// Run server
-	err := api.Router.Run(fmt.Sprintf("%s:%d", api.Config.Address, api.Config.Port))
+	log.Info().Str("address", s.Config.Address).Int("port", s.Config.Port).Msg("Starting server")
 
-	// Check for errors
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
-	}
+	return s.Router.Run(fmt.Sprintf("%s:%d", s.Config.Address, s.Config.Port))
 }
 
 // zerolog is a middleware for gin that logs requests using zerolog

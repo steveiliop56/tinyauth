@@ -16,36 +16,38 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
-	return &Auth{
-		Config:        config,
-		Docker:        docker,
-		LoginAttempts: make(map[string]*types.LoginAttempt),
-	}
-}
-
 type Auth struct {
 	Config        types.AuthConfig
 	Docker        *docker.Docker
 	LoginAttempts map[string]*types.LoginAttempt
 	LoginMutex    sync.RWMutex
+	Store         *sessions.CookieStore
 }
 
-func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
+func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
 	// Create cookie store
-	store := sessions.NewCookieStore([]byte(auth.Config.HMACSecret), []byte(auth.Config.EncryptionSecret))
+	store := sessions.NewCookieStore([]byte(config.HMACSecret), []byte(config.EncryptionSecret))
 
 	// Configure cookie store
 	store.Options = &sessions.Options{
 		Path:     "/",
-		MaxAge:   auth.Config.SessionExpiry,
-		Secure:   auth.Config.CookieSecure,
+		MaxAge:   config.SessionExpiry,
+		Secure:   config.CookieSecure,
 		HttpOnly: true,
-		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
+		Domain:   fmt.Sprintf(".%s", config.Domain),
 	}
 
+	return &Auth{
+		Config:        config,
+		Docker:        docker,
+		LoginAttempts: make(map[string]*types.LoginAttempt),
+		Store:         store,
+	}
+}
+
+func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 	// Get session
-	session, err := store.Get(c.Request, auth.Config.SessionCookieName)
+	session, err := auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 
 	if err != nil {
 		log.Warn().Err(err).Msg("Invalid session, clearing cookie and retrying")
@@ -54,7 +56,7 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.CookieSecure, true)
 
 		// Try to get the session again
-		session, err = store.Get(c.Request, auth.Config.SessionCookieName)
+		session, err = auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 
 		if err != nil {
 			// If we still can't get the session, log the error and return nil
