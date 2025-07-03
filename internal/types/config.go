@@ -80,12 +80,13 @@ type AuthConfig struct {
 	Users             Users
 	OauthWhitelist    string
 	SessionExpiry     int
-	Secret            string
 	CookieSecure      bool
 	Domain            string
 	LoginTimeout      int
 	LoginMaxRetries   int
 	SessionCookieName string
+	HMACSecret        string
+	EncryptionSecret  string
 }
 
 // HooksConfig is the configuration for the hooks service

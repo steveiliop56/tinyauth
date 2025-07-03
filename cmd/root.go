@@ -74,6 +74,15 @@ var rootCmd = &cobra.Command{
 		csrfCookieName := fmt.Sprintf("%s-%s", constants.CsrfCookieName, cookieId)
 		redirectCookieName := fmt.Sprintf("%s-%s", constants.RedirectCookieName, cookieId)
 
+		// Generate HMAC and encryption secrets
+		log.Debug().Msg("Deriving HMAC and encryption secrets")
+
+		hmacSecret, err := utils.DeriveKey(config.Secret, "hmac")
+		HandleError(err, "Failed to derive HMAC secret")
+
+		encryptionSecret, err := utils.DeriveKey(config.Secret, "encryption")
+		HandleError(err, "Failed to derive encryption secret")
+
 		// Create OAuth config
 		oauthConfig := types.OAuthConfig{
 			GithubClientId:      config.GithubClientId,
@@ -115,13 +124,14 @@ var rootCmd = &cobra.Command{
 		authConfig := types.AuthConfig{
 			Users:             users,
 			OauthWhitelist:    config.OAuthWhitelist,
-			Secret:            config.Secret,
 			CookieSecure:      config.CookieSecure,
 			SessionExpiry:     config.SessionExpiry,
 			Domain:            domain,
 			LoginTimeout:      config.LoginTimeout,
 			LoginMaxRetries:   config.LoginMaxRetries,
 			SessionCookieName: sessionCookieName,
+			HMACSecret:        hmacSecret,
+			EncryptionSecret:  encryptionSecret,
 		}
 
 		// Create hooks config

@@ -33,7 +33,7 @@ type Auth struct {
 
 func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 	// Create cookie store
-	store := sessions.NewCookieStore([]byte(auth.Config.Secret))
+	store := sessions.NewCookieStore([]byte(auth.Config.HMACSecret), []byte(auth.Config.EncryptionSecret))
 
 	// Configure cookie store
 	store.Options = &sessions.Options{
@@ -46,9 +46,21 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 
 	// Get session
 	session, err := store.Get(c.Request, auth.Config.SessionCookieName)
+
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get session")
-		return nil, err
+		log.Warn().Err(err).Msg("Invalid session, clearing cookie and retrying")
+
+		// Delete the session cookie if there is an error
+		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.CookieSecure, true)
+
+		// Try to get the session again
+		session, err = store.Get(c.Request, auth.Config.SessionCookieName)
+
+		if err != nil {
+			// If we still can't get the session, log the error and return nil
+			log.Error().Err(err).Msg("Failed to get session")
+			return nil, err
+		}
 	}
 
 	return session, nil

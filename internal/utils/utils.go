@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -11,6 +14,7 @@ import (
 	"tinyauth/internal/types"
 
 	"github.com/traefik/paerser/parser"
+	"golang.org/x/crypto/hkdf"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -404,4 +408,33 @@ func FilterIP(filter string, ip string) (bool, error) {
 
 	// If the filter is not a CIDR range or a single IP, return false
 	return false, nil
+}
+
+func DeriveKey(secret string, info string) (string, error) {
+	// Create hashing function
+	hash := sha256.New
+
+	// Create a new key using the secret and info
+	hkdf := hkdf.New(hash, []byte(secret), nil, []byte(info)) // I am not using a salt because I just want two different keys from one secret, maybe bad practice
+
+	// Create a new key
+	key := make([]byte, 24)
+
+	// Read the key from the HKDF
+	_, err := io.ReadFull(hkdf, key)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Verify the key is not empty
+	if bytes.Equal(key, make([]byte, 24)) {
+		return "", errors.New("derived key is empty")
+	}
+
+	// Encode the key to base64
+	encodedKey := base64.StdEncoding.EncodeToString(key)
+
+	// Return the key as a base64 encoded string
+	return encodedKey, nil
 }
