@@ -36,27 +36,46 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		log.Debug().Msg("Got basic auth")
 
 		// Get user
-		user := hooks.Auth.GetUser(basic.Username)
+		userSearch := hooks.Auth.GetUser(basic.Username)
 
-		// Check we have a user
-		if user == nil {
+		if userSearch.Type == "" {
 			log.Error().Str("username", basic.Username).Msg("User does not exist")
 
 			// Return empty context
 			return types.UserContext{}
 		}
 
-		// Check if the user has a correct password
-		if hooks.Auth.CheckPassword(*user, basic.Password) {
-			// Return user context since we are logged in with basic auth
+		// Verify the user
+		if !hooks.Auth.VerifyUser(userSearch, basic.Password) {
+			log.Error().Str("username", basic.Username).Msg("Password incorrect")
+
+			// Return empty context
+			return types.UserContext{}
+		}
+
+		// Get the user type
+		if userSearch.Type == "ldap" {
+			log.Debug().Msg("User is LDAP")
+
 			return types.UserContext{
 				Username:    basic.Username,
 				Name:        utils.Capitalize(basic.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), hooks.Config.Domain),
 				IsLoggedIn:  true,
 				Provider:    "basic",
-				TotpEnabled: user.TotpSecret != "",
+				TotpEnabled: false,
 			}
+		}
+
+		user := hooks.Auth.GetLocalUser(basic.Username)
+
+		return types.UserContext{
+			Username:    basic.Username,
+			Name:        utils.Capitalize(basic.Username),
+			Email:       fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), hooks.Config.Domain),
+			IsLoggedIn:  true,
+			Provider:    "basic",
+			TotpEnabled: user.TotpSecret != "",
 		}
 
 	}
@@ -85,18 +104,25 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if cookie.Provider == "username" {
 		log.Debug().Msg("Provider is username")
 
-		// Check if user exists
-		if hooks.Auth.GetUser(cookie.Username) != nil {
-			log.Debug().Msg("User exists")
+		// Get user
+		userSearch := hooks.Auth.GetUser(cookie.Username)
 
-			// It exists so we are logged in
-			return types.UserContext{
-				Username:   cookie.Username,
-				Name:       cookie.Name,
-				Email:      cookie.Email,
-				IsLoggedIn: true,
-				Provider:   "username",
-			}
+		if userSearch.Type == "" {
+			log.Error().Str("username", cookie.Username).Msg("User does not exist")
+
+			// Return empty context
+			return types.UserContext{}
+		}
+
+		log.Debug().Str("type", userSearch.Type).Msg("User exists")
+
+		// It exists so we are logged in
+		return types.UserContext{
+			Username:   cookie.Username,
+			Name:       cookie.Name,
+			Email:      cookie.Email,
+			IsLoggedIn: true,
+			Provider:   "username",
 		}
 	}
 

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 	"tinyauth/internal/docker"
+	"tinyauth/internal/ldap"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -22,9 +23,10 @@ type Auth struct {
 	LoginAttempts map[string]*types.LoginAttempt
 	LoginMutex    sync.RWMutex
 	Store         *sessions.CookieStore
+	LDAP          *ldap.LDAP
 }
 
-func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
+func NewAuth(config types.AuthConfig, docker *docker.Docker, ldap *ldap.LDAP) *Auth {
 	// Create cookie store
 	store := sessions.NewCookieStore([]byte(config.HMACSecret), []byte(config.EncryptionSecret))
 
@@ -42,6 +44,7 @@ func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
 		Docker:        docker,
 		LoginAttempts: make(map[string]*types.LoginAttempt),
 		Store:         store,
+		LDAP:          ldap,
 	}
 }
 
@@ -68,14 +71,87 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 	return session, nil
 }
 
-func (auth *Auth) GetUser(username string) *types.User {
+func (auth *Auth) GetUser(username string) types.UserSearch {
 	// Loop through users and return the user if the username matches
+	log.Debug().Str("username", username).Msg("Searching for user")
+
 	for _, user := range auth.Config.Users {
 		if user.Username == username {
-			return &user
+			return types.UserSearch{
+				Username: user.Username,
+				Type:     "local",
+			}
 		}
 	}
-	return nil
+
+	// If no user found, check LDAP
+	if auth.LDAP != nil {
+		log.Debug().Str("username", username).Msg("Checking LDAP for user")
+
+		userDN, err := auth.LDAP.Search(username)
+		if err != nil {
+			log.Warn().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
+			return types.UserSearch{}
+		}
+
+		// If user found in LDAP, return a user with the DN as username
+		return types.UserSearch{
+			Username: userDN,
+			Type:     "ldap",
+		}
+	}
+
+	return types.UserSearch{}
+}
+
+func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
+	// Authenticate the user based on the type
+	switch search.Type {
+	case "local":
+		// Get local user
+		user := auth.GetLocalUser(search.Username)
+
+		// Check if password is correct
+		return auth.CheckPassword(user, password)
+	case "ldap":
+		// If LDAP is configured, bind to the LDAP server with the user DN and password
+		if auth.LDAP != nil {
+			log.Debug().Str("username", search.Username).Msg("Binding to LDAP for user authentication")
+
+			// Bind to the LDAP server
+			err := auth.LDAP.Bind(search.Username, password)
+			if err != nil {
+				log.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
+				return false
+			}
+
+			// If bind is successful, rebind with the LDAP bind user
+			auth.LDAP.Bind(auth.LDAP.Config.BindUser, auth.LDAP.Config.BindPassword)
+			log.Debug().Str("username", search.Username).Msg("LDAP authentication successful")
+
+			// Return true if the bind was successful
+			return true
+		}
+	}
+
+	// If no user found or authentication failed, return false
+	log.Warn().Str("username", search.Username).Msg("User authentication failed")
+	return false
+}
+
+func (auth *Auth) GetLocalUser(username string) types.User {
+	// Loop through users and return the user if the username matches
+	log.Debug().Str("username", username).Msg("Searching for local user")
+
+	for _, user := range auth.Config.Users {
+		if user.Username == username {
+			return user
+		}
+	}
+
+	// If no user found, return an empty user
+	log.Warn().Str("username", username).Msg("Local user not found")
+	return types.User{}
 }
 
 func (auth *Auth) CheckPassword(user types.User, password string) bool {

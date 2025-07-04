@@ -13,6 +13,7 @@ import (
 	"tinyauth/internal/docker"
 	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
+	"tinyauth/internal/ldap"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/server"
 	"tinyauth/internal/types"
@@ -143,8 +144,28 @@ var rootCmd = &cobra.Command{
 		docker, err := docker.NewDocker()
 		HandleError(err, "Failed to initialize docker")
 
+		// Create LDAP service if configured
+		var ldapService *ldap.LDAP
+
+		if config.LdapAddress != "" {
+			log.Info().Msg("Using LDAP for authentication")
+
+			ldapConfig := types.LdapConfig{
+				Address:      config.LdapAddress,
+				BindUser:     config.LdapBindUser,
+				BindPassword: config.LdapBindPassword,
+				BaseDN:       config.LdapBaseDN,
+			}
+
+			// Create LDAP service
+			ldapService, err = ldap.NewLDAP(ldapConfig)
+			HandleError(err, "Failed to create LDAP service")
+		} else {
+			log.Info().Msg("LDAP not configured, using local users or OAuth")
+		}
+
 		// Create auth service
-		auth := auth.NewAuth(authConfig, docker)
+		auth := auth.NewAuth(authConfig, docker, ldapService)
 
 		// Create OAuth providers service
 		providers := providers.NewProviders(oauthConfig)
@@ -221,6 +242,10 @@ func init() {
 	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
 	rootCmd.Flags().String("forgot-password-message", "You can reset your password by changing the `USERS` environment variable.", "Message to show on the forgot password page.")
 	rootCmd.Flags().String("background-image", "/background.jpg", "Background image URL for the login page.")
+	rootCmd.Flags().String("ldap-address", "", "LDAP server address (e.g. ldap://localhost:389).")
+	rootCmd.Flags().String("ldap-bind-user", "", "LDAP bind user.")
+	rootCmd.Flags().String("ldap-bind-password", "", "LDAP bind password.")
+	rootCmd.Flags().String("ldap-base-dn", "", "LDAP base DN (e.g. dc=example,dc=com).")
 
 	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
@@ -256,6 +281,10 @@ func init() {
 	viper.BindEnv("login-max-retries", "LOGIN_MAX_RETRIES")
 	viper.BindEnv("forgot-password-message", "FORGOT_PASSWORD_MESSAGE")
 	viper.BindEnv("background-image", "BACKGROUND_IMAGE")
+	viper.BindEnv("ldap-address", "LDAP_ADDRESS")
+	viper.BindEnv("ldap-bind-user", "LDAP_BIND_USER")
+	viper.BindEnv("ldap-bind-password", "LDAP_BIND_PASSWORD")
+	viper.BindEnv("ldap-base-dn", "LDAP_BASE_DN")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())

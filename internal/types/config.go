@@ -36,6 +36,10 @@ type Config struct {
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
 	FogotPasswordMessage    string `mapstructure:"forgot-password-message" validate:"required"`
 	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
+	LdapAddress             string `mapstructure:"ldap-address"`
+	LdapBindUser            string `mapstructure:"ldap-bind-user"`
+	LdapBindPassword        string `mapstructure:"ldap-bind-password"`
+	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
 }
 
 // Server configuration
@@ -121,4 +125,12 @@ type Labels struct {
 	Basic   BasicLabels
 	OAuth   OAuthLabels
 	IP      IPLabels
+}
+
+// Ldap config is a struct that contains the configuration for the LDAP service
+type LdapConfig struct {
+	Address      string
+	BindUser     string
+	BindPassword string
+	BaseDN       string
 }

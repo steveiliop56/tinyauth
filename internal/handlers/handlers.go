@@ -363,10 +363,12 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	}
 
 	// Get user based on username
-	user := h.Auth.GetUser(login.Username)
+	userSearch := h.Auth.GetUser(login.Username)
+
+	log.Debug().Interface("userSearch", userSearch).Msg("Searching for user")
 
 	// User does not exist
-	if user == nil {
+	if userSearch.Type == "" {
 		log.Debug().Str("username", login.Username).Msg("User not found")
 		// Record failed login attempt
 		h.Auth.RecordLoginAttempt(rateIdentifier, false)
@@ -380,7 +382,7 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	log.Debug().Msg("Got user")
 
 	// Check if password is correct
-	if !h.Auth.CheckPassword(*user, login.Password) {
+	if !h.Auth.VerifyUser(userSearch, login.Password) {
 		log.Debug().Str("username", login.Username).Msg("Password incorrect")
 		// Record failed login attempt
 		h.Auth.RecordLoginAttempt(rateIdentifier, false)
@@ -396,28 +398,34 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	// Record successful login attempt (will reset failed attempt counter)
 	h.Auth.RecordLoginAttempt(rateIdentifier, true)
 
-	// Check if user has totp enabled
-	if user.TotpSecret != "" {
-		log.Debug().Msg("Totp enabled")
+	// Check if user is using TOTP
+	if userSearch.Type == "local" {
+		// Get local user
+		localUser := h.Auth.GetLocalUser(login.Username)
 
-		// Set totp pending cookie
-		h.Auth.CreateSessionCookie(c, &types.SessionCookie{
-			Username:    login.Username,
-			Name:        utils.Capitalize(login.Username),
-			Email:       fmt.Sprintf("%s@%s", strings.ToLower(login.Username), h.Config.Domain),
-			Provider:    "username",
-			TotpPending: true,
-		})
+		// Check if TOTP is enabled
+		if localUser.TotpSecret != "" {
+			log.Debug().Msg("Totp enabled")
 
-		// Return totp required
-		c.JSON(200, gin.H{
-			"status":      200,
-			"message":     "Waiting for totp",
-			"totpPending": true,
-		})
+			// Set totp pending cookie
+			h.Auth.CreateSessionCookie(c, &types.SessionCookie{
+				Username:    login.Username,
+				Name:        utils.Capitalize(login.Username),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(login.Username), h.Config.Domain),
+				Provider:    "username",
+				TotpPending: true,
+			})
 
-		// Stop further processing
-		return
+			// Return totp required
+			c.JSON(200, gin.H{
+				"status":      200,
+				"message":     "Waiting for totp",
+				"totpPending": true,
+			})
+
+			// Stop further processing
+			return
+		}
 	}
 
 	// Create session cookie with username as provider
@@ -469,17 +477,7 @@ func (h *Handlers) TotpHandler(c *gin.Context) {
 	}
 
 	// Get user
-	user := h.Auth.GetUser(userContext.Username)
-
-	// Check if user exists
-	if user == nil {
-		log.Debug().Msg("User not found")
-		c.JSON(401, gin.H{
-			"status":  401,
-			"message": "Unauthorized",
-		})
-		return
-	}
+	user := h.Auth.GetLocalUser(userContext.Username)
 
 	// Check if totp is correct
 	ok := totp.Validate(totpReq.Code, user.TotpSecret)
