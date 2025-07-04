@@ -1,5 +1,5 @@
 # Site builder
-FROM oven/bun:1.2.17-alpine AS frontend-builder
+FROM oven/bun:1.2.18-alpine AS frontend-builder
 
 WORKDIR /frontend
 
