@@ -71,16 +71,17 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 	return session, nil
 }
 
-func (auth *Auth) GetUser(username string) types.UserSearch {
+func (auth *Auth) SearchUser(username string) types.UserSearch {
 	// Loop through users and return the user if the username matches
 	log.Debug().Str("username", username).Msg("Searching for user")
 
-	for _, user := range auth.Config.Users {
-		if user.Username == username {
-			return types.UserSearch{
-				Username: user.Username,
-				Type:     "local",
-			}
+	if auth.GetLocalUser(username).Username != "" {
+		log.Debug().Str("username", username).Msg("Found local user")
+
+		// If user found, return a user with the username and type "local"
+		return types.UserSearch{
+			Username: username,
+			Type:     "local",
 		}
 	}
 
@@ -126,7 +127,7 @@ func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
 			}
 
 			// If bind is successful, rebind with the LDAP bind user
-			auth.LDAP.Bind(auth.LDAP.Config.BindUser, auth.LDAP.Config.BindPassword)
+			auth.LDAP.Bind(auth.LDAP.Config.BindDN, auth.LDAP.Config.BindPassword)
 			log.Debug().Str("username", search.Username).Msg("LDAP authentication successful")
 
 			// Return true if the bind was successful

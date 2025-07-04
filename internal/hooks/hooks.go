@@ -35,8 +35,8 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if basic != nil {
 		log.Debug().Msg("Got basic auth")
 
-		// Get user
-		userSearch := hooks.Auth.GetUser(basic.Username)
+		// Search for a user based on username
+		userSearch := hooks.Auth.SearchUser(basic.Username)
 
 		if userSearch.Type == "" {
 			log.Error().Str("username", basic.Username).Msg("User does not exist")
@@ -104,8 +104,8 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if cookie.Provider == "username" {
 		log.Debug().Msg("Provider is username")
 
-		// Get user
-		userSearch := hooks.Auth.GetUser(cookie.Username)
+		// Search for the user with the username
+		userSearch := hooks.Auth.SearchUser(cookie.Username)
 
 		if userSearch.Type == "" {
 			log.Error().Str("username", cookie.Username).Msg("User does not exist")

@@ -1,6 +1,7 @@
 package ldap
 
 import (
+	"crypto/tls"
 	"fmt"
 	"tinyauth/internal/types"
 
@@ -15,18 +16,15 @@ type LDAP struct {
 
 func NewLDAP(config types.LdapConfig) (*LDAP, error) {
 	// Connect to the LDAP server
-	conn, err := ldapgo.DialURL(config.Address)
+	conn, err := ldapgo.DialURL(config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		InsecureSkipVerify: config.Insecure,
+	}))
 	if err != nil {
 		return nil, err
 	}
 
-	// Try to connect using TLS
-	// conn.StartTLS(&tls.Config{
-	// 	InsecureSkipVerify: true,
-	// })
-
 	// Bind to the LDAP server with the provided credentials
-	err = conn.Bind(config.BindUser, config.BindPassword)
+	err = conn.Bind(config.BindDN, config.BindPassword)
 	if err != nil {
 		return nil, err
 	}

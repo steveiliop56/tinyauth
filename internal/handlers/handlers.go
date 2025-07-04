@@ -362,8 +362,8 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	// Get user based on username
-	userSearch := h.Auth.GetUser(login.Username)
+	// Search for a user based on username
+	userSearch := h.Auth.SearchUser(login.Username)
 
 	log.Debug().Interface("userSearch", userSearch).Msg("Searching for user")
 

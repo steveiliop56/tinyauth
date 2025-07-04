@@ -59,10 +59,6 @@ var rootCmd = &cobra.Command{
 		users, err := utils.GetUsers(config.Users, config.UsersFile)
 		HandleError(err, "Failed to parse users")
 
-		if len(users) == 0 && !utils.OAuthConfigured(config) {
-			HandleError(errors.New("no users or OAuth configured"), "No users or OAuth configured")
-		}
-
 		// Get domain
 		log.Debug().Msg("Getting domain")
 		domain, err := utils.GetUpperDomain(config.AppURL)
@@ -152,9 +148,10 @@ var rootCmd = &cobra.Command{
 
 			ldapConfig := types.LdapConfig{
 				Address:      config.LdapAddress,
-				BindUser:     config.LdapBindUser,
+				BindDN:       config.LdapBindDN,
 				BindPassword: config.LdapBindPassword,
 				BaseDN:       config.LdapBaseDN,
+				Insecure:     config.LdapInsecure,
 			}
 
 			// Create LDAP service
@@ -162,6 +159,11 @@ var rootCmd = &cobra.Command{
 			HandleError(err, "Failed to create LDAP service")
 		} else {
 			log.Info().Msg("LDAP not configured, using local users or OAuth")
+		}
+
+		// Check if we have any users configured
+		if len(users) == 0 && !utils.OAuthConfigured(config) && ldapService == nil {
+			HandleError(errors.New("err no users"), "Unable to find a source of users")
 		}
 
 		// Create auth service
@@ -243,9 +245,10 @@ func init() {
 	rootCmd.Flags().String("forgot-password-message", "You can reset your password by changing the `USERS` environment variable.", "Message to show on the forgot password page.")
 	rootCmd.Flags().String("background-image", "/background.jpg", "Background image URL for the login page.")
 	rootCmd.Flags().String("ldap-address", "", "LDAP server address (e.g. ldap://localhost:389).")
-	rootCmd.Flags().String("ldap-bind-user", "", "LDAP bind user.")
+	rootCmd.Flags().String("ldap-bind-dn", "", "LDAP bind DN (e.g. uid=user,dc=example,dc=com).")
 	rootCmd.Flags().String("ldap-bind-password", "", "LDAP bind password.")
 	rootCmd.Flags().String("ldap-base-dn", "", "LDAP base DN (e.g. dc=example,dc=com).")
+	rootCmd.Flags().Bool("ldap-insecure", false, "Skip certificate verification for the LDAP server.")
 
 	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
@@ -282,9 +285,10 @@ func init() {
 	viper.BindEnv("forgot-password-message", "FORGOT_PASSWORD_MESSAGE")
 	viper.BindEnv("background-image", "BACKGROUND_IMAGE")
 	viper.BindEnv("ldap-address", "LDAP_ADDRESS")
-	viper.BindEnv("ldap-bind-user", "LDAP_BIND_USER")
+	viper.BindEnv("ldap-bind-dn", "LDAP_BIND_DN")
 	viper.BindEnv("ldap-bind-password", "LDAP_BIND_PASSWORD")
 	viper.BindEnv("ldap-base-dn", "LDAP_BASE_DN")
+	viper.BindEnv("ldap-insecure", "LDAP_INSECURE")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())

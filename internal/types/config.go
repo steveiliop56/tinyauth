@@ -37,9 +37,10 @@ type Config struct {
 	FogotPasswordMessage    string `mapstructure:"forgot-password-message" validate:"required"`
 	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
 	LdapAddress             string `mapstructure:"ldap-address"`
-	LdapBindUser            string `mapstructure:"ldap-bind-user"`
+	LdapBindDN              string `mapstructure:"ldap-bind-dn"`
 	LdapBindPassword        string `mapstructure:"ldap-bind-password"`
 	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
+	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
 }
 
 // Server configuration
@@ -130,7 +131,8 @@ type Labels struct {
 // Ldap config is a struct that contains the configuration for the LDAP service
 type LdapConfig struct {
 	Address      string
-	BindUser     string
+	BindDN       string
 	BindPassword string
 	BaseDN       string
+	Insecure     bool
 }
