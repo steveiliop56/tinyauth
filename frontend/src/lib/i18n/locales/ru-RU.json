@@ -42,6 +42,7 @@
     "unauthorizedResourceSubtitle": "Пользователю <code>{{username}}</code> не разрешен доступ к <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "Пользователю <code>{{username}}</code> не разрешен вход.",
     "unauthorizedGroupsSubtitle": "Пользователь <code>{{username}}</code> не состоит в группах, которым разрешен доступ к <code>{{resource}}</code>.",
+    "unauthorizedIpSubtitle": "Ваш IP адрес <code>{{ip}}</code> не авторизован для доступа к ресурсу <code>{{resource}}</code>.",
     "unauthorizedButton": "Повторить",
     "untrustedRedirectTitle": "Ненадежное перенаправление",
     "untrustedRedirectSubtitle": "Попытка перенаправить на домен, который не соответствует вашему заданному домену (<code>{{domain}}</code>). Уверены, что хотите продолжить?",
