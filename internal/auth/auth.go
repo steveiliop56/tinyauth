@@ -352,7 +352,7 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 
 func (auth *Auth) UserAuthConfigured() bool {
 	// If there are users, return true
-	return len(auth.Config.Users) > 0
+	return len(auth.Config.Users) > 0 || auth.LDAP != nil
 }
 
 func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.Labels) bool {
