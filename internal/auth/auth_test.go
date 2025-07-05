@@ -18,7 +18,7 @@ func TestLoginRateLimiting(t *testing.T) {
 	// Initialize a new auth service with 3 max retries and 5 seconds timeout
 	config.LoginMaxRetries = 3
 	config.LoginTimeout = 5
-	authService := auth.NewAuth(config, &docker.Docker{})
+	authService := auth.NewAuth(config, &docker.Docker{}, nil)
 
 	// Test identifier
 	identifier := "test_user"
@@ -62,7 +62,7 @@ func TestLoginRateLimiting(t *testing.T) {
 	// Reinitialize auth service with a shorter timeout for testing
 	config.LoginTimeout = 1
 	config.LoginMaxRetries = 3
-	authService = auth.NewAuth(config, &docker.Docker{})
+	authService = auth.NewAuth(config, &docker.Docker{}, nil)
 
 	// Add enough failed attempts to lock the account
 	for i := 0; i < 3; i++ {
@@ -87,7 +87,7 @@ func TestLoginRateLimiting(t *testing.T) {
 	t.Log("Testing disabled rate limiting")
 	config.LoginMaxRetries = 0
 	config.LoginTimeout = 0
-	authService = auth.NewAuth(config, &docker.Docker{})
+	authService = auth.NewAuth(config, &docker.Docker{}, nil)
 
 	for i := 0; i < 10; i++ {
 		authService.RecordLoginAttempt(identifier, false)
@@ -103,7 +103,7 @@ func TestConcurrentLoginAttempts(t *testing.T) {
 	// Initialize a new auth service with 2 max retries and 5 seconds timeout
 	config.LoginMaxRetries = 2
 	config.LoginTimeout = 5
-	authService := auth.NewAuth(config, &docker.Docker{})
+	authService := auth.NewAuth(config, &docker.Docker{}, nil)
 
 	// Test multiple identifiers
 	identifiers := []string{"user1", "user2", "user3"}
