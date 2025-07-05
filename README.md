@@ -23,27 +23,27 @@ Tinyauth is a simple authentication middleware that adds a simple login screen o
 
 ## Getting Started
 
-You can easily get started with tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started.html). There is also an available [docker compose](./docker-compose.example.yml) file that has traefik, whoami and tinyauth to demonstrate its capabilities.
+You can easily get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started.html). There is also an available [docker compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities.
 
 ## Demo
 
-If you are still not sure if tinyauth suits your needs you can try out the [demo](https://demo.tinyauth.app). The default username is `user` and the default password is `password`.
+If you are still not sure if Tinyauth suits your needs you can try out the [demo](https://demo.tinyauth.app). The default username is `user` and the default password is `password`.
 
 ## Documentation
 
-You can find documentation and guides on all of the available configuration of tinyauth in the [website](https://tinyauth.app).
+You can find documentation and guides on all of the available configuration of Tinyauth in the [website](https://tinyauth.app).
 
 ## Discord
 
-Tinyauth has a [discord](https://discord.gg/eHzVaCzRRd) server. Feel free to hop in to chat about self-hosting, homelabs and of course tinyauth. See you there!
+Tinyauth has a [discord](https://discord.gg/eHzVaCzRRd) server. Feel free to hop in to chat about self-hosting, homelabs and of course Tinyauth. See you there!
 
 ## Contributing
 
-All contributions to the codebase are welcome! If you have any free time feel free to pick up an [Issue](https://github.com/steveiliop56/tinyauth/issues) or add your own missing features. Make sure to check out the [contributing guide](./CONTRIBUTING.md) for instructions on how to get the development server up and running.
+All contributions to the codebase are welcome! If you have any free time feel free to pick up an [issue](https://github.com/steveiliop56/tinyauth/issues) or add your own missing features. Make sure to check out the [contributing guide](./CONTRIBUTING.md) for instructions on how to get the development server up and running.
 
 ## Localization
 
-If you would like to help translate tinyauth into more languages, visit the [Crowdin](https://crowdin.com/project/tinyauth) page.
+If you would like to help translate Tinyauth into more languages, visit the [Crowdin](https://crowdin.com/project/tinyauth) page.
 
 ## License
 
@@ -51,7 +51,7 @@ Tinyauth is licensed under the GNU General Public License v3.0. TL;DR — You ma
 
 ## Sponsors
 
-Thanks a lot to the following people for providing me with more coffee:
+A big thank you to the following people for providing me with more coffee:
 
 <!-- sponsors --><a href="https://github.com/erwinkramer"><img src="https:&#x2F;&#x2F;github.com&#x2F;erwinkramer.png" width="64px" alt="User avatar: erwinkramer" /></a>&nbsp;&nbsp;<a href="https://github.com/nicotsx"><img src="https:&#x2F;&#x2F;github.com&#x2F;nicotsx.png" width="64px" alt="User avatar: nicotsx" /></a>&nbsp;&nbsp;<a href="https://github.com/SimpleHomelab"><img src="https:&#x2F;&#x2F;github.com&#x2F;SimpleHomelab.png" width="64px" alt="User avatar: SimpleHomelab" /></a>&nbsp;&nbsp;<a href="https://github.com/jmadden91"><img src="https:&#x2F;&#x2F;github.com&#x2F;jmadden91.png" width="64px" alt="User avatar: jmadden91" /></a>&nbsp;&nbsp;<a href="https://github.com/tribor"><img src="https:&#x2F;&#x2F;github.com&#x2F;tribor.png" width="64px" alt="User avatar: tribor" /></a>&nbsp;&nbsp;<a href="https://github.com/eliasbenb"><img src="https:&#x2F;&#x2F;github.com&#x2F;eliasbenb.png" width="64px" alt="User avatar: eliasbenb" /></a>&nbsp;&nbsp;<!-- sponsors -->
 
