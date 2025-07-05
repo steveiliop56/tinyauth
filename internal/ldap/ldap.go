@@ -18,6 +18,7 @@ func NewLDAP(config types.LdapConfig) (*LDAP, error) {
 	// Connect to the LDAP server
 	conn, err := ldapgo.DialURL(config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 		InsecureSkipVerify: config.Insecure,
+		MinVersion:         tls.VersionTLS12,
 	}))
 	if err != nil {
 		return nil, err
@@ -37,11 +38,15 @@ func NewLDAP(config types.LdapConfig) (*LDAP, error) {
 }
 
 func (l *LDAP) Search(username string) (string, error) {
+	// Escape the username to prevent LDAP injection
+	escapedUsername := ldapgo.EscapeFilter(username)
+	filter := fmt.Sprintf(l.Config.SearchFilter, escapedUsername)
+
 	// Create a search request to find the user by username
 	searchRequest := ldapgo.NewSearchRequest(
 		l.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf(l.Config.SearchFilter, username),
+		filter,
 		[]string{"dn"},
 		nil,
 	)

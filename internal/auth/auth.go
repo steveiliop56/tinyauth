@@ -127,12 +127,21 @@ func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
 			}
 
 			// If bind is successful, rebind with the LDAP bind user
-			auth.LDAP.Bind(auth.LDAP.Config.BindDN, auth.LDAP.Config.BindPassword)
+			err = auth.LDAP.Bind(auth.LDAP.Config.BindDN, auth.LDAP.Config.BindPassword)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
+				// Consider closing the connection or creating a new one
+				return false
+			}
+
 			log.Debug().Str("username", search.Username).Msg("LDAP authentication successful")
 
 			// Return true if the bind was successful
 			return true
 		}
+	default:
+		log.Warn().Str("type", search.Type).Msg("Unknown user type for authentication")
+		return false
 	}
 
 	// If no user found or authentication failed, return false
