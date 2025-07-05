@@ -53,7 +53,7 @@ func (l *LDAP) Search(username string) (string, error) {
 	}
 
 	if len(searchResult.Entries) != 1 {
-		return "", fmt.Errorf("user not found or multiple entries found for username: %s", username)
+		return "", fmt.Errorf("err multiple or no entries found for user %s", username)
 	}
 
 	// User found, return the distinguished name (DN)
