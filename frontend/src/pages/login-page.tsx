@@ -162,9 +162,9 @@ export const LoginPage = () => {
           />
         )}
         {configuredProviders.length == 0 && (
-          <h3 className="text-center text-xl text-red-600">
+          <p className="text-center text-red-600 max-w-sm">
             {t("failedToFetchProvidersTitle")}
-          </h3>
+          </p>
         )}
       </CardContent>
     </Card>

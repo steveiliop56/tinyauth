@@ -84,7 +84,7 @@ func getServer(t *testing.T) *server.Server {
 			Password: user.Password,
 		},
 	}
-	auth := auth.NewAuth(authConfig, docker)
+	auth := auth.NewAuth(authConfig, docker, nil)
 
 	// Create providers service
 	providers := providers.NewProviders(types.OAuthConfig{})

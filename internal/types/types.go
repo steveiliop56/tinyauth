@@ -12,6 +12,12 @@ type User struct {
 	TotpSecret string
 }
 
+// UserSearch is the response of the get user
+type UserSearch struct {
+	Username string
+	Type     string // "local", "ldap" or empty
+}
+
 // Users is a list of users
 type Users []User
 
