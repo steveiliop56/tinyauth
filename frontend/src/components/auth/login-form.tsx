@@ -33,9 +33,9 @@ export const LoginForm = (props: Props) => {
           control={form.control}
           name="username"
           render={({ field }) => (
-            <FormItem className="mb-4">
-              <FormLabel>{t("loginUsername")}</FormLabel>
-              <FormControl>
+            <FormItem className="mb-4 gap-0">
+              <FormLabel className="mb-2">{t("loginUsername")}</FormLabel>
+              <FormControl className="mb-1">
                 <Input
                   placeholder={t("loginUsername")}
                   disabled={loading}
@@ -50,8 +50,8 @@ export const LoginForm = (props: Props) => {
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem className="mb-4">
-              <div className="relative">
+            <FormItem className="mb-4 gap-0">
+              <div className="relative mb-1">
                 <FormLabel className="mb-2">{t("loginPassword")}</FormLabel>
                 <FormControl>
                   <Input
@@ -61,14 +61,14 @@ export const LoginForm = (props: Props) => {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
                 <a
                   href="/forgot-password"
-                  className="text-muted-foreground text-sm absolute right-0 bottom-10"
+                  className="text-muted-foreground text-sm absolute right-0 bottom-[2.565rem]" // 2.565 is *just* perfect
                 >
                   {t("forgotPasswordTitle")}
                 </a>
               </div>
+              <FormMessage />
             </FormItem>
           )}
         />
