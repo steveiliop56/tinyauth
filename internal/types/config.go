@@ -108,7 +108,7 @@ type OAuthLabels struct {
 
 // Basic auth labels for a tinyauth protected container
 type BasicLabels struct {
-	User     string
+	Username string
 	Password string
 }
 
