@@ -41,6 +41,7 @@ type Config struct {
 	LdapBindPassword        string `mapstructure:"ldap-bind-password"`
 	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
 	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
+	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
 }
 
 // Server configuration
@@ -135,4 +136,5 @@ type LdapConfig struct {
 	BindPassword string
 	BaseDN       string
 	Insecure     bool
+	SearchFilter string
 }

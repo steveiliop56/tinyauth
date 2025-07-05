@@ -152,6 +152,7 @@ var rootCmd = &cobra.Command{
 				BindPassword: config.LdapBindPassword,
 				BaseDN:       config.LdapBaseDN,
 				Insecure:     config.LdapInsecure,
+				SearchFilter: config.LdapSearchFilter,
 			}
 
 			// Create LDAP service
@@ -249,6 +250,7 @@ func init() {
 	rootCmd.Flags().String("ldap-bind-password", "", "LDAP bind password.")
 	rootCmd.Flags().String("ldap-base-dn", "", "LDAP base DN (e.g. dc=example,dc=com).")
 	rootCmd.Flags().Bool("ldap-insecure", false, "Skip certificate verification for the LDAP server.")
+	rootCmd.Flags().String("ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup.")
 
 	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
@@ -289,6 +291,7 @@ func init() {
 	viper.BindEnv("ldap-bind-password", "LDAP_BIND_PASSWORD")
 	viper.BindEnv("ldap-base-dn", "LDAP_BASE_DN")
 	viper.BindEnv("ldap-insecure", "LDAP_INSECURE")
+	viper.BindEnv("ldap-search-filter", "LDAP_SEARCH_FILTER")
 
 	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())

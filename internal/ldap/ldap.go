@@ -41,7 +41,7 @@ func (l *LDAP) Search(username string) (string, error) {
 	searchRequest := ldapgo.NewSearchRequest(
 		l.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(uid=%s)", username),
+		fmt.Sprintf(l.Config.SearchFilter, username),
 		[]string{"dn"},
 		nil,
 	)
