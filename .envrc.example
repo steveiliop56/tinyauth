@@ -1,0 +1,55 @@
+# TinyAuth Configuration
+# Copy this file to .envrc and update the values
+
+# Server Configuration
+export PORT=3000
+export ADDRESS=0.0.0.0
+
+# Security
+export SECRET=some-random-32-chars-string12345
+export SECRET_FILE=app_secret_file
+export COOKIE_SECURE=false
+
+# Application
+export APP_URL=http://localhost:3000
+export APP_TITLE="Tinyauth SSO"
+
+# Users Configuration
+export USERS=user:$2a$10$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u
+export USERS_FILE=users_file
+
+# OAuth Providers
+export GITHUB_CLIENT_ID=github_client_id
+export GITHUB_CLIENT_SECRET=github_client_secret
+export GITHUB_CLIENT_SECRET_FILE=github_client_secret_file
+
+export GOOGLE_CLIENT_ID=google_client_id
+export GOOGLE_CLIENT_SECRET=google_client_secret
+export GOOGLE_CLIENT_SECRET_FILE=google_client_secret_file
+
+export GENERIC_CLIENT_ID=generic_client_id
+export GENERIC_CLIENT_SECRET=generic_client_secret
+export GENERIC_CLIENT_SECRET_FILE=generic_client_secret_file
+export GENERIC_SCOPES=generic_scopes
+export GENERIC_AUTH_URL=generic_auth_url
+export GENERIC_TOKEN_URL=generic_token_url
+export GENERIC_USER_URL=generic_user_url
+export GENERIC_NAME="My OAuth"
+export GENERIC_SKIP_SSL=false
+
+# Features
+export DISABLE_CONTINUE=false
+export OAUTH_WHITELIST=
+export OAUTH_AUTO_REDIRECT=none
+
+# Session Management
+export SESSION_EXPIRY=7200
+export LOGIN_TIMEOUT=300
+export LOGIN_MAX_RETRIES=5
+
+# UI Customization
+export BACKGROUND_IMAGE=some_image_url
+export FORGOT_PASSWORD_MESSAGE="Some message about resetting the password"
+
+# Logging
+export LOG_LEVEL=0

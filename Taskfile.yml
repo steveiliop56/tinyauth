@@ -1,0 +1,142 @@
+version: '3'
+
+tasks:
+  # Development tasks
+  dev:
+    desc: "Start TinyAuth in development mode"
+    cmds:
+      - docker-compose -f docker-compose.dev.yml up -d
+    
+  dev:build:
+    desc: "Build and start TinyAuth in development mode"
+    cmds:
+      - docker-compose -f docker-compose.dev.yml up --build -d
+    
+  dev:logs:
+    desc: "Show development logs"
+    cmds:
+      - docker-compose -f docker-compose.dev.yml logs -f
+    
+  dev:stop:
+    desc: "Stop development containers"
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down
+    
+  # Production tasks
+  prod:
+    desc: "Start TinyAuth in production mode"
+    cmds:
+      - docker-compose up -d
+    
+  prod:build:
+    desc: "Build and start TinyAuth in production mode"
+    cmds:
+      - docker-compose up --build -d
+    
+  prod:logs:
+    desc: "Show production logs"
+    cmds:
+      - docker-compose logs -f
+    
+  prod:stop:
+    desc: "Stop production containers"
+    cmds:
+      - docker-compose down
+    
+  # Container management
+  restart:
+    desc: "Restart TinyAuth containers"
+    cmds:
+      - docker-compose restart
+    
+  restart:backend:
+    desc: "Restart TinyAuth backend only"
+    cmds:
+      - docker-compose restart tinyauth-backend
+    
+  restart:frontend:
+    desc: "Restart TinyAuth frontend only"
+    cmds:
+      - docker-compose restart tinyauth-frontend
+    
+  # Health checks
+  health:
+    desc: "Check TinyAuth health status"
+    cmds:
+      - docker ps --filter "name=tinyauth"
+      - echo "Backend health check:"
+      - http GET localhost:3000/health || echo "Backend not responding"
+      - echo "Frontend health check:"
+      - http GET localhost:5173 || echo "Frontend not responding"
+    
+  status:
+    desc: "Show container status"
+    cmds:
+      - docker-compose ps
+    
+  # Logs
+  logs:
+    desc: "Show all logs"
+    cmds:
+      - docker-compose logs -f
+    
+  logs:backend:
+    desc: "Show backend logs"
+    cmds:
+      - docker-compose logs -f tinyauth-backend
+    
+  logs:frontend:
+    desc: "Show frontend logs"
+    cmds:
+      - docker-compose logs -f tinyauth-frontend
+    
+  # Cleanup
+  clean:
+    desc: "Clean up containers and volumes"
+    cmds:
+      - docker-compose down -v
+      - docker system prune -f
+    
+  clean:all:
+    desc: "Clean up everything including images"
+    cmds:
+      - docker-compose down -v --rmi all
+      - docker system prune -af
+    
+  # Database/Config
+  reset:
+    desc: "Reset configuration and restart"
+    cmds:
+      - docker-compose down
+      - docker-compose up -d
+    
+  # Testing
+  test:auth:
+    desc: "Test authentication endpoint"
+    cmds:
+      - http GET localhost:3000/api/auth/traefik
+    
+  test:frontend:
+    desc: "Test frontend accessibility"
+    cmds:
+      - http GET localhost:5173
+    
+  # User management
+  user:create:
+    desc: "Generate password hash for new user"
+    cmds:
+      - echo "Use docker run --rm -it ghcr.io/steveiliop56/tinyauth:v3 hash-password"
+    
+  # Environment
+  env:check:
+    desc: "Check environment configuration"
+    cmds:
+      - echo "Checking .env file..."
+      - test -f .env && echo "✓ .env exists" || echo "✗ .env missing"
+      - grep -q "SECRET=" .env && echo "✓ SECRET configured" || echo "✗ SECRET missing"
+      - grep -q "USERS=" .env && echo "✓ USERS configured" || echo "✗ USERS missing"
+    
+  env:template:
+    desc: "Show environment template"
+    cmds:
+      - cat .envrc.example
