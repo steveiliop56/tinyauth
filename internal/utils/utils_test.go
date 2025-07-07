@@ -491,7 +491,7 @@ func TestParseHeaders(t *testing.T) {
 	t.Log("Testing parse headers with a valid string")
 
 	// Create variables
-	headers := []string{"X-Hea\tder1=value1", "X-Header2=value\n2"}
+	headers := []string{"X-Hea\x00der1=value1", "X-Header2=value\n2"}
 	expected := map[string]string{
 		"X-Header1": "value1",
 		"X-Header2": "value2",
