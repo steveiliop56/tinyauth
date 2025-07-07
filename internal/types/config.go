@@ -109,7 +109,13 @@ type OAuthLabels struct {
 // Basic auth labels for a tinyauth protected container
 type BasicLabels struct {
 	Username string
-	Password string
+	Password PassowrdLabels
+}
+
+// PassowrdLabels is a struct that contains the password labels for a tinyauth protected container
+type PassowrdLabels struct {
+	Plain string
+	File  string
 }
 
 // IP labels for a tinyauth protected container
