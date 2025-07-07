@@ -315,25 +315,6 @@ func TestGetLabels(t *testing.T) {
 	}
 }
 
-// Test the filter function
-func TestFilter(t *testing.T) {
-	t.Log("Testing filter helper")
-
-	// Create variables
-	data := []string{"", "val1", "", "val2", "", "val3", ""}
-	expected := []string{"val1", "val2", "val3"}
-
-	// Test the filter function
-	result := utils.Filter(data, func(val string) bool {
-		return val != ""
-	})
-
-	// Check if the result is equal to the expected
-	if !reflect.DeepEqual(expected, result) {
-		t.Fatalf("Expected %v, got %v", expected, result)
-	}
-}
-
 // Test parse user
 func TestParseUser(t *testing.T) {
 	t.Log("Testing parse user with a valid user")
@@ -474,37 +455,6 @@ func TestCheckWhitelist(t *testing.T) {
 	}
 }
 
-// Test capitalize
-func TestCapitalize(t *testing.T) {
-	t.Log("Testing capitalize with a valid string")
-
-	// Create variables
-	str := "test"
-	expected := "Test"
-
-	// Test the capitalize function
-	result := utils.Capitalize(str)
-
-	// Check if the result is equal to the expected
-	if result != expected {
-		t.Fatalf("Expected %v, got %v", expected, result)
-	}
-
-	t.Log("Testing capitalize with an empty string")
-
-	// Create variables
-	str = ""
-	expected = ""
-
-	// Test the capitalize function
-	result = utils.Capitalize(str)
-
-	// Check if the result is equal to the expected
-	if result != expected {
-		t.Fatalf("Expected %v, got %v", expected, result)
-	}
-}
-
 // Test the header sanitizer
 func TestSanitizeHeader(t *testing.T) {
 	t.Log("Testing sanitize header with a valid string")
@@ -529,6 +479,173 @@ func TestSanitizeHeader(t *testing.T) {
 
 	// Test the sanitize header function
 	result = utils.SanitizeHeader(str)
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}
+
+// Test the parse headers function
+func TestParseHeaders(t *testing.T) {
+	t.Log("Testing parse headers with a valid string")
+
+	// Create variables
+	headers := []string{"X-Hea\tder1=value1", "X-Header2=value\n2"}
+	expected := map[string]string{
+		"X-Header1": "value1",
+		"X-Header2": "value2",
+	}
+
+	// Test the parse headers function
+	result := utils.ParseHeaders(headers)
+
+	// Check if the result is equal to the expected
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing parse headers with an invalid string")
+
+	// Create variables
+	headers = []string{"X-Header1=", "X-Header2", "=value", "X-Header3=value3"}
+	expected = map[string]string{"X-Header3": "value3"}
+
+	// Test the parse headers function
+	result = utils.ParseHeaders(headers)
+
+	// Check if the result is equal to the expected
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}
+
+// Test the parse secret file function
+func TestParseSecretFile(t *testing.T) {
+	t.Log("Testing parse secret file with a valid file")
+
+	// Create variables
+	content := "\n\n    \n\n\n  secret   \n\n    \n  "
+	expected := "secret"
+
+	// Test the parse secret file function
+	result := utils.ParseSecretFile(content)
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}
+
+// Test the filter IP function
+func TestFilterIP(t *testing.T) {
+	t.Log("Testing filter IP with an IP and a valid CIDR")
+
+	// Create variables
+	ip := "10.10.10.10"
+	filter := "10.10.10.0/24"
+	expected := true
+
+	// Test the filter IP function
+	result, err := utils.FilterIP(filter, ip)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error filtering IP: %v", err)
+	}
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing filter IP with an IP and a valid IP")
+
+	// Create variables
+	filter = "10.10.10.10"
+	expected = true
+
+	// Test the filter IP function
+	result, err = utils.FilterIP(filter, ip)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error filtering IP: %v", err)
+	}
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing filter IP with an IP and an non matching CIDR")
+
+	// Create variables
+	filter = "10.10.15.0/24"
+	expected = false
+
+	// Test the filter IP function
+	result, err = utils.FilterIP(filter, ip)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error filtering IP: %v", err)
+	}
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing filter IP with a non matching IP and a valid CIDR")
+
+	// Create variables
+	filter = "10.10.10.11"
+	expected = false
+
+	// Test the filter IP function
+	result, err = utils.FilterIP(filter, ip)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error filtering IP: %v", err)
+	}
+
+	// Check if the result is equal to the expected
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing filter IP with an IP and an invalid CIDR")
+
+	// Create variables
+	filter = "10.../83"
+
+	// Test the filter IP function
+	_, err = utils.FilterIP(filter, ip)
+
+	// Check if there was an error
+	if err == nil {
+		t.Fatalf("Expected error filtering IP")
+	}
+}
+
+// Test the derive key function
+func TestDeriveKey(t *testing.T) {
+	t.Log("Testing the derive key function")
+
+	// Create variables
+	master := "master"
+	info := "info"
+	expected := "gdrdU/fXzclYjiSXRexEatVgV13qQmKl"
+
+	// Test the derive key function
+	result, err := utils.DeriveKey(master, info)
+
+	// Check if there was an error
+	if err != nil {
+		t.Fatalf("Error deriving key: %v", err)
+	}
 
 	// Check if the result is equal to the expected
 	if result != expected {
