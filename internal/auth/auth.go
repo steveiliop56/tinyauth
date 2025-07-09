@@ -452,10 +452,7 @@ func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 	}
 }
 
-func (auth *Auth) CheckIP(c *gin.Context, labels types.Labels) bool {
-	// Get the IP address from the request
-	ip := c.ClientIP()
-
+func (auth *Auth) CheckIP(labels types.Labels, ip string) bool {
 	// Check if the IP is in block list
 	for _, blocked := range labels.IP.Block {
 		res, err := utils.FilterIP(blocked, ip)
@@ -491,4 +488,23 @@ func (auth *Auth) CheckIP(c *gin.Context, labels types.Labels) bool {
 	log.Debug().Str("ip", ip).Msg("IP not in allow or block list, allowing by default")
 
 	return true
+}
+
+func (auth *Auth) BypassedIP(labels types.Labels, ip string) bool {
+	// For every IP in the bypass list, check if the IP matches
+	for _, bypassed := range labels.IP.Bypass {
+		res, err := utils.FilterIP(bypassed, ip)
+		if err != nil {
+			log.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
+			continue
+		}
+		if res {
+			log.Debug().Str("ip", ip).Str("item", bypassed).Msg("IP is in bypass list, allowing access")
+			return true
+		}
+	}
+
+	log.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
+
+	return false
 }

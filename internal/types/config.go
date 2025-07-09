@@ -120,8 +120,9 @@ type PassowrdLabels struct {
 
 // IP labels for a tinyauth protected container
 type IPLabels struct {
-	Allow []string
-	Block []string
+	Allow  []string
+	Block  []string
+	Bypass []string
 }
 
 // Labels is a struct that contains the labels for a tinyauth protected container

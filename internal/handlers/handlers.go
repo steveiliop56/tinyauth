@@ -96,11 +96,29 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if the IP is allowed/blocked
+	// Get client IP
 	ip := c.ClientIP()
-	if !h.Auth.CheckIP(c, labels) {
-		log.Warn().Str("ip", ip).Msg("IP not allowed")
 
+	// Check if the IP is in bypass list
+	if h.Auth.BypassedIP(labels, ip) {
+		headersParsed := utils.ParseHeaders(labels.Headers)
+		for key, value := range headersParsed {
+			log.Debug().Str("key", key).Msg("Setting header")
+			c.Header(key, value)
+		}
+		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
+			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth headers")
+			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
+		}
+		c.JSON(200, gin.H{
+			"status":  200,
+			"message": "Authenticated",
+		})
+		return
+	}
+
+	// Check if the IP is allowed/blocked
+	if !h.Auth.CheckIP(labels, ip) {
 		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(403, gin.H{
 				"status":  403,
