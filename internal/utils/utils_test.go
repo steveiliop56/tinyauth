@@ -387,7 +387,7 @@ func TestCheckFilter(t *testing.T) {
 	expected := true
 
 	// Test the check filter function
-	result := utils.CheckFilter(filter, str, false)
+	result := utils.CheckFilter(filter, str)
 
 	// Check if the result is equal to the expected
 	if result != expected {
@@ -402,7 +402,7 @@ func TestCheckFilter(t *testing.T) {
 	expected = true
 
 	// Test the check filter function
-	result = utils.CheckFilter(filter, str, true)
+	result = utils.CheckFilter(filter, str)
 
 	// Check if the result is equal to the expected
 	if result != expected {
@@ -417,7 +417,7 @@ func TestCheckFilter(t *testing.T) {
 	expected = true
 
 	// Test the check filter function
-	result = utils.CheckFilter(filter, str, false)
+	result = utils.CheckFilter(filter, str)
 
 	// Check if the result is equal to the expected
 	if result != expected {
@@ -432,7 +432,7 @@ func TestCheckFilter(t *testing.T) {
 	expected = false
 
 	// Test the check filter function
-	result = utils.CheckFilter(filter, str, true)
+	result = utils.CheckFilter(filter, str)
 
 	// Check if the result is equal to the expected
 	if result != expected {
@@ -447,7 +447,7 @@ func TestCheckFilter(t *testing.T) {
 	expected = false
 
 	// Test the check filter function
-	result = utils.CheckFilter(filter, str, false)
+	result = utils.CheckFilter(filter, str)
 
 	// Check if the result is equal to the expected
 	if result != expected {

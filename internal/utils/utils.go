@@ -293,14 +293,14 @@ func ParseSecretFile(contents string) string {
 }
 
 // Check if a string matches a regex or if it is included in a comma separated list
-func CheckFilter(filter string, str string, regex bool) bool {
+func CheckFilter(filter string, str string) bool {
 	// Check if the filter is empty
 	if len(strings.TrimSpace(filter)) == 0 {
 		return true
 	}
 
 	// Check if the filter is a regex
-	if strings.HasPrefix(filter, "/") && strings.HasSuffix(filter, "/") && regex {
+	if strings.HasPrefix(filter, "/") && strings.HasSuffix(filter, "/") {
 		// Create regex
 		re, err := regexp.Compile(filter[1 : len(filter)-1])
 

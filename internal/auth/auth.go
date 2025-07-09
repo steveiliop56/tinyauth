@@ -234,7 +234,7 @@ func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
 }
 
 func (auth *Auth) EmailWhitelisted(email string) bool {
-	return utils.CheckFilter(auth.Config.OauthWhitelist, email, true)
+	return utils.CheckFilter(auth.Config.OauthWhitelist, email)
 }
 
 func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {
@@ -368,13 +368,13 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, lab
 	// Check if oauth is allowed
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
-		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email, true)
+		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
 	}
 
 	// Check users
 	log.Debug().Msg("Checking users")
 
-	return utils.CheckFilter(labels.Users, context.Username, true)
+	return utils.CheckFilter(labels.Users, context.Username)
 }
 
 func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.Labels) bool {
@@ -394,7 +394,7 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 
 	// For every group check if it is in the required groups
 	for _, group := range oauthGroups {
-		if utils.CheckFilter(labels.OAuth.Groups, group, true) {
+		if utils.CheckFilter(labels.OAuth.Groups, group) {
 			log.Debug().Str("group", group).Msg("Group is in required groups")
 			return true
 		}

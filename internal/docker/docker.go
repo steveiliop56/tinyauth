@@ -69,7 +69,7 @@ func (docker *Docker) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *Docker) GetLabels(id string, domain string) (types.Labels, error) {
+func (docker *Docker) GetLabels(app string, domain string) (types.Labels, error) {
 	// Check if we have access to the Docker API
 	isConnected := docker.DockerConnected()
 
@@ -112,9 +112,16 @@ func (docker *Docker) GetLabels(id string, domain string) (types.Labels, error) 
 			continue
 		}
 
-		// Check if the labels match the id or the domain
-		if strings.TrimPrefix(inspect.Name, "/") == id || utils.CheckFilter(labels.Domain, domain, false) { // Disable regex for now
-			log.Debug().Str("id", inspect.ID).Msg("Found matching container")
+		// Check if the container matches the ID or domain
+		for _, lDomain := range labels.Domain {
+			if lDomain == domain {
+				log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
+				return labels, nil
+			}
+		}
+
+		if strings.TrimPrefix(inspect.Name, "/") == app {
+			log.Debug().Str("id", inspect.ID).Msg("Found matching container by name")
 			return labels, nil
 		}
 	}

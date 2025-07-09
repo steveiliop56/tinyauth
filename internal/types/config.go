@@ -129,7 +129,7 @@ type Labels struct {
 	Users   string
 	Allowed string
 	Headers []string
-	Domain  string
+	Domain  []string
 	Basic   BasicLabels
 	OAuth   OAuthLabels
 	IP      IPLabels
