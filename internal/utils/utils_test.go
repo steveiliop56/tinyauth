@@ -377,77 +377,77 @@ func TestParseUser(t *testing.T) {
 	}
 }
 
-// Test the whitelist function
-func TestCheckWhitelist(t *testing.T) {
-	t.Log("Testing check whitelist with a comma whitelist")
+// Test the check filter function
+func TestCheckFilter(t *testing.T) {
+	t.Log("Testing check filter with a comma separated list")
 
 	// Create variables
-	whitelist := "user1,user2,user3"
+	filter := "user1,user2,user3"
 	str := "user1"
 	expected := true
 
-	// Test the check whitelist function
-	result := utils.CheckWhitelist(whitelist, str)
+	// Test the check filter function
+	result := utils.CheckFilter(filter, str, false)
 
 	// Check if the result is equal to the expected
 	if result != expected {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 
-	t.Log("Testing check whitelist with a regex whitelist")
+	t.Log("Testing check filter with a regex filter")
 
 	// Create variables
-	whitelist = "/^user[0-9]+$/"
+	filter = "/^user[0-9]+$/"
 	str = "user1"
 	expected = true
 
-	// Test the check whitelist function
-	result = utils.CheckWhitelist(whitelist, str)
+	// Test the check filter function
+	result = utils.CheckFilter(filter, str, true)
 
 	// Check if the result is equal to the expected
 	if result != expected {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 
-	t.Log("Testing check whitelist with an empty whitelist")
+	t.Log("Testing check filter with an empty filter")
 
 	// Create variables
-	whitelist = ""
+	filter = ""
 	str = "user1"
 	expected = true
 
-	// Test the check whitelist function
-	result = utils.CheckWhitelist(whitelist, str)
+	// Test the check filter function
+	result = utils.CheckFilter(filter, str, false)
 
 	// Check if the result is equal to the expected
 	if result != expected {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 
-	t.Log("Testing check whitelist with an invalid regex whitelist")
+	t.Log("Testing check filter with an invalid regex filter")
 
 	// Create variables
-	whitelist = "/^user[0-9+$/"
+	filter = "/^user[0-9+$/"
 	str = "user1"
 	expected = false
 
-	// Test the check whitelist function
-	result = utils.CheckWhitelist(whitelist, str)
+	// Test the check filter function
+	result = utils.CheckFilter(filter, str, true)
 
 	// Check if the result is equal to the expected
 	if result != expected {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 
-	t.Log("Testing check whitelist with a non matching whitelist")
+	t.Log("Testing check filter with a non matching list")
 
 	// Create variables
-	whitelist = "user1,user2,user3"
+	filter = "user1,user2,user3"
 	str = "user4"
 	expected = false
 
-	// Test the check whitelist function
-	result = utils.CheckWhitelist(whitelist, str)
+	// Test the check filter function
+	result = utils.CheckFilter(filter, str, false)
 
 	// Check if the result is equal to the expected
 	if result != expected {

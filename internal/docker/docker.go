@@ -113,7 +113,7 @@ func (docker *Docker) GetLabels(id string, domain string) (types.Labels, error) 
 		}
 
 		// Check if the labels match the id or the domain
-		if strings.TrimPrefix(inspect.Name, "/") == id || labels.Domain == domain {
+		if strings.TrimPrefix(inspect.Name, "/") == id || utils.CheckFilter(labels.Domain, domain, false) { // Disable regex for now
 			log.Debug().Str("id", inspect.ID).Msg("Found matching container")
 			return labels, nil
 		}

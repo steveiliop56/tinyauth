@@ -292,17 +292,17 @@ func ParseSecretFile(contents string) string {
 	return ""
 }
 
-// Check if a string matches a regex or a whitelist
-func CheckWhitelist(whitelist string, str string) bool {
-	// Check if the whitelist is empty
-	if len(strings.TrimSpace(whitelist)) == 0 {
+// Check if a string matches a regex or if it is included in a comma separated list
+func CheckFilter(filter string, str string, regex bool) bool {
+	// Check if the filter is empty
+	if len(strings.TrimSpace(filter)) == 0 {
 		return true
 	}
 
-	// Check if the whitelist is a regex
-	if strings.HasPrefix(whitelist, "/") && strings.HasSuffix(whitelist, "/") {
+	// Check if the filter is a regex
+	if strings.HasPrefix(filter, "/") && strings.HasSuffix(filter, "/") && regex {
 		// Create regex
-		re, err := regexp.Compile(whitelist[1 : len(whitelist)-1])
+		re, err := regexp.Compile(filter[1 : len(filter)-1])
 
 		// Check if there was an error
 		if err != nil {
@@ -316,11 +316,11 @@ func CheckWhitelist(whitelist string, str string) bool {
 		}
 	}
 
-	// Split the whitelist by comma
-	whitelistSplit := strings.Split(whitelist, ",")
+	// Split the filter by comma
+	filterSplit := strings.Split(filter, ",")
 
-	// Loop through the whitelist
-	for _, item := range whitelistSplit {
+	// Loop through the filter items
+	for _, item := range filterSplit {
 		// Check if the item matches with the string
 		if strings.TrimSpace(item) == str {
 			return true
