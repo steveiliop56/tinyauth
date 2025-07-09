@@ -1,7 +1,7 @@
 {
     "loginTitle": "مرحبا بعودتك، ادخل باستخدام",
-    "loginTitleSimple": "Welcome back, please login",
-    "loginDivider": "Or",
+    "loginTitleSimple": "مرحبا بعودتك، سجل دخولك",
+    "loginDivider": "أو",
     "loginUsername": "اسم المستخدم",
     "loginPassword": "كلمة المرور",
     "loginSubmit": "تسجيل الدخول",
@@ -10,7 +10,7 @@
     "loginFailRateLimit": "You failed to login too many times. Please try again later",
     "loginSuccessTitle": "تم تسجيل الدخول",
     "loginSuccessSubtitle": "مرحبا بعودتك!",
-    "loginOauthFailTitle": "An error occurred",
+    "loginOauthFailTitle": "حدث خطأ",
     "loginOauthFailSubtitle": "أخفق الحصول على رابط OAuth",
     "loginOauthSuccessTitle": "إعادة توجيه",
     "loginOauthSuccessSubtitle": "إعادة توجيه إلى مزود OAuth الخاص بك",
