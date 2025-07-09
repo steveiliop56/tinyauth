@@ -27,8 +27,8 @@ export const languages = {
   "tr-TR": "Türkçe",
   "uk-UA": "Українська",
   "vi-VN": "Tiếng Việt",
-  "zh-CN": "中文",
-  "zh-TW": "中文",
+  "zh-CN": "简体中文",
+  "zh-TW": "繁體中文（台灣）",
 };
 
 export type SupportedLanguage = keyof typeof languages;
