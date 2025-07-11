@@ -13,9 +13,6 @@ users.txt
 # secret test file
 secret*
 
-# vscode
-.vscode
-
 # apple stuff
 .DS_Store
 

@@ -3,8 +3,8 @@ tmp_dir = "tmp"
 
 [build]
 pre_cmd = ["mkdir -p internal/assets/dist", "echo 'backend running' > internal/assets/dist/index.html"]
-cmd = "CGO_ENABLED=0 go build -o ./tmp/tinyauth ."
-bin = "tmp/tinyauth"
+cmd = "CGO_ENABLED=0 go build -gcflags=\"all=-N -l\" -o ./tinyauth ."
+bin = "/go/bin/dlv --listen :4000 --headless=true --api-version=2 --accept-multiclient --log=true exec ./tinyauth"
 include_ext = ["go"]
 exclude_dir = ["internal/assets/dist"]
 exclude_regex = [".*_test\\.go"]
