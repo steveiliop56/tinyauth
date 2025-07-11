@@ -105,9 +105,9 @@ func (l *LDAP) heartbeat() error {
 
 	// Create a search request to find the user by username
 	searchRequest := ldapgo.NewSearchRequest(
-		l.Config.BaseDN,
-		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
-		"(uid=*)",
+		"",
+		ldapgo.ScopeBaseObject, ldapgo.NeverDerefAliases, 0, 0, false,
+		"(objectClass=*)",
 		[]string{},
 		nil,
 	)
@@ -117,7 +117,6 @@ func (l *LDAP) heartbeat() error {
 	if err != nil {
 		return err
 	}
-
 	// No error means the connection is alive
 	return nil
 }
