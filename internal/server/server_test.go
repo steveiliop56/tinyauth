@@ -218,6 +218,9 @@ func TestAppContext(t *testing.T) {
 		BackgroundImage:       "https://example.com/image.png",
 		OAuthAutoRedirect:     "none",
 		Domain:                "localhost",
+		Version:               "development",
+		BuildTimestamp:        "n/a",
+		CommitHash:            "n/a",
 	}
 
 	// We should get the username back

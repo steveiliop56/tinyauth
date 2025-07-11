@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/constants"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/hooks"
 	"tinyauth/internal/providers"
@@ -565,6 +566,9 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		ForgotPasswordMessage: h.Config.ForgotPasswordMessage,
 		BackgroundImage:       h.Config.BackgroundImage,
 		OAuthAutoRedirect:     h.Config.OAuthAutoRedirect,
+		Version:               constants.Version,
+		BuildTimestamp:        constants.BuildTimestamp,
+		CommitHash:            constants.CommitHash,
 	}
 
 	// Return app context

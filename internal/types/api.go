@@ -54,6 +54,9 @@ type AppContext struct {
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
 	BackgroundImage       string   `json:"backgroundImage"`
 	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
+	Version               string   `json:"version"`
+	BuildTimestamp        string   `json:"buildTimestamp"`
+	CommitHash            string   `json:"commitHash"`
 }
 
 // Totp request is the request for the totp endpoint

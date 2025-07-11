@@ -9,6 +9,9 @@ export const appContextSchema = z.object({
   forgotPasswordMessage: z.string(),
   oauthAutoRedirect: z.enum(["none", "github", "google", "generic"]),
   backgroundImage: z.string(),
+  version: z.string(),
+  buildTimestamp: z.string(),
+  commitHash: z.string(),
 });
 
 export type AppContextSchema = z.infer<typeof appContextSchema>;
