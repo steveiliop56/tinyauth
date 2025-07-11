@@ -50,5 +50,6 @@
     "forgotPasswordTitle": "¿Olvidó su contraseña?",
     "failedToFetchProvidersTitle": "Error al cargar los proveedores de autenticación. Por favor revise su configuración.",
     "errorTitle": "Ha ocurrido un error",
-    "errorSubtitle": "Ocurrió un error mientras se trataba de realizar esta acción. Por favor, revise la consola para más información."
+    "errorSubtitle": "Ocurrió un error mientras se trataba de realizar esta acción. Por favor, revise la consola para más información.",
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
 }
