@@ -243,7 +243,7 @@ func init() {
 	rootCmd.Flags().Int("login-max-retries", 5, "Maximum login attempts before timeout (0 to disable).")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
-	rootCmd.Flags().String("forgot-password-message", "You can reset your password by changing the `USERS` environment variable.", "Message to show on the forgot password page.")
+	rootCmd.Flags().String("forgot-password-message", "", "Message to show on the forgot password page.")
 	rootCmd.Flags().String("background-image", "/background.jpg", "Background image URL for the login page.")
 	rootCmd.Flags().String("ldap-address", "", "LDAP server address (e.g. ldap://localhost:389).")
 	rootCmd.Flags().String("ldap-bind-dn", "", "LDAP bind DN (e.g. uid=user,dc=example,dc=com).")

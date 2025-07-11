@@ -34,7 +34,7 @@ type Config struct {
 	EnvFile                 string `mapstructure:"env-file"`
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
-	FogotPasswordMessage    string `mapstructure:"forgot-password-message" validate:"required"`
+	FogotPasswordMessage    string `mapstructure:"forgot-password-message"`
 	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
 	LdapAddress             string `mapstructure:"ldap-address"`
 	LdapBindDN              string `mapstructure:"ldap-bind-dn"`

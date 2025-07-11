@@ -17,7 +17,7 @@ export const ForgotPasswordPage = () => {
       <CardHeader>
         <CardTitle className="text-3xl">{t("forgotPasswordTitle")}</CardTitle>
         <CardDescription>
-          <Markdown>{forgotPasswordMessage}</Markdown>
+          <Markdown>{forgotPasswordMessage !== "" ? forgotPasswordMessage : t('forgotPasswordMessage')}</Markdown>
         </CardDescription>
       </CardHeader>
     </Card>
