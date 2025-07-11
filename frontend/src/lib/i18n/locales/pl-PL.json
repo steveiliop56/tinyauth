@@ -51,5 +51,5 @@
     "failedToFetchProvidersTitle": "Nie udało się załadować dostawców uwierzytelniania. Sprawdź swoją konfigurację.",
     "errorTitle": "Wystąpił błąd",
     "errorSubtitle": "Wystąpił błąd podczas próby wykonania tej czynności. Sprawdź konsolę, aby uzyskać więcej informacji.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "Możesz zresetować hasło, zmieniając zmienną środowiskową `USERS`."
 }
