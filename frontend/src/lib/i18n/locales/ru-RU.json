@@ -50,5 +50,6 @@
     "forgotPasswordTitle": "Забыли пароль?",
     "failedToFetchProvidersTitle": "Не удалось загрузить провайдеров аутентификации. Пожалуйста, проверьте конфигурацию.",
     "errorTitle": "Произошла ошибка",
-    "errorSubtitle": "Произошла ошибка при попытке выполнить это действие. Проверьте консоль для дополнительной информации."
+    "errorSubtitle": "Произошла ошибка при попытке выполнить это действие. Проверьте консоль для дополнительной информации.",
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
 }
