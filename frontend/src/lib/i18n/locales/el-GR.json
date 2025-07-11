@@ -51,5 +51,5 @@
     "failedToFetchProvidersTitle": "Αποτυχία φόρτωσης παρόχων πιστοποίησης. Παρακαλώ ελέγξτε τις ρυθμίσεις σας.",
     "errorTitle": "Παρουσιάστηκε ένα σφάλμα",
     "errorSubtitle": "Παρουσιάστηκε σφάλμα κατά την προσπάθεια εκτέλεσης αυτής της ενέργειας. Ελέγξτε την κονσόλα για περισσότερες πληροφορίες.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "Μπορείτε να επαναφέρετε τον κωδικό πρόσβασής σας αλλάζοντας τη μεταβλητή περιβάλλοντος `USERS`."
 }
