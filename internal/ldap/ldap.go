@@ -3,38 +3,61 @@ package ldap
 import (
 	"crypto/tls"
 	"fmt"
+	"time"
 	"tinyauth/internal/types"
 
 	ldapgo "github.com/go-ldap/ldap/v3"
+	"github.com/rs/zerolog/log"
 )
 
 type LDAP struct {
 	Config types.LdapConfig
 	Conn   *ldapgo.Conn
-	BaseDN string
 }
 
 func NewLDAP(config types.LdapConfig) (*LDAP, error) {
+	// Create a new LDAP instance with the provided configuration
+	ldap := &LDAP{
+		Config: config,
+	}
+
 	// Connect to the LDAP server
-	conn, err := ldapgo.DialURL(config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
-		InsecureSkipVerify: config.Insecure,
+	if err := ldap.Connect(); err != nil {
+		return nil, fmt.Errorf("failed to connect to LDAP server: %w", err)
+	}
+
+	// Start heartbeat goroutine
+	go func() {
+		for range time.Tick(time.Duration(5) * time.Minute) {
+			err := ldap.heartbeat()
+			if err != nil {
+				log.Error().Err(err).Msg("LDAP connection heartbeat failed")
+			}
+		}
+	}()
+
+	return ldap, nil
+}
+
+func (l *LDAP) Connect() error {
+	// Connect to the LDAP server
+	conn, err := ldapgo.DialURL(l.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		InsecureSkipVerify: l.Config.Insecure,
 		MinVersion:         tls.VersionTLS12,
 	}))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Bind to the LDAP server with the provided credentials
-	err = conn.Bind(config.BindDN, config.BindPassword)
+	err = conn.Bind(l.Config.BindDN, l.Config.BindPassword)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &LDAP{
-		Config: config,
-		Conn:   conn,
-		BaseDN: config.BaseDN,
-	}, nil
+	// Store the connection in the LDAP struct
+	l.Conn = conn
+	return nil
 }
 
 func (l *LDAP) Search(username string) (string, error) {
@@ -44,7 +67,7 @@ func (l *LDAP) Search(username string) (string, error) {
 
 	// Create a search request to find the user by username
 	searchRequest := ldapgo.NewSearchRequest(
-		l.BaseDN,
+		l.Config.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
 		filter,
 		[]string{"dn"},
@@ -73,5 +96,28 @@ func (l *LDAP) Bind(userDN string, password string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (l *LDAP) heartbeat() error {
+	// Perform a simple search to check if the connection is alive
+	log.Info().Msg("Performing LDAP connection heartbeat")
+
+	// Create a search request to find the user by username
+	searchRequest := ldapgo.NewSearchRequest(
+		l.Config.BaseDN,
+		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
+		"(uid=*)",
+		[]string{},
+		nil,
+	)
+
+	// Perform the search
+	_, err := l.Conn.Search(searchRequest)
+	if err != nil {
+		return err
+	}
+
+	// No error means the connection is alive
 	return nil
 }

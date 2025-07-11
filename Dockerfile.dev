@@ -13,7 +13,6 @@ COPY ./main.go ./
 COPY ./air.toml ./
 
 RUN go install github.com/air-verse/air@v1.61.7
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.25.0
 
 EXPOSE 3000
 
