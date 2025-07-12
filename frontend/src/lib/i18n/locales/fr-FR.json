@@ -51,5 +51,5 @@
     "failedToFetchProvidersTitle": "Échec du chargement des fournisseurs d'authentification. Veuillez vérifier votre configuration.",
     "errorTitle": "Une erreur est survenue",
     "errorSubtitle": "Une erreur est survenue lors de l'exécution de cette action. Veuillez consulter la console pour plus d'informations.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "Vous pouvez réinitialiser votre mot de passe en modifiant la variable d'environnement `USERS`."
 }
