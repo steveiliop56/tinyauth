@@ -91,7 +91,7 @@ func (l *LDAP) Bind(userDN string, password string) error {
 }
 
 func (l *LDAP) heartbeat() error {
-	log.Info().Msg("Performing LDAP connection heartbeat")
+	log.Debug().Msg("Performing LDAP connection heartbeat")
 
 	searchRequest := ldapgo.NewSearchRequest(
 		"",
