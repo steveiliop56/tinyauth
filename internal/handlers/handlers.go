@@ -736,7 +736,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	// Handle error
 	if err != nil {
-		log.Error().Msg("Failed to get user")
+		log.Error().Err(err).Msg("Failed to get user")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
