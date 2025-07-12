@@ -50,5 +50,6 @@
     "forgotPasswordTitle": "Glemt din adgangskode?",
     "failedToFetchProvidersTitle": "Kunne ikke indlæse godkendelsesudbydere. Tjek venligst din konfiguration.",
     "errorTitle": "Der opstod en fejl",
-    "errorSubtitle": "Der opstod en fejl under forsøget på at udføre denne handling. Tjek venligst konsollen for mere information."
+    "errorSubtitle": "Der opstod en fejl under forsøget på at udføre denne handling. Tjek venligst konsollen for mere information.",
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
 }

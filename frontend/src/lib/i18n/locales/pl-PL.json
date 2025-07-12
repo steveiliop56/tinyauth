@@ -26,7 +26,7 @@
     "logoutFailSubtitle": "Spróbuj ponownie",
     "logoutSuccessTitle": "Wylogowano",
     "logoutSuccessSubtitle": "Zostałeś wylogowany",
-    "logoutTitle": "Wylogowanie",
+    "logoutTitle": "Wyloguj się",
     "logoutUsernameSubtitle": "Jesteś obecnie zalogowany jako <code>{{username}}</code>. Kliknij poniższy przycisk, aby się wylogować.",
     "logoutOauthSubtitle": "Obecnie jesteś zalogowany jako <code>{{username}}</code> przy użyciu dostawcy {{provider}} OAuth. Kliknij poniższy przycisk, aby się wylogować.",
     "notFoundTitle": "Nie znaleziono strony",
@@ -50,5 +50,6 @@
     "forgotPasswordTitle": "Nie pamiętasz hasła?",
     "failedToFetchProvidersTitle": "Nie udało się załadować dostawców uwierzytelniania. Sprawdź swoją konfigurację.",
     "errorTitle": "Wystąpił błąd",
-    "errorSubtitle": "Wystąpił błąd podczas próby wykonania tej czynności. Sprawdź konsolę, aby uzyskać więcej informacji."
+    "errorSubtitle": "Wystąpił błąd podczas próby wykonania tej czynności. Sprawdź konsolę, aby uzyskać więcej informacji.",
+    "forgotPasswordMessage": "Możesz zresetować hasło, zmieniając zmienną środowiskową `USERS`."
 }
