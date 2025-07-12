@@ -26,7 +26,7 @@
     "logoutFailSubtitle": "Spróbuj ponownie",
     "logoutSuccessTitle": "Wylogowano",
     "logoutSuccessSubtitle": "Zostałeś wylogowany",
-    "logoutTitle": "Wylogowanie",
+    "logoutTitle": "Wyloguj się",
     "logoutUsernameSubtitle": "Jesteś obecnie zalogowany jako <code>{{username}}</code>. Kliknij poniższy przycisk, aby się wylogować.",
     "logoutOauthSubtitle": "Obecnie jesteś zalogowany jako <code>{{username}}</code> przy użyciu dostawcy {{provider}} OAuth. Kliknij poniższy przycisk, aby się wylogować.",
     "notFoundTitle": "Nie znaleziono strony",
