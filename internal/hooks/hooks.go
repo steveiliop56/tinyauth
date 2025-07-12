@@ -35,21 +35,16 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if basic != nil {
 		log.Debug().Msg("Got basic auth")
 
-		// Search for a user based on username
 		userSearch := hooks.Auth.SearchUser(basic.Username)
 
 		if userSearch.Type == "" {
 			log.Error().Str("username", basic.Username).Msg("User does not exist")
-
-			// Return empty context
 			return types.UserContext{}
 		}
 
 		// Verify the user
 		if !hooks.Auth.VerifyUser(userSearch, basic.Password) {
 			log.Error().Str("username", basic.Username).Msg("Password incorrect")
-
-			// Return empty context
 			return types.UserContext{}
 		}
 
@@ -83,14 +78,11 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	// Check cookie error after basic auth
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get session cookie")
-		// Return empty context
 		return types.UserContext{}
 	}
 
-	// Check if session cookie has totp pending
 	if cookie.TotpPending {
 		log.Debug().Msg("Totp pending")
-		// Return empty context since we are pending totp
 		return types.UserContext{
 			Username:    cookie.Username,
 			Name:        cookie.Name,
@@ -104,19 +96,15 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if cookie.Provider == "username" {
 		log.Debug().Msg("Provider is username")
 
-		// Search for the user with the username
 		userSearch := hooks.Auth.SearchUser(cookie.Username)
 
 		if userSearch.Type == "" {
 			log.Error().Str("username", cookie.Username).Msg("User does not exist")
-
-			// Return empty context
 			return types.UserContext{}
 		}
 
 		log.Debug().Str("type", userSearch.Type).Msg("User exists")
 
-		// It exists so we are logged in
 		return types.UserContext{
 			Username:   cookie.Username,
 			Name:       cookie.Name,
@@ -135,20 +123,15 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 	if provider != nil {
 		log.Debug().Msg("Provider exists")
 
-		// Check if the oauth email is whitelisted
+		// If the email is not whitelisted we delete the cookie and return an empty context
 		if !hooks.Auth.EmailWhitelisted(cookie.Email) {
 			log.Error().Str("email", cookie.Email).Msg("Email is not whitelisted")
-
-			// It isn't so we delete the cookie and return an empty context
 			hooks.Auth.DeleteSessionCookie(c)
-
-			// Return empty context
 			return types.UserContext{}
 		}
 
 		log.Debug().Msg("Email is whitelisted")
 
-		// Return user context since we are logged in with oauth
 		return types.UserContext{
 			Username:    cookie.Username,
 			Name:        cookie.Name,
@@ -160,6 +143,5 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 		}
 	}
 
-	// Neither basic auth or oauth is set so we return an empty context
 	return types.UserContext{}
 }

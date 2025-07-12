@@ -37,13 +37,9 @@ func NewHandlers(config types.HandlersConfig, auth *auth.Auth, hooks *hooks.Hook
 }
 
 func (h *Handlers) AuthHandler(c *gin.Context) {
-	// Create struct for proxy
 	var proxy types.Proxy
 
-	// Bind URI
 	err := c.BindUri(&proxy)
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
@@ -64,7 +60,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 	log.Debug().Interface("proxy", proxy.Proxy).Msg("Got proxy")
 
-	// Get headers
 	uri := c.Request.Header.Get("X-Forwarded-Uri")
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
@@ -75,12 +70,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	// Get the id
 	id := strings.Split(hostPortless, ".")[0]
 
-	// Get the container labels
 	labels, err := h.Docker.GetLabels(id, hostPortless)
-
-	log.Debug().Interface("labels", labels).Msg("Got labels")
-
-	// Check if there was an error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get container labels")
 
@@ -96,20 +86,24 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 		return
 	}
 
-	// Get client IP
+	log.Debug().Interface("labels", labels).Msg("Got labels")
+
 	ip := c.ClientIP()
 
 	// Check if the IP is in bypass list
 	if h.Auth.BypassedIP(labels, ip) {
 		headersParsed := utils.ParseHeaders(labels.Headers)
+
 		for key, value := range headersParsed {
 			log.Debug().Str("key", key).Msg("Setting header")
 			c.Header(key, value)
 		}
+
 		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
 			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth headers")
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
 		}
+
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -132,10 +126,7 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			IP:       ip,
 		}
 
-		// Build query
 		queries, err := query.Values(values)
-
-		// Handle error
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to build queries")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
@@ -147,12 +138,9 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	}
 
 	// Check if auth is enabled
-	authEnabled, err := h.Auth.AuthEnabled(c, labels)
-
-	// Check if there was an error
+	authEnabled, err := h.Auth.AuthEnabled(uri, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if app is allowed")
-
 		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(500, gin.H{
 				"status":  500,
@@ -172,14 +160,17 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			log.Debug().Str("key", key).Msg("Setting header")
 			c.Header(key, value)
 		}
+
 		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
 			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth headers")
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
 		}
+
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
 		})
+
 		return
 	}
 
@@ -201,7 +192,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 
 		log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if app is allowed")
 
-		// The user is not allowed to access the app
 		if !appAllowed {
 			log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User not allowed")
 
@@ -213,44 +203,35 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 				return
 			}
 
-			// Values
 			values := types.UnauthorizedQuery{
 				Resource: strings.Split(host, ".")[0],
 			}
 
-			// Use either username or email
 			if userContext.OAuth {
 				values.Username = userContext.Email
 			} else {
 				values.Username = userContext.Username
 			}
 
-			// Build query
 			queries, err := query.Values(values)
-
-			// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to build queries")
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 				return
 			}
 
-			// We are using caddy/traefik so redirect
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 			return
 		}
 
 		// Check groups if using OAuth
 		if userContext.OAuth {
-			// Check if user is in required groups
 			groupOk := h.Auth.OAuthGroup(c, userContext, labels)
 
 			log.Debug().Bool("groupOk", groupOk).Msg("Checking if user is in required groups")
 
-			// The user is not allowed to access the app
 			if !groupOk {
 				log.Warn().Str("username", userContext.Username).Str("host", host).Msg("User is not in required groups")
-
 				if proxy.Proxy == "nginx" || !isBrowser {
 					c.JSON(401, gin.H{
 						"status":  401,
@@ -259,30 +240,24 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 					return
 				}
 
-				// Values
 				values := types.UnauthorizedQuery{
 					Resource: strings.Split(host, ".")[0],
 					GroupErr: true,
 				}
 
-				// Use either username or email
 				if userContext.OAuth {
 					values.Username = userContext.Email
 				} else {
 					values.Username = userContext.Username
 				}
 
-				// Build query
 				queries, err := query.Values(values)
-
-				// Handle error (no need to check for nginx/headers since we are sure we are using caddy/traefik)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to build queries")
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 					return
 				}
 
-				// We are using caddy/traefik so redirect
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 				return
 			}
@@ -306,7 +281,6 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
 		}
 
-		// The user is allowed to access the app
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -336,19 +310,13 @@ func (h *Handlers) AuthHandler(c *gin.Context) {
 	}
 
 	log.Debug().Interface("redirect_uri", fmt.Sprintf("%s://%s%s", proto, host, uri)).Msg("Redirecting to login")
-
-	// Redirect to login
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", h.Config.AppURL, queries.Encode()))
 }
 
 func (h *Handlers) LoginHandler(c *gin.Context) {
-	// Create login struct
 	var login types.LoginRequest
 
-	// Bind JSON
 	err := c.BindJSON(&login)
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind JSON")
 		c.JSON(400, gin.H{
@@ -360,7 +328,6 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 
 	log.Debug().Msg("Got login request")
 
-	// Get client IP for rate limiting
 	clientIP := c.ClientIP()
 
 	// Create an identifier for rate limiting (username or IP if username doesn't exist yet)
@@ -381,9 +348,9 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 	}
 
 	// Search for a user based on username
-	userSearch := h.Auth.SearchUser(login.Username)
+	log.Debug().Interface("username", login.Username).Msg("Searching for user")
 
-	log.Debug().Interface("userSearch", userSearch).Msg("Searching for user")
+	userSearch := h.Auth.SearchUser(login.Username)
 
 	// User does not exist
 	if userSearch.Type == "" {
@@ -440,8 +407,6 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 				"message":     "Waiting for totp",
 				"totpPending": true,
 			})
-
-			// Stop further processing
 			return
 		}
 	}
@@ -463,13 +428,9 @@ func (h *Handlers) LoginHandler(c *gin.Context) {
 }
 
 func (h *Handlers) TotpHandler(c *gin.Context) {
-	// Create totp struct
 	var totpReq types.TotpRequest
 
-	// Bind JSON
 	err := c.BindJSON(&totpReq)
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind JSON")
 		c.JSON(400, gin.H{
@@ -500,7 +461,6 @@ func (h *Handlers) TotpHandler(c *gin.Context) {
 	// Check if totp is correct
 	ok := totp.Validate(totpReq.Code, user.TotpSecret)
 
-	// TOTP is incorrect
 	if !ok {
 		log.Debug().Msg("Totp incorrect")
 		c.JSON(401, gin.H{
@@ -528,14 +488,10 @@ func (h *Handlers) TotpHandler(c *gin.Context) {
 }
 
 func (h *Handlers) LogoutHandler(c *gin.Context) {
-	log.Debug().Msg("Logging out")
-
-	// Delete session cookie
-	h.Auth.DeleteSessionCookie(c)
-
 	log.Debug().Msg("Cleaning up redirect cookie")
 
-	// Return logged out
+	h.Auth.DeleteSessionCookie(c)
+
 	c.JSON(200, gin.H{
 		"status":  200,
 		"message": "Logged out",
@@ -553,7 +509,7 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		configuredProviders = append(configuredProviders, "username")
 	}
 
-	// Create app context struct
+	// Return app context
 	appContext := types.AppContext{
 		Status:                200,
 		Message:               "OK",
@@ -566,18 +522,15 @@ func (h *Handlers) AppHandler(c *gin.Context) {
 		BackgroundImage:       h.Config.BackgroundImage,
 		OAuthAutoRedirect:     h.Config.OAuthAutoRedirect,
 	}
-
-	// Return app context
 	c.JSON(200, appContext)
 }
 
 func (h *Handlers) UserHandler(c *gin.Context) {
 	log.Debug().Msg("Getting user context")
 
-	// Get user context
+	// Create user context using hooks
 	userContext := h.Hooks.UseUserContext(c)
 
-	// Create user context response
 	userContextResponse := types.UserContextResponse{
 		Status:      200,
 		IsLoggedIn:  userContext.IsLoggedIn,
@@ -598,18 +551,13 @@ func (h *Handlers) UserHandler(c *gin.Context) {
 		userContextResponse.Message = "Authenticated"
 	}
 
-	// Return user context
 	c.JSON(200, userContextResponse)
 }
 
 func (h *Handlers) OauthUrlHandler(c *gin.Context) {
-	// Create struct for OAuth request
 	var request types.OAuthRequest
 
-	// Bind URI
 	err := c.BindUri(&request)
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
@@ -624,7 +572,6 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 	// Check if provider exists
 	provider := h.Providers.GetProvider(request.Provider)
 
-	// Provider does not exist
 	if provider == nil {
 		c.JSON(404, gin.H{
 			"status":  404,
@@ -664,13 +611,9 @@ func (h *Handlers) OauthUrlHandler(c *gin.Context) {
 }
 
 func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
-	// Create struct for OAuth request
 	var providerName types.OAuthRequest
 
-	// Bind URI
 	err := c.BindUri(&providerName)
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind URI")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
@@ -711,30 +654,25 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Get provider
 	provider := h.Providers.GetProvider(providerName.Provider)
 
-	log.Debug().Str("provider", providerName.Provider).Msg("Got provider")
-
-	// Provider does not exist
 	if provider == nil {
 		c.Redirect(http.StatusTemporaryRedirect, "/not-found")
 		return
 	}
 
+	log.Debug().Str("provider", providerName.Provider).Msg("Got provider")
+
 	// Exchange token (authenticates user)
 	_, err = provider.ExchangeToken(code)
-
-	log.Debug().Msg("Got token")
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to exchange token")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
 
+	log.Debug().Msg("Got token")
+
 	// Get user
 	user, err := h.Providers.GetUser(providerName.Provider)
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get user")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
@@ -753,20 +691,16 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 	// Email is not whitelisted
 	if !h.Auth.EmailWhitelisted(user.Email) {
 		log.Warn().Str("email", user.Email).Msg("Email not whitelisted")
-
-		// Build query
 		queries, err := query.Values(types.UnauthorizedQuery{
 			Username: user.Email,
 		})
 
-		// Handle error
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to build queries")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 			return
 		}
 
-		// Redirect to unauthorized
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", h.Config.AppURL, queries.Encode()))
 	}
 
@@ -790,7 +724,7 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
-	// Create session cookie (also cleans up redirect cookie)
+	// Create session cookie
 	h.Auth.CreateSessionCookie(c, &types.SessionCookie{
 		Username:    username,
 		Name:        name,
@@ -810,19 +744,17 @@ func (h *Handlers) OauthCallbackHandler(c *gin.Context) {
 
 	log.Debug().Str("redirectURI", redirectCookie).Msg("Got redirect URI")
 
-	// Build query
 	queries, err := query.Values(types.LoginQuery{
 		RedirectURI: redirectCookie,
 	})
 
-	log.Debug().Msg("Got redirect query")
-
-	// Handle error
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to build queries")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", h.Config.AppURL))
 		return
 	}
+
+	log.Debug().Msg("Got redirect query")
 
 	// Clean up redirect cookie
 	c.SetCookie(h.Config.RedirectCookieName, "", -1, "/", "", h.Config.CookieSecure, true)

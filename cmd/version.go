@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Create the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of Tinyauth",

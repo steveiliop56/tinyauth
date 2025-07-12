@@ -1,6 +1,6 @@
 package constants
 
-// Claims are the OIDC supported claims (including preferd username for some reason)
+// Claims are the OIDC supported claims (prefered username is included for convinience)
 type Claims struct {
 	Name              string   `json:"name"`
 	Email             string   `json:"email"`
@@ -13,7 +13,7 @@ var Version = "development"
 var CommitHash = "n/a"
 var BuildTimestamp = "n/a"
 
-// Cookie names
+// Base cookie names
 var SessionCookieName = "tinyauth-session"
 var CsrfCookieName = "tinyauth-csrf"
 var RedirectCookieName = "tinyauth-redirect"
