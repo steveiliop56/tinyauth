@@ -51,20 +51,20 @@ func NewServer(config types.ServerConfig, handlers *handlers.Handlers) (*Server,
 	})
 
 	// Proxy routes
-	router.GET("/api/auth/:proxy", handlers.AuthHandler)
+	router.GET("/api/auth/:proxy", handlers.ProxyHandler)
 
 	// Auth routes
 	router.POST("/api/login", handlers.LoginHandler)
-	router.POST("/api/totp", handlers.TotpHandler)
+	router.POST("/api/totp", handlers.TOTPHandler)
 	router.POST("/api/logout", handlers.LogoutHandler)
 
 	// Context routes
-	router.GET("/api/app", handlers.AppHandler)
-	router.GET("/api/user", handlers.UserHandler)
+	router.GET("/api/app", handlers.AppContextHandler)
+	router.GET("/api/user", handlers.UserContextHandler)
 
 	// OAuth routes
-	router.GET("/api/oauth/url/:provider", handlers.OauthUrlHandler)
-	router.GET("/api/oauth/callback/:provider", handlers.OauthCallbackHandler)
+	router.GET("/api/oauth/url/:provider", handlers.OAuthURLHandler)
+	router.GET("/api/oauth/callback/:provider", handlers.OAuthCallbackHandler)
 
 	// App routes
 	router.GET("/api/healthcheck", handlers.HealthcheckHandler)
