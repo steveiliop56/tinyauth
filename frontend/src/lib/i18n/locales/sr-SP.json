@@ -51,5 +51,7 @@
     "failedToFetchProvidersTitle": "Није успело учитавање провајдера аутентификације. Молим вас проверите ваша подешавања.",
     "errorTitle": "Појавила се грешка",
     "errorSubtitle": "Појавила се грешка при покушају извршавања ове радње. Молим вас проверите конзолу за додатне информације.",
-    "forgotPasswordMessage": "Можете поништити вашу лозинку променом `USERS` променљиве окружења."
+    "forgotPasswordMessage": "Можете поништити вашу лозинку променом `USERS` променљиве окружења.",
+    "fieldRequired": "This field is required",
+    "invalidInput": "Invalid input"
 }
