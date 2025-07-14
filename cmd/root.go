@@ -133,7 +133,10 @@ var rootCmd = &cobra.Command{
 				SearchFilter: config.LdapSearchFilter,
 			}
 			ldapService, err = ldap.NewLDAP(ldapConfig)
-			HandleError(err, "Failed to create LDAP service")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to initialize LDAP service, disabling LDAP authentication")
+				ldapService = nil
+			}
 		} else {
 			log.Info().Msg("LDAP not configured, using local users or OAuth")
 		}
