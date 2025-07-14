@@ -50,7 +50,7 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 
 	// If there was an error getting the session, it might be invalid so let's clear it and retry
 	if err != nil {
-		log.Warn().Err(err).Msg("Invalid session, clearing cookie and retrying")
+		log.Error().Err(err).Msg("Invalid session, clearing cookie and retrying")
 		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.CookieSecure, true)
 		session, err = auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 		if err != nil {
@@ -79,7 +79,7 @@ func (auth *Auth) SearchUser(username string) types.UserSearch {
 		log.Debug().Str("username", username).Msg("Checking LDAP for user")
 		userDN, err := auth.LDAP.Search(username)
 		if err != nil {
-			log.Warn().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
+			log.Error().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
 			return types.UserSearch{}
 		}
 		return types.UserSearch{
@@ -107,7 +107,7 @@ func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
 
 			err := auth.LDAP.Bind(search.Username, password)
 			if err != nil {
-				log.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
+				log.Error().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
 				return false
 			}
 
@@ -372,7 +372,7 @@ func (auth *Auth) AuthEnabled(uri string, labels types.Labels) (bool, error) {
 
 	// If there is an error, invalid regex, auth enabled
 	if err != nil {
-		log.Warn().Err(err).Msg("Invalid regex")
+		log.Error().Err(err).Msg("Invalid regex")
 		return true, err
 	}
 
@@ -401,7 +401,7 @@ func (auth *Auth) CheckIP(labels types.Labels, ip string) bool {
 	for _, blocked := range labels.IP.Block {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
-			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
+			log.Error().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
 			continue
 		}
 		if res {
@@ -414,7 +414,7 @@ func (auth *Auth) CheckIP(labels types.Labels, ip string) bool {
 	for _, allowed := range labels.IP.Allow {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
-			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
+			log.Error().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
 			continue
 		}
 		if res {
@@ -438,7 +438,7 @@ func (auth *Auth) BypassedIP(labels types.Labels, ip string) bool {
 	for _, bypassed := range labels.IP.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {
-			log.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
+			log.Error().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
 			continue
 		}
 		if res {
