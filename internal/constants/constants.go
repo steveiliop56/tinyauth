@@ -2,10 +2,10 @@ package constants
 
 // Claims are the OIDC supported claims (prefered username is included for convinience)
 type Claims struct {
-	Name              string   `json:"name"`
-	Email             string   `json:"email"`
-	PreferredUsername string   `json:"preferred_username"`
-	Groups            []string `json:"groups"`
+	Name              string `json:"name"`
+	Email             string `json:"email"`
+	PreferredUsername string `json:"preferred_username"`
+	Groups            any    `json:"groups"`
 }
 
 // Version information

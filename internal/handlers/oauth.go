@@ -189,7 +189,7 @@ func (h *Handlers) OAuthCallbackHandler(c *gin.Context) {
 		Name:        name,
 		Email:       user.Email,
 		Provider:    providerName.Provider,
-		OAuthGroups: strings.Join(user.Groups, ","),
+		OAuthGroups: utils.CoalesceToString(user.Groups),
 	})
 
 	// Check if we have a redirect URI

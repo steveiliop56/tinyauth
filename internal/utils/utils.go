@@ -327,3 +327,15 @@ func DeriveKey(secret string, info string) (string, error) {
 	encodedKey := base64.StdEncoding.EncodeToString(key)
 	return encodedKey, nil
 }
+
+func CoalesceToString(value any) string {
+	switch v := value.(type) {
+	case []string:
+		return strings.Join(v, ",")
+	case string:
+		return v
+	default:
+		log.Warn().Interface("value", value).Msg("Unsupported type, returning empty string")
+		return ""
+	}
+}

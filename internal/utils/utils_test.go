@@ -511,3 +511,38 @@ func TestDeriveKey(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", expected, result)
 	}
 }
+
+func TestCoalesceToString(t *testing.T) {
+	t.Log("Testing coalesce to string with a string")
+
+	value := "test"
+	expected := "test"
+
+	result := utils.CoalesceToString(value)
+
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing coalesce to string with a slice of strings")
+
+	valueSlice := []string{"test1", "test2"}
+	expected = "test1,test2"
+
+	result = utils.CoalesceToString(valueSlice)
+
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+
+	t.Log("Testing coalesce to string with an unsupported type")
+
+	valueUnsupported := 12345
+	expected = ""
+
+	result = utils.CoalesceToString(valueUnsupported)
+
+	if result != expected {
+		t.Fatalf("Expected %v, got %v", expected, result)
+	}
+}
