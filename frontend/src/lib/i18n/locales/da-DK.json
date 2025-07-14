@@ -51,5 +51,7 @@
     "failedToFetchProvidersTitle": "Kunne ikke indlæse godkendelsesudbydere. Tjek venligst din konfiguration.",
     "errorTitle": "Der opstod en fejl",
     "errorSubtitle": "Der opstod en fejl under forsøget på at udføre denne handling. Tjek venligst konsollen for mere information.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
+    "fieldRequired": "This field is required",
+    "invalidInput": "Invalid input"
 }
