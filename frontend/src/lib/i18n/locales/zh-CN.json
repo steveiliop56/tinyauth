@@ -51,5 +51,7 @@
     "failedToFetchProvidersTitle": "加载身份验证提供程序失败，请检查您的配置。",
     "errorTitle": "发生了错误",
     "errorSubtitle": "执行此操作时发生错误，请检查控制台以获取更多信息。",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
+    "fieldRequired": "This field is required",
+    "invalidInput": "Invalid input"
 }
