@@ -8,6 +8,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { totpSchema, TotpSchema } from "@/schemas/totp-schema";
+import { useTranslation } from "react-i18next";
+import z from "zod";
 
 interface Props {
   formId: string;
@@ -17,6 +19,12 @@ interface Props {
 
 export const TotpForm = (props: Props) => {
   const { formId, onSubmit, loading } = props;
+  const { t } = useTranslation();
+
+  z.config({
+    customError: (iss) =>
+      iss.input === undefined ? t("fieldRequired") : t("invalidInput"),
+  });
 
   const form = useForm<TotpSchema>({
     resolver: zodResolver(totpSchema),

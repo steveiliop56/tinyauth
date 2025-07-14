@@ -12,6 +12,7 @@ import {
 } from "../ui/form";
 import { Button } from "../ui/button";
 import { loginSchema, LoginSchema } from "@/schemas/login-schema";
+import z from "zod";
 
 interface Props {
   onSubmit: (data: LoginSchema) => void;
@@ -21,6 +22,11 @@ interface Props {
 export const LoginForm = (props: Props) => {
   const { onSubmit, loading } = props;
   const { t } = useTranslation();
+
+  z.config({
+    customError: (iss) =>
+      iss.input === undefined ? t("fieldRequired") : t("invalidInput"),
+  });
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
