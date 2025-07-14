@@ -37,15 +37,15 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 		userSearch := hooks.Auth.SearchUser(basic.Username)
 
-		if userSearch.Type == "" {
-			log.Error().Str("username", basic.Username).Msg("User does not exist")
-			return types.UserContext{}
+		if userSearch.Type == "unkown" {
+			log.Warn().Str("username", basic.Username).Msg("Basic auth user does not exist, skipping")
+			goto session
 		}
 
 		// Verify the user
 		if !hooks.Auth.VerifyUser(userSearch, basic.Password) {
-			log.Error().Str("username", basic.Username).Msg("Password incorrect")
-			return types.UserContext{}
+			log.Error().Str("username", basic.Username).Msg("Basic auth user password incorrect, skipping")
+			goto session
 		}
 
 		// Get the user type
@@ -75,6 +75,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 	}
 
+session:
 	// Check cookie error after basic auth
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get session cookie")
@@ -98,7 +99,7 @@ func (hooks *Hooks) UseUserContext(c *gin.Context) types.UserContext {
 
 		userSearch := hooks.Auth.SearchUser(cookie.Username)
 
-		if userSearch.Type == "" {
+		if userSearch.Type == "unknown" {
 			log.Error().Str("username", cookie.Username).Msg("User does not exist")
 			return types.UserContext{}
 		}

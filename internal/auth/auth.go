@@ -88,7 +88,9 @@ func (auth *Auth) SearchUser(username string) types.UserSearch {
 		}
 	}
 
-	return types.UserSearch{}
+	return types.UserSearch{
+		Type: "unknown",
+	}
 }
 
 func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {

@@ -40,10 +40,7 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// Remove the port from the host if it exists
 	hostPortless := strings.Split(host, ":")[0] // *lol*
-
-	// Get the id
 	id := strings.Split(hostPortless, ".")[0]
 
 	labels, err := h.Docker.GetLabels(id, hostPortless)
@@ -66,10 +63,10 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 
 	ip := c.ClientIP()
 
-	// Check if the IP is in bypass list
 	if h.Auth.BypassedIP(labels, ip) {
-		headersParsed := utils.ParseHeaders(labels.Headers)
+		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
+		headersParsed := utils.ParseHeaders(labels.Headers)
 		for key, value := range headersParsed {
 			log.Debug().Str("key", key).Msg("Setting header")
 			c.Header(key, value)
@@ -87,7 +84,6 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if the IP is allowed/blocked
 	if !h.Auth.CheckIP(labels, ip) {
 		if proxy.Proxy == "nginx" || !isBrowser {
 			c.JSON(403, gin.H{
@@ -113,7 +109,6 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if auth is enabled
 	authEnabled, err := h.Auth.AuthEnabled(uri, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if app is allowed")
@@ -129,8 +124,9 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// If auth is not enabled, return 200
 	if !authEnabled {
+		c.Header("Authorization", c.Request.Header.Get("Authorization"))
+
 		headersParsed := utils.ParseHeaders(labels.Headers)
 		for key, value := range headersParsed {
 			log.Debug().Str("key", key).Msg("Setting header")
@@ -150,7 +146,6 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// Get user context
 	userContext := h.Hooks.UseUserContext(c)
 
 	// If we are using basic auth, we need to check if the user has totp and if it does then disable basic auth
@@ -159,7 +154,6 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		userContext.IsLoggedIn = false
 	}
 
-	// Check if user is logged in
 	if userContext.IsLoggedIn {
 		log.Debug().Msg("Authenticated")
 
@@ -200,7 +194,6 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 			return
 		}
 
-		// Check groups if using OAuth
 		if userContext.OAuth {
 			groupOk := h.Auth.OAuthGroup(c, userContext, labels)
 
@@ -239,19 +232,18 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 			}
 		}
 
+		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
-		// Set the rest of the headers
 		parsedHeaders := utils.ParseHeaders(labels.Headers)
 		for key, value := range parsedHeaders {
 			log.Debug().Str("key", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
-		// Set basic auth headers if configured
 		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
 			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth headers")
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
