@@ -129,6 +129,7 @@ func (l *LDAP) reconnect() error {
 	exp.Reset()
 
 	operation := func() (*ldapgo.Conn, error) {
+		l.Conn.Close()
 		_, err := l.connect()
 		if err != nil {
 			return nil, nil
