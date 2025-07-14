@@ -51,5 +51,7 @@
     "failedToFetchProvidersTitle": "載入驗證供應商失敗。請檢查您的設定。",
     "errorTitle": "發生錯誤",
     "errorSubtitle": "執行此操作時發生錯誤。請檢查主控台以獲取更多資訊。",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
+    "fieldRequired": "This field is required",
+    "invalidInput": "Invalid input"
 }
