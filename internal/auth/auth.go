@@ -79,7 +79,7 @@ func (auth *Auth) SearchUser(username string) types.UserSearch {
 		log.Debug().Str("username", username).Msg("Checking LDAP for user")
 		userDN, err := auth.LDAP.Search(username)
 		if err != nil {
-			log.Error().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
+			log.Warn().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
 			return types.UserSearch{}
 		}
 		return types.UserSearch{
@@ -107,7 +107,7 @@ func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
 
 			err := auth.LDAP.Bind(search.Username, password)
 			if err != nil {
-				log.Error().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
+				log.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
 				return false
 			}
 
