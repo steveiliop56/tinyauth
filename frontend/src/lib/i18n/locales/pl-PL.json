@@ -52,6 +52,6 @@
     "errorTitle": "Wystąpił błąd",
     "errorSubtitle": "Wystąpił błąd podczas próby wykonania tej czynności. Sprawdź konsolę, aby uzyskać więcej informacji.",
     "forgotPasswordMessage": "Możesz zresetować hasło, zmieniając zmienną środowiskową `USERS`.",
-    "fieldRequired": "This field is required",
-    "invalidInput": "Invalid input"
+    "fieldRequired": "To pole jest wymagane",
+    "invalidInput": "Nieprawidłowe dane wejściowe"
 }
