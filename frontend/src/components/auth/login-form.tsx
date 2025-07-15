@@ -45,6 +45,7 @@ export const LoginForm = (props: Props) => {
                 <Input
                   placeholder={t("loginUsername")}
                   disabled={loading}
+                  autoComplete="username"
                   {...field}
                 />
               </FormControl>
@@ -64,6 +65,7 @@ export const LoginForm = (props: Props) => {
                     placeholder={t("loginPassword")}
                     type="password"
                     disabled={loading}
+                    autoComplete="current-password"
                     {...field}
                   />
                 </FormControl>

@@ -39,7 +39,12 @@ export const TotpForm = (props: Props) => {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <InputOTP maxLength={6} disabled={loading} {...field}>
+                <InputOTP
+                  maxLength={6}
+                  disabled={loading}
+                  {...field}
+                  autoComplete="one-time-code"
+                >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
