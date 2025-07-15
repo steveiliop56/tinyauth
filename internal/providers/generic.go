@@ -32,6 +32,6 @@ func GetGenericUser(client *http.Client, url string) (constants.Claims, error) {
 		return user, err
 	}
 
-	log.Debug().Msg("Parsed user from generic provider")
+	log.Debug().Interface("user", user).Msg("Parsed user from generic provider")
 	return user, nil
 }
