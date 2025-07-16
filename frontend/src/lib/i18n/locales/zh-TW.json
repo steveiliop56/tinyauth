@@ -14,7 +14,7 @@
     "loginOauthFailSubtitle": "無法取得 OAuth 網址",
     "loginOauthSuccessTitle": "重新導向中",
     "loginOauthSuccessSubtitle": "正在將您重新導向至 OAuth 供應商",
-    "continueRedirectingTitle": "重新導向中...",
+    "continueRedirectingTitle": "重新導向中……",
     "continueRedirectingSubtitle": "您即將被重新導向至應用程式",
     "continueInvalidRedirectTitle": "無效的重新導向",
     "continueInvalidRedirectSubtitle": "重新導向的網址無效",
