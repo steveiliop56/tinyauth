@@ -515,7 +515,7 @@ func TestDeriveKey(t *testing.T) {
 func TestCoalesceToString(t *testing.T) {
 	t.Log("Testing coalesce to string with a string")
 
-	value := "test"
+	value := any("test")
 	expected := "test"
 
 	result := utils.CoalesceToString(value)
@@ -526,10 +526,10 @@ func TestCoalesceToString(t *testing.T) {
 
 	t.Log("Testing coalesce to string with a slice of strings")
 
-	valueSlice := []string{"test1", "test2"}
+	value = []any{any("test1"), any("test2"), any(123)}
 	expected = "test1,test2"
 
-	result = utils.CoalesceToString(valueSlice)
+	result = utils.CoalesceToString(value)
 
 	if result != expected {
 		t.Fatalf("Expected %v, got %v", expected, result)
@@ -537,10 +537,10 @@ func TestCoalesceToString(t *testing.T) {
 
 	t.Log("Testing coalesce to string with an unsupported type")
 
-	valueUnsupported := 12345
+	value = 12345
 	expected = ""
 
-	result = utils.CoalesceToString(valueUnsupported)
+	result = utils.CoalesceToString(value)
 
 	if result != expected {
 		t.Fatalf("Expected %v, got %v", expected, result)

@@ -330,12 +330,21 @@ func DeriveKey(secret string, info string) (string, error) {
 
 func CoalesceToString(value any) string {
 	switch v := value.(type) {
-	case []string:
-		return strings.Join(v, ",")
+	case []any:
+		log.Debug().Msg("Coalescing []any to string")
+		strs := make([]string, 0, len(v))
+		for _, item := range v {
+			if str, ok := item.(string); ok {
+				strs = append(strs, str)
+				continue
+			}
+			log.Warn().Interface("item", item).Msg("Item in []any is not a string, skipping")
+		}
+		return strings.Join(strs, ",")
 	case string:
 		return v
 	default:
-		log.Warn().Interface("value", value).Msg("Unsupported type, returning empty string")
+		log.Warn().Interface("value", value).Interface("type", v).Msg("Unsupported type, returning empty string")
 		return ""
 	}
 }
