@@ -23,13 +23,13 @@ type Server struct {
 
 var (
 	loggerSkipPathsPrefix = []string{
-		"GET /api/healthcheck", 
-		"HEAD /api/healthcheck", 
+		"GET /api/healthcheck",
+		"HEAD /api/healthcheck",
 		"GET /favicon.ico",
 	}
 )
 
-func logPath(path string) bool{
+func logPath(path string) bool {
 	for _, prefix := range loggerSkipPathsPrefix {
 		if strings.HasPrefix(path, prefix) {
 			return false
@@ -102,33 +102,29 @@ func (s *Server) Start() error {
 // zerolog is a middleware for gin that logs requests using zerolog
 func zerolog() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get initial time
 		tStart := time.Now()
 
-		// Process request
 		c.Next()
 
-		// Get status code, address, method and path
 		code := c.Writer.Status()
 		address := c.Request.RemoteAddr
 		method := c.Request.Method
 		path := c.Request.URL.Path
 
-		// Get latency
 		latency := time.Since(tStart).String()
 
-		// Log request
+		// logPath check if the path should be logged normally or with debug
 		if logPath(method + " " + path) {
 			switch {
-				case code >= 200 && code < 300:
-					log.Info().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
-				case code >= 300 && code < 400:
-					log.Warn().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
-				case code >= 400:
-					log.Error().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+			case code >= 200 && code < 300:
+				log.Info().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+			case code >= 300 && code < 400:
+				log.Warn().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+			case code >= 400:
+				log.Error().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
 			}
-		}else{
+		} else {
 			log.Debug().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
-		}		
+		}
 	}
 }
