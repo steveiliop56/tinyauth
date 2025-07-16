@@ -21,6 +21,23 @@ type Server struct {
 	Router   *gin.Engine
 }
 
+var (
+	loggerSkipPathsPrefix = []string{
+		"GET /api/healthcheck", 
+		"HEAD /api/healthcheck", 
+		"GET /favicon.ico",
+	}
+)
+
+func logPath(path string) bool{
+	for _, prefix := range loggerSkipPathsPrefix {
+		if strings.HasPrefix(path, prefix) {
+			return false
+		}
+	}
+	return true
+}
+
 func NewServer(config types.ServerConfig, handlers *handlers.Handlers) (*Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 
@@ -68,6 +85,7 @@ func NewServer(config types.ServerConfig, handlers *handlers.Handlers) (*Server,
 
 	// App routes
 	router.GET("/api/healthcheck", handlers.HealthcheckHandler)
+	router.HEAD("/api/healthcheck", handlers.HealthcheckHandler)
 
 	return &Server{
 		Config:   config,
@@ -100,13 +118,17 @@ func zerolog() gin.HandlerFunc {
 		latency := time.Since(tStart).String()
 
 		// Log request
-		switch {
-		case code >= 200 && code < 300:
-			log.Info().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
-		case code >= 300 && code < 400:
-			log.Warn().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
-		case code >= 400:
-			log.Error().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
-		}
+		if logPath(method + " " + path) {
+			switch {
+				case code >= 200 && code < 300:
+					log.Info().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+				case code >= 300 && code < 400:
+					log.Warn().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+				case code >= 400:
+					log.Error().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+			}
+		}else{
+			log.Debug().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+		}		
 	}
 }
