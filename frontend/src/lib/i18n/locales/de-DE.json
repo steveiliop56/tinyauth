@@ -51,5 +51,7 @@
     "failedToFetchProvidersTitle": "Fehler beim Laden der Authentifizierungsanbieter. Bitte überprüfen Sie Ihre Konfiguration.",
     "errorTitle": "Ein Fehler ist aufgetreten",
     "errorSubtitle": "Beim Versuch, diese Aktion auszuführen, ist ein Fehler aufgetreten. Bitte überprüfen Sie die Konsole für weitere Informationen.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable."
+    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
+    "fieldRequired": "This field is required",
+    "invalidInput": "Invalid input"
 }
