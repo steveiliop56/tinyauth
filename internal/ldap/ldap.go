@@ -130,11 +130,11 @@ func (l *LDAP) reconnect() error {
 
 	operation := func() (*ldapgo.Conn, error) {
 		l.Conn.Close()
-		_, err := l.connect()
+		conn, err := l.connect()
 		if err != nil {
 			return nil, nil
 		}
-		return nil, nil
+		return conn, nil
 	}
 
 	_, err := backoff.Retry(context.TODO(), operation, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
