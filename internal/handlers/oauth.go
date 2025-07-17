@@ -138,7 +138,7 @@ func (h *Handlers) OAuthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	log.Debug().Msg("Got user")
+	log.Debug().Interface("user", user).Msg("Got user")
 
 	// Check that email is not empty
 	if user.Email == "" {
