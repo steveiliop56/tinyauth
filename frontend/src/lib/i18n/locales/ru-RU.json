@@ -51,7 +51,7 @@
     "failedToFetchProvidersTitle": "Не удалось загрузить провайдеров аутентификации. Пожалуйста, проверьте конфигурацию.",
     "errorTitle": "Произошла ошибка",
     "errorSubtitle": "Произошла ошибка при попытке выполнить это действие. Проверьте консоль для дополнительной информации.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
-    "fieldRequired": "This field is required",
-    "invalidInput": "Invalid input"
+    "forgotPasswordMessage": "Вы можете сбросить свой пароль, изменив переменную среды `USERS`.",
+    "fieldRequired": "Это поле является обязательным",
+    "invalidInput": "Недопустимый ввод"
 }
