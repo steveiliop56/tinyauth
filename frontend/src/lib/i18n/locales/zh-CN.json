@@ -30,7 +30,7 @@
     "logoutUsernameSubtitle": "您当前登录用户为<code>{{username}}</code>。点击下方按钮注销。",
     "logoutOauthSubtitle": "您当前以<code>{{username}}</code>登录，使用的是{{provider}} OAuth 提供商。点击下方按钮注销。",
     "notFoundTitle": "无法找到页面",
-    "notFoundSubtitle": "您正在查找的页面不存在。",
+    "notFoundSubtitle": "您访问的页面不存在。",
     "notFoundButton": "回到主页",
     "totpFailTitle": "无法验证代码",
     "totpFailSubtitle": "请检查您的代码并重试",
@@ -42,7 +42,7 @@
     "unauthorizedResourceSubtitle": "用户名为<code>{{username}}</code>的用户无权访问资源<code>{{resource}}</code>。",
     "unauthorizedLoginSubtitle": "用户名为<code>{{username}}</code>的用户无权登录。",
     "unauthorizedGroupsSubtitle": "用户名为<code>{{username}}</code>的用户不在资源<code>{{resource}}</code>所需的组中。",
-    "unauthorizedIpSubtitle": "Your IP address <code>{{ip}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
+    "unauthorizedIpSubtitle": "用户 <code>{{ip}}</code> 无权访问资源 <code>{{resource}}</code>。",
     "unauthorizedButton": "重试",
     "untrustedRedirectTitle": "不可信的重定向",
     "untrustedRedirectSubtitle": "您正在尝试重定向到一个与您已配置的域名 (<code>{{domain}}</code>) 不匹配的域名。您确定要继续吗？",
@@ -51,7 +51,7 @@
     "failedToFetchProvidersTitle": "加载身份验证提供程序失败，请检查您的配置。",
     "errorTitle": "发生了错误",
     "errorSubtitle": "执行此操作时发生错误，请检查控制台以获取更多信息。",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
-    "fieldRequired": "This field is required",
+    "forgotPasswordMessage": "您可以通过更改 `USERS ` 环境变量重置您的密码。",
+    "fieldRequired": "必添字段",
     "invalidInput": "无效的输入"
 }
