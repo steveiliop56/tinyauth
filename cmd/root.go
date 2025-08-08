@@ -93,6 +93,13 @@ var rootCmd = &cobra.Command{
 			Domain:                domain,
 			ForgotPasswordMessage: config.FogotPasswordMessage,
 			BackgroundImage:       config.BackgroundImage,
+			LoginTitle:            config.LoginTitle,
+			LoginSubtitle:         config.LoginSubtitle,
+			UsernameTitle:         config.UsernameTitle,
+			PasswordTitle:         config.PasswordTitle,
+			UsernamePlaceholder:   config.UsernamePlaceholder,
+			PasswordPlaceholder:   config.PasswordPlaceholder,
+			Logo:                  config.Logo,
 			OAuthAutoRedirect:     config.OAuthAutoRedirect,
 			CsrfCookieName:        csrfCookieName,
 			RedirectCookieName:    redirectCookieName,
@@ -210,6 +217,13 @@ func init() {
 	rootCmd.Flags().Int("login-max-retries", 5, "Maximum login attempts before timeout (0 to disable).")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
+	rootCmd.Flags().String("login-title", "", "Custom title for the login card.")
+	rootCmd.Flags().String("login-subtitle", "", "Custom subtitle for the login card.")
+	rootCmd.Flags().String("username-title", "", "Custom title for the username field.")
+	rootCmd.Flags().String("password-title", "", "Custom title for the password field.")
+	rootCmd.Flags().String("username-placeholder", "", "Custom placeholder for the username field.")
+	rootCmd.Flags().String("password-placeholder", "", "Custom placeholder for the password field.")
+	rootCmd.Flags().String("logo", "", "Logo URL to display above the login title.")
 	rootCmd.Flags().String("forgot-password-message", "", "Message to show on the forgot password page.")
 	rootCmd.Flags().String("background-image", "/background.jpg", "Background image URL for the login page.")
 	rootCmd.Flags().String("ldap-address", "", "LDAP server address (e.g. ldap://localhost:389).")
@@ -248,6 +262,13 @@ func init() {
 	viper.BindEnv("session-expiry", "SESSION_EXPIRY")
 	viper.BindEnv("log-level", "LOG_LEVEL")
 	viper.BindEnv("app-title", "APP_TITLE")
+	viper.BindEnv("login-title", "LOGIN_TITLE")
+	viper.BindEnv("login-subtitle", "LOGIN_SUBTITLE")
+	viper.BindEnv("username-title", "USERNAME_TITLE")
+	viper.BindEnv("password-title", "PASSWORD_TITLE")
+	viper.BindEnv("username-placeholder", "USERNAME_PLACEHOLDER")
+	viper.BindEnv("password-placeholder", "PASSWORD_PLACEHOLDER")
+	viper.BindEnv("logo", "LOGO")
 	viper.BindEnv("login-timeout", "LOGIN_TIMEOUT")
 	viper.BindEnv("login-max-retries", "LOGIN_MAX_RETRIES")
 	viper.BindEnv("forgot-password-message", "FORGOT_PASSWORD_MESSAGE")
