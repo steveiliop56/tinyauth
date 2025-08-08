@@ -2,6 +2,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { GenericIcon } from "@/components/icons/generic";
 import { GithubIcon } from "@/components/icons/github";
 import { GoogleIcon } from "@/components/icons/google";
+import { MicrosoftIcon } from "@/components/icons/microsoft";
 import {
   Card,
   CardHeader,
@@ -127,6 +128,16 @@ export const LoginPage = () => {
                 className="w-full"
                 onClick={() => oauthMutation.mutate("google")}
                 loading={oauthMutation.isPending && oauthMutation.variables === "google"}
+                disabled={oauthMutation.isPending || loginMutation.isPending}
+              />
+            )}
+            {configuredProviders.includes("microsoft") && (
+              <OAuthButton
+                title="Microsoft"
+                icon={<MicrosoftIcon />}
+                className="w-full"
+                onClick={() => oauthMutation.mutate("microsoft")}
+                loading={oauthMutation.isPending && oauthMutation.variables === "microsoft"}
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
