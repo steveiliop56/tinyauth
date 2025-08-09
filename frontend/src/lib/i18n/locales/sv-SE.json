@@ -38,7 +38,7 @@
     "totpSuccessSubtitle": "Redirecting to your app",
     "totpTitle": "Enter your TOTP code",
     "totpSubtitle": "Please enter the code from your authenticator app.",
-    "unauthorizedTitle": "Unauthorized",
+    "unauthorizedTitle": "Obehörig",
     "unauthorizedResourceSubtitle": "The user with username <code>{{username}}</code> is not authorized to access the resource <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "The user with username <code>{{username}}</code> is not authorized to login.",
     "unauthorizedGroupsSubtitle": "The user with username <code>{{username}}</code> is not in the groups required by the resource <code>{{resource}}</code>.",
