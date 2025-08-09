@@ -100,11 +100,11 @@ func (h *Handlers) AppContextHandler(c *gin.Context) {
 	requestDomain := getDomainFromRequest(c)
 
 	// Apply domain-specific branding with fallback to config defaults
-	title := getDomainBranding(requestDomain, "TITLE", h.Config.Title)
-	loginTitle := getDomainBranding(requestDomain, "LOGIN_TITLE", h.Config.LoginTitle)
-	loginSubtitle := getDomainBranding(requestDomain, "LOGIN_SUBTITLE", h.Config.LoginSubtitle)
-	logo := getDomainBranding(requestDomain, "LOGO", h.Config.Logo)
-	backgroundImage := getDomainBranding(requestDomain, "BACKGROUND", h.Config.BackgroundImage)
+title := getDomainBranding(requestDomain, "TITLE", h.Config.Title)
+loginTitle := getDomainBranding(requestDomain, "LOGIN_TITLE", h.Config.LoginTitle)
+loginSubtitle := getDomainBranding(requestDomain, "LOGIN_SUBTITLE", h.Config.LoginSubtitle)
+logo := getDomainBranding(requestDomain, "LOGO", h.Config.Logo)
+backgroundImage := getDomainBranding(requestDomain, "BACKGROUND_IMAGE", h.Config.BackgroundImage)
 	usernameTitle := getDomainBranding(requestDomain, "USERNAME_TITLE", h.Config.UsernameTitle)
 	passwordTitle := getDomainBranding(requestDomain, "PASSWORD_TITLE", h.Config.PasswordTitle)
 	usernamePlaceholder := getDomainBranding(requestDomain, "USERNAME_PLACEHOLDER", h.Config.UsernamePlaceholder)
