@@ -12,6 +12,7 @@ import {
 } from "../ui/form";
 import { Button } from "../ui/button";
 import { loginSchema, LoginSchema } from "@/schemas/login-schema";
+import { useAppContext } from "@/context/app-context";
 import z from "zod";
 
 interface Props {
@@ -22,6 +23,12 @@ interface Props {
 export const LoginForm = (props: Props) => {
   const { onSubmit, loading } = props;
   const { t } = useTranslation();
+  const {
+    usernameTitle,
+    passwordTitle,
+    usernamePlaceholder,
+    passwordPlaceholder
+  } = useAppContext();
 
   z.config({
     customError: (iss) =>
@@ -40,10 +47,10 @@ export const LoginForm = (props: Props) => {
           name="username"
           render={({ field }) => (
             <FormItem className="mb-4 gap-0">
-              <FormLabel className="mb-2">{t("loginUsername")}</FormLabel>
+              <FormLabel className="mb-2">{usernameTitle || t("loginUsername")}</FormLabel>
               <FormControl className="mb-1">
                 <Input
-                  placeholder={t("loginUsername")}
+                  placeholder={usernamePlaceholder || t("loginUsername")}
                   disabled={loading}
                   autoComplete="username"
                   {...field}
@@ -59,10 +66,10 @@ export const LoginForm = (props: Props) => {
           render={({ field }) => (
             <FormItem className="mb-4 gap-0">
               <div className="relative mb-1">
-                <FormLabel className="mb-2">{t("loginPassword")}</FormLabel>
+                <FormLabel className="mb-2">{passwordTitle || t("loginPassword")}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t("loginPassword")}
+                    placeholder={passwordPlaceholder || t("loginPassword")}
                     type="password"
                     disabled={loading}
                     autoComplete="current-password"

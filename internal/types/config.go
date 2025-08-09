@@ -36,6 +36,13 @@ type Config struct {
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
 	FogotPasswordMessage    string `mapstructure:"forgot-password-message"`
 	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
+	LoginTitle              string `mapstructure:"login-title"`
+	LoginSubtitle           string `mapstructure:"login-subtitle"`
+	UsernameTitle           string `mapstructure:"username-title"`
+	PasswordTitle           string `mapstructure:"password-title"`
+	UsernamePlaceholder     string `mapstructure:"username-placeholder"`
+	PasswordPlaceholder     string `mapstructure:"password-placeholder"`
+	Logo                    string `mapstructure:"logo"`
 	LdapAddress             string `mapstructure:"ldap-address"`
 	LdapBindDN              string `mapstructure:"ldap-bind-dn"`
 	LdapBindPassword        string `mapstructure:"ldap-bind-password"`
@@ -54,6 +61,13 @@ type HandlersConfig struct {
 	Title                 string
 	ForgotPasswordMessage string
 	BackgroundImage       string
+	LoginTitle            string
+	LoginSubtitle         string
+	UsernameTitle         string
+	PasswordTitle         string
+	UsernamePlaceholder   string
+	PasswordPlaceholder   string
+	Logo                  string
 	OAuthAutoRedirect     string
 	CsrfCookieName        string
 	RedirectCookieName    string
