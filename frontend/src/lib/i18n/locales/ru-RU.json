@@ -1,6 +1,6 @@
 {
     "loginTitle": "С возвращением, войти с",
-    "loginTitleSimple": "Вход",
+    "loginTitleSimple": "С возвращением, пожалуйста войдите",
     "loginDivider": "Или",
     "loginUsername": "Имя пользователя",
     "loginPassword": "Пароль",
@@ -8,7 +8,7 @@
     "loginFailTitle": "Вход не удался",
     "loginFailSubtitle": "Проверьте имя пользователя и пароль",
     "loginFailRateLimit": "Слишком много ошибок входа. Попробуйте позже",
-    "loginSuccessTitle": "Вы вошли",
+    "loginSuccessTitle": "Вход выполнен",
     "loginSuccessSubtitle": "С возвращением!",
     "loginOauthFailTitle": "Произошла ошибка",
     "loginOauthFailSubtitle": "Не удалось получить OAuth URL",
@@ -37,7 +37,7 @@
     "totpSuccessTitle": "Подтверждён",
     "totpSuccessSubtitle": "Перенаправление в приложение",
     "totpTitle": "Введите код TOTP",
-    "totpSubtitle": "Пожалуйста, введите код из вашего приложения — аутентификатора.",
+    "totpSubtitle": "Пожалуйста, введите код из вашего приложения-аутентификатора.",
     "unauthorizedTitle": "Доступ запрещен",
     "unauthorizedResourceSubtitle": "Пользователю <code>{{username}}</code> не разрешен доступ к <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "Пользователю <code>{{username}}</code> не разрешен вход.",
@@ -51,7 +51,7 @@
     "failedToFetchProvidersTitle": "Не удалось загрузить провайдеров аутентификации. Пожалуйста, проверьте конфигурацию.",
     "errorTitle": "Произошла ошибка",
     "errorSubtitle": "Произошла ошибка при попытке выполнить это действие. Проверьте консоль для дополнительной информации.",
-    "forgotPasswordMessage": "Вы можете сбросить свой пароль, изменив переменную среды `USERS`.",
+    "forgotPasswordMessage": "Вы можете сбросить свой пароль, изменив переменную окружения `USERS`.",
     "fieldRequired": "Это поле является обязательным",
     "invalidInput": "Недопустимый ввод"
 }
