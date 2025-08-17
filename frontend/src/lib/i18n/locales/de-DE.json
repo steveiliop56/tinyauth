@@ -31,7 +31,7 @@
     "logoutOauthSubtitle": "Sie sind derzeit als <code>{{username}}</code> über den OAuth-Anbieter {{provider}} angemeldet. Klicken Sie auf den Button unten, um sich abzumelden.",
     "notFoundTitle": "Seite nicht gefunden",
     "notFoundSubtitle": "Die gesuchte Seite existiert nicht.",
-    "notFoundButton": "Nach Hause",
+    "notFoundButton": "Zurück",
     "totpFailTitle": "Fehler beim Verifizieren des Codes",
     "totpFailSubtitle": "Bitte überprüfen Sie Ihren Code und versuchen Sie es erneut",
     "totpSuccessTitle": "Verifiziert",
