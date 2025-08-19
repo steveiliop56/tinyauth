@@ -29,7 +29,15 @@ export const LoginPage = () => {
     return <Navigate to="/logout" />;
   }
 
-  const { configuredProviders, title, oauthAutoRedirect, genericName } = useAppContext();
+  const {
+    configuredProviders,
+    title,
+    oauthAutoRedirect,
+    genericName,
+    loginTitle,
+    loginSubtitle,
+    logo
+  } = useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
@@ -110,10 +118,24 @@ export const LoginPage = () => {
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
-        <CardTitle className="text-center text-3xl">{title}</CardTitle>
+        {logo && (
+          <div className="flex justify-center mb-4">
+            <img
+              src={logo}
+              alt="Logo"
+              className="h-16 w-auto object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        <CardTitle className="text-center text-3xl">
+          {loginTitle || title}
+        </CardTitle>
         {configuredProviders.length > 0 && (
           <CardDescription className="text-center">
-            {oauthConfigured ? t("loginTitle") : t("loginTitleSimple")}
+            {loginSubtitle || (oauthConfigured ? t("loginTitle") : t("loginTitleSimple"))}
           </CardDescription>
         )}
       </CardHeader>

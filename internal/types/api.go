@@ -53,6 +53,13 @@ type AppContext struct {
 	Domain                string   `json:"domain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
 	BackgroundImage       string   `json:"backgroundImage"`
+	LoginTitle            string   `json:"loginTitle"`
+	LoginSubtitle         string   `json:"loginSubtitle"`
+	UsernameTitle         string   `json:"usernameTitle"`
+	PasswordTitle         string   `json:"passwordTitle"`
+	UsernamePlaceholder   string   `json:"usernamePlaceholder"`
+	PasswordPlaceholder   string   `json:"passwordPlaceholder"`
+	Logo                  string   `json:"logo"`
 	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
 }
 
