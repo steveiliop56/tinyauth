@@ -388,8 +388,6 @@ func (auth *Auth) AuthEnabled(uri string, labels types.Labels) (bool, error) {
 }
 
 func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
-	username, password, ok := c.Request.BasicAuth()
-	if !ok {
 	// Get the X-TinyAuth-Authorization header
 	authHeader := c.Request.Header.Get("X-Api-Key")
 	if authHeader == "" {
