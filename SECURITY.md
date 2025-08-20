@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-Please always use the latest available Tinyauth version which can be found [here](https://github.com/steveiliop56/tinyauth/releases/latest). Older versions (especially major) may contain security issues which I cannot go back and fix.
+It is recommended to use the [latest](https://github.com/steveiliop56/tinyauth/releases/latest) available version of tinyauth. This is because it includes security fixes, new features and dependency updates. Older versions, especially major ones, are not supported and won't receive security or patch updates.
 
 ## Reporting a Vulnerability
 
-Due to the nature of this app, it needs to be secure. If you find any security issues in the OAuth or login flow of the app please contact me at <steve@doesmycode.work> and include a concise description of the issue. Please do not use the issues section for reporting major security issues.
+Due to the nature of this app, it needs to be secure. If you discover any security issues or vulnerabilities in the app please contact me as soon as possible at <steve@doesmycode.work>. Please do not use the issues section to report security issues as I won't be able to patch them in time and they may get exploited by malicious actors.

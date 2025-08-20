@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"errors"
-	"os"
+	"fmt"
 	"strings"
-	"time"
 	totpCmd "tinyauth/cmd/totp"
 	userCmd "tinyauth/cmd/user"
-	"tinyauth/internal/api"
-	"tinyauth/internal/assets"
 	"tinyauth/internal/auth"
+	"tinyauth/internal/constants"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/handlers"
 	"tinyauth/internal/hooks"
+	"tinyauth/internal/ldap"
 	"tinyauth/internal/providers"
+	"tinyauth/internal/server"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -29,45 +29,46 @@ var rootCmd = &cobra.Command{
 	Short: "The simplest way to protect your apps with a login screen.",
 	Long:  `Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Logger
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Logger().Level(zerolog.FatalLevel)
-
-		// Get config
 		var config types.Config
 		err := viper.Unmarshal(&config)
 		HandleError(err, "Failed to parse config")
 
-		// Secrets
+		// Check if secrets have a file associated with them
 		config.Secret = utils.GetSecret(config.Secret, config.SecretFile)
 		config.GithubClientSecret = utils.GetSecret(config.GithubClientSecret, config.GithubClientSecretFile)
 		config.GoogleClientSecret = utils.GetSecret(config.GoogleClientSecret, config.GoogleClientSecretFile)
 		config.GenericClientSecret = utils.GetSecret(config.GenericClientSecret, config.GenericClientSecretFile)
 
-		// Validate config
 		validator := validator.New()
 		err = validator.Struct(config)
 		HandleError(err, "Failed to validate config")
 
-		// Logger
 		log.Logger = log.Level(zerolog.Level(config.LogLevel))
-		log.Info().Str("version", assets.Version).Msg("Starting tinyauth")
+		log.Info().Str("version", strings.TrimSpace(constants.Version)).Msg("Starting tinyauth")
 
-		// Users
 		log.Info().Msg("Parsing users")
 		users, err := utils.GetUsers(config.Users, config.UsersFile)
 		HandleError(err, "Failed to parse users")
 
-		if len(users) == 0 && !utils.OAuthConfigured(config) {
-			HandleError(errors.New("no users or OAuth configured"), "No users or OAuth configured")
-		}
-
-		// Get domain
 		log.Debug().Msg("Getting domain")
 		domain, err := utils.GetUpperDomain(config.AppURL)
 		HandleError(err, "Failed to get upper domain")
 		log.Info().Str("domain", domain).Msg("Using domain for cookie store")
 
-		// Create OAuth config
+		cookieId := utils.GenerateIdentifier(strings.Split(domain, ".")[0])
+		sessionCookieName := fmt.Sprintf("%s-%s", constants.SessionCookieName, cookieId)
+		csrfCookieName := fmt.Sprintf("%s-%s", constants.CsrfCookieName, cookieId)
+		redirectCookieName := fmt.Sprintf("%s-%s", constants.RedirectCookieName, cookieId)
+
+		log.Debug().Msg("Deriving HMAC and encryption secrets")
+
+		hmacSecret, err := utils.DeriveKey(config.Secret, "hmac")
+		HandleError(err, "Failed to derive HMAC secret")
+
+		encryptionSecret, err := utils.DeriveKey(config.Secret, "encryption")
+		HandleError(err, "Failed to derive encryption secret")
+
+		// Split the config into service-specific sub-configs
 		oauthConfig := types.OAuthConfig{
 			GithubClientId:      config.GithubClientId,
 			GithubClientSecret:  config.GithubClientSecret,
@@ -79,10 +80,10 @@ var rootCmd = &cobra.Command{
 			GenericAuthURL:      config.GenericAuthURL,
 			GenericTokenURL:     config.GenericTokenURL,
 			GenericUserURL:      config.GenericUserURL,
+			GenericSkipSSL:      config.GenericSkipSSL,
 			AppURL:              config.AppURL,
 		}
 
-		// Create handlers config
 		handlersConfig := types.HandlersConfig{
 			AppURL:                config.AppURL,
 			DisableContinue:       config.DisableContinue,
@@ -91,63 +92,73 @@ var rootCmd = &cobra.Command{
 			CookieSecure:          config.CookieSecure,
 			Domain:                domain,
 			ForgotPasswordMessage: config.FogotPasswordMessage,
+			BackgroundImage:       config.BackgroundImage,
 			OAuthAutoRedirect:     config.OAuthAutoRedirect,
+			CsrfCookieName:        csrfCookieName,
+			RedirectCookieName:    redirectCookieName,
 		}
 
-		// Create api config
-		apiConfig := types.APIConfig{
+		serverConfig := types.ServerConfig{
 			Port:    config.Port,
 			Address: config.Address,
 		}
 
-		// Create auth config
 		authConfig := types.AuthConfig{
-			Users:           users,
-			OauthWhitelist:  config.OAuthWhitelist,
-			Secret:          config.Secret,
-			CookieSecure:    config.CookieSecure,
-			SessionExpiry:   config.SessionExpiry,
-			Domain:          domain,
-			LoginTimeout:    config.LoginTimeout,
-			LoginMaxRetries: config.LoginMaxRetries,
+			Users:             users,
+			OauthWhitelist:    config.OAuthWhitelist,
+			CookieSecure:      config.CookieSecure,
+			SessionExpiry:     config.SessionExpiry,
+			Domain:            domain,
+			LoginTimeout:      config.LoginTimeout,
+			LoginMaxRetries:   config.LoginMaxRetries,
+			SessionCookieName: sessionCookieName,
+			HMACSecret:        hmacSecret,
+			EncryptionSecret:  encryptionSecret,
 		}
 
-		// Create hooks config
 		hooksConfig := types.HooksConfig{
 			Domain: domain,
 		}
 
-		// Create docker service
-		docker := docker.NewDocker()
+		var ldapService *ldap.LDAP
 
-		// Initialize docker
-		err = docker.Init()
+		if config.LdapAddress != "" {
+			log.Info().Msg("Using LDAP for authentication")
+			ldapConfig := types.LdapConfig{
+				Address:      config.LdapAddress,
+				BindDN:       config.LdapBindDN,
+				BindPassword: config.LdapBindPassword,
+				BaseDN:       config.LdapBaseDN,
+				Insecure:     config.LdapInsecure,
+				SearchFilter: config.LdapSearchFilter,
+			}
+			ldapService, err = ldap.NewLDAP(ldapConfig)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to initialize LDAP service, disabling LDAP authentication")
+				ldapService = nil
+			}
+		} else {
+			log.Info().Msg("LDAP not configured, using local users or OAuth")
+		}
+
+		// Check if we have a source of users
+		if len(users) == 0 && !utils.OAuthConfigured(config) && ldapService == nil {
+			HandleError(errors.New("err no users"), "Unable to find a source of users")
+		}
+
+		// Setup the services
+		docker, err := docker.NewDocker()
 		HandleError(err, "Failed to initialize docker")
-
-		// Create auth service
-		auth := auth.NewAuth(authConfig, docker)
-
-		// Create OAuth providers service
+		auth := auth.NewAuth(authConfig, docker, ldapService)
 		providers := providers.NewProviders(oauthConfig)
-
-		// Initialize providers
-		providers.Init()
-
-		// Create hooks service
 		hooks := hooks.NewHooks(hooksConfig, auth, providers)
-
-		// Create handlers
 		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
+		srv, err := server.NewServer(serverConfig, handlers)
+		HandleError(err, "Failed to create server")
 
-		// Create API
-		api := api.NewAPI(apiConfig, handlers)
-
-		// Setup routes
-		api.Init()
-		api.SetupRoutes()
-
-		// Start
-		api.Run()
+		// Start up
+		err = srv.Start()
+		HandleError(err, "Failed to start server")
 	},
 }
 
@@ -157,23 +168,17 @@ func Execute() {
 }
 
 func HandleError(err error, msg string) {
-	// If error, log it and exit
 	if err != nil {
 		log.Fatal().Err(err).Msg(msg)
 	}
 }
 
 func init() {
-	// Add user command
 	rootCmd.AddCommand(userCmd.UserCmd())
-
-	// Add totp command
 	rootCmd.AddCommand(totpCmd.TotpCmd())
 
-	// Read environment variables
 	viper.AutomaticEnv()
 
-	// Flags
 	rootCmd.Flags().Int("port", 3000, "Port to run the server on.")
 	rootCmd.Flags().String("address", "0.0.0.0", "Address to bind the server to.")
 	rootCmd.Flags().String("secret", "", "Secret to use for the cookie.")
@@ -196,6 +201,7 @@ func init() {
 	rootCmd.Flags().String("generic-token-url", "", "Generic OAuth token URL.")
 	rootCmd.Flags().String("generic-user-url", "", "Generic OAuth user info URL.")
 	rootCmd.Flags().String("generic-name", "Generic", "Generic OAuth provider name.")
+	rootCmd.Flags().Bool("generic-skip-ssl", false, "Skip SSL verification for the generic OAuth provider.")
 	rootCmd.Flags().Bool("disable-continue", false, "Disable continue screen and redirect to app directly.")
 	rootCmd.Flags().String("oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth.")
 	rootCmd.Flags().String("oauth-auto-redirect", "none", "Auto redirect to the specified OAuth provider if configured. (available providers: github, google, generic)")
@@ -204,9 +210,15 @@ func init() {
 	rootCmd.Flags().Int("login-max-retries", 5, "Maximum login attempts before timeout (0 to disable).")
 	rootCmd.Flags().Int("log-level", 1, "Log level.")
 	rootCmd.Flags().String("app-title", "Tinyauth", "Title of the app.")
-	rootCmd.Flags().String("forgot-password-message", "You can reset your password by changing the `USERS` environment variable.", "Message to show on the forgot password page.")
+	rootCmd.Flags().String("forgot-password-message", "", "Message to show on the forgot password page.")
+	rootCmd.Flags().String("background-image", "/background.jpg", "Background image URL for the login page.")
+	rootCmd.Flags().String("ldap-address", "", "LDAP server address (e.g. ldap://localhost:389).")
+	rootCmd.Flags().String("ldap-bind-dn", "", "LDAP bind DN (e.g. uid=user,dc=example,dc=com).")
+	rootCmd.Flags().String("ldap-bind-password", "", "LDAP bind password.")
+	rootCmd.Flags().String("ldap-base-dn", "", "LDAP base DN (e.g. dc=example,dc=com).")
+	rootCmd.Flags().Bool("ldap-insecure", false, "Skip certificate verification for the LDAP server.")
+	rootCmd.Flags().String("ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup.")
 
-	// Bind flags to environment
 	viper.BindEnv("port", "PORT")
 	viper.BindEnv("address", "ADDRESS")
 	viper.BindEnv("secret", "SECRET")
@@ -229,6 +241,7 @@ func init() {
 	viper.BindEnv("generic-token-url", "GENERIC_TOKEN_URL")
 	viper.BindEnv("generic-user-url", "GENERIC_USER_URL")
 	viper.BindEnv("generic-name", "GENERIC_NAME")
+	viper.BindEnv("generic-skip-ssl", "GENERIC_SKIP_SSL")
 	viper.BindEnv("disable-continue", "DISABLE_CONTINUE")
 	viper.BindEnv("oauth-whitelist", "OAUTH_WHITELIST")
 	viper.BindEnv("oauth-auto-redirect", "OAUTH_AUTO_REDIRECT")
@@ -238,7 +251,13 @@ func init() {
 	viper.BindEnv("login-timeout", "LOGIN_TIMEOUT")
 	viper.BindEnv("login-max-retries", "LOGIN_MAX_RETRIES")
 	viper.BindEnv("forgot-password-message", "FORGOT_PASSWORD_MESSAGE")
+	viper.BindEnv("background-image", "BACKGROUND_IMAGE")
+	viper.BindEnv("ldap-address", "LDAP_ADDRESS")
+	viper.BindEnv("ldap-bind-dn", "LDAP_BIND_DN")
+	viper.BindEnv("ldap-bind-password", "LDAP_BIND_PASSWORD")
+	viper.BindEnv("ldap-base-dn", "LDAP_BASE_DN")
+	viper.BindEnv("ldap-insecure", "LDAP_INSECURE")
+	viper.BindEnv("ldap-search-filter", "LDAP_SEARCH_FILTER")
 
-	// Bind flags to viper
 	viper.BindPFlags(rootCmd.Flags())
 }

@@ -22,49 +22,35 @@ func GoogleScopes() []string {
 }
 
 func GetGoogleUser(client *http.Client) (constants.Claims, error) {
-	// Create user struct
 	var user constants.Claims
 
-	// Get the user info from google using the oauth http client
 	res, err := client.Get("https://www.googleapis.com/userinfo/v2/me")
-
-	// Check if there was an error
 	if err != nil {
 		return user, err
 	}
-
 	defer res.Body.Close()
 
 	log.Debug().Msg("Got response from google")
 
-	// Read the body of the response
 	body, err := io.ReadAll(res.Body)
-
-	// Check if there was an error
 	if err != nil {
 		return user, err
 	}
 
 	log.Debug().Msg("Read body from google")
 
-	// Create a new user info struct
 	var userInfo GoogleUserInfoResponse
 
-	// Unmarshal the body into the user struct
 	err = json.Unmarshal(body, &userInfo)
-
-	// Check if there was an error
 	if err != nil {
 		return user, err
 	}
 
 	log.Debug().Msg("Parsed user from google")
 
-	// Map the user info to the user struct
 	user.PreferredUsername = strings.Split(userInfo.Email, "@")[0]
 	user.Name = userInfo.Name
 	user.Email = userInfo.Email
 
-	// Return the user
 	return user, nil
 }

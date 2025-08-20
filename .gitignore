@@ -11,11 +11,7 @@ docker-compose.test*
 users.txt
 
 # secret test file
-secret.txt
-secret_oauth.txt
-
-# vscode
-.vscode
+secret*
 
 # apple stuff
 .DS_Store
@@ -25,3 +21,6 @@ secret_oauth.txt
 
 # tmp directory
 tmp
+
+# version files
+internal/assets/version

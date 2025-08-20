@@ -11,119 +11,92 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewDocker() *Docker {
-	return &Docker{}
-}
-
 type Docker struct {
 	Client  *client.Client
 	Context context.Context
 }
 
-func (docker *Docker) Init() error {
-	// Create a new docker client
+func NewDocker() (*Docker, error) {
 	client, err := client.NewClientWithOpts(client.FromEnv)
-
-	// Check if there was an error
-	if err != nil {
-		return err
-	}
-
-	// Create the context
-	docker.Context = context.Background()
-
-	// Negotiate API version
-	client.NegotiateAPIVersion(docker.Context)
-
-	// Set client
-	docker.Client = client
-
-	// Done
-	return nil
-}
-
-func (docker *Docker) GetContainers() ([]container.Summary, error) {
-	// Get the list of containers
-	containers, err := docker.Client.ContainerList(docker.Context, container.ListOptions{})
-
-	// Check if there was an error
 	if err != nil {
 		return nil, err
 	}
 
-	// Return the containers
+	ctx := context.Background()
+	client.NegotiateAPIVersion(ctx)
+
+	return &Docker{
+		Client:  client,
+		Context: ctx,
+	}, nil
+}
+
+func (docker *Docker) GetContainers() ([]container.Summary, error) {
+	containers, err := docker.Client.ContainerList(docker.Context, container.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
 	return containers, nil
 }
 
 func (docker *Docker) InspectContainer(containerId string) (container.InspectResponse, error) {
-	// Inspect the container
 	inspect, err := docker.Client.ContainerInspect(docker.Context, containerId)
-
-	// Check if there was an error
 	if err != nil {
 		return container.InspectResponse{}, err
 	}
-
-	// Return the inspect
 	return inspect, nil
 }
 
 func (docker *Docker) DockerConnected() bool {
-	// Ping the docker client if there is an error it is not connected
 	_, err := docker.Client.Ping(docker.Context)
 	return err == nil
 }
 
-func (docker *Docker) GetLabels(appId string) (types.TinyauthLabels, error) {
-	// Check if we have access to the Docker API
+func (docker *Docker) GetLabels(app string, domain string) (types.Labels, error) {
 	isConnected := docker.DockerConnected()
 
-	// If we don't have access, return an empty struct
 	if !isConnected {
 		log.Debug().Msg("Docker not connected, returning empty labels")
-		return types.TinyauthLabels{}, nil
+		return types.Labels{}, nil
 	}
 
-	// Get the containers
+	log.Debug().Msg("Getting containers")
+
 	containers, err := docker.GetContainers()
-
-	// If there is an error, return false
 	if err != nil {
-		return types.TinyauthLabels{}, err
+		log.Error().Err(err).Msg("Error getting containers")
+		return types.Labels{}, err
 	}
 
-	log.Debug().Msg("Got containers")
-
-	// Loop through the containers
 	for _, container := range containers {
-		// Inspect the container
 		inspect, err := docker.InspectContainer(container.ID)
-
-		// If there is an error, return false
 		if err != nil {
-			return types.TinyauthLabels{}, err
+			log.Warn().Str("id", container.ID).Err(err).Msg("Error inspecting container, skipping")
+			continue
 		}
 
-		// Get the container name (for some reason it is /name)
-		containerName := strings.TrimPrefix(inspect.Name, "/")
+		log.Debug().Str("id", inspect.ID).Msg("Getting labels for container")
 
-		// There is a container with the same name as the app ID
-		if containerName == appId {
-			log.Debug().Str("container", containerName).Msg("Found container")
+		labels, err := utils.GetLabels(inspect.Config.Labels)
+		if err != nil {
+			log.Warn().Str("id", container.ID).Err(err).Msg("Error getting container labels, skipping")
+			continue
+		}
 
-			// Get only the tinyauth labels in a struct
-			labels := utils.GetTinyauthLabels(inspect.Config.Labels)
+		// Check if the container matches the ID or domain
+		for _, lDomain := range labels.Domain {
+			if lDomain == domain {
+				log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
+				return labels, nil
+			}
+		}
 
-			log.Debug().Msg("Got labels")
-
-			// Return labels
+		if strings.TrimPrefix(inspect.Name, "/") == app {
+			log.Debug().Str("id", inspect.ID).Msg("Found matching container by name")
 			return labels, nil
 		}
-
 	}
 
 	log.Debug().Msg("No matching container found, returning empty labels")
-
-	// If no matching container is found, return empty labels
-	return types.TinyauthLabels{}, nil
+	return types.Labels{}, nil
 }

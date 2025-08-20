@@ -5,9 +5,9 @@ export const userContextSchema = z.object({
   username: z.string(),
   name: z.string(),
   email: z.string(),
-  oauth: z.boolean(),
   provider: z.string(),
+  oauth: z.boolean(),
   totpPending: z.boolean(),
 });
 
-export type UserContextSchemaType = z.infer<typeof userContextSchema>;
+export type UserContextSchema = z.infer<typeof userContextSchema>;

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 	"tinyauth/internal/docker"
+	"tinyauth/internal/ldap"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -18,60 +19,139 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(config types.AuthConfig, docker *docker.Docker) *Auth {
-	return &Auth{
-		Config:        config,
-		Docker:        docker,
-		LoginAttempts: make(map[string]*types.LoginAttempt),
-	}
-}
-
 type Auth struct {
 	Config        types.AuthConfig
 	Docker        *docker.Docker
 	LoginAttempts map[string]*types.LoginAttempt
 	LoginMutex    sync.RWMutex
+	Store         *sessions.CookieStore
+	LDAP          *ldap.LDAP
+}
+
+func NewAuth(config types.AuthConfig, docker *docker.Docker, ldap *ldap.LDAP) *Auth {
+	// Setup cookie store and create the auth service
+	store := sessions.NewCookieStore([]byte(config.HMACSecret), []byte(config.EncryptionSecret))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   config.SessionExpiry,
+		Secure:   config.CookieSecure,
+		HttpOnly: true,
+		Domain:   fmt.Sprintf(".%s", config.Domain),
+	}
+	return &Auth{
+		Config:        config,
+		Docker:        docker,
+		LoginAttempts: make(map[string]*types.LoginAttempt),
+		Store:         store,
+		LDAP:          ldap,
+	}
 }
 
 func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
-	// Create cookie store
-	store := sessions.NewCookieStore([]byte(auth.Config.Secret))
+	session, err := auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 
-	// Configure cookie store
-	store.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   auth.Config.SessionExpiry,
-		Secure:   auth.Config.CookieSecure,
-		HttpOnly: true,
-		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
-	}
-
-	// Get session
-	session, err := store.Get(c.Request, "tinyauth")
+	// If there was an error getting the session, it might be invalid so let's clear it and retry
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get session")
-		return nil, err
+		log.Error().Err(err).Msg("Invalid session, clearing cookie and retrying")
+		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.CookieSecure, true)
+		session, err = auth.Store.Get(c.Request, auth.Config.SessionCookieName)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get session")
+			return nil, err
+		}
 	}
 
 	return session, nil
 }
 
-func (auth *Auth) GetUser(username string) *types.User {
-	// Loop through users and return the user if the username matches
-	for _, user := range auth.Config.Users {
-		if user.Username == username {
-			return &user
+func (auth *Auth) SearchUser(username string) types.UserSearch {
+	log.Debug().Str("username", username).Msg("Searching for user")
+
+	// Check local users first
+	if auth.GetLocalUser(username).Username != "" {
+		log.Debug().Str("username", username).Msg("Found local user")
+		return types.UserSearch{
+			Username: username,
+			Type:     "local",
 		}
 	}
-	return nil
+
+	// If no user found, check LDAP
+	if auth.LDAP != nil {
+		log.Debug().Str("username", username).Msg("Checking LDAP for user")
+		userDN, err := auth.LDAP.Search(username)
+		if err != nil {
+			log.Warn().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
+			return types.UserSearch{}
+		}
+		return types.UserSearch{
+			Username: userDN,
+			Type:     "ldap",
+		}
+	}
+
+	return types.UserSearch{
+		Type: "unknown",
+	}
+}
+
+func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
+	// Authenticate the user based on the type
+	switch search.Type {
+	case "local":
+		// If local user, get the user and check the password
+		user := auth.GetLocalUser(search.Username)
+		return auth.CheckPassword(user, password)
+	case "ldap":
+		// If LDAP is configured, bind to the LDAP server with the user DN and password
+		if auth.LDAP != nil {
+			log.Debug().Str("username", search.Username).Msg("Binding to LDAP for user authentication")
+
+			err := auth.LDAP.Bind(search.Username, password)
+			if err != nil {
+				log.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
+				return false
+			}
+
+			// Rebind with the service account to reset the connection
+			err = auth.LDAP.Bind(auth.LDAP.Config.BindDN, auth.LDAP.Config.BindPassword)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
+				return false
+			}
+
+			log.Debug().Str("username", search.Username).Msg("LDAP authentication successful")
+			return true
+		}
+	default:
+		log.Warn().Str("type", search.Type).Msg("Unknown user type for authentication")
+		return false
+	}
+
+	// If no user found or authentication failed, return false
+	log.Warn().Str("username", search.Username).Msg("User authentication failed")
+	return false
+}
+
+func (auth *Auth) GetLocalUser(username string) types.User {
+	// Loop through users and return the user if the username matches
+	log.Debug().Str("username", username).Msg("Searching for local user")
+
+	for _, user := range auth.Config.Users {
+		if user.Username == username {
+			return user
+		}
+	}
+
+	// If no user found, return an empty user
+	log.Warn().Str("username", username).Msg("Local user not found")
+	return types.User{}
 }
 
 func (auth *Auth) CheckPassword(user types.User, password string) bool {
-	// Compare the hashed password with the password provided
 	return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) == nil
 }
 
-// IsAccountLocked checks if a username or IP is locked due to too many failed login attempts
 func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
 	auth.LoginMutex.RLock()
 	defer auth.LoginMutex.RUnlock()
@@ -98,7 +178,6 @@ func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
 	return false, 0
 }
 
-// RecordLoginAttempt records a login attempt for rate limiting
 func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
 	// Skip if rate limiting is not configured
 	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
@@ -135,14 +214,13 @@ func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
 	}
 }
 
-func (auth *Auth) EmailWhitelisted(emailSrc string) bool {
-	return utils.CheckWhitelist(auth.Config.OauthWhitelist, emailSrc)
+func (auth *Auth) EmailWhitelisted(email string) bool {
+	return utils.CheckFilter(auth.Config.OauthWhitelist, email)
 }
 
 func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {
 	log.Debug().Msg("Creating session cookie")
 
-	// Get session
 	session, err := auth.GetSession(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get session")
@@ -151,7 +229,6 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 
 	log.Debug().Msg("Setting session cookie")
 
-	// Calculate expiry
 	var sessionExpiry int
 
 	if data.TotpPending {
@@ -160,7 +237,6 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 		sessionExpiry = auth.Config.SessionExpiry
 	}
 
-	// Set data
 	session.Values["username"] = data.Username
 	session.Values["name"] = data.Name
 	session.Values["email"] = data.Email
@@ -169,21 +245,18 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	session.Values["totpPending"] = data.TotpPending
 	session.Values["oauthGroups"] = data.OAuthGroups
 
-	// Save session
 	err = session.Save(c.Request, c.Writer)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save session")
 		return err
 	}
 
-	// Return nil
 	return nil
 }
 
 func (auth *Auth) DeleteSessionCookie(c *gin.Context) error {
 	log.Debug().Msg("Deleting session cookie")
 
-	// Get session
 	session, err := auth.GetSession(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get session")
@@ -195,21 +268,18 @@ func (auth *Auth) DeleteSessionCookie(c *gin.Context) error {
 		delete(session.Values, key)
 	}
 
-	// Save session
 	err = session.Save(c.Request, c.Writer)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save session")
 		return err
 	}
 
-	// Return nil
 	return nil
 }
 
 func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) {
 	log.Debug().Msg("Getting session cookie")
 
-	// Get session
 	session, err := auth.GetSession(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get session")
@@ -218,7 +288,6 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 
 	log.Debug().Msg("Got session")
 
-	// Get data from session
 	username, usernameOk := session.Values["username"].(string)
 	email, emailOk := session.Values["email"].(string)
 	name, nameOk := session.Values["name"].(string)
@@ -227,30 +296,21 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
 	oauthGroups, oauthGroupsOk := session.Values["oauthGroups"].(string)
 
+	// If any data is missing, delete the session cookie
 	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk || !emailOk || !nameOk || !oauthGroupsOk {
 		log.Warn().Msg("Session cookie is invalid")
-
-		// If any data is missing, delete the session cookie
 		auth.DeleteSessionCookie(c)
-
-		// Return empty cookie
 		return types.SessionCookie{}, nil
 	}
 
-	// Check if the cookie has expired
+	// If the session cookie has expired, delete it
 	if time.Now().Unix() > expiry {
 		log.Warn().Msg("Session cookie expired")
-
-		// If it has, delete it
 		auth.DeleteSessionCookie(c)
-
-		// Return empty cookie
 		return types.SessionCookie{}, nil
 	}
 
 	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Str("name", name).Str("email", email).Str("oauthGroups", oauthGroups).Msg("Parsed cookie")
-
-	// Return the cookie
 	return types.SessionCookie{
 		Username:    username,
 		Name:        name,
@@ -262,26 +322,22 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 }
 
 func (auth *Auth) UserAuthConfigured() bool {
-	// If there are users, return true
-	return len(auth.Config.Users) > 0
+	// If there are users or LDAP is configured, return true
+	return len(auth.Config.Users) > 0 || auth.LDAP != nil
 }
 
-func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.TinyauthLabels) bool {
-	// Check if oauth is allowed
+func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.Labels) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
-		return utils.CheckWhitelist(labels.OAuthWhitelist, context.Email)
+		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
 	}
 
-	// Check users
 	log.Debug().Msg("Checking users")
-
-	return utils.CheckWhitelist(labels.Users, context.Username)
+	return utils.CheckFilter(labels.Users, context.Username)
 }
 
-func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.TinyauthLabels) bool {
-	// Check if groups are required
-	if labels.OAuthGroups == "" {
+func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.Labels) bool {
+	if labels.OAuth.Groups == "" {
 		return true
 	}
 
@@ -296,7 +352,7 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 
 	// For every group check if it is in the required groups
 	for _, group := range oauthGroups {
-		if utils.CheckWhitelist(labels.OAuthGroups, group) {
+		if utils.CheckFilter(labels.OAuth.Groups, group) {
 			log.Debug().Str("group", group).Msg("Group is in required groups")
 			return true
 		}
@@ -304,18 +360,12 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 
 	// No groups matched
 	log.Debug().Msg("No groups matched")
-
-	// Return false
 	return false
 }
 
-func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool, error) {
-	// Get headers
-	uri := c.Request.Header.Get("X-Forwarded-Uri")
-
-	// Check if the allowed label is empty
+func (auth *Auth) AuthEnabled(uri string, labels types.Labels) (bool, error) {
+	// If the label is empty, auth is enabled
 	if labels.Allowed == "" {
-		// Auth enabled
 		return true, nil
 	}
 
@@ -324,13 +374,12 @@ func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool
 
 	// If there is an error, invalid regex, auth enabled
 	if err != nil {
-		log.Warn().Err(err).Msg("Invalid regex")
+		log.Error().Err(err).Msg("Invalid regex")
 		return true, err
 	}
 
-	// Check if the uri matches the regex
+	// If the regex matches the URI, auth is not enabled
 	if regex.MatchString(uri) {
-		// Auth disabled
 		return false, nil
 	}
 
@@ -339,6 +388,8 @@ func (auth *Auth) AuthEnabled(c *gin.Context, labels types.TinyauthLabels) (bool
 }
 
 func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
+	username, password, ok := c.Request.BasicAuth()
+	if !ok {
 	// Get the X-TinyAuth-Authorization header
 	authHeader := c.Request.Header.Get("X-Api-Key")
 	if authHeader == "" {
@@ -362,10 +413,63 @@ func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 	if len(pair) != 2 {
 		return nil
 	}
-
-	// Return the user
 	return &types.User{
 		Username: pair[0],
 		Password: pair[1],
 	}
+}
+
+func (auth *Auth) CheckIP(labels types.Labels, ip string) bool {
+	// Check if the IP is in block list
+	for _, blocked := range labels.IP.Block {
+		res, err := utils.FilterIP(blocked, ip)
+		if err != nil {
+			log.Error().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
+			continue
+		}
+		if res {
+			log.Warn().Str("ip", ip).Str("item", blocked).Msg("IP is in blocked list, denying access")
+			return false
+		}
+	}
+
+	// For every IP in the allow list, check if the IP matches
+	for _, allowed := range labels.IP.Allow {
+		res, err := utils.FilterIP(allowed, ip)
+		if err != nil {
+			log.Error().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
+			continue
+		}
+		if res {
+			log.Debug().Str("ip", ip).Str("item", allowed).Msg("IP is in allowed list, allowing access")
+			return true
+		}
+	}
+
+	// If not in allowed range and allowed range is not empty, deny access
+	if len(labels.IP.Allow) > 0 {
+		log.Warn().Str("ip", ip).Msg("IP not in allow list, denying access")
+		return false
+	}
+
+	log.Debug().Str("ip", ip).Msg("IP not in allow or block list, allowing by default")
+	return true
+}
+
+func (auth *Auth) BypassedIP(labels types.Labels, ip string) bool {
+	// For every IP in the bypass list, check if the IP matches
+	for _, bypassed := range labels.IP.Bypass {
+		res, err := utils.FilterIP(bypassed, ip)
+		if err != nil {
+			log.Error().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
+			continue
+		}
+		if res {
+			log.Debug().Str("ip", ip).Str("item", bypassed).Msg("IP is in bypass list, allowing access")
+			return true
+		}
+	}
+
+	log.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
+	return false
 }

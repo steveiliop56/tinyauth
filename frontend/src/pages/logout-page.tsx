@@ -1,84 +1,89 @@
-import { Button, Code, Paper, Text } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAppContext } from "@/context/app-context";
+import { useUserContext } from "@/context/user-context";
+import { capitalize } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { useUserContext } from "../context/user-context";
-import { Navigate } from "react-router";
-import { Layout } from "../components/layouts/layout";
-import { capitalize } from "../utils/utils";
-import { useAppContext } from "../context/app-context";
 import { Trans, useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
+import { toast } from "sonner";
 
 export const LogoutPage = () => {
-  const { isLoggedIn, oauth, provider, email, username } = useUserContext();
-  const { genericName } = useAppContext();
-  const { t } = useTranslation();
+  const { provider, username, isLoggedIn, email } = useUserContext();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
 
+  const { genericName } = useAppContext();
+  const { t } = useTranslation();
+
   const logoutMutation = useMutation({
-    mutationFn: () => {
-      return axios.post("/api/logout");
-    },
-    onError: () => {
-      notifications.show({
-        title: t("logoutFailTitle"),
-        message: t("logoutFailSubtitle"),
-        color: "red",
-      });
-    },
+    mutationFn: () => axios.post("/api/logout"),
+    mutationKey: ["logout"],
     onSuccess: () => {
-      notifications.show({
-        title: t("logoutSuccessTitle"),
-        message: t("logoutSuccessSubtitle"),
-        color: "green",
+      toast.success(t("logoutSuccessTitle"), {
+        description: t("logoutSuccessSubtitle"),
       });
-      setTimeout(() => {
+
+      setTimeout(async () => {
         window.location.replace("/login");
       }, 500);
+    },
+    onError: () => {
+      toast.error(t("logoutFailTitle"), {
+        description: t("logoutFailSubtitle"),
+      });
     },
   });
 
   return (
-    <Layout>
-      <Paper shadow="md" p={30} mt={30} radius="md" withBorder>
-        <Text size="xl" fw={700}>
-          {t("logoutTitle")}
-        </Text>
-        <Text>
-          {oauth ? (
+    <Card className="min-w-xs sm:min-w-sm">
+      <CardHeader>
+        <CardTitle className="text-3xl">{t("logoutTitle")}</CardTitle>
+        <CardDescription>
+          {provider !== "username" ? (
             <Trans
               i18nKey="logoutOauthSubtitle"
               t={t}
-              components={{ Code: <Code /> }}
+              components={{
+                code: <code />,
+              }}
               values={{
+                username: email,
                 provider:
                   provider === "generic" ? genericName : capitalize(provider),
-                username: email,
               }}
             />
           ) : (
             <Trans
               i18nKey="logoutUsernameSubtitle"
               t={t}
-              components={{ Code: <Code /> }}
+              components={{
+                code: <code />,
+              }}
               values={{
-                username: username,
+                username,
               }}
             />
           )}
-        </Text>
+        </CardDescription>
+      </CardHeader>
+      <CardFooter className="flex flex-col items-stretch">
         <Button
-          fullWidth
-          mt="xl"
-          onClick={() => logoutMutation.mutate()}
           loading={logoutMutation.isPending}
+          onClick={() => logoutMutation.mutate()}
         >
           {t("logoutTitle")}
         </Button>
-      </Paper>
-    </Layout>
+      </CardFooter>
+    </Card>
   );
 };

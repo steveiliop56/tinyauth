@@ -21,6 +21,7 @@ type UnauthorizedQuery struct {
 	Username string `url:"username"`
 	Resource string `url:"resource"`
 	GroupErr bool   `url:"groupErr"`
+	IP       string `url:"ip"`
 }
 
 // Proxy is the uri parameters for the proxy endpoint
@@ -51,6 +52,7 @@ type AppContext struct {
 	GenericName           string   `json:"genericName"`
 	Domain                string   `json:"domain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
+	BackgroundImage       string   `json:"backgroundImage"`
 	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
 }
 

@@ -1,0 +1,304 @@
+name: Nightly Release
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Delete old release
+        run: gh release delete --cleanup-tag --yes nightly || echo release not found
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          tag_name: nightly
+
+  generate-metadata:
+    runs-on: ubuntu-latest
+    needs: create-release
+    outputs:
+      VERSION: ${{ steps.metadata.outputs.VERSION }}
+      COMMIT_HASH: ${{ steps.metadata.outputs.COMMIT_HASH }}
+      BUILD_TIMESTAMP: ${{ steps.metadata.outputs.BUILD_TIMESTAMP }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: nightly
+
+      - name: Generate metadata
+        id: metadata
+        run: |
+          echo "VERSION=nightly" >> "$GITHUB_OUTPUT"
+          echo "COMMIT_HASH=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "BUILD_TIMESTAMP=$(date '+%Y-%m-%dT%H:%M:%S')" >> "$GITHUB_OUTPUT"
+
+  binary-build:
+    runs-on: ubuntu-latest
+    needs:
+      - create-release
+      - generate-metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: nightly
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^1.23.2"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Install backend dependencies
+        run: |
+          go mod download
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun run build
+
+      - name: Build
+        run: |
+          cp -r frontend/dist internal/assets/dist
+          go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/constants.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/constants.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-amd64
+        env:
+          CGO_ENABLED: 0
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinyauth-amd64
+          path: tinyauth-amd64
+
+  binary-build-arm:
+    runs-on: ubuntu-24.04-arm
+    needs:
+      - create-release
+      - generate-metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: nightly
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^1.23.2"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Install backend dependencies
+        run: |
+          go mod download
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun run build
+
+      - name: Build
+        run: |
+          cp -r frontend/dist internal/assets/dist
+          go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/constants.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/constants.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-arm64
+        env:
+          CGO_ENABLED: 0
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinyauth-arm64
+          path: tinyauth-arm64
+
+  image-build:
+    runs-on: ubuntu-latest
+    needs:
+      - create-release
+      - generate-metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: nightly
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/tinyauth
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        id: build
+        with:
+          platforms: linux/amd64
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ github.repository_owner }}/tinyauth
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            VERSION=${{ needs.generate-metadata.outputs.VERSION }}
+            COMMIT_HASH=${{ needs.generate-metadata.outputs.COMMIT_HASH }}
+            BUILD_TIMESTAMP=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-linux-amd64
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-build-arm:
+    runs-on: ubuntu-24.04-arm
+    needs:
+      - create-release
+      - generate-metadata
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: nightly
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/tinyauth
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set version
+        run: |
+          echo nightly > internal/assets/version
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        id: build
+        with:
+          platforms: linux/arm64
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ github.repository_owner }}/tinyauth
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            VERSION=${{ needs.generate-metadata.outputs.VERSION }}
+            COMMIT_HASH=${{ needs.generate-metadata.outputs.COMMIT_HASH }}
+            BUILD_TIMESTAMP=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-linux-arm64
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-merge:
+    runs-on: ubuntu-latest
+    needs:
+      - image-build
+      - image-build-arm
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/tinyauth
+          tags: |
+            type=raw,nightly
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf 'ghcr.io/${{ github.repository_owner }}/tinyauth@sha256:%s ' *)
+
+  update-release:
+    runs-on: ubuntu-latest
+    needs:
+      - binary-build
+      - binary-build-arm
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tinyauth-*
+          path: binaries
+          merge-multiple: true
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: binaries/*
+          tag_name: nightly

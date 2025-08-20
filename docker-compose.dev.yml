@@ -13,8 +13,8 @@ services:
     image: traefik/whoami:latest
     labels:
       traefik.enable: true
-      traefik.http.routers.nginx.rule: Host(`whoami.example.com`)
-      traefik.http.routers.nginx.middlewares: tinyauth
+      traefik.http.routers.whoami.rule: Host(`whoami.example.com`)
+      traefik.http.routers.whoami.middlewares: tinyauth
 
   tinyauth-frontend:
     container_name: tinyauth-frontend
@@ -42,6 +42,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 3000:3000
+      - 4000:4000
     labels:
       traefik.enable: true
       traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth-backend:3000/api/auth/traefik

@@ -24,6 +24,7 @@ type Config struct {
 	GenericTokenURL         string `mapstructure:"generic-token-url"`
 	GenericUserURL          string `mapstructure:"generic-user-url"`
 	GenericName             string `mapstructure:"generic-name"`
+	GenericSkipSSL          bool   `mapstructure:"generic-skip-ssl"`
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
@@ -33,7 +34,14 @@ type Config struct {
 	EnvFile                 string `mapstructure:"env-file"`
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
-	FogotPasswordMessage    string `mapstructure:"forgot-password-message" validate:"required"`
+	FogotPasswordMessage    string `mapstructure:"forgot-password-message"`
+	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
+	LdapAddress             string `mapstructure:"ldap-address"`
+	LdapBindDN              string `mapstructure:"ldap-bind-dn"`
+	LdapBindPassword        string `mapstructure:"ldap-bind-password"`
+	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
+	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
+	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
 }
 
 // Server configuration
@@ -45,7 +53,10 @@ type HandlersConfig struct {
 	GenericName           string
 	Title                 string
 	ForgotPasswordMessage string
+	BackgroundImage       string
 	OAuthAutoRedirect     string
+	CsrfCookieName        string
+	RedirectCookieName    string
 }
 
 // OAuthConfig is the configuration for the providers
@@ -60,28 +71,77 @@ type OAuthConfig struct {
 	GenericAuthURL      string
 	GenericTokenURL     string
 	GenericUserURL      string
+	GenericSkipSSL      bool
 	AppURL              string
 }
 
-// APIConfig is the configuration for the API
-type APIConfig struct {
+// ServerConfig is the configuration for the server
+type ServerConfig struct {
 	Port    int
 	Address string
 }
 
 // AuthConfig is the configuration for the auth service
 type AuthConfig struct {
-	Users           Users
-	OauthWhitelist  string
-	SessionExpiry   int
-	Secret          string
-	CookieSecure    bool
-	Domain          string
-	LoginTimeout    int
-	LoginMaxRetries int
+	Users             Users
+	OauthWhitelist    string
+	SessionExpiry     int
+	CookieSecure      bool
+	Domain            string
+	LoginTimeout      int
+	LoginMaxRetries   int
+	SessionCookieName string
+	HMACSecret        string
+	EncryptionSecret  string
 }
 
 // HooksConfig is the configuration for the hooks service
 type HooksConfig struct {
 	Domain string
+}
+
+// OAuthLabels is a list of labels that can be used in a tinyauth protected container
+type OAuthLabels struct {
+	Whitelist string
+	Groups    string
+}
+
+// Basic auth labels for a tinyauth protected container
+type BasicLabels struct {
+	Username string
+	Password PassowrdLabels
+}
+
+// PassowrdLabels is a struct that contains the password labels for a tinyauth protected container
+type PassowrdLabels struct {
+	Plain string
+	File  string
+}
+
+// IP labels for a tinyauth protected container
+type IPLabels struct {
+	Allow  []string
+	Block  []string
+	Bypass []string
+}
+
+// Labels is a struct that contains the labels for a tinyauth protected container
+type Labels struct {
+	Users   string
+	Allowed string
+	Headers []string
+	Domain  []string
+	Basic   BasicLabels
+	OAuth   OAuthLabels
+	IP      IPLabels
+}
+
+// Ldap config is a struct that contains the configuration for the LDAP service
+type LdapConfig struct {
+	Address      string
+	BindDN       string
+	BindPassword string
+	BaseDN       string
+	Insecure     bool
+	SearchFilter string
 }

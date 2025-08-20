@@ -12,6 +12,12 @@ type User struct {
 	TotpSecret string
 }
 
+// UserSearch is the response of the get user
+type UserSearch struct {
+	Username string
+	Type     string // "local", "ldap" or empty
+}
+
 // Users is a list of users
 type Users []User
 
@@ -30,15 +36,6 @@ type SessionCookie struct {
 	Provider    string
 	TotpPending bool
 	OAuthGroups string
-}
-
-// TinyauthLabels is the labels for the tinyauth container
-type TinyauthLabels struct {
-	OAuthWhitelist string
-	Users          string
-	Allowed        string
-	Headers        map[string]string
-	OAuthGroups    string
 }
 
 // UserContext is the context for the user
