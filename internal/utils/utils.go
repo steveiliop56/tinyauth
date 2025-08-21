@@ -165,7 +165,7 @@ func GetLabels(labels map[string]string) (types.Labels, error) {
 
 // Check if any of the OAuth providers are configured based on the client id and secret
 func OAuthConfigured(config types.Config) bool {
-	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
+	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.MicrosoftClientId != "" && config.MicrosoftClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
 }
 
 // Filter helper function

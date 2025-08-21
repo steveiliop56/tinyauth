@@ -16,6 +16,13 @@ type Config struct {
 	GoogleClientId          string `mapstructure:"google-client-id"`
 	GoogleClientSecret      string `mapstructure:"google-client-secret"`
 	GoogleClientSecretFile  string `mapstructure:"google-client-secret-file"`
+	MicrosoftClientId         string `mapstructure:"microsoft-client-id"`
+	MicrosoftClientSecret     string `mapstructure:"microsoft-client-secret"`
+	MicrosoftClientSecretFile string `mapstructure:"microsoft-client-secret-file"`
+	MicrosoftAuthURL          string `mapstructure:"microsoft-auth-url"`
+	MicrosoftTokenURL         string `mapstructure:"microsoft-token-url"`
+	MicrosoftUserURL          string `mapstructure:"microsoft-user-url"`
+	MicrosoftScopes           string `mapstructure:"microsoft-scopes"`
 	GenericClientId         string `mapstructure:"generic-client-id"`
 	GenericClientSecret     string `mapstructure:"generic-client-secret"`
 	GenericClientSecretFile string `mapstructure:"generic-client-secret-file"`
@@ -27,7 +34,7 @@ type Config struct {
 	GenericSkipSSL          bool   `mapstructure:"generic-skip-ssl"`
 	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
-	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
+	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google microsoft generic"`
 	SessionExpiry           int    `mapstructure:"session-expiry"`
 	LogLevel                int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
 	Title                   string `mapstructure:"app-title"`
@@ -61,18 +68,24 @@ type HandlersConfig struct {
 
 // OAuthConfig is the configuration for the providers
 type OAuthConfig struct {
-	GithubClientId      string
-	GithubClientSecret  string
-	GoogleClientId      string
-	GoogleClientSecret  string
-	GenericClientId     string
-	GenericClientSecret string
-	GenericScopes       []string
-	GenericAuthURL      string
-	GenericTokenURL     string
-	GenericUserURL      string
-	GenericSkipSSL      bool
-	AppURL              string
+	GithubClientId        string
+	GithubClientSecret    string
+	GoogleClientId        string
+	GoogleClientSecret    string
+	MicrosoftClientId     string
+	MicrosoftClientSecret string
+	MicrosoftAuthURL      string
+	MicrosoftTokenURL     string
+	MicrosoftUserURL      string
+	MicrosoftScopes       []string
+	GenericClientId       string
+	GenericClientSecret   string
+	GenericScopes         []string
+	GenericAuthURL        string
+	GenericTokenURL       string
+	GenericUserURL        string
+	GenericSkipSSL        bool
+	AppURL                string
 }
 
 // ServerConfig is the configuration for the server
