@@ -31,7 +31,7 @@
     "logoutOauthSubtitle": "Sie sind derzeit als <code>{{username}}</code> über den OAuth-Anbieter {{provider}} angemeldet. Klicken Sie auf den Button unten, um sich abzumelden.",
     "notFoundTitle": "Seite nicht gefunden",
     "notFoundSubtitle": "Die gesuchte Seite existiert nicht.",
-    "notFoundButton": "Nach Hause",
+    "notFoundButton": "Zurück",
     "totpFailTitle": "Fehler beim Verifizieren des Codes",
     "totpFailSubtitle": "Bitte überprüfen Sie Ihren Code und versuchen Sie es erneut",
     "totpSuccessTitle": "Verifiziert",
@@ -51,7 +51,7 @@
     "failedToFetchProvidersTitle": "Fehler beim Laden der Authentifizierungsanbieter. Bitte überprüfen Sie Ihre Konfiguration.",
     "errorTitle": "Ein Fehler ist aufgetreten",
     "errorSubtitle": "Beim Versuch, diese Aktion auszuführen, ist ein Fehler aufgetreten. Bitte überprüfen Sie die Konsole für weitere Informationen.",
-    "forgotPasswordMessage": "You can reset your password by changing the `USERS` environment variable.",
-    "fieldRequired": "This field is required",
-    "invalidInput": "Invalid input"
+    "forgotPasswordMessage": "Das Passwort kann durch Änderung der 'USERS' Variable zurückgesetzt werden.",
+    "fieldRequired": "Dieses Feld ist notwendig",
+    "invalidInput": "Ungültige Eingabe"
 }
