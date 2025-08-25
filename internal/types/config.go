@@ -44,21 +44,6 @@ type Config struct {
 	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
 }
 
-// Server configuration
-type HandlersConfig struct {
-	AppURL                string
-	Domain                string
-	CookieSecure          bool
-	DisableContinue       bool
-	GenericName           string
-	Title                 string
-	ForgotPasswordMessage string
-	BackgroundImage       string
-	OAuthAutoRedirect     string
-	CsrfCookieName        string
-	RedirectCookieName    string
-}
-
 // OAuthConfig is the configuration for the providers
 type OAuthConfig struct {
 	GithubClientId      string

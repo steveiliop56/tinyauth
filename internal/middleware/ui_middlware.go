@@ -1,4 +1,4 @@
-package middlewares
+package middleware
 
 import (
 	"io/fs"
@@ -16,24 +16,29 @@ type UIMiddleware struct {
 	ResourcesFileServer http.Handler
 }
 
-func NewUIMiddleware() (*UIMiddleware, error) {
+func NewUIMiddleware() *UIMiddleware {
+	return &UIMiddleware{}
+}
+
+func (m *UIMiddleware) Init() error {
 	ui, err := fs.Sub(assets.Assets, "dist")
 
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	uiFileServer := http.FileServer(http.FS(ui))
-	resourcesFileServer := http.FileServer(http.Dir("/data/resources"))
+	m.UIFS = ui
+	m.UIFileServer = http.FileServer(http.FS(ui))
+	m.ResourcesFileServer = http.FileServer(http.Dir("/data/resources"))
 
-	return &UIMiddleware{
-		UIFS:                ui,
-		UIFileServer:        uiFileServer,
-		ResourcesFileServer: resourcesFileServer,
-	}, nil
+	return nil
 }
 
-func (m UIMiddleware) Middlware() gin.HandlerFunc {
+func (m *UIMiddleware) Name() string {
+	return "UIMiddleware"
+}
+
+func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		switch strings.Split(c.Request.URL.Path, "/")[1] {
 		case "api":

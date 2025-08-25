@@ -10,8 +10,8 @@ import (
 	"tinyauth/internal/constants"
 	"tinyauth/internal/docker"
 	"tinyauth/internal/handlers"
-	"tinyauth/internal/hooks"
 	"tinyauth/internal/ldap"
+	"tinyauth/internal/middleware"
 	"tinyauth/internal/providers"
 	"tinyauth/internal/server"
 	"tinyauth/internal/types"
@@ -84,7 +84,7 @@ var rootCmd = &cobra.Command{
 			AppURL:              config.AppURL,
 		}
 
-		handlersConfig := types.HandlersConfig{
+		handlersConfig := handlers.HandlersConfig{
 			AppURL:                config.AppURL,
 			DisableContinue:       config.DisableContinue,
 			Title:                 config.Title,
@@ -114,10 +114,6 @@ var rootCmd = &cobra.Command{
 			SessionCookieName: sessionCookieName,
 			HMACSecret:        hmacSecret,
 			EncryptionSecret:  encryptionSecret,
-		}
-
-		hooksConfig := types.HooksConfig{
-			Domain: domain,
 		}
 
 		var ldapService *ldap.LDAP
@@ -151,9 +147,20 @@ var rootCmd = &cobra.Command{
 		HandleError(err, "Failed to initialize docker")
 		auth := auth.NewAuth(authConfig, docker, ldapService)
 		providers := providers.NewProviders(oauthConfig)
-		hooks := hooks.NewHooks(hooksConfig, auth, providers)
-		handlers := handlers.NewHandlers(handlersConfig, auth, hooks, providers, docker)
-		srv, err := server.NewServer(serverConfig, handlers)
+		handlers := handlers.NewHandlers(handlersConfig, auth, providers, docker)
+
+		// Setup the middlewares
+		var middlewares []server.Middleware
+
+		contextMiddleware := middleware.NewContextMiddleware(middleware.ContextMiddlewareConfig{
+			Domain: domain,
+		}, auth, providers)
+		uiMiddleware := middleware.NewUIMiddleware()
+		zerologMiddleware := middleware.NewZerologMiddleware()
+
+		middlewares = append(middlewares, contextMiddleware, uiMiddleware, zerologMiddleware)
+
+		srv, err := server.NewServer(serverConfig, handlers, middlewares)
 		HandleError(err, "Failed to create server")
 
 		// Start up

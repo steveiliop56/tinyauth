@@ -15,15 +15,22 @@ type Server struct {
 	Router   *gin.Engine
 }
 
-type Middlware interface {
-	Middlware() gin.HandlerFunc
+type Middleware interface {
+	Middleware() gin.HandlerFunc
+	Init() error
+	Name() string
 }
 
-func NewServer(config types.ServerConfig, handlers *handlers.Handlers, middlewares []Middlware) (*Server, error) {
+func NewServer(config types.ServerConfig, handlers *handlers.Handlers, middlewares []Middleware) (*Server, error) {
 	router := gin.New()
 
 	for _, middleware := range middlewares {
-		router.Use(middleware.Middlware())
+		log.Debug().Str("middleware", middleware.Name()).Msg("Initializing middleware")
+		err := middleware.Init()
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize middleware %s: %w", middleware.Name(), err)
+		}
+		router.Use(middleware.Middleware())
 	}
 
 	// Proxy routes

@@ -1,4 +1,4 @@
-package middlewares
+package middleware
 
 import (
 	"fmt"
@@ -27,6 +27,14 @@ func NewContextMiddleware(config ContextMiddlewareConfig, auth *auth.Auth, provi
 		Auth:      auth,
 		Providers: providers,
 	}
+}
+
+func (m *ContextMiddleware) Init() error {
+	return nil
+}
+
+func (m *ContextMiddleware) Name() string {
+	return "ContextMiddleware"
 }
 
 func (m *ContextMiddleware) Middleware() gin.HandlerFunc {

@@ -146,7 +146,24 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	userContext := h.Hooks.UseUserContext(c)
+	var userContext *types.UserContext
+
+	userContextValue, exists := c.Get("context")
+
+	if !exists {
+		userContext = &types.UserContext{
+			IsLoggedIn: false,
+		}
+	} else {
+		var ok bool
+		userContext, ok = userContextValue.(*types.UserContext)
+
+		if !ok {
+			userContext = &types.UserContext{
+				IsLoggedIn: false,
+			}
+		}
+	}
 
 	// If we are using basic auth, we need to check if the user has totp and if it does then disable basic auth
 	if userContext.Provider == "basic" && userContext.TotpEnabled {
@@ -158,7 +175,7 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		log.Debug().Msg("Authenticated")
 
 		// Check if user is allowed to access subdomain, if request is nginx.example.com the subdomain (resource) is nginx
-		appAllowed := h.Auth.ResourceAllowed(c, userContext, labels)
+		appAllowed := h.Auth.ResourceAllowed(c, *userContext, labels)
 
 		log.Debug().Bool("appAllowed", appAllowed).Msg("Checking if app is allowed")
 
@@ -195,7 +212,7 @@ func (h *Handlers) ProxyHandler(c *gin.Context) {
 		}
 
 		if userContext.OAuth {
-			groupOk := h.Auth.OAuthGroup(c, userContext, labels)
+			groupOk := h.Auth.OAuthGroup(c, *userContext, labels)
 
 			log.Debug().Bool("groupOk", groupOk).Msg("Checking if user is in required groups")
 

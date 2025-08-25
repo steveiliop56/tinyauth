@@ -141,7 +141,25 @@ func (h *Handlers) TOTPHandler(c *gin.Context) {
 	log.Debug().Msg("Checking totp")
 
 	// Get user context
-	userContext := h.Hooks.UseUserContext(c)
+	userContextValue, exists := c.Get("context")
+
+	if !exists {
+		c.JSON(401, gin.H{
+			"status":  401,
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	userContext, ok := userContextValue.(*types.UserContext)
+
+	if !ok {
+		c.JSON(401, gin.H{
+			"status":  401,
+			"message": "Unauthorized",
+		})
+		return
+	}
 
 	// Check if we have a user
 	if userContext.Username == "" {
@@ -157,7 +175,7 @@ func (h *Handlers) TOTPHandler(c *gin.Context) {
 	user := h.Auth.GetLocalUser(userContext.Username)
 
 	// Check if totp is correct
-	ok := totp.Validate(totpReq.Code, user.TotpSecret)
+	ok = totp.Validate(totpReq.Code, user.TotpSecret)
 
 	if !ok {
 		log.Debug().Msg("Totp incorrect")

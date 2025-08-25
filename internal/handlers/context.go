@@ -37,8 +37,28 @@ func (h *Handlers) AppContextHandler(c *gin.Context) {
 func (h *Handlers) UserContextHandler(c *gin.Context) {
 	log.Debug().Msg("Getting user context")
 
-	// Create user context using hooks
-	userContext := h.Hooks.UseUserContext(c)
+	// Get user context from middleware
+	userContextValue, exists := c.Get("context")
+
+	if !exists {
+		c.JSON(200, types.UserContextResponse{
+			Status:     200,
+			Message:    "Unauthorized",
+			IsLoggedIn: false,
+		})
+		return
+	}
+
+	userContext, ok := userContextValue.(*types.UserContext)
+
+	if !ok {
+		c.JSON(200, types.UserContextResponse{
+			Status:     200,
+			Message:    "Unauthorized",
+			IsLoggedIn: false,
+		})
+		return
+	}
 
 	userContextResponse := types.UserContextResponse{
 		Status:      200,
