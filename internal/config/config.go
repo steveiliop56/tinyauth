@@ -1,7 +1,5 @@
 package config
 
-import "time"
-
 type Claims struct {
 	Name              string `json:"name"`
 	Email             string `json:"email"`
@@ -100,7 +98,6 @@ type OAuthServiceConfig struct {
 	TokenURL           string
 	UserinfoURL        string
 	InsecureSkipVerify bool
-	Name               string
 }
 
 type User struct {
@@ -113,8 +110,6 @@ type UserSearch struct {
 	Username string
 	Type     string // local, ldap or unknown
 }
-
-type Users []User
 
 type SessionCookie struct {
 	Username    string
@@ -135,12 +130,6 @@ type UserContext struct {
 	TotpPending bool
 	OAuthGroups string
 	TotpEnabled bool
-}
-
-type LoginAttempt struct {
-	FailedAttempts int
-	LastAttempt    time.Time
-	LockedUntil    time.Time
 }
 
 type UnauthorizedQuery struct {

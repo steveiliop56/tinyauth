@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"tinyauth/internal/auth"
-	"tinyauth/internal/docker"
-	"tinyauth/internal/types"
+	"tinyauth/internal/config"
+	"tinyauth/internal/service"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -24,11 +23,11 @@ type ProxyControllerConfig struct {
 type ProxyController struct {
 	Config ProxyControllerConfig
 	Router *gin.RouterGroup
-	Docker *docker.Docker
-	Auth   *auth.Auth
+	Docker *service.DockerService
+	Auth   *service.AuthService
 }
 
-func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *docker.Docker, auth *auth.Auth) *ProxyController {
+func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *service.DockerService, auth *service.AuthService) *ProxyController {
 	return &ProxyController{
 		Config: config,
 		Router: router,
@@ -109,7 +108,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			return
 		}
 
-		queries, err := query.Values(types.UnauthorizedQuery{
+		queries, err := query.Values(config.UnauthorizedQuery{
 			Resource: strings.Split(host, ".")[0],
 			IP:       clientIP,
 		})
@@ -157,12 +156,12 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	var userContext types.UserContext
+	var userContext config.UserContext
 
 	context, err := utils.GetContext(c)
 
 	if err != nil {
-		userContext = types.UserContext{
+		userContext = config.UserContext{
 			IsLoggedIn: false,
 		}
 	} else {
@@ -185,7 +184,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				return
 			}
 
-			queries, err := query.Values(types.UnauthorizedQuery{
+			queries, err := query.Values(config.UnauthorizedQuery{
 				Resource: strings.Split(host, ".")[0],
 			})
 
@@ -216,7 +215,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 					return
 				}
 
-				queries, err := query.Values(types.UnauthorizedQuery{
+				queries, err := query.Values(config.UnauthorizedQuery{
 					Resource: strings.Split(host, ".")[0],
 					GroupErr: true,
 				})
@@ -268,7 +267,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	queries, err := query.Values(types.RedirectQuery{
+	queries, err := query.Values(config.RedirectQuery{
 		RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
 	})
 

@@ -19,7 +19,6 @@ type GenericOAuthService struct {
 	Token              *oauth2.Token
 	Verifier           string
 	InsecureSkipVerify bool
-	ServiceName        string
 	UserinfoURL        string
 }
 
@@ -36,7 +35,6 @@ func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthServi
 			},
 		},
 		InsecureSkipVerify: config.InsecureSkipVerify,
-		ServiceName:        config.Name,
 		UserinfoURL:        config.UserinfoURL,
 	}
 }
@@ -61,10 +59,6 @@ func (generic *GenericOAuthService) Init() error {
 	generic.Context = ctx
 	generic.Verifier = verifier
 	return nil
-}
-
-func (generic *GenericOAuthService) Name() string {
-	return generic.ServiceName
 }
 
 func (generic *GenericOAuthService) GenerateState() string {

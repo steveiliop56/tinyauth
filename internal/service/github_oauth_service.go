@@ -54,10 +54,6 @@ func (github *GithubOAuthService) Init() error {
 	return nil
 }
 
-func (github *GithubOAuthService) Name() string {
-	return "github"
-}
-
 func (github *GithubOAuthService) GenerateState() string {
 	b := make([]byte, 128)
 	rand.Read(b)

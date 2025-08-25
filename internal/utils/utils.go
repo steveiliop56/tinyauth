@@ -11,7 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"tinyauth/internal/types"
+	"tinyauth/internal/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/traefik/paerser/parser"
@@ -22,21 +22,21 @@ import (
 )
 
 // Parses a list of comma separated users in a struct
-func ParseUsers(users string) (types.Users, error) {
+func ParseUsers(users string) ([]config.User, error) {
 	log.Debug().Msg("Parsing users")
 
-	var usersParsed types.Users
+	var usersParsed []config.User
 
 	userList := strings.Split(users, ",")
 
 	if len(userList) == 0 {
-		return types.Users{}, errors.New("invalid user format")
+		return []config.User{}, errors.New("invalid user format")
 	}
 
 	for _, user := range userList {
 		parsed, err := ParseUser(user)
 		if err != nil {
-			return types.Users{}, err
+			return []config.User{}, err
 		}
 		usersParsed = append(usersParsed, parsed)
 	}
@@ -107,11 +107,11 @@ func GetSecret(conf string, file string) string {
 }
 
 // Get the users from the config or file
-func GetUsers(conf string, file string) (types.Users, error) {
+func GetUsers(conf string, file string) ([]config.User, error) {
 	var users string
 
 	if conf == "" && file == "" {
-		return types.Users{}, nil
+		return []config.User{}, nil
 	}
 
 	if conf != "" {
@@ -152,21 +152,16 @@ func ParseHeaders(headers []string) map[string]string {
 }
 
 // Get labels parses a map of labels into a struct with only the needed labels
-func GetLabels(labels map[string]string) (types.Labels, error) {
-	var labelsParsed types.Labels
+func GetLabels(labels map[string]string) (config.Labels, error) {
+	var labelsParsed config.Labels
 
 	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth", "tinyauth.ip")
 	if err != nil {
 		log.Error().Err(err).Msg("Error parsing labels")
-		return types.Labels{}, err
+		return config.Labels{}, err
 	}
 
 	return labelsParsed, nil
-}
-
-// Check if any of the OAuth providers are configured based on the client id and secret
-func OAuthConfigured(config types.Config) bool {
-	return (config.GithubClientId != "" && config.GithubClientSecret != "") || (config.GoogleClientId != "" && config.GoogleClientSecret != "") || (config.GenericClientId != "" && config.GenericClientSecret != "")
 }
 
 // Filter helper function
@@ -180,7 +175,7 @@ func Filter[T any](slice []T, test func(T) bool) (res []T) {
 }
 
 // Parse user
-func ParseUser(user string) (types.User, error) {
+func ParseUser(user string) (config.User, error) {
 	if strings.Contains(user, "$$") {
 		user = strings.ReplaceAll(user, "$$", "$")
 	}
@@ -188,23 +183,23 @@ func ParseUser(user string) (types.User, error) {
 	userSplit := strings.Split(user, ":")
 
 	if len(userSplit) < 2 || len(userSplit) > 3 {
-		return types.User{}, errors.New("invalid user format")
+		return config.User{}, errors.New("invalid user format")
 	}
 
 	for _, userPart := range userSplit {
 		if strings.TrimSpace(userPart) == "" {
-			return types.User{}, errors.New("invalid user format")
+			return config.User{}, errors.New("invalid user format")
 		}
 	}
 
 	if len(userSplit) == 2 {
-		return types.User{
+		return config.User{
 			Username: strings.TrimSpace(userSplit[0]),
 			Password: strings.TrimSpace(userSplit[1]),
 		}, nil
 	}
 
-	return types.User{
+	return config.User{
 		Username:   strings.TrimSpace(userSplit[0]),
 		Password:   strings.TrimSpace(userSplit[1]),
 		TotpSecret: strings.TrimSpace(userSplit[2]),
@@ -350,17 +345,17 @@ func CoalesceToString(value any) string {
 	}
 }
 
-func GetContext(c *gin.Context) (types.UserContext, error) {
+func GetContext(c *gin.Context) (config.UserContext, error) {
 	userContextValue, exists := c.Get("context")
 
 	if !exists {
-		return types.UserContext{}, errors.New("no user context in request")
+		return config.UserContext{}, errors.New("no user context in request")
 	}
 
-	userContext, ok := userContextValue.(*types.UserContext)
+	userContext, ok := userContextValue.(*config.UserContext)
 
 	if !ok {
-		return types.UserContext{}, errors.New("invalid user context in request")
+		return config.UserContext{}, errors.New("invalid user context in request")
 	}
 
 	return *userContext, nil

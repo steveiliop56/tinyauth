@@ -3,8 +3,8 @@ package controller
 import (
 	"fmt"
 	"strings"
-	"tinyauth/internal/auth"
-	"tinyauth/internal/types"
+	"tinyauth/internal/config"
+	"tinyauth/internal/service"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -27,10 +27,10 @@ type UserControllerConfig struct {
 type UserController struct {
 	Config UserControllerConfig
 	Router *gin.RouterGroup
-	Auth   *auth.Auth
+	Auth   *service.AuthService
 }
 
-func NewUserController(config UserControllerConfig, router *gin.RouterGroup, auth *auth.Auth) *UserController {
+func NewUserController(config UserControllerConfig, router *gin.RouterGroup, auth *service.AuthService) *UserController {
 	return &UserController{
 		Config: config,
 		Router: router,
@@ -101,7 +101,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		user := controller.Auth.GetLocalUser(userSearch.Username)
 
 		if user.TotpSecret != "" {
-			controller.Auth.CreateSessionCookie(c, &types.SessionCookie{
+			controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.Domain),
@@ -118,7 +118,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		}
 	}
 
-	controller.Auth.CreateSessionCookie(c, &types.SessionCookie{
+	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.Domain),
@@ -202,7 +202,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	controller.Auth.RecordLoginAttempt(rateIdentifier, true)
 
-	controller.Auth.CreateSessionCookie(c, &types.SessionCookie{
+	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.Config.Domain),

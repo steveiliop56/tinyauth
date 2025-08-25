@@ -49,10 +49,6 @@ func (google *GoogleOAuthService) Init() error {
 	return nil
 }
 
-func (google *GoogleOAuthService) Name() string {
-	return "google"
-}
-
 func (oauth *GoogleOAuthService) GenerateState() string {
 	b := make([]byte, 128)
 	rand.Read(b)

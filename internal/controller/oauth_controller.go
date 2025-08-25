@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"tinyauth/internal/auth"
-	"tinyauth/internal/providers"
-	"tinyauth/internal/types"
+	"tinyauth/internal/config"
+	"tinyauth/internal/service"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -26,18 +25,18 @@ type OAuthControllerConfig struct {
 }
 
 type OAuthController struct {
-	Config    OAuthControllerConfig
-	Router    *gin.RouterGroup
-	Auth      *auth.Auth
-	Providers *providers.Providers
+	Config OAuthControllerConfig
+	Router *gin.RouterGroup
+	Auth   *service.AuthService
+	Broker *service.OAuthBrokerService
 }
 
-func NewOAuthController(config OAuthControllerConfig, router *gin.RouterGroup, auth *auth.Auth, providers *providers.Providers) *OAuthController {
+func NewOAuthController(config OAuthControllerConfig, router *gin.RouterGroup, auth *service.AuthService, broker *service.OAuthBrokerService) *OAuthController {
 	return &OAuthController{
-		Config:    config,
-		Router:    router,
-		Auth:      auth,
-		Providers: providers,
+		Config: config,
+		Router: router,
+		Auth:   auth,
+		Broker: broker,
 	}
 }
 
@@ -59,9 +58,9 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	provider := controller.Providers.GetProvider(req.Provider)
+	service, exists := controller.Broker.GetService(req.Provider)
 
-	if provider == nil {
+	if !exists {
 		c.JSON(404, gin.H{
 			"status":  404,
 			"message": "Not Found",
@@ -69,8 +68,8 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	state := provider.GenerateState()
-	authURL := provider.GetAuthURL(state)
+	state := service.GenerateState()
+	authURL := service.GetAuthURL(state)
 	c.SetCookie(controller.Config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", "", controller.Config.SecureCookie, true)
 
 	redirectURI := c.Query("redirect_uri")
@@ -109,20 +108,20 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	c.SetCookie(controller.Config.CSRFCookieName, "", -1, "/", "", controller.Config.SecureCookie, true)
 
 	code := c.Query("code")
-	provider := controller.Providers.GetProvider(req.Provider)
+	service, exists := controller.Broker.GetService(req.Provider)
 
-	if provider == nil {
+	if !exists {
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
 
-	_, err = provider.ExchangeToken(code)
+	err = service.VerifyCode(code)
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
 
-	user, err := controller.Providers.GetUser(req.Provider)
+	user, err := controller.Broker.GetUser(req.Provider)
 
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
@@ -135,7 +134,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	if !controller.Auth.EmailWhitelisted(user.Email) {
-		queries, err := query.Values(types.UnauthorizedQuery{
+		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
 		})
 
@@ -156,7 +155,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
-	controller.Auth.CreateSessionCookie(c, &types.SessionCookie{
+	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username:    user.Email,
 		Name:        name,
 		Email:       user.Email,
@@ -171,7 +170,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	queries, err := query.Values(types.RedirectQuery{
+	queries, err := query.Values(config.RedirectQuery{
 		RedirectURI: redirectURI,
 	})
 

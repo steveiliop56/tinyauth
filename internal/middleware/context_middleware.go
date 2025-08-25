@@ -3,9 +3,8 @@ package middleware
 import (
 	"fmt"
 	"strings"
-	"tinyauth/internal/auth"
-	"tinyauth/internal/providers"
-	"tinyauth/internal/types"
+	"tinyauth/internal/config"
+	"tinyauth/internal/service"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -16,16 +15,16 @@ type ContextMiddlewareConfig struct {
 }
 
 type ContextMiddleware struct {
-	Config    ContextMiddlewareConfig
-	Auth      *auth.Auth
-	Providers *providers.Providers
+	Config ContextMiddlewareConfig
+	Auth   *service.AuthService
+	Broker *service.OAuthBrokerService
 }
 
-func NewContextMiddleware(config ContextMiddlewareConfig, auth *auth.Auth, providers *providers.Providers) *ContextMiddleware {
+func NewContextMiddleware(config ContextMiddlewareConfig, auth *service.AuthService, broker *service.OAuthBrokerService) *ContextMiddleware {
 	return &ContextMiddleware{
-		Config:    config,
-		Auth:      auth,
-		Providers: providers,
+		Config: config,
+		Auth:   auth,
+		Broker: broker,
 	}
 }
 
@@ -46,7 +45,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		}
 
 		if cookie.TotpPending {
-			c.Set("context", &types.UserContext{
+			c.Set("context", &config.UserContext{
 				Username:    cookie.Username,
 				Name:        cookie.Name,
 				Email:       cookie.Email,
@@ -66,7 +65,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
-			c.Set("context", &types.UserContext{
+			c.Set("context", &config.UserContext{
 				Username:   cookie.Username,
 				Name:       cookie.Name,
 				Email:      cookie.Email,
@@ -76,9 +75,9 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		default:
-			provider := m.Providers.GetProvider(cookie.Provider)
+			_, exists := m.Broker.GetService(cookie.Provider)
 
-			if provider == nil {
+			if !exists {
 				goto basic
 			}
 
@@ -87,7 +86,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
-			c.Set("context", &types.UserContext{
+			c.Set("context", &config.UserContext{
 				Username:    cookie.Username,
 				Name:        cookie.Name,
 				Email:       cookie.Email,
@@ -124,7 +123,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		case "local":
 			user := m.Auth.GetLocalUser(basic.Username)
 
-			c.Set("context", &types.UserContext{
+			c.Set("context", &config.UserContext{
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.Config.Domain),
@@ -135,7 +134,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		case "ldap":
-			c.Set("context", &types.UserContext{
+			c.Set("context", &config.UserContext{
 				Username:   basic.Username,
 				Name:       utils.Capitalize(basic.Username),
 				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.Config.Domain),
