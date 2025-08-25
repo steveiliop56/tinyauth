@@ -11,6 +11,7 @@ import (
 	"tinyauth/internal/config"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/endpoints"
 )
 
 var GithubOAuthScopes = []string{"user:email", "read:user"}
@@ -39,6 +40,7 @@ func NewGithubOAuthService(config config.OAuthServiceConfig) *GithubOAuthService
 			ClientSecret: config.ClientSecret,
 			RedirectURL:  config.RedirectURL,
 			Scopes:       GithubOAuthScopes,
+			Endpoint:     endpoints.GitHub,
 		},
 	}
 }

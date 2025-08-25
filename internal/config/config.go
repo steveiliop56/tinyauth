@@ -12,7 +12,7 @@ var CommitHash = "n/a"
 var BuildTimestamp = "n/a"
 
 var SessionCookieName = "tinyauth-session"
-var CsrfCookieName = "tinyauth-csrf"
+var CSRFCookieName = "tinyauth-csrf"
 var RedirectCookieName = "tinyauth-redirect"
 
 type Config struct {
@@ -23,7 +23,7 @@ type Config struct {
 	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
 	Users                   string `mapstructure:"users"`
 	UsersFile               string `mapstructure:"users-file"`
-	CookieSecure            bool   `mapstructure:"cookie-secure"`
+	SecureCookie            bool   `mapstructure:"secure-cookie"`
 	GithubClientId          string `mapstructure:"github-client-id"`
 	GithubClientSecret      string `mapstructure:"github-client-secret"`
 	GithubClientSecretFile  string `mapstructure:"github-client-secret-file"`
@@ -43,9 +43,8 @@ type Config struct {
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
 	SessionExpiry           int    `mapstructure:"session-expiry"`
-	LogLevel                int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
+	LogLevel                string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
 	Title                   string `mapstructure:"app-title"`
-	EnvFile                 string `mapstructure:"env-file"`
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
 	FogotPasswordMessage    string `mapstructure:"forgot-password-message"`

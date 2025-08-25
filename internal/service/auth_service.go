@@ -25,7 +25,7 @@ type AuthServiceConfig struct {
 	Users             []config.User
 	OauthWhitelist    string
 	SessionExpiry     int
-	CookieSecure      bool
+	SecureCookie      bool
 	Domain            string
 	LoginTimeout      int
 	LoginMaxRetries   int
@@ -57,10 +57,11 @@ func (auth *AuthService) Init() error {
 	store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   auth.Config.SessionExpiry,
-		Secure:   auth.Config.CookieSecure,
+		Secure:   auth.Config.SecureCookie,
 		HttpOnly: true,
 		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
 	}
+	auth.Store = store
 	return nil
 }
 
@@ -70,7 +71,7 @@ func (auth *AuthService) GetSession(c *gin.Context) (*sessions.Session, error) {
 	// If there was an error getting the session, it might be invalid so let's clear it and retry
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid session, clearing cookie and retrying")
-		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.CookieSecure, true)
+		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
 		session, err = auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get session")

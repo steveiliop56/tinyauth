@@ -11,6 +11,7 @@ import (
 	"tinyauth/internal/config"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/endpoints"
 )
 
 var GoogleOAuthScopes = []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"}
@@ -34,6 +35,7 @@ func NewGoogleOAuthService(config config.OAuthServiceConfig) *GoogleOAuthService
 			ClientSecret: config.ClientSecret,
 			RedirectURL:  config.RedirectURL,
 			Scopes:       GoogleOAuthScopes,
+			Endpoint:     endpoints.Google,
 		},
 	}
 }
