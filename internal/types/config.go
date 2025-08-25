@@ -95,11 +95,6 @@ type AuthConfig struct {
 	EncryptionSecret  string
 }
 
-// HooksConfig is the configuration for the hooks service
-type HooksConfig struct {
-	Domain string
-}
-
 // OAuthLabels is a list of labels that can be used in a tinyauth protected container
 type OAuthLabels struct {
 	Whitelist string
