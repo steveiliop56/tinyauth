@@ -10,14 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type UIMiddlewareConfig struct {
+	ResourcesDir string
+}
+
 type UIMiddleware struct {
+	Config              UIMiddlewareConfig
 	UIFS                fs.FS
 	UIFileServer        http.Handler
 	ResourcesFileServer http.Handler
 }
 
-func NewUIMiddleware() *UIMiddleware {
-	return &UIMiddleware{}
+func NewUIMiddleware(config UIMiddlewareConfig) *UIMiddleware {
+	return &UIMiddleware{
+		Config: config,
+	}
 }
 
 func (m *UIMiddleware) Init() error {
@@ -29,7 +36,7 @@ func (m *UIMiddleware) Init() error {
 
 	m.UIFS = ui
 	m.UIFileServer = http.FileServer(http.FS(ui))
-	m.ResourcesFileServer = http.FileServer(http.Dir("/data/resources"))
+	m.ResourcesFileServer = http.FileServer(http.Dir(m.Config.ResourcesDir))
 
 	return nil
 }
@@ -45,7 +52,7 @@ func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		case "resources":
-			_, err := os.Stat("/data/resources/" + strings.TrimPrefix(c.Request.URL.Path, "/resources/"))
+			_, err := os.Stat(m.Config.ResourcesDir + strings.TrimPrefix(c.Request.URL.Path, "/resources/"))
 
 			if os.IsNotExist(err) {
 				c.Status(404)

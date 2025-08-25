@@ -113,6 +113,7 @@ func init() {
 		{"ldap-base-dn", "", "LDAP base DN (e.g. dc=example,dc=com)."},
 		{"ldap-insecure", false, "Skip certificate verification for the LDAP server."},
 		{"ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup."},
+		{"resources-dir", "/data/resources", "Path to a directory containing custom resources (e.g. background image)."},
 	}
 
 	for _, opt := range configOptions {

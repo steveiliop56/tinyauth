@@ -151,7 +151,9 @@ func (app *BootstrapApp) Setup() error {
 		Domain: domain,
 	}, authService, oauthBrokerService)
 
-	uiMiddleware := middleware.NewUIMiddleware()
+	uiMiddleware := middleware.NewUIMiddleware(middleware.UIMiddlewareConfig{
+		ResourcesDir: app.Config.ResourcesDir,
+	})
 	zerologMiddleware := middleware.NewZerologMiddleware()
 
 	middlewares = append(middlewares, contextMiddleware, uiMiddleware, zerologMiddleware)

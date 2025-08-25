@@ -55,6 +55,7 @@ type Config struct {
 	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
 	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
 	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
+	ResourcesDir            string `mapstructure:"resources-dir"`
 }
 
 type OAuthLabels struct {
