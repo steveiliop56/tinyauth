@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"tinyauth/internal/assets"
 
@@ -52,7 +53,15 @@ func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		case "resources":
-			_, err := os.Stat(m.Config.ResourcesDir + strings.TrimPrefix(c.Request.URL.Path, "/resources/"))
+			requestFilePath := m.Config.ResourcesDir + strings.TrimPrefix(c.Request.URL.Path, "/resources/")
+
+			if !filepath.IsLocal(requestFilePath) {
+				c.Status(404)
+				c.Abort()
+				return
+			}
+
+			_, err := os.Stat(requestFilePath)
 
 			if os.IsNotExist(err) {
 				c.Status(404)
