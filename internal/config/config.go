@@ -1,6 +1,22 @@
-package types
+package config
 
-// Config is the configuration for the tinyauth server
+import "time"
+
+type Claims struct {
+	Name              string `json:"name"`
+	Email             string `json:"email"`
+	PreferredUsername string `json:"preferred_username"`
+	Groups            any    `json:"groups"`
+}
+
+var Version = "development"
+var CommitHash = "n/a"
+var BuildTimestamp = "n/a"
+
+var SessionCookieName = "tinyauth-session"
+var CsrfCookieName = "tinyauth-csrf"
+var RedirectCookieName = "tinyauth-redirect"
+
 type Config struct {
 	Port                    int    `mapstructure:"port" validate:"required"`
 	Address                 string `validate:"required,ip4_addr" mapstructure:"address"`
@@ -44,62 +60,27 @@ type Config struct {
 	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
 }
 
-// OAuthConfig is the configuration for the providers
-type OAuthConfig struct {
-	GithubClientId      string
-	GithubClientSecret  string
-	GoogleClientId      string
-	GoogleClientSecret  string
-	GenericClientId     string
-	GenericClientSecret string
-	GenericScopes       []string
-	GenericAuthURL      string
-	GenericTokenURL     string
-	GenericUserURL      string
-	GenericSkipSSL      bool
-	AppURL              string
-}
-
-// AuthConfig is the configuration for the auth service
-type AuthConfig struct {
-	Users             Users
-	OauthWhitelist    string
-	SessionExpiry     int
-	CookieSecure      bool
-	Domain            string
-	LoginTimeout      int
-	LoginMaxRetries   int
-	SessionCookieName string
-	HMACSecret        string
-	EncryptionSecret  string
-}
-
-// OAuthLabels is a list of labels that can be used in a tinyauth protected container
 type OAuthLabels struct {
 	Whitelist string
 	Groups    string
 }
 
-// Basic auth labels for a tinyauth protected container
 type BasicLabels struct {
 	Username string
 	Password PassowrdLabels
 }
 
-// PassowrdLabels is a struct that contains the password labels for a tinyauth protected container
 type PassowrdLabels struct {
 	Plain string
 	File  string
 }
 
-// IP labels for a tinyauth protected container
 type IPLabels struct {
 	Allow  []string
 	Block  []string
 	Bypass []string
 }
 
-// Labels is a struct that contains the labels for a tinyauth protected container
 type Labels struct {
 	Users   string
 	Allowed string
@@ -110,12 +91,65 @@ type Labels struct {
 	IP      IPLabels
 }
 
-// Ldap config is a struct that contains the configuration for the LDAP service
-type LdapConfig struct {
-	Address      string
-	BindDN       string
-	BindPassword string
-	BaseDN       string
-	Insecure     bool
-	SearchFilter string
+type OAuthServiceConfig struct {
+	ClientID           string
+	ClientSecret       string
+	Scopes             []string
+	RedirectURL        string
+	AuthURL            string
+	TokenURL           string
+	UserinfoURL        string
+	InsecureSkipVerify bool
+	Name               string
+}
+
+type User struct {
+	Username   string
+	Password   string
+	TotpSecret string
+}
+
+type UserSearch struct {
+	Username string
+	Type     string // local, ldap or unknown
+}
+
+type Users []User
+
+type SessionCookie struct {
+	Username    string
+	Name        string
+	Email       string
+	Provider    string
+	TotpPending bool
+	OAuthGroups string
+}
+
+type UserContext struct {
+	Username    string
+	Name        string
+	Email       string
+	IsLoggedIn  bool
+	OAuth       bool
+	Provider    string
+	TotpPending bool
+	OAuthGroups string
+	TotpEnabled bool
+}
+
+type LoginAttempt struct {
+	FailedAttempts int
+	LastAttempt    time.Time
+	LockedUntil    time.Time
+}
+
+type UnauthorizedQuery struct {
+	Username string `url:"username"`
+	Resource string `url:"resource"`
+	GroupErr bool   `url:"groupErr"`
+	IP       string `url:"ip"`
+}
+
+type RedirectQuery struct {
+	RedirectURI string `url:"redirect_uri"`
 }

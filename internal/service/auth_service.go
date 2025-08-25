@@ -1,4 +1,4 @@
-package auth
+package service
 
 import (
 	"fmt"
@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tinyauth/internal/docker"
-	"tinyauth/internal/ldap"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
@@ -17,35 +15,50 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Auth struct {
-	Config        types.AuthConfig
-	Docker        *docker.Docker
+type AuthServiceConfig struct {
+	Users             types.Users
+	OauthWhitelist    string
+	SessionExpiry     int
+	CookieSecure      bool
+	Domain            string
+	LoginTimeout      int
+	LoginMaxRetries   int
+	SessionCookieName string
+	HMACSecret        string
+	EncryptionSecret  string
+}
+
+type AuthService struct {
+	Config        AuthServiceConfig
+	Docker        *DockerService
 	LoginAttempts map[string]*types.LoginAttempt
 	LoginMutex    sync.RWMutex
 	Store         *sessions.CookieStore
-	LDAP          *ldap.LDAP
+	LDAP          *LdapService
 }
 
-func NewAuth(config types.AuthConfig, docker *docker.Docker, ldap *ldap.LDAP) *Auth {
-	// Setup cookie store and create the auth service
-	store := sessions.NewCookieStore([]byte(config.HMACSecret), []byte(config.EncryptionSecret))
-	store.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   config.SessionExpiry,
-		Secure:   config.CookieSecure,
-		HttpOnly: true,
-		Domain:   fmt.Sprintf(".%s", config.Domain),
-	}
-	return &Auth{
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService) *AuthService {
+	return &AuthService{
 		Config:        config,
 		Docker:        docker,
 		LoginAttempts: make(map[string]*types.LoginAttempt),
-		Store:         store,
 		LDAP:          ldap,
 	}
 }
 
-func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
+func (auth *AuthService) Init() error {
+	store := sessions.NewCookieStore([]byte(auth.Config.HMACSecret), []byte(auth.Config.EncryptionSecret))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   auth.Config.SessionExpiry,
+		Secure:   auth.Config.CookieSecure,
+		HttpOnly: true,
+		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
+	}
+	return nil
+}
+
+func (auth *AuthService) GetSession(c *gin.Context) (*sessions.Session, error) {
 	session, err := auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 
 	// If there was an error getting the session, it might be invalid so let's clear it and retry
@@ -62,7 +75,7 @@ func (auth *Auth) GetSession(c *gin.Context) (*sessions.Session, error) {
 	return session, nil
 }
 
-func (auth *Auth) SearchUser(username string) types.UserSearch {
+func (auth *AuthService) SearchUser(username string) types.UserSearch {
 	log.Debug().Str("username", username).Msg("Searching for user")
 
 	// Check local users first
@@ -93,7 +106,7 @@ func (auth *Auth) SearchUser(username string) types.UserSearch {
 	}
 }
 
-func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
+func (auth *AuthService) VerifyUser(search types.UserSearch, password string) bool {
 	// Authenticate the user based on the type
 	switch search.Type {
 	case "local":
@@ -131,7 +144,7 @@ func (auth *Auth) VerifyUser(search types.UserSearch, password string) bool {
 	return false
 }
 
-func (auth *Auth) GetLocalUser(username string) types.User {
+func (auth *AuthService) GetLocalUser(username string) types.User {
 	// Loop through users and return the user if the username matches
 	log.Debug().Str("username", username).Msg("Searching for local user")
 
@@ -146,11 +159,11 @@ func (auth *Auth) GetLocalUser(username string) types.User {
 	return types.User{}
 }
 
-func (auth *Auth) CheckPassword(user types.User, password string) bool {
+func (auth *AuthService) CheckPassword(user types.User, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) == nil
 }
 
-func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
+func (auth *AuthService) IsAccountLocked(identifier string) (bool, int) {
 	auth.LoginMutex.RLock()
 	defer auth.LoginMutex.RUnlock()
 
@@ -176,7 +189,7 @@ func (auth *Auth) IsAccountLocked(identifier string) (bool, int) {
 	return false, 0
 }
 
-func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
+func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 	// Skip if rate limiting is not configured
 	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
 		return
@@ -212,11 +225,11 @@ func (auth *Auth) RecordLoginAttempt(identifier string, success bool) {
 	}
 }
 
-func (auth *Auth) EmailWhitelisted(email string) bool {
+func (auth *AuthService) EmailWhitelisted(email string) bool {
 	return utils.CheckFilter(auth.Config.OauthWhitelist, email)
 }
 
-func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {
+func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *types.SessionCookie) error {
 	log.Debug().Msg("Creating session cookie")
 
 	session, err := auth.GetSession(c)
@@ -252,7 +265,7 @@ func (auth *Auth) CreateSessionCookie(c *gin.Context, data *types.SessionCookie)
 	return nil
 }
 
-func (auth *Auth) DeleteSessionCookie(c *gin.Context) error {
+func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 	log.Debug().Msg("Deleting session cookie")
 
 	session, err := auth.GetSession(c)
@@ -275,7 +288,7 @@ func (auth *Auth) DeleteSessionCookie(c *gin.Context) error {
 	return nil
 }
 
-func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) {
+func (auth *AuthService) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) {
 	log.Debug().Msg("Getting session cookie")
 
 	session, err := auth.GetSession(c)
@@ -319,12 +332,12 @@ func (auth *Auth) GetSessionCookie(c *gin.Context) (types.SessionCookie, error) 
 	}, nil
 }
 
-func (auth *Auth) UserAuthConfigured() bool {
+func (auth *AuthService) UserAuthConfigured() bool {
 	// If there are users or LDAP is configured, return true
 	return len(auth.Config.Users) > 0 || auth.LDAP != nil
 }
 
-func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.Labels) bool {
+func (auth *AuthService) ResourceAllowed(c *gin.Context, context types.UserContext, labels types.Labels) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
@@ -334,7 +347,7 @@ func (auth *Auth) ResourceAllowed(c *gin.Context, context types.UserContext, lab
 	return utils.CheckFilter(labels.Users, context.Username)
 }
 
-func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels types.Labels) bool {
+func (auth *AuthService) OAuthGroup(c *gin.Context, context types.UserContext, labels types.Labels) bool {
 	if labels.OAuth.Groups == "" {
 		return true
 	}
@@ -361,7 +374,7 @@ func (auth *Auth) OAuthGroup(c *gin.Context, context types.UserContext, labels t
 	return false
 }
 
-func (auth *Auth) AuthEnabled(uri string, labels types.Labels) (bool, error) {
+func (auth *AuthService) AuthEnabled(uri string, labels types.Labels) (bool, error) {
 	// If the label is empty, auth is enabled
 	if labels.Allowed == "" {
 		return true, nil
@@ -385,7 +398,7 @@ func (auth *Auth) AuthEnabled(uri string, labels types.Labels) (bool, error) {
 	return true, nil
 }
 
-func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
+func (auth *AuthService) GetBasicAuth(c *gin.Context) *types.User {
 	username, password, ok := c.Request.BasicAuth()
 	if !ok {
 		return nil
@@ -396,7 +409,7 @@ func (auth *Auth) GetBasicAuth(c *gin.Context) *types.User {
 	}
 }
 
-func (auth *Auth) CheckIP(labels types.Labels, ip string) bool {
+func (auth *AuthService) CheckIP(labels types.Labels, ip string) bool {
 	// Check if the IP is in block list
 	for _, blocked := range labels.IP.Block {
 		res, err := utils.FilterIP(blocked, ip)
@@ -433,7 +446,7 @@ func (auth *Auth) CheckIP(labels types.Labels, ip string) bool {
 	return true
 }
 
-func (auth *Auth) BypassedIP(labels types.Labels, ip string) bool {
+func (auth *AuthService) BypassedIP(labels types.Labels, ip string) bool {
 	// For every IP in the bypass list, check if the IP matches
 	for _, bypassed := range labels.IP.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)

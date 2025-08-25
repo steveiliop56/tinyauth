@@ -1,9 +1,9 @@
-package docker
+package service
 
 import (
 	"context"
 	"strings"
-	"tinyauth/internal/types"
+	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
 
 	container "github.com/docker/docker/api/types/container"
@@ -11,27 +11,27 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Docker struct {
+type DockerService struct {
 	Client  *client.Client
 	Context context.Context
 }
 
-func NewDocker() (*Docker, error) {
+func NewDockerService() *DockerService {
+	return &DockerService{}
+}
+
+func (docker *DockerService) Init() error {
 	client, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	ctx := context.Background()
 	client.NegotiateAPIVersion(ctx)
-
-	return &Docker{
-		Client:  client,
-		Context: ctx,
-	}, nil
+	return nil
 }
 
-func (docker *Docker) GetContainers() ([]container.Summary, error) {
+func (docker *DockerService) GetContainers() ([]container.Summary, error) {
 	containers, err := docker.Client.ContainerList(docker.Context, container.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (docker *Docker) GetContainers() ([]container.Summary, error) {
 	return containers, nil
 }
 
-func (docker *Docker) InspectContainer(containerId string) (container.InspectResponse, error) {
+func (docker *DockerService) InspectContainer(containerId string) (container.InspectResponse, error) {
 	inspect, err := docker.Client.ContainerInspect(docker.Context, containerId)
 	if err != nil {
 		return container.InspectResponse{}, err
@@ -47,17 +47,17 @@ func (docker *Docker) InspectContainer(containerId string) (container.InspectRes
 	return inspect, nil
 }
 
-func (docker *Docker) DockerConnected() bool {
+func (docker *DockerService) DockerConnected() bool {
 	_, err := docker.Client.Ping(docker.Context)
 	return err == nil
 }
 
-func (docker *Docker) GetLabels(app string, domain string) (types.Labels, error) {
+func (docker *DockerService) GetLabels(app string, domain string) (config.Labels, error) {
 	isConnected := docker.DockerConnected()
 
 	if !isConnected {
 		log.Debug().Msg("Docker not connected, returning empty labels")
-		return types.Labels{}, nil
+		return config.Labels{}, nil
 	}
 
 	log.Debug().Msg("Getting containers")
@@ -65,7 +65,7 @@ func (docker *Docker) GetLabels(app string, domain string) (types.Labels, error)
 	containers, err := docker.GetContainers()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting containers")
-		return types.Labels{}, err
+		return config.Labels{}, err
 	}
 
 	for _, container := range containers {
@@ -98,5 +98,5 @@ func (docker *Docker) GetLabels(app string, domain string) (types.Labels, error)
 	}
 
 	log.Debug().Msg("No matching container found, returning empty labels")
-	return types.Labels{}, nil
+	return config.Labels{}, nil
 }

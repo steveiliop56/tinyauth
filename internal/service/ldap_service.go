@@ -1,30 +1,40 @@
-package ldap
+package service
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
 	"time"
-	"tinyauth/internal/types"
 
 	"github.com/cenkalti/backoff/v5"
 	ldapgo "github.com/go-ldap/ldap/v3"
 	"github.com/rs/zerolog/log"
 )
 
-type LDAP struct {
-	Config types.LdapConfig
+type LdapServiceConfig struct {
+	Address      string
+	BindDN       string
+	BindPassword string
+	BaseDN       string
+	Insecure     bool
+	SearchFilter string
+}
+
+type LdapService struct {
+	Config LdapServiceConfig
 	Conn   *ldapgo.Conn
 }
 
-func NewLDAP(config types.LdapConfig) (*LDAP, error) {
-	ldap := &LDAP{
+func NewLdapService(config LdapServiceConfig) *LdapService {
+	return &LdapService{
 		Config: config,
 	}
+}
 
+func (ldap *LdapService) Init() error {
 	_, err := ldap.connect()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to LDAP server: %w", err)
+		return fmt.Errorf("failed to connect to LDAP server: %w", err)
 	}
 
 	go func() {
@@ -41,13 +51,13 @@ func NewLDAP(config types.LdapConfig) (*LDAP, error) {
 		}
 	}()
 
-	return ldap, nil
+	return nil
 }
 
-func (l *LDAP) connect() (*ldapgo.Conn, error) {
+func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	log.Debug().Msg("Connecting to LDAP server")
-	conn, err := ldapgo.DialURL(l.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
-		InsecureSkipVerify: l.Config.Insecure,
+	conn, err := ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		InsecureSkipVerify: ldap.Config.Insecure,
 		MinVersion:         tls.VersionTLS12,
 	}))
 	if err != nil {
@@ -55,30 +65,30 @@ func (l *LDAP) connect() (*ldapgo.Conn, error) {
 	}
 
 	log.Debug().Msg("Binding to LDAP server")
-	err = conn.Bind(l.Config.BindDN, l.Config.BindPassword)
+	err = conn.Bind(ldap.Config.BindDN, ldap.Config.BindPassword)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set and return the connection
-	l.Conn = conn
+	ldap.Conn = conn
 	return conn, nil
 }
 
-func (l *LDAP) Search(username string) (string, error) {
+func (ldap *LdapService) Search(username string) (string, error) {
 	// Escape the username to prevent LDAP injection
 	escapedUsername := ldapgo.EscapeFilter(username)
-	filter := fmt.Sprintf(l.Config.SearchFilter, escapedUsername)
+	filter := fmt.Sprintf(ldap.Config.SearchFilter, escapedUsername)
 
 	searchRequest := ldapgo.NewSearchRequest(
-		l.Config.BaseDN,
+		ldap.Config.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
 		filter,
 		[]string{"dn"},
 		nil,
 	)
 
-	searchResult, err := l.Conn.Search(searchRequest)
+	searchResult, err := ldap.Conn.Search(searchRequest)
 	if err != nil {
 		return "", err
 	}
@@ -91,15 +101,15 @@ func (l *LDAP) Search(username string) (string, error) {
 	return userDN, nil
 }
 
-func (l *LDAP) Bind(userDN string, password string) error {
-	err := l.Conn.Bind(userDN, password)
+func (ldap *LdapService) Bind(userDN string, password string) error {
+	err := ldap.Conn.Bind(userDN, password)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (l *LDAP) heartbeat() error {
+func (ldap *LdapService) heartbeat() error {
 	log.Debug().Msg("Performing LDAP connection heartbeat")
 
 	searchRequest := ldapgo.NewSearchRequest(
@@ -110,7 +120,7 @@ func (l *LDAP) heartbeat() error {
 		nil,
 	)
 
-	_, err := l.Conn.Search(searchRequest)
+	_, err := ldap.Conn.Search(searchRequest)
 	if err != nil {
 		return err
 	}
@@ -119,7 +129,7 @@ func (l *LDAP) heartbeat() error {
 	return nil
 }
 
-func (l *LDAP) reconnect() error {
+func (ldap *LdapService) reconnect() error {
 	log.Info().Msg("Reconnecting to LDAP server")
 
 	exp := backoff.NewExponentialBackOff()
@@ -129,8 +139,8 @@ func (l *LDAP) reconnect() error {
 	exp.Reset()
 
 	operation := func() (*ldapgo.Conn, error) {
-		l.Conn.Close()
-		conn, err := l.connect()
+		ldap.Conn.Close()
+		conn, err := ldap.connect()
 		if err != nil {
 			return nil, nil
 		}
