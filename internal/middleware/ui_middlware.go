@@ -21,7 +21,7 @@ func NewUIMiddleware() *UIMiddleware {
 }
 
 func (m *UIMiddleware) Init() error {
-	ui, err := fs.Sub(assets.Assets, "dist")
+	ui, err := fs.Sub(assets.FontendAssets, "dist")
 
 	if err != nil {
 		return nil
