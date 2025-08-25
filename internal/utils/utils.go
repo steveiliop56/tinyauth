@@ -13,6 +13,7 @@ import (
 	"strings"
 	"tinyauth/internal/types"
 
+	"github.com/gin-gonic/gin"
 	"github.com/traefik/paerser/parser"
 	"golang.org/x/crypto/hkdf"
 
@@ -347,4 +348,20 @@ func CoalesceToString(value any) string {
 		log.Warn().Interface("value", value).Interface("type", v).Msg("Unsupported type, returning empty string")
 		return ""
 	}
+}
+
+func GetContext(c *gin.Context) (types.UserContext, error) {
+	userContextValue, exists := c.Get("context")
+
+	if !exists {
+		return types.UserContext{}, errors.New("no user context in request")
+	}
+
+	userContext, ok := userContextValue.(*types.UserContext)
+
+	if !ok {
+		return types.UserContext{}, errors.New("invalid user context in request")
+	}
+
+	return *userContext, nil
 }

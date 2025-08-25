@@ -8,21 +8,27 @@ import (
 	userCmd "tinyauth/cmd/user"
 	"tinyauth/internal/auth"
 	"tinyauth/internal/constants"
+	"tinyauth/internal/controller"
 	"tinyauth/internal/docker"
-	"tinyauth/internal/handlers"
 	"tinyauth/internal/ldap"
 	"tinyauth/internal/middleware"
 	"tinyauth/internal/providers"
-	"tinyauth/internal/server"
 	"tinyauth/internal/types"
 	"tinyauth/internal/utils"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type Middleware interface {
+	Middleware() gin.HandlerFunc
+	Init() error
+	Name() string
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "tinyauth",
@@ -84,25 +90,6 @@ var rootCmd = &cobra.Command{
 			AppURL:              config.AppURL,
 		}
 
-		handlersConfig := handlers.HandlersConfig{
-			AppURL:                config.AppURL,
-			DisableContinue:       config.DisableContinue,
-			Title:                 config.Title,
-			GenericName:           config.GenericName,
-			CookieSecure:          config.CookieSecure,
-			Domain:                domain,
-			ForgotPasswordMessage: config.FogotPasswordMessage,
-			BackgroundImage:       config.BackgroundImage,
-			OAuthAutoRedirect:     config.OAuthAutoRedirect,
-			CsrfCookieName:        csrfCookieName,
-			RedirectCookieName:    redirectCookieName,
-		}
-
-		serverConfig := types.ServerConfig{
-			Port:    config.Port,
-			Address: config.Address,
-		}
-
 		authConfig := types.AuthConfig{
 			Users:             users,
 			OauthWhitelist:    config.OAuthWhitelist,
@@ -147,10 +134,15 @@ var rootCmd = &cobra.Command{
 		HandleError(err, "Failed to initialize docker")
 		auth := auth.NewAuth(authConfig, docker, ldapService)
 		providers := providers.NewProviders(oauthConfig)
-		handlers := handlers.NewHandlers(handlersConfig, auth, providers, docker)
+
+		// Create the engine
+		engine := gin.New()
+
+		// Create the group
+		router := engine.Group("/api")
 
 		// Setup the middlewares
-		var middlewares []server.Middleware
+		var middlewares []Middleware
 
 		contextMiddleware := middleware.NewContextMiddleware(middleware.ContextMiddlewareConfig{
 			Domain: domain,
@@ -160,12 +152,58 @@ var rootCmd = &cobra.Command{
 
 		middlewares = append(middlewares, contextMiddleware, uiMiddleware, zerologMiddleware)
 
-		srv, err := server.NewServer(serverConfig, handlers, middlewares)
-		HandleError(err, "Failed to create server")
+		for _, middleware := range middlewares {
+			log.Debug().Str("middleware", middleware.Name()).Msg("Initializing middleware")
+			err := middleware.Init()
+			HandleError(err, fmt.Sprintf("Failed to initialize middleware %s", middleware.Name()))
+			router.Use(middleware.Middleware())
+		}
 
-		// Start up
-		err = srv.Start()
-		HandleError(err, "Failed to start server")
+		// Create configured providers
+		var configuredProviders []string
+
+		configuredProviders = append(configuredProviders, providers.GetConfiguredProviders()...)
+
+		if auth.UserAuthConfigured() {
+			configuredProviders = append(configuredProviders, "username")
+		}
+
+		// Create controllers
+		contextController := controller.NewContextController(controller.ContextControllerConfig{
+			ConfiguredProviders:   configuredProviders,
+			DisableContinue:       config.DisableContinue,
+			Title:                 config.Title,
+			GenericName:           config.GenericName,
+			Domain:                domain,
+			ForgotPasswordMessage: config.FogotPasswordMessage,
+			BackgroundImage:       config.BackgroundImage,
+			OAuthAutoRedirect:     config.OAuthAutoRedirect,
+		}, router)
+		contextController.SetupRoutes()
+
+		healthController := controller.NewHealthController(router)
+		healthController.SetupRoutes()
+
+		oauthController := controller.NewOAuthController(controller.OAuthControllerConfig{
+			AppURL:             config.AppURL,
+			SecureCookie:       config.CookieSecure,
+			CSRFCookieName:     csrfCookieName,
+			RedirectCookieName: redirectCookieName,
+		}, router, auth, providers)
+		oauthController.SetupRoutes()
+
+		proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
+			AppURL: config.AppURL,
+		}, router, docker, auth)
+		proxyController.SetupRoutes()
+
+		userController := controller.NewUserController(controller.UserControllerConfig{
+			Domain: domain,
+		}, router, auth)
+		userController.SetupRoutes()
+
+		// Run server
+		engine.Run(fmt.Sprintf("%s:%d", config.Address, config.Port))
 	},
 }
 

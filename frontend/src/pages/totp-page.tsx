@@ -32,7 +32,7 @@ export const TotpPage = () => {
   const redirectUri = searchParams.get("redirect_uri");
 
   const totpMutation = useMutation({
-    mutationFn: (values: TotpSchema) => axios.post("/api/totp", values),
+    mutationFn: (values: TotpSchema) => axios.post("/api/user/totp", values),
     mutationKey: ["totp"],
     onSuccess: () => {
       toast.success(t("totpSuccessTitle"), {

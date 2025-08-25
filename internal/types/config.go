@@ -60,12 +60,6 @@ type OAuthConfig struct {
 	AppURL              string
 }
 
-// ServerConfig is the configuration for the server
-type ServerConfig struct {
-	Port    int
-	Address string
-}
-
 // AuthConfig is the configuration for the auth service
 type AuthConfig struct {
 	Users             Users

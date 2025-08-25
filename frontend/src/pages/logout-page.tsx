@@ -26,7 +26,7 @@ export const LogoutPage = () => {
   const { t } = useTranslation();
 
   const logoutMutation = useMutation({
-    mutationFn: () => axios.post("/api/logout"),
+    mutationFn: () => axios.post("/api/user/logout"),
     mutationKey: ["logout"],
     onSuccess: () => {
       toast.success(t("logoutSuccessTitle"), {
