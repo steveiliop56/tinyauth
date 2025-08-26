@@ -20,9 +20,10 @@ services:
     container_name: tinyauth
     image: ghcr.io/steveiliop56/tinyauth:v3
     environment:
-      - SECRET=some-random-32-chars-string
       - APP_URL=https://tinyauth.example.com
       - USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u # user:password
+    volumes:
+      - ./data:/data
     labels:
       traefik.enable: true
       traefik.http.routers.tinyauth.rule: Host(`tinyauth.example.com`)

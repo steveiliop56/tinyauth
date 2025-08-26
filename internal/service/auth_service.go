@@ -7,10 +7,11 @@ import (
 	"sync"
 	"time"
 	"tinyauth/internal/config"
+	"tinyauth/internal/model"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/sessions"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -30,8 +31,6 @@ type AuthServiceConfig struct {
 	LoginTimeout      int
 	LoginMaxRetries   int
 	SessionCookieName string
-	HMACSecret        string
-	EncryptionSecret  string
 }
 
 type AuthService struct {
@@ -39,47 +38,22 @@ type AuthService struct {
 	Docker        *DockerService
 	LoginAttempts map[string]*LoginAttempt
 	LoginMutex    sync.RWMutex
-	Store         *sessions.CookieStore
 	LDAP          *LdapService
+	Database      *DatabaseService
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, database *DatabaseService) *AuthService {
 	return &AuthService{
 		Config:        config,
 		Docker:        docker,
 		LoginAttempts: make(map[string]*LoginAttempt),
 		LDAP:          ldap,
+		Database:      database,
 	}
 }
 
 func (auth *AuthService) Init() error {
-	store := sessions.NewCookieStore([]byte(auth.Config.HMACSecret), []byte(auth.Config.EncryptionSecret))
-	store.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   auth.Config.SessionExpiry,
-		Secure:   auth.Config.SecureCookie,
-		HttpOnly: true,
-		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
-	}
-
-	auth.Store = store
 	return nil
-}
-
-func (auth *AuthService) GetSession(c *gin.Context) (*sessions.Session, error) {
-	session, err := auth.Store.Get(c.Request, auth.Config.SessionCookieName)
-
-	// If there was an error getting the session, it might be invalid so let's clear it and retry
-	if err != nil {
-		log.Debug().Err(err).Msg("Error getting session, creating a new one")
-		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
-		session, err = auth.Store.New(c.Request, auth.Config.SessionCookieName)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return session, nil
 }
 
 func (auth *AuthService) SearchUser(username string) config.UserSearch {
@@ -158,30 +132,24 @@ func (auth *AuthService) IsAccountLocked(identifier string) (bool, int) {
 	auth.LoginMutex.RLock()
 	defer auth.LoginMutex.RUnlock()
 
-	// Return false if rate limiting is not configured
 	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
 		return false, 0
 	}
 
-	// Check if the identifier exists in the map
 	attempt, exists := auth.LoginAttempts[identifier]
 	if !exists {
 		return false, 0
 	}
 
-	// If account is locked, check if lock time has expired
 	if attempt.LockedUntil.After(time.Now()) {
-		// Calculate remaining lockout time in seconds
 		remaining := int(time.Until(attempt.LockedUntil).Seconds())
 		return true, remaining
 	}
 
-	// Lock has expired
 	return false, 0
 }
 
 func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
-	// Skip if rate limiting is not configured
 	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
 		return
 	}
@@ -189,133 +157,135 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 	auth.LoginMutex.Lock()
 	defer auth.LoginMutex.Unlock()
 
-	// Get current attempt record or create a new one
 	attempt, exists := auth.LoginAttempts[identifier]
 	if !exists {
 		attempt = &LoginAttempt{}
 		auth.LoginAttempts[identifier] = attempt
 	}
 
-	// Update last attempt time
 	attempt.LastAttempt = time.Now()
 
-	// If successful login, reset failed attempts
 	if success {
 		attempt.FailedAttempts = 0
 		attempt.LockedUntil = time.Time{} // Reset lock time
 		return
 	}
 
-	// Increment failed attempts
 	attempt.FailedAttempts++
 
-	// If max retries reached, lock the account
 	if attempt.FailedAttempts >= auth.Config.LoginMaxRetries {
 		attempt.LockedUntil = time.Now().Add(time.Duration(auth.Config.LoginTimeout) * time.Second)
 		log.Warn().Str("identifier", identifier).Int("timeout", auth.Config.LoginTimeout).Msg("Account locked due to too many failed login attempts")
 	}
 }
 
-func (auth *AuthService) EmailWhitelisted(email string) bool {
+func (auth *AuthService) IsEmailWhitelisted(email string) bool {
 	return utils.CheckFilter(auth.Config.OauthWhitelist, email)
 }
 
 func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
-	session, err := auth.GetSession(c)
+	db := auth.Database.GetDatabase()
+	uuid, err := uuid.NewRandom()
+
 	if err != nil {
 		return err
 	}
 
-	var sessionExpiry int
+	var expiry int
 
 	if data.TotpPending {
-		sessionExpiry = 3600
+		expiry = 3600
 	} else {
-		sessionExpiry = auth.Config.SessionExpiry
+		expiry = auth.Config.SessionExpiry
 	}
 
-	session.Values["username"] = data.Username
-	session.Values["name"] = data.Name
-	session.Values["email"] = data.Email
-	session.Values["provider"] = data.Provider
-	session.Values["expiry"] = time.Now().Add(time.Duration(sessionExpiry) * time.Second).Unix()
-	session.Values["totpPending"] = data.TotpPending
-	session.Values["oauthGroups"] = data.OAuthGroups
+	session := model.Session{
+		UUID:        uuid.String(),
+		Username:    data.Username,
+		Email:       data.Email,
+		Name:        data.Name,
+		Provider:    data.Provider,
+		TOTPPending: data.TotpPending,
+		OAuthGroups: data.OAuthGroups,
+		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
+	}
 
-	err = session.Save(c.Request, c.Writer)
+	err = db.Create(&session).Error
+
 	if err != nil {
 		return err
 	}
+
+	c.SetCookie(auth.Config.SessionCookieName, session.UUID, expiry, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
 
 	return nil
 }
 
 func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
-	session, err := auth.GetSession(c)
+	db := auth.Database.GetDatabase()
+	session, err := auth.GetSessionCookie(c)
+
 	if err != nil {
 		return err
 	}
 
-	// Delete all values in the session
-	for key := range session.Values {
-		delete(session.Values, key)
+	res := db.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
+
+	if res.Error != nil {
+		return res.Error
 	}
 
-	err = session.Save(c.Request, c.Writer)
-	if err != nil {
-		return err
-	}
-
-	// Clear the cookie in the browser
 	c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
 
 	return nil
 }
 
 func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie, error) {
-	session, err := auth.GetSession(c)
+	db := auth.Database.GetDatabase()
+	cookie, err := c.Cookie(auth.Config.SessionCookieName)
+
 	if err != nil {
 		return config.SessionCookie{}, err
 	}
 
-	username, usernameOk := session.Values["username"].(string)
-	email, emailOk := session.Values["email"].(string)
-	name, nameOk := session.Values["name"].(string)
-	provider, providerOK := session.Values["provider"].(string)
-	expiry, expiryOk := session.Values["expiry"].(int64)
-	totpPending, totpPendingOk := session.Values["totpPending"].(bool)
-	oauthGroups, oauthGroupsOk := session.Values["oauthGroups"].(string)
+	var session model.Session
 
-	// If any data is missing, delete the session cookie
-	if !usernameOk || !providerOK || !expiryOk || !totpPendingOk || !emailOk || !nameOk || !oauthGroupsOk {
-		log.Warn().Msg("Session cookie is invalid")
-		auth.DeleteSessionCookie(c)
-		return config.SessionCookie{}, nil
+	res := db.Unscoped().Where("uuid = ?", cookie).First(&session)
+
+	if res.Error != nil {
+		return config.SessionCookie{}, res.Error
 	}
 
-	// If the session cookie has expired, delete it
-	if time.Now().Unix() > expiry {
-		log.Warn().Msg("Session cookie expired")
-		auth.DeleteSessionCookie(c)
-		return config.SessionCookie{}, nil
+	if res.RowsAffected == 0 {
+		return config.SessionCookie{}, fmt.Errorf("session not found")
+	}
+
+	currentTime := time.Now().Unix()
+
+	if currentTime > session.Expiry {
+		res := db.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
+		if res.Error != nil {
+			log.Error().Err(res.Error).Msg("Failed to delete expired session")
+		}
+		return config.SessionCookie{}, fmt.Errorf("session expired")
 	}
 
 	return config.SessionCookie{
-		Username:    username,
-		Name:        name,
-		Email:       email,
-		Provider:    provider,
-		TotpPending: totpPending,
-		OAuthGroups: oauthGroups,
+		UUID:        session.UUID,
+		Username:    session.Username,
+		Email:       session.Email,
+		Name:        session.Name,
+		Provider:    session.Provider,
+		TotpPending: session.TOTPPending,
+		OAuthGroups: session.OAuthGroups,
 	}, nil
 }
 
 func (auth *AuthService) UserAuthConfigured() bool {
-	// If there are users or LDAP is configured, return true
 	return len(auth.Config.Users) > 0 || auth.LDAP != nil
 }
 
-func (auth *AuthService) ResourceAllowed(c *gin.Context, context config.UserContext, labels config.Labels) bool {
+func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.Labels) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
@@ -325,7 +295,7 @@ func (auth *AuthService) ResourceAllowed(c *gin.Context, context config.UserCont
 	return utils.CheckFilter(labels.Users, context.Username)
 }
 
-func (auth *AuthService) OAuthGroup(c *gin.Context, context config.UserContext, labels config.Labels) bool {
+func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserContext, labels config.Labels) bool {
 	if labels.OAuth.Groups == "" {
 		return true
 	}
@@ -335,23 +305,20 @@ func (auth *AuthService) OAuthGroup(c *gin.Context, context config.UserContext, 
 		return true
 	}
 
-	// Split the groups by comma (no need to parse since they are from the API response)
+	// No need to parse since they are from the API response
 	oauthGroups := strings.Split(context.OAuthGroups, ",")
 
-	// For every group check if it is in the required groups
 	for _, group := range oauthGroups {
 		if utils.CheckFilter(labels.OAuth.Groups, group) {
 			return true
 		}
 	}
 
-	// No groups matched
 	log.Debug().Msg("No groups matched")
 	return false
 }
 
-func (auth *AuthService) AuthEnabled(uri string, labels config.Labels) (bool, error) {
-	// If the label is empty, auth is enabled
+func (auth *AuthService) IsAuthEnabled(uri string, labels config.Labels) (bool, error) {
 	if labels.Allowed == "" {
 		return true, nil
 	}
@@ -362,12 +329,10 @@ func (auth *AuthService) AuthEnabled(uri string, labels config.Labels) (bool, er
 		return true, err
 	}
 
-	// If the regex matches the URI, auth is not enabled
 	if regex.MatchString(uri) {
 		return false, nil
 	}
 
-	// Auth enabled
 	return true, nil
 }
 
@@ -384,7 +349,6 @@ func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 }
 
 func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
-	// Check if the IP is in block list
 	for _, blocked := range labels.IP.Block {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
@@ -397,7 +361,6 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 		}
 	}
 
-	// For every IP in the allow list, check if the IP matches
 	for _, allowed := range labels.IP.Allow {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
@@ -410,7 +373,6 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 		}
 	}
 
-	// If not in allowed range and allowed range is not empty, deny access
 	if len(labels.IP.Allow) > 0 {
 		log.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
@@ -420,8 +382,7 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 	return true
 }
 
-func (auth *AuthService) BypassedIP(labels config.Labels, ip string) bool {
-	// For every IP in the bypass list, check if the IP matches
+func (auth *AuthService) IsBypassedIP(labels config.Labels, ip string) bool {
 	for _, bypassed := range labels.IP.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {

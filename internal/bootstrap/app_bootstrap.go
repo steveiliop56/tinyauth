@@ -57,19 +57,6 @@ func (app *BootstrapApp) Setup() error {
 	csrfCookieName := fmt.Sprintf("%s-%s", config.CSRFCookieName, cookieId)
 	redirectCookieName := fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
 
-	// Secrets
-	encryptionSecret, err := utils.DeriveKey(app.Config.Secret, "encryption")
-
-	if err != nil {
-		return err
-	}
-
-	hmacSecret, err := utils.DeriveKey(app.Config.Secret, "hmac")
-
-	if err != nil {
-		return err
-	}
-
 	// Create configs
 	authConfig := service.AuthServiceConfig{
 		Users:             users,
@@ -80,8 +67,6 @@ func (app *BootstrapApp) Setup() error {
 		LoginTimeout:      app.Config.LoginTimeout,
 		LoginMaxRetries:   app.Config.LoginMaxRetries,
 		SessionCookieName: sessionCookieName,
-		HMACSecret:        hmacSecret,
-		EncryptionSecret:  encryptionSecret,
 	}
 
 	// Setup services
@@ -107,12 +92,16 @@ func (app *BootstrapApp) Setup() error {
 		}
 	}
 
+	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
+		DatabasePath: app.Config.DatabasePath,
+	})
 	dockerService := service.NewDockerService()
-	authService := service.NewAuthService(authConfig, dockerService, ldapService)
+	authService := service.NewAuthService(authConfig, dockerService, ldapService, databaseService)
 	oauthBrokerService := service.NewOAuthBrokerService(app.getOAuthBrokerConfig())
 
 	// Initialize services
 	services := []Service{
+		databaseService,
 		dockerService,
 		authService,
 		oauthBrokerService,

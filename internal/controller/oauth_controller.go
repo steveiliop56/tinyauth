@@ -144,7 +144,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.Auth.EmailWhitelisted(user.Email) {
+	if !controller.Auth.IsEmailWhitelisted(user.Email) {
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
 		})
@@ -170,7 +170,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
-		Username:    user.Email,
+		Username:    user.PreferredUsername,
 		Name:        name,
 		Email:       user.Email,
 		Provider:    req.Provider,

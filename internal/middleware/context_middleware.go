@@ -83,7 +83,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
-			if !m.Auth.EmailWhitelisted(cookie.Email) {
+			if !m.Auth.IsEmailWhitelisted(cookie.Email) {
 				log.Debug().Msg("Email from session cookie not whitelisted")
 				m.Auth.DeleteSessionCookie(c)
 				goto basic
