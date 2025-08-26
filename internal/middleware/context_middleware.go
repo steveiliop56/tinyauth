@@ -32,10 +32,6 @@ func (m *ContextMiddleware) Init() error {
 	return nil
 }
 
-func (m *ContextMiddleware) Name() string {
-	return "ContextMiddleware"
-}
-
 func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := m.Auth.GetSessionCookie(c)

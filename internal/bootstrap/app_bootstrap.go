@@ -20,7 +20,6 @@ type Controller interface {
 type Middleware interface {
 	Middleware() gin.HandlerFunc
 	Init() error
-	Name() string
 }
 
 type Service interface {
@@ -103,6 +102,7 @@ func (app *BootstrapApp) Setup() error {
 		err := ldapService.Init()
 
 		if err != nil {
+			log.Warn().Err(err).Msg("Failed to initialize LDAP service, continuing without LDAP")
 			ldapService = nil
 		}
 	}
@@ -120,6 +120,7 @@ func (app *BootstrapApp) Setup() error {
 
 	for _, svc := range services {
 		if svc != nil {
+			log.Debug().Str("service", fmt.Sprintf("%T", svc)).Msg("Initializing service")
 			err := svc.Init()
 			if err != nil {
 				return err
@@ -142,7 +143,13 @@ func (app *BootstrapApp) Setup() error {
 
 	// Create engine
 	engine := gin.New()
-	router := engine.Group("/api")
+
+	if config.Version != "development" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	router := engine.Group("/")
+	apiRouter := router.Group("/api")
 
 	// Create middlewares
 	var middlewares []Middleware
@@ -151,18 +158,16 @@ func (app *BootstrapApp) Setup() error {
 		Domain: domain,
 	}, authService, oauthBrokerService)
 
-	uiMiddleware := middleware.NewUIMiddleware(middleware.UIMiddlewareConfig{
-		ResourcesDir: app.Config.ResourcesDir,
-	})
+	uiMiddleware := middleware.NewUIMiddleware()
 	zerologMiddleware := middleware.NewZerologMiddleware()
 
 	middlewares = append(middlewares, contextMiddleware, uiMiddleware, zerologMiddleware)
 
 	for _, middleware := range middlewares {
-		log.Debug().Str("middleware", middleware.Name()).Msg("Initializing middleware")
+		log.Debug().Str("middleware", fmt.Sprintf("%T", middleware)).Msg("Initializing middleware")
 		err := middleware.Init()
 		if err != nil {
-			return fmt.Errorf("failed to initialize %s middleware: %w", middleware.Name(), err)
+			return fmt.Errorf("failed to initialize %s middleware: %T", middleware, err)
 		}
 		router.Use(middleware.Middleware())
 	}
@@ -177,24 +182,28 @@ func (app *BootstrapApp) Setup() error {
 		ForgotPasswordMessage: app.Config.FogotPasswordMessage,
 		BackgroundImage:       app.Config.BackgroundImage,
 		OAuthAutoRedirect:     app.Config.OAuthAutoRedirect,
-	}, router)
+	}, apiRouter)
 
 	oauthController := controller.NewOAuthController(controller.OAuthControllerConfig{
 		AppURL:             app.Config.AppURL,
 		SecureCookie:       app.Config.SecureCookie,
 		CSRFCookieName:     csrfCookieName,
 		RedirectCookieName: redirectCookieName,
-	}, router, authService, oauthBrokerService)
+	}, apiRouter, authService, oauthBrokerService)
 
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
 		AppURL: app.Config.AppURL,
-	}, router, dockerService, authService)
+	}, apiRouter, dockerService, authService)
 
 	userController := controller.NewUserController(controller.UserControllerConfig{
 		Domain: domain,
-	}, router, authService)
+	}, apiRouter, authService)
 
-	healthController := controller.NewHealthController(router)
+	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{
+		ResourcesDir: app.Config.ResourcesDir,
+	}, router)
+
+	healthController := controller.NewHealthController(apiRouter)
 
 	// Setup routes
 	controller := []Controller{
@@ -203,10 +212,11 @@ func (app *BootstrapApp) Setup() error {
 		proxyController,
 		userController,
 		healthController,
+		resourcesController,
 	}
 
 	for _, ctrl := range controller {
-		log.Debug().Msgf("Setting up %T routes", ctrl)
+		log.Debug().Msgf("Setting up %T controller", ctrl)
 		ctrl.SetupRoutes()
 	}
 

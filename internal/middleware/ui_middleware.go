@@ -4,28 +4,19 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"tinyauth/internal/assets"
 
 	"github.com/gin-gonic/gin"
 )
 
-type UIMiddlewareConfig struct {
-	ResourcesDir string
-}
-
 type UIMiddleware struct {
-	Config              UIMiddlewareConfig
-	UIFS                fs.FS
-	UIFileServer        http.Handler
-	ResourcesFileServer http.Handler
+	UIFS         fs.FS
+	UIFileServer http.Handler
 }
 
-func NewUIMiddleware(config UIMiddlewareConfig) *UIMiddleware {
-	return &UIMiddleware{
-		Config: config,
-	}
+func NewUIMiddleware() *UIMiddleware {
+	return &UIMiddleware{}
 }
 
 func (m *UIMiddleware) Init() error {
@@ -37,13 +28,8 @@ func (m *UIMiddleware) Init() error {
 
 	m.UIFS = ui
 	m.UIFileServer = http.FileServer(http.FS(ui))
-	m.ResourcesFileServer = http.FileServer(http.Dir(m.Config.ResourcesDir))
 
 	return nil
-}
-
-func (m *UIMiddleware) Name() string {
-	return "UIMiddleware"
 }
 
 func (m *UIMiddleware) Middleware() gin.HandlerFunc {
@@ -53,24 +39,7 @@ func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		case "resources":
-			requestFilePath := m.Config.ResourcesDir + strings.TrimPrefix(c.Request.URL.Path, "/resources/")
-
-			if !filepath.IsLocal(requestFilePath) {
-				c.Status(404)
-				c.Abort()
-				return
-			}
-
-			_, err := os.Stat(requestFilePath)
-
-			if os.IsNotExist(err) {
-				c.Status(404)
-				c.Abort()
-				return
-			}
-
-			m.ResourcesFileServer.ServeHTTP(c.Writer, c.Request)
-			c.Abort()
+			c.Next()
 			return
 		default:
 			_, err := fs.Stat(m.UIFS, strings.TrimPrefix(c.Request.URL.Path, "/"))

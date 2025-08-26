@@ -33,6 +33,7 @@ var rootCmd = &cobra.Command{
 		conf.GoogleClientSecret = utils.GetSecret(conf.GoogleClientSecret, conf.GoogleClientSecretFile)
 		conf.GenericClientSecret = utils.GetSecret(conf.GenericClientSecret, conf.GenericClientSecretFile)
 
+		// Validate config
 		validator := validator.New()
 
 		err = validator.Struct(conf)

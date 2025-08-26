@@ -7,7 +7,6 @@ import (
 	"tinyauth/internal/config"
 
 	"github.com/gin-gonic/gin"
-	"github.com/traefik/paerser/parser"
 
 	"github.com/rs/zerolog"
 )
@@ -37,17 +36,6 @@ func ParseFileToLine(content string) string {
 	}
 
 	return strings.Join(users, ",")
-}
-
-func GetLabels(labels map[string]string) (config.Labels, error) {
-	var labelsParsed config.Labels
-
-	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth", "tinyauth.ip")
-	if err != nil {
-		return config.Labels{}, err
-	}
-
-	return labelsParsed, nil
 }
 
 func Filter[T any](slice []T, test func(T) bool) (res []T) {

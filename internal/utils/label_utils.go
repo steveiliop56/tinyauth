@@ -2,7 +2,21 @@ package utils
 
 import (
 	"strings"
+	"tinyauth/internal/config"
+
+	"github.com/traefik/paerser/parser"
 )
+
+func GetLabels(labels map[string]string) (config.Labels, error) {
+	var labelsParsed config.Labels
+
+	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth", "tinyauth.ip")
+	if err != nil {
+		return config.Labels{}, err
+	}
+
+	return labelsParsed, nil
+}
 
 func ParseHeaders(headers []string) map[string]string {
 	headerMap := make(map[string]string)

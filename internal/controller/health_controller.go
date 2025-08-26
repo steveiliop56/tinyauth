@@ -14,6 +14,7 @@ func NewHealthController(router *gin.RouterGroup) *HealthController {
 
 func (controller *HealthController) SetupRoutes() {
 	controller.Router.GET("/health", controller.healthHandler)
+	controller.Router.HEAD("/health", controller.healthHandler)
 }
 
 func (controller *HealthController) healthHandler(c *gin.Context) {
