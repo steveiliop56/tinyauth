@@ -65,7 +65,7 @@ export const LoginPage = () => {
   });
 
   const loginMutation = useMutation({
-    mutationFn: (values: LoginSchema) => axios.post("/api/login", values),
+    mutationFn: (values: LoginSchema) => axios.post("/api/user/login", values),
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {

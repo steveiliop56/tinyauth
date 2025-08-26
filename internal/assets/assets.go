@@ -4,7 +4,7 @@ import (
 	"embed"
 )
 
-// UI assets
+// Frontend assets
 //
 //go:embed dist
-var Assets embed.FS
+var FrontendAssets embed.FS

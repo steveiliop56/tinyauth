@@ -15,7 +15,7 @@ export const UserContextProvider = ({
 }) => {
   const { isFetching, data, error } = useSuspenseQuery({
     queryKey: ["user"],
-    queryFn: () => axios.get("/api/user").then((res) => res.data),
+    queryFn: () => axios.get("/api/context/user").then((res) => res.data),
   });
 
   if (error && !isFetching) {

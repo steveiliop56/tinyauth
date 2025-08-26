@@ -1,6 +1,20 @@
-package types
+package config
 
-// Config is the configuration for the tinyauth server
+type Claims struct {
+	Name              string `json:"name"`
+	Email             string `json:"email"`
+	PreferredUsername string `json:"preferred_username"`
+	Groups            any    `json:"groups"`
+}
+
+var Version = "development"
+var CommitHash = "n/a"
+var BuildTimestamp = "n/a"
+
+var SessionCookieName = "tinyauth-session"
+var CSRFCookieName = "tinyauth-csrf"
+var RedirectCookieName = "tinyauth-redirect"
+
 type Config struct {
 	Port                    int    `mapstructure:"port" validate:"required"`
 	Address                 string `validate:"required,ip4_addr" mapstructure:"address"`
@@ -9,7 +23,7 @@ type Config struct {
 	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
 	Users                   string `mapstructure:"users"`
 	UsersFile               string `mapstructure:"users-file"`
-	CookieSecure            bool   `mapstructure:"cookie-secure"`
+	SecureCookie            bool   `mapstructure:"secure-cookie"`
 	GithubClientId          string `mapstructure:"github-client-id"`
 	GithubClientSecret      string `mapstructure:"github-client-secret"`
 	GithubClientSecretFile  string `mapstructure:"github-client-secret-file"`
@@ -29,9 +43,8 @@ type Config struct {
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
 	SessionExpiry           int    `mapstructure:"session-expiry"`
-	LogLevel                int8   `mapstructure:"log-level" validate:"min=-1,max=5"`
+	LogLevel                string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
 	Title                   string `mapstructure:"app-title"`
-	EnvFile                 string `mapstructure:"env-file"`
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
 	FogotPasswordMessage    string `mapstructure:"forgot-password-message"`
@@ -42,90 +55,30 @@ type Config struct {
 	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
 	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
 	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
+	ResourcesDir            string `mapstructure:"resources-dir"`
 }
 
-// Server configuration
-type HandlersConfig struct {
-	AppURL                string
-	Domain                string
-	CookieSecure          bool
-	DisableContinue       bool
-	GenericName           string
-	Title                 string
-	ForgotPasswordMessage string
-	BackgroundImage       string
-	OAuthAutoRedirect     string
-	CsrfCookieName        string
-	RedirectCookieName    string
-}
-
-// OAuthConfig is the configuration for the providers
-type OAuthConfig struct {
-	GithubClientId      string
-	GithubClientSecret  string
-	GoogleClientId      string
-	GoogleClientSecret  string
-	GenericClientId     string
-	GenericClientSecret string
-	GenericScopes       []string
-	GenericAuthURL      string
-	GenericTokenURL     string
-	GenericUserURL      string
-	GenericSkipSSL      bool
-	AppURL              string
-}
-
-// ServerConfig is the configuration for the server
-type ServerConfig struct {
-	Port    int
-	Address string
-}
-
-// AuthConfig is the configuration for the auth service
-type AuthConfig struct {
-	Users             Users
-	OauthWhitelist    string
-	SessionExpiry     int
-	CookieSecure      bool
-	Domain            string
-	LoginTimeout      int
-	LoginMaxRetries   int
-	SessionCookieName string
-	HMACSecret        string
-	EncryptionSecret  string
-}
-
-// HooksConfig is the configuration for the hooks service
-type HooksConfig struct {
-	Domain string
-}
-
-// OAuthLabels is a list of labels that can be used in a tinyauth protected container
 type OAuthLabels struct {
 	Whitelist string
 	Groups    string
 }
 
-// Basic auth labels for a tinyauth protected container
 type BasicLabels struct {
 	Username string
-	Password PassowrdLabels
+	Password PasswordLabels
 }
 
-// PassowrdLabels is a struct that contains the password labels for a tinyauth protected container
-type PassowrdLabels struct {
+type PasswordLabels struct {
 	Plain string
 	File  string
 }
 
-// IP labels for a tinyauth protected container
 type IPLabels struct {
 	Allow  []string
 	Block  []string
 	Bypass []string
 }
 
-// Labels is a struct that contains the labels for a tinyauth protected container
 type Labels struct {
 	Users   string
 	Allowed string
@@ -136,12 +89,56 @@ type Labels struct {
 	IP      IPLabels
 }
 
-// Ldap config is a struct that contains the configuration for the LDAP service
-type LdapConfig struct {
-	Address      string
-	BindDN       string
-	BindPassword string
-	BaseDN       string
-	Insecure     bool
-	SearchFilter string
+type OAuthServiceConfig struct {
+	ClientID           string
+	ClientSecret       string
+	Scopes             []string
+	RedirectURL        string
+	AuthURL            string
+	TokenURL           string
+	UserinfoURL        string
+	InsecureSkipVerify bool
+}
+
+type User struct {
+	Username   string
+	Password   string
+	TotpSecret string
+}
+
+type UserSearch struct {
+	Username string
+	Type     string // local, ldap or unknown
+}
+
+type SessionCookie struct {
+	Username    string
+	Name        string
+	Email       string
+	Provider    string
+	TotpPending bool
+	OAuthGroups string
+}
+
+type UserContext struct {
+	Username    string
+	Name        string
+	Email       string
+	IsLoggedIn  bool
+	OAuth       bool
+	Provider    string
+	TotpPending bool
+	OAuthGroups string
+	TotpEnabled bool
+}
+
+type UnauthorizedQuery struct {
+	Username string `url:"username"`
+	Resource string `url:"resource"`
+	GroupErr bool   `url:"groupErr"`
+	IP       string `url:"ip"`
+}
+
+type RedirectQuery struct {
+	RedirectURI string `url:"redirect_uri"`
 }
