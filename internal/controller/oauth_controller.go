@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
+	"github.com/rs/zerolog/log"
 )
 
 type OAuthRequest struct {
@@ -51,6 +52,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 
 	err := c.BindUri(&req)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -61,6 +63,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 	service, exists := controller.Broker.GetService(req.Provider)
 
 	if !exists {
+		log.Warn().Msgf("OAuth provider not found: %s", req.Provider)
 		c.JSON(404, gin.H{
 			"status":  404,
 			"message": "Not Found",
@@ -75,6 +78,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 	redirectURI := c.Query("redirect_uri")
 
 	if redirectURI != "" {
+		log.Debug().Msg("Setting redirect URI cookie")
 		c.SetCookie(controller.Config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", "", controller.Config.SecureCookie, true)
 	}
 
@@ -90,6 +94,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	err := c.BindUri(&req)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -101,6 +106,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	csrfCookie, err := c.Cookie(controller.Config.CSRFCookieName)
 
 	if err != nil || state != csrfCookie {
+		log.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
@@ -111,12 +117,14 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	service, exists := controller.Broker.GetService(req.Provider)
 
 	if !exists {
+		log.Warn().Msgf("OAuth provider not found: %s", req.Provider)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
 
 	err = service.VerifyCode(code)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to verify OAuth code")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
@@ -124,11 +132,13 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	user, err := controller.Broker.GetUser(req.Provider)
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user from OAuth provider")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
 
 	if user.Email == "" {
+		log.Error().Msg("OAuth provider did not return an email")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}
@@ -139,6 +149,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		})
 
 		if err != nil {
+			log.Error().Err(err).Msg("Failed to encode unauthorized query")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 			return
 		}
@@ -150,8 +161,10 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	var name string
 
 	if user.Name != "" {
+		log.Debug().Msg("Using name from OAuth provider")
 		name = user.Name
 	} else {
+		log.Debug().Msg("No name from OAuth provider, using pseudo name")
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
@@ -166,6 +179,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	redirectURI, err := c.Cookie(controller.Config.RedirectCookieName)
 
 	if err != nil {
+		log.Debug().Msg("No redirect URI cookie found, redirecting to app root")
 		c.Redirect(http.StatusTemporaryRedirect, controller.Config.AppURL)
 		return
 	}
@@ -175,6 +189,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	})
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to encode redirect URI query")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
+	"github.com/rs/zerolog/log"
 )
 
 type LoginRequest struct {
@@ -50,6 +51,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	err := c.BindJSON(&req)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to bind JSON")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -65,9 +67,12 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		rateIdentifier = clientIP
 	}
 
+	log.Debug().Str("username", req.Username).Str("ip", clientIP).Msg("Login attempt")
+
 	isLocked, remainingTime := controller.Auth.IsAccountLocked(rateIdentifier)
 
 	if isLocked {
+		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed login attempts")
 		c.JSON(429, gin.H{
 			"status":  429,
 			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remainingTime),
@@ -78,6 +83,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	userSearch := controller.Auth.SearchUser(req.Username)
 
 	if userSearch.Type == "" {
+		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("User not found")
 		controller.Auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
@@ -87,6 +93,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	}
 
 	if !controller.Auth.VerifyUser(userSearch, req.Password) {
+		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Invalid password")
 		controller.Auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
@@ -95,12 +102,16 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
+	log.Info().Str("username", req.Username).Str("ip", clientIP).Msg("Login successful")
+
 	controller.Auth.RecordLoginAttempt(rateIdentifier, true)
 
 	if userSearch.Type == "local" {
 		user := controller.Auth.GetLocalUser(userSearch.Username)
 
 		if user.TotpSecret != "" {
+			log.Debug().Str("username", req.Username).Msg("User has TOTP enabled, requiring TOTP verification")
+
 			controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
@@ -132,6 +143,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 }
 
 func (controller *UserController) logoutHandler(c *gin.Context) {
+	log.Debug().Msg("Logout request received")
 	controller.Auth.DeleteSessionCookie(c)
 	c.JSON(200, gin.H{
 		"status":  200,
@@ -144,6 +156,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	err := c.BindJSON(&req)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to bind JSON")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -154,6 +167,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	context, err := utils.GetContext(c)
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user context")
 		c.JSON(500, gin.H{
 			"status":  500,
 			"message": "Internal Server Error",
@@ -162,6 +176,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	}
 
 	if !context.IsLoggedIn {
+		log.Warn().Msg("TOTP attempt without being logged in")
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -177,9 +192,12 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		rateIdentifier = clientIP
 	}
 
+	log.Debug().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification attempt")
+
 	isLocked, remainingTime := controller.Auth.IsAccountLocked(rateIdentifier)
 
 	if isLocked {
+		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed TOTP attempts")
 		c.JSON(429, gin.H{
 			"status":  429,
 			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remainingTime),
@@ -192,6 +210,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	ok := totp.Validate(req.Code, user.TotpSecret)
 
 	if !ok {
+		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Invalid TOTP code")
 		controller.Auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
@@ -199,6 +218,8 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	log.Info().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification successful")
 
 	controller.Auth.RecordLoginAttempt(rateIdentifier, true)
 

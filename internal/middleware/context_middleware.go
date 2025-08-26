@@ -8,6 +8,7 @@ import (
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type ContextMiddlewareConfig struct {
@@ -37,6 +38,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		cookie, err := m.Auth.GetSessionCookie(c)
 
 		if err != nil {
+			log.Debug().Err(err).Msg("No valid session cookie found")
 			goto basic
 		}
 
@@ -58,6 +60,8 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			userSearch := m.Auth.SearchUser(cookie.Username)
 
 			if userSearch.Type == "unknown" {
+				log.Debug().Msg("User from session cookie not found")
+				m.Auth.DeleteSessionCookie(c)
 				goto basic
 			}
 
@@ -74,10 +78,12 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			_, exists := m.Broker.GetService(cookie.Provider)
 
 			if !exists {
+				log.Debug().Msg("OAuth provider from session cookie not found")
 				goto basic
 			}
 
 			if !m.Auth.EmailWhitelisted(cookie.Email) {
+				log.Debug().Msg("Email from session cookie not whitelisted")
 				m.Auth.DeleteSessionCookie(c)
 				goto basic
 			}
@@ -99,6 +105,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		basic := m.Auth.GetBasicAuth(c)
 
 		if basic == nil {
+			log.Debug().Msg("No basic auth provided")
 			c.Next()
 			return
 		}
@@ -106,17 +113,21 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		userSearch := m.Auth.SearchUser(basic.Username)
 
 		if userSearch.Type == "unknown" {
+			log.Debug().Msg("User from basic auth not found")
 			c.Next()
 			return
 		}
 
 		if !m.Auth.VerifyUser(userSearch, basic.Password) {
+			log.Debug().Msg("Invalid password for basic auth user")
 			c.Next()
 			return
 		}
 
 		switch userSearch.Type {
 		case "local":
+			log.Debug().Msg("Basic auth user is local")
+
 			user := m.Auth.GetLocalUser(basic.Username)
 
 			c.Set("context", &config.UserContext{
@@ -130,6 +141,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		case "ldap":
+			log.Debug().Msg("Basic auth user is LDAP")
 			c.Set("context", &config.UserContext{
 				Username:   basic.Username,
 				Name:       utils.Capitalize(basic.Username),

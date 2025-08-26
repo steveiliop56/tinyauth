@@ -6,6 +6,8 @@ import (
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
 
+	"slices"
+
 	container "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/rs/zerolog/log"
@@ -60,11 +62,8 @@ func (docker *DockerService) GetLabels(app string, domain string) (config.Labels
 		return config.Labels{}, nil
 	}
 
-	log.Debug().Msg("Getting containers")
-
 	containers, err := docker.GetContainers()
 	if err != nil {
-		log.Error().Err(err).Msg("Error getting containers")
 		return config.Labels{}, err
 	}
 
@@ -75,8 +74,6 @@ func (docker *DockerService) GetLabels(app string, domain string) (config.Labels
 			continue
 		}
 
-		log.Debug().Str("id", inspect.ID).Msg("Getting labels for container")
-
 		labels, err := utils.GetLabels(inspect.Config.Labels)
 		if err != nil {
 			log.Warn().Str("id", container.ID).Err(err).Msg("Error getting container labels, skipping")
@@ -84,11 +81,9 @@ func (docker *DockerService) GetLabels(app string, domain string) (config.Labels
 		}
 
 		// Check if the container matches the ID or domain
-		for _, lDomain := range labels.Domain {
-			if lDomain == domain {
-				log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
-				return labels, nil
-			}
+		if slices.Contains(labels.Domain, domain) {
+			log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
+			return labels, nil
 		}
 
 		if strings.TrimPrefix(inspect.Name, "/") == app {

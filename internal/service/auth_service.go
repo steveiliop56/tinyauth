@@ -61,6 +61,7 @@ func (auth *AuthService) Init() error {
 		HttpOnly: true,
 		Domain:   fmt.Sprintf(".%s", auth.Config.Domain),
 	}
+
 	auth.Store = store
 	return nil
 }
@@ -70,11 +71,10 @@ func (auth *AuthService) GetSession(c *gin.Context) (*sessions.Session, error) {
 
 	// If there was an error getting the session, it might be invalid so let's clear it and retry
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid session, clearing cookie and retrying")
+		log.Debug().Err(err).Msg("Error getting session, clearing cookie and retrying")
 		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
 		session, err = auth.Store.Get(c.Request, auth.Config.SessionCookieName)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to get session")
 			return nil, err
 		}
 	}
@@ -83,25 +83,21 @@ func (auth *AuthService) GetSession(c *gin.Context) (*sessions.Session, error) {
 }
 
 func (auth *AuthService) SearchUser(username string) config.UserSearch {
-	log.Debug().Str("username", username).Msg("Searching for user")
-
-	// Check local users first
 	if auth.GetLocalUser(username).Username != "" {
-		log.Debug().Str("username", username).Msg("Found local user")
 		return config.UserSearch{
 			Username: username,
 			Type:     "local",
 		}
 	}
 
-	// If no user found, check LDAP
 	if auth.LDAP != nil {
-		log.Debug().Str("username", username).Msg("Checking LDAP for user")
 		userDN, err := auth.LDAP.Search(username)
+
 		if err != nil {
-			log.Warn().Err(err).Str("username", username).Msg("Failed to find user in LDAP")
+			log.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
 			return config.UserSearch{}
 		}
+
 		return config.UserSearch{
 			Username: userDN,
 			Type:     "ldap",
@@ -114,54 +110,42 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 }
 
 func (auth *AuthService) VerifyUser(search config.UserSearch, password string) bool {
-	// Authenticate the user based on the type
 	switch search.Type {
 	case "local":
-		// If local user, get the user and check the password
 		user := auth.GetLocalUser(search.Username)
 		return auth.CheckPassword(user, password)
 	case "ldap":
-		// If LDAP is configured, bind to the LDAP server with the user DN and password
 		if auth.LDAP != nil {
-			log.Debug().Str("username", search.Username).Msg("Binding to LDAP for user authentication")
-
 			err := auth.LDAP.Bind(search.Username, password)
 			if err != nil {
 				log.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
 				return false
 			}
 
-			// Rebind with the service account to reset the connection
 			err = auth.LDAP.Bind(auth.LDAP.Config.BindDN, auth.LDAP.Config.BindPassword)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
 				return false
 			}
 
-			log.Debug().Str("username", search.Username).Msg("LDAP authentication successful")
 			return true
 		}
 	default:
-		log.Warn().Str("type", search.Type).Msg("Unknown user type for authentication")
+		log.Debug().Str("type", search.Type).Msg("Unknown user type for authentication")
 		return false
 	}
 
-	// If no user found or authentication failed, return false
 	log.Warn().Str("username", search.Username).Msg("User authentication failed")
 	return false
 }
 
 func (auth *AuthService) GetLocalUser(username string) config.User {
-	// Loop through users and return the user if the username matches
-	log.Debug().Str("username", username).Msg("Searching for local user")
-
 	for _, user := range auth.Config.Users {
 		if user.Username == username {
 			return user
 		}
 	}
 
-	// If no user found, return an empty user
 	log.Warn().Str("username", username).Msg("Local user not found")
 	return config.User{}
 }
@@ -237,15 +221,10 @@ func (auth *AuthService) EmailWhitelisted(email string) bool {
 }
 
 func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
-	log.Debug().Msg("Creating session cookie")
-
 	session, err := auth.GetSession(c)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get session")
 		return err
 	}
-
-	log.Debug().Msg("Setting session cookie")
 
 	var sessionExpiry int
 
@@ -265,7 +244,6 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 
 	err = session.Save(c.Request, c.Writer)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to save session")
 		return err
 	}
 
@@ -273,11 +251,8 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 }
 
 func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
-	log.Debug().Msg("Deleting session cookie")
-
 	session, err := auth.GetSession(c)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get session")
 		return err
 	}
 
@@ -288,7 +263,6 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 
 	err = session.Save(c.Request, c.Writer)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to save session")
 		return err
 	}
 
@@ -296,15 +270,10 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 }
 
 func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie, error) {
-	log.Debug().Msg("Getting session cookie")
-
 	session, err := auth.GetSession(c)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get session")
 		return config.SessionCookie{}, err
 	}
-
-	log.Debug().Msg("Got session")
 
 	username, usernameOk := session.Values["username"].(string)
 	email, emailOk := session.Values["email"].(string)
@@ -328,7 +297,6 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		return config.SessionCookie{}, nil
 	}
 
-	log.Debug().Str("username", username).Str("provider", provider).Int64("expiry", expiry).Bool("totpPending", totpPending).Str("name", name).Str("email", email).Str("oauthGroups", oauthGroups).Msg("Parsed cookie")
 	return config.SessionCookie{
 		Username:    username,
 		Name:        name,
@@ -359,7 +327,6 @@ func (auth *AuthService) OAuthGroup(c *gin.Context, context config.UserContext, 
 		return true
 	}
 
-	// Check if we are using the generic oauth provider
 	if context.Provider != "generic" {
 		log.Debug().Msg("Not using generic provider, skipping group check")
 		return true
@@ -371,7 +338,6 @@ func (auth *AuthService) OAuthGroup(c *gin.Context, context config.UserContext, 
 	// For every group check if it is in the required groups
 	for _, group := range oauthGroups {
 		if utils.CheckFilter(labels.OAuth.Groups, group) {
-			log.Debug().Str("group", group).Msg("Group is in required groups")
 			return true
 		}
 	}
@@ -387,12 +353,9 @@ func (auth *AuthService) AuthEnabled(uri string, labels config.Labels) (bool, er
 		return true, nil
 	}
 
-	// Compile regex
 	regex, err := regexp.Compile(labels.Allowed)
 
-	// If there is an error, invalid regex, auth enabled
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid regex")
 		return true, err
 	}
 
@@ -408,6 +371,7 @@ func (auth *AuthService) AuthEnabled(uri string, labels config.Labels) (bool, er
 func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 	username, password, ok := c.Request.BasicAuth()
 	if !ok {
+		log.Debug().Msg("No basic auth provided")
 		return nil
 	}
 	return &config.User{
@@ -421,11 +385,11 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 	for _, blocked := range labels.IP.Block {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
-			log.Error().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
+			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
 			continue
 		}
 		if res {
-			log.Warn().Str("ip", ip).Str("item", blocked).Msg("IP is in blocked list, denying access")
+			log.Debug().Str("ip", ip).Str("item", blocked).Msg("IP is in blocked list, denying access")
 			return false
 		}
 	}
@@ -434,7 +398,7 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 	for _, allowed := range labels.IP.Allow {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
-			log.Error().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
+			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
 			continue
 		}
 		if res {
@@ -445,7 +409,7 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 
 	// If not in allowed range and allowed range is not empty, deny access
 	if len(labels.IP.Allow) > 0 {
-		log.Warn().Str("ip", ip).Msg("IP not in allow list, denying access")
+		log.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
 	}
 
@@ -458,7 +422,7 @@ func (auth *AuthService) BypassedIP(labels config.Labels, ip string) bool {
 	for _, bypassed := range labels.IP.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {
-			log.Error().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
+			log.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
 			continue
 		}
 		if res {

@@ -55,7 +55,6 @@ func (ldap *LdapService) Init() error {
 }
 
 func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
-	log.Debug().Msg("Connecting to LDAP server")
 	conn, err := ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 		InsecureSkipVerify: ldap.Config.Insecure,
 		MinVersion:         tls.VersionTLS12,
@@ -64,7 +63,6 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 		return nil, err
 	}
 
-	log.Debug().Msg("Binding to LDAP server")
 	err = conn.Bind(ldap.Config.BindDN, ldap.Config.BindPassword)
 	if err != nil {
 		return nil, err
@@ -94,7 +92,7 @@ func (ldap *LdapService) Search(username string) (string, error) {
 	}
 
 	if len(searchResult.Entries) != 1 {
-		return "", fmt.Errorf("err multiple or no entries found for user %s", username)
+		return "", fmt.Errorf("multiple or no entries found for user %s", username)
 	}
 
 	userDN := searchResult.Entries[0].DN

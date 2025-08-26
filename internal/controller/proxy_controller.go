@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
+	"github.com/rs/zerolog/log"
 )
 
 type Proxy struct {
@@ -46,6 +47,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	err := c.BindUri(&req)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -54,6 +56,12 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
+
+	if isBrowser {
+		log.Debug().Msg("Request identified as (most likely) coming from a browser")
+	} else {
+		log.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
+	}
 
 	uri := c.Request.Header.Get("X-Forwarded-Uri")
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
@@ -65,6 +73,8 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	labels, err := controller.Docker.GetLabels(id, hostWithoutPort)
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get labels from Docker")
+
 		if req.Proxy == "nginx" || !isBrowser {
 			c.JSON(500, gin.H{
 				"status":  500,
@@ -85,10 +95,12 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		headers := utils.ParseHeaders(labels.Headers)
 
 		for key, value := range headers {
+			log.Debug().Str("header", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
 		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
+			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth header")
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
 		}
 
@@ -114,6 +126,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		})
 
 		if err != nil {
+			log.Error().Err(err).Msg("Failed to encode unauthorized query")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		}
 
@@ -124,6 +137,8 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	authEnabled, err := controller.Auth.AuthEnabled(uri, labels)
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
+
 		if req.Proxy == "nginx" || !isBrowser {
 			c.JSON(500, gin.H{
 				"status":  500,
@@ -137,15 +152,19 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if !authEnabled {
+		log.Debug().Msg("Authentication disabled for resource, allowing access")
+
 		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
 		headers := utils.ParseHeaders(labels.Headers)
 
 		for key, value := range headers {
+			log.Debug().Str("header", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
 		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
+			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth header")
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
 		}
 
@@ -161,6 +180,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	context, err := utils.GetContext(c)
 
 	if err != nil {
+		log.Debug().Msg("No user context found in request, treating as not logged in")
 		userContext = config.UserContext{
 			IsLoggedIn: false,
 		}
@@ -169,6 +189,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.Provider == "basic" && userContext.TotpEnabled {
+		log.Debug().Msg("User has TOTP enabled, denying basic auth access")
 		userContext.IsLoggedIn = false
 	}
 
@@ -176,6 +197,8 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		appAllowed := controller.Auth.ResourceAllowed(c, userContext, labels)
 
 		if !appAllowed {
+			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
+
 			if req.Proxy == "nginx" || !isBrowser {
 				c.JSON(403, gin.H{
 					"status":  403,
@@ -195,6 +218,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			}
 
 			if err != nil {
+				log.Error().Err(err).Msg("Failed to encode unauthorized query")
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 				return
 			}
@@ -207,6 +231,8 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			groupOK := controller.Auth.OAuthGroup(c, userContext, labels)
 
 			if !groupOK {
+				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
+
 				if req.Proxy == "nginx" || !isBrowser {
 					c.JSON(403, gin.H{
 						"status":  403,
@@ -227,6 +253,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				}
 
 				if err != nil {
+					log.Error().Err(err).Msg("Failed to encode unauthorized query")
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 					return
 				}
@@ -245,10 +272,12 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		headers := utils.ParseHeaders(labels.Headers)
 
 		for key, value := range headers {
+			log.Debug().Str("header", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
 		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
+			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth header")
 			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
 		}
 
@@ -272,6 +301,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	})
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to encode redirect URI query")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
 		return
 	}

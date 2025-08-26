@@ -4,6 +4,7 @@ import (
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type UserContextResponse struct {
@@ -76,6 +77,7 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 	}
 
 	if err != nil {
+		log.Debug().Err(err).Msg("No user context found in request")
 		userContext.Status = 401
 		userContext.Message = "Unauthorized"
 		userContext.IsLoggedIn = false
