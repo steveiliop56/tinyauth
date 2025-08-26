@@ -101,7 +101,7 @@ func CheckFilter(filter string, str string) bool {
 			return false
 		}
 
-		if re.MatchString(str) {
+		if re.MatchString(strings.TrimSpace(str)) {
 			return true
 		}
 	}
@@ -109,7 +109,7 @@ func CheckFilter(filter string, str string) bool {
 	filterSplit := strings.Split(filter, ",")
 
 	for _, item := range filterSplit {
-		if strings.TrimSpace(item) == str {
+		if strings.TrimSpace(item) == strings.TrimSpace(str) {
 			return true
 		}
 	}

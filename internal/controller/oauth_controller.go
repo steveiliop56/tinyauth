@@ -74,13 +74,13 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 
 	state := service.GenerateState()
 	authURL := service.GetAuthURL(state)
-	c.SetCookie(controller.Config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", "", controller.Config.SecureCookie, true)
+	c.SetCookie(controller.Config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.Config.Domain), controller.Config.SecureCookie, true)
 
 	redirectURI := c.Query("redirect_uri")
 
 	if redirectURI != "" && utils.IsRedirectSafe(redirectURI, controller.Config.Domain) {
 		log.Debug().Msg("Setting redirect URI cookie")
-		c.SetCookie(controller.Config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", "", controller.Config.SecureCookie, true)
+		c.SetCookie(controller.Config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.Config.Domain), controller.Config.SecureCookie, true)
 	}
 
 	c.JSON(200, gin.H{
@@ -112,7 +112,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(controller.Config.CSRFCookieName, "", -1, "/", "", controller.Config.SecureCookie, true)
+	c.SetCookie(controller.Config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.Config.Domain), controller.Config.SecureCookie, true)
 
 	code := c.Query("code")
 	service, exists := controller.Broker.GetService(req.Provider)
@@ -195,6 +195,6 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(controller.Config.RedirectCookieName, "", -1, "/", "", controller.Config.SecureCookie, true)
+	c.SetCookie(controller.Config.RedirectCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.Config.Domain), controller.Config.SecureCookie, true)
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", controller.Config.AppURL, queries.Encode()))
 }

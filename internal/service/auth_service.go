@@ -266,6 +266,9 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 		return err
 	}
 
+	// Clear the cookie in the browser
+	c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
+
 	return nil
 }
 

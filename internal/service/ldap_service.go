@@ -140,7 +140,7 @@ func (ldap *LdapService) reconnect() error {
 		ldap.Conn.Close()
 		conn, err := ldap.connect()
 		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 		return conn, nil
 	}

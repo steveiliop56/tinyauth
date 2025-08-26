@@ -49,7 +49,7 @@ func (controller *UserController) SetupRoutes() {
 func (controller *UserController) loginHandler(c *gin.Context) {
 	var req LoginRequest
 
-	err := c.BindJSON(&req)
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind JSON")
 		c.JSON(400, gin.H{
@@ -174,7 +174,7 @@ func (controller *UserController) logoutHandler(c *gin.Context) {
 func (controller *UserController) totpHandler(c *gin.Context) {
 	var req TotpRequest
 
-	err := c.BindJSON(&req)
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind JSON")
 		c.JSON(400, gin.H{

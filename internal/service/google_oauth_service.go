@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 	"tinyauth/internal/config"
 
 	"golang.org/x/oauth2"
@@ -54,8 +55,11 @@ func (google *GoogleOAuthService) Init() error {
 
 func (oauth *GoogleOAuthService) GenerateState() string {
 	b := make([]byte, 128)
-	rand.Read(b)
-	state := base64.URLEncoding.EncodeToString(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		return base64.RawURLEncoding.EncodeToString(fmt.Appendf(nil, "state-%d", time.Now().UnixNano()))
+	}
+	state := base64.RawURLEncoding.EncodeToString(b)
 	return state
 }
 

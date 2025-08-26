@@ -8,7 +8,7 @@ import (
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -34,9 +34,9 @@ var rootCmd = &cobra.Command{
 		conf.GenericClientSecret = utils.GetSecret(conf.GenericClientSecret, conf.GenericClientSecretFile)
 
 		// Validate config
-		validator := validator.New()
+		v := validator.New()
 
-		err = validator.Struct(conf)
+		err = v.Struct(conf)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Invalid config")
 		}
