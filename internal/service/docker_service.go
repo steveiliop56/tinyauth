@@ -30,6 +30,9 @@ func (docker *DockerService) Init() error {
 
 	ctx := context.Background()
 	client.NegotiateAPIVersion(ctx)
+
+	docker.Client = client
+	docker.Context = ctx
 	return nil
 }
 

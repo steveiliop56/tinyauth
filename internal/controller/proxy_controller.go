@@ -38,7 +38,7 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, d
 }
 
 func (controller *ProxyController) SetupRoutes() {
-	proxyGroup := controller.Router.Group("/api/auth")
+	proxyGroup := controller.Router.Group("/auth")
 	proxyGroup.GET("/:proxy", controller.proxyHandler)
 }
 

@@ -148,9 +148,6 @@ func (app *BootstrapApp) Setup() error {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := engine.Group("/")
-	apiRouter := router.Group("/api")
-
 	// Create middlewares
 	var middlewares []Middleware
 
@@ -169,8 +166,12 @@ func (app *BootstrapApp) Setup() error {
 		if err != nil {
 			return fmt.Errorf("failed to initialize %s middleware: %T", middleware, err)
 		}
-		router.Use(middleware.Middleware())
+		engine.Use(middleware.Middleware())
 	}
+
+	// Create routers
+	mainRouter := engine.Group("/")
+	apiRouter := engine.Group("/api")
 
 	// Create controllers
 	contextController := controller.NewContextController(controller.ContextControllerConfig{
@@ -201,7 +202,7 @@ func (app *BootstrapApp) Setup() error {
 
 	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{
 		ResourcesDir: app.Config.ResourcesDir,
-	}, router)
+	}, mainRouter)
 
 	healthController := controller.NewHealthController(apiRouter)
 
