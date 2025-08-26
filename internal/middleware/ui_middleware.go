@@ -20,10 +20,10 @@ func NewUIMiddleware() *UIMiddleware {
 }
 
 func (m *UIMiddleware) Init() error {
-	ui, err := fs.Sub(assets.FontendAssets, "dist")
+	ui, err := fs.Sub(assets.FrontendAssets, "dist")
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	m.UIFS = ui

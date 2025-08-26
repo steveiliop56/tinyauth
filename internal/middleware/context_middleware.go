@@ -79,6 +79,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 
 			if !exists {
 				log.Debug().Msg("OAuth provider from session cookie not found")
+				m.Auth.DeleteSessionCookie(c)
 				goto basic
 			}
 

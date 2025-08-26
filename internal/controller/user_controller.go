@@ -112,13 +112,22 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		if user.TotpSecret != "" {
 			log.Debug().Str("username", req.Username).Msg("User has TOTP enabled, requiring TOTP verification")
 
-			controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
+			err := controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.Domain),
 				Provider:    "username",
 				TotpPending: true,
 			})
+
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to create session cookie")
+				c.JSON(500, gin.H{
+					"status":  500,
+					"message": "Internal Server Error",
+				})
+				return
+			}
 
 			c.JSON(200, gin.H{
 				"status":      200,
@@ -129,12 +138,21 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		}
 	}
 
-	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
+	err = controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.Domain),
 		Provider: "username",
 	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create session cookie")
+		c.JSON(500, gin.H{
+			"status":  500,
+			"message": "Internal Server Error",
+		})
+		return
+	}
 
 	c.JSON(200, gin.H{
 		"status":  200,
@@ -144,7 +162,9 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 func (controller *UserController) logoutHandler(c *gin.Context) {
 	log.Debug().Msg("Logout request received")
+
 	controller.Auth.DeleteSessionCookie(c)
+
 	c.JSON(200, gin.H{
 		"status":  200,
 		"message": "Logout successful",
@@ -175,8 +195,8 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		return
 	}
 
-	if !context.IsLoggedIn {
-		log.Warn().Msg("TOTP attempt without being logged in")
+	if !context.TotpPending {
+		log.Warn().Msg("TOTP attempt without a pending TOTP session")
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -223,12 +243,21 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	controller.Auth.RecordLoginAttempt(rateIdentifier, true)
 
-	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
+	err = controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.Config.Domain),
 		Provider: "username",
 	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create session cookie")
+		c.JSON(500, gin.H{
+			"status":  500,
+			"message": "Internal Server Error",
+		})
+		return
+	}
 
 	c.JSON(200, gin.H{
 		"status":  200,

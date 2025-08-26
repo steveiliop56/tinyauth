@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"tinyauth/internal/config"
@@ -71,7 +72,7 @@ func (github *GithubOAuthService) VerifyCode(code string) error {
 	token, err := github.Config.Exchange(github.Context, code, oauth2.VerifierOption(github.Verifier))
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	github.Token = token
@@ -83,11 +84,22 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 
 	client := github.Config.Client(github.Context, github.Token)
 
-	res, err := client.Get("https://api.github.com/user")
+	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
+	if err != nil {
+		return user, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	res, err := client.Do(req)
 	if err != nil {
 		return user, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return user, fmt.Errorf("request failed with status: %s", res.Status)
+	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -101,11 +113,22 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 		return user, err
 	}
 
-	res, err = client.Get("https://api.github.com/user/emails")
+	req, err = http.NewRequest("GET", "https://api.github.com/user/emails", nil)
+	if err != nil {
+		return user, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	res, err = client.Do(req)
 	if err != nil {
 		return user, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return user, fmt.Errorf("request failed with status: %s", res.Status)
+	}
 
 	body, err = io.ReadAll(res.Body)
 	if err != nil {

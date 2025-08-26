@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"net"
 	"net/url"
 	"strings"
 	"tinyauth/internal/config"
@@ -12,16 +13,25 @@ import (
 )
 
 // Get upper domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
-func GetUpperDomain(urlSrc string) (string, error) {
-	urlParsed, err := url.Parse(urlSrc)
+func GetUpperDomain(appUrl string) (string, error) {
+	appUrlParsed, err := url.Parse(appUrl)
 	if err != nil {
 		return "", err
 	}
 
-	urlSplitted := strings.Split(urlParsed.Hostname(), ".")
-	urlFinal := strings.Join(urlSplitted[1:], ".")
+	host := appUrlParsed.Hostname()
 
-	return urlFinal, nil
+	if netIP := net.ParseIP(host); netIP != nil {
+		return "", errors.New("IP addresses are not allowed")
+	}
+
+	urlParts := strings.Split(host, ".")
+
+	if len(urlParts) < 2 {
+		return "", errors.New("invalid domain, must be at least second level domain")
+	}
+
+	return strings.Join(urlParts[1:], "."), nil
 }
 
 func ParseFileToLine(content string) string {
@@ -63,8 +73,38 @@ func GetContext(c *gin.Context) (config.UserContext, error) {
 	return *userContext, nil
 }
 
+func IsRedirectSafe(redirectURL string, domain string) bool {
+	if redirectURL == "" {
+		return false
+	}
+
+	parsedURL, err := url.Parse(redirectURL)
+
+	if err != nil {
+		return false
+	}
+
+	if !parsedURL.IsAbs() {
+		return false
+	}
+
+	upper, err := GetUpperDomain(redirectURL)
+
+	if err != nil {
+		return false
+	}
+
+	if upper != domain {
+		return false
+	}
+
+	return true
+}
+
 func GetLogLevel(level string) zerolog.Level {
 	switch strings.ToLower(level) {
+	case "trace":
+		return zerolog.TraceLevel
 	case "debug":
 		return zerolog.DebugLevel
 	case "info":

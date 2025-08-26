@@ -82,7 +82,7 @@ func init() {
 		{"app-url", "", "The Tinyauth URL."},
 		{"users", "", "Comma separated list of users in the format username:hash."},
 		{"users-file", "", "Path to a file containing users in the format username:hash."},
-		{"cookie-secure", false, "Send cookie over secure connection only."},
+		{"secure-cookie", false, "Send cookie over secure connection only."},
 		{"github-client-id", "", "Github OAuth client ID."},
 		{"github-client-secret", "", "Github OAuth client secret."},
 		{"github-client-secret-file", "", "Github OAuth client secret file."},

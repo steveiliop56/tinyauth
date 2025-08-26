@@ -7,4 +7,4 @@ import (
 // Frontend assets
 //
 //go:embed dist
-var FontendAssets embed.FS
+var FrontendAssets embed.FS

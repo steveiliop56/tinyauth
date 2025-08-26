@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -66,7 +67,7 @@ func (google *GoogleOAuthService) VerifyCode(code string) error {
 	token, err := google.Config.Exchange(google.Context, code, oauth2.VerifierOption(google.Verifier))
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	google.Token = token
@@ -83,6 +84,10 @@ func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 		return config.Claims{}, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return user, fmt.Errorf("request failed with status: %s", res.Status)
+	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {

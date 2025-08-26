@@ -23,6 +23,7 @@ type OAuthControllerConfig struct {
 	RedirectCookieName string
 	SecureCookie       bool
 	AppURL             string
+	Domain             string
 }
 
 type OAuthController struct {
@@ -77,7 +78,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 
 	redirectURI := c.Query("redirect_uri")
 
-	if redirectURI != "" {
+	if redirectURI != "" && utils.IsRedirectSafe(redirectURI, controller.Config.Domain) {
 		log.Debug().Msg("Setting redirect URI cookie")
 		c.SetCookie(controller.Config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", "", controller.Config.SecureCookie, true)
 	}
@@ -178,7 +179,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	redirectURI, err := c.Cookie(controller.Config.RedirectCookieName)
 
-	if err != nil {
+	if err != nil || !utils.IsRedirectSafe(redirectURI, controller.Config.Domain) {
 		log.Debug().Msg("No redirect URI cookie found, redirecting to app root")
 		c.Redirect(http.StatusTemporaryRedirect, controller.Config.AppURL)
 		return
@@ -195,5 +196,5 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	c.SetCookie(controller.Config.RedirectCookieName, "", -1, "/", "", controller.Config.SecureCookie, true)
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.Config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", controller.Config.AppURL, queries.Encode()))
 }

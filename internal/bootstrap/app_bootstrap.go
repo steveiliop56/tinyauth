@@ -164,13 +164,13 @@ func (app *BootstrapApp) Setup() error {
 		log.Debug().Str("middleware", fmt.Sprintf("%T", middleware)).Msg("Initializing middleware")
 		err := middleware.Init()
 		if err != nil {
-			return fmt.Errorf("failed to initialize %s middleware: %T", middleware, err)
+			return fmt.Errorf("failed to initialize middleware %T: %w", middleware, err)
 		}
 		engine.Use(middleware.Middleware())
 	}
 
 	// Create routers
-	mainRouter := engine.Group("/")
+	mainRouter := engine.Group("")
 	apiRouter := engine.Group("/api")
 
 	// Create controllers
@@ -190,6 +190,7 @@ func (app *BootstrapApp) Setup() error {
 		SecureCookie:       app.Config.SecureCookie,
 		CSRFCookieName:     csrfCookieName,
 		RedirectCookieName: redirectCookieName,
+		Domain:             domain,
 	}, apiRouter, authService, oauthBrokerService)
 
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"net/http"
 	"strings"
 	"tinyauth/internal/config"
 
@@ -26,6 +27,10 @@ func ParseHeaders(headers []string) map[string]string {
 			continue
 		}
 		key := SanitizeHeader(strings.TrimSpace(split[0]))
+		if strings.ContainsAny(key, " \t") {
+			continue
+		}
+		key = http.CanonicalHeaderKey(key)
 		value := SanitizeHeader(strings.TrimSpace(split[1]))
 		headerMap[key] = value
 	}

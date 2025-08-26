@@ -9,6 +9,12 @@ import (
 func ParseUsers(users string) ([]config.User, error) {
 	var usersParsed []config.User
 
+	users = strings.TrimSpace(users)
+
+	if users == "" {
+		return []config.User{}, nil
+	}
+
 	userList := strings.Split(users, ",")
 
 	if len(userList) == 0 {
@@ -16,7 +22,10 @@ func ParseUsers(users string) ([]config.User, error) {
 	}
 
 	for _, user := range userList {
-		parsed, err := ParseUser(user)
+		if strings.TrimSpace(user) == "" {
+			continue
+		}
+		parsed, err := ParseUser(strings.TrimSpace(user))
 		if err != nil {
 			return []config.User{}, err
 		}
@@ -39,12 +48,13 @@ func GetUsers(conf string, file string) ([]config.User, error) {
 
 	if file != "" {
 		contents, err := ReadFile(file)
-		if err == nil {
-			if users != "" {
-				users += ","
-			}
-			users += ParseFileToLine(contents)
+		if err != nil {
+			return []config.User{}, err
 		}
+		if users != "" {
+			users += ","
+		}
+		users += ParseFileToLine(contents)
 	}
 
 	return ParseUsers(users)

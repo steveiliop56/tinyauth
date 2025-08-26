@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"tinyauth/internal/config"
@@ -76,7 +77,7 @@ func (generic *GenericOAuthService) VerifyCode(code string) error {
 	token, err := generic.Config.Exchange(generic.Context, code, oauth2.VerifierOption(generic.Verifier))
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	generic.Token = token
@@ -93,6 +94,10 @@ func (generic *GenericOAuthService) Userinfo() (config.Claims, error) {
 		return user, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return user, fmt.Errorf("request failed with status: %s", res.Status)
+	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {

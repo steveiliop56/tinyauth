@@ -71,9 +71,9 @@ func (auth *AuthService) GetSession(c *gin.Context) (*sessions.Session, error) {
 
 	// If there was an error getting the session, it might be invalid so let's clear it and retry
 	if err != nil {
-		log.Debug().Err(err).Msg("Error getting session, clearing cookie and retrying")
+		log.Debug().Err(err).Msg("Error getting session, creating a new one")
 		c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
-		session, err = auth.Store.Get(c.Request, auth.Config.SessionCookieName)
+		session, err = auth.Store.New(c.Request, auth.Config.SessionCookieName)
 		if err != nil {
 			return nil, err
 		}

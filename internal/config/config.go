@@ -65,10 +65,10 @@ type OAuthLabels struct {
 
 type BasicLabels struct {
 	Username string
-	Password PassowrdLabels
+	Password PasswordLabels
 }
 
-type PassowrdLabels struct {
+type PasswordLabels struct {
 	Plain string
 	File  string
 }

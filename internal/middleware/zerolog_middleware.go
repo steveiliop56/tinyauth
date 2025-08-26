@@ -10,8 +10,8 @@ import (
 
 var (
 	loggerSkipPathsPrefix = []string{
-		"GET /api/healthcheck",
-		"HEAD /api/healthcheck",
+		"GET /api/health",
+		"HEAD /api/health",
 		"GET /favicon.ico",
 	}
 )

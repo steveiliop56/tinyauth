@@ -128,6 +128,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to encode unauthorized query")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+			return
 		}
 
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
@@ -212,9 +213,9 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			})
 
 			if userContext.OAuth {
-				queries.Set("username", userContext.Username)
-			} else {
 				queries.Set("username", userContext.Email)
+			} else {
+				queries.Set("username", userContext.Username)
 			}
 
 			if err != nil {
@@ -247,9 +248,9 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				})
 
 				if userContext.OAuth {
-					queries.Set("username", userContext.Username)
-				} else {
 					queries.Set("username", userContext.Email)
+				} else {
+					queries.Set("username", userContext.Username)
 				}
 
 				if err != nil {
