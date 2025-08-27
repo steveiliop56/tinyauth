@@ -39,6 +39,8 @@ func (ds *DatabaseService) Init() error {
 		return err
 	}
 
+	sqlDB.SetMaxOpenConns(1)
+
 	err = ds.migrateDatabase(sqlDB)
 
 	if err != nil && err != migrate.ErrNoChange {

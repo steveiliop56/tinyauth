@@ -222,13 +222,13 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 }
 
 func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
-	session, err := auth.GetSessionCookie(c)
+	cookie, err := c.Cookie(auth.Config.SessionCookieName)
 
 	if err != nil {
 		return err
 	}
 
-	res := auth.Database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
+	res := auth.Database.Unscoped().Where("uuid = ?", cookie).Delete(&model.Session{})
 
 	if res.Error != nil {
 		return res.Error

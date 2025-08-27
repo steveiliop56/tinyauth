@@ -1,7 +1,7 @@
 package model
 
 type Session struct {
-	UUID        string `gorm:"column:uuid"`
+	UUID        string `gorm:"column:uuid;primaryKey"`
 	Username    string `gorm:"column:username"`
 	Email       string `gorm:"column:email"`
 	Name        string `gorm:"column:name"`
