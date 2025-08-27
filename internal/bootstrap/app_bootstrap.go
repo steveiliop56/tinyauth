@@ -92,16 +92,28 @@ func (app *BootstrapApp) Setup() error {
 		}
 	}
 
+	// Bootstrap database
 	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
 		DatabasePath: app.Config.DatabasePath,
 	})
+
+	log.Debug().Str("service", fmt.Sprintf("%T", databaseService)).Msg("Initializing service")
+
+	err = databaseService.Init()
+
+	if err != nil {
+		return fmt.Errorf("failed to initialize database service: %w", err)
+	}
+
+	database := databaseService.GetDatabase()
+
+	// Create services
 	dockerService := service.NewDockerService()
-	authService := service.NewAuthService(authConfig, dockerService, ldapService, databaseService)
+	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
 	oauthBrokerService := service.NewOAuthBrokerService(app.getOAuthBrokerConfig())
 
 	// Initialize services
 	services := []Service{
-		databaseService,
 		dockerService,
 		authService,
 		oauthBrokerService,

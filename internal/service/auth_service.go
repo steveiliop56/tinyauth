@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type LoginAttempt struct {
@@ -39,10 +40,10 @@ type AuthService struct {
 	LoginAttempts map[string]*LoginAttempt
 	LoginMutex    sync.RWMutex
 	LDAP          *LdapService
-	Database      *DatabaseService
+	Database      *gorm.DB
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, database *DatabaseService) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, database *gorm.DB) *AuthService {
 	return &AuthService{
 		Config:        config,
 		Docker:        docker,
@@ -184,7 +185,6 @@ func (auth *AuthService) IsEmailWhitelisted(email string) bool {
 }
 
 func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
-	db := auth.Database.GetDatabase()
 	uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -210,7 +210,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
 	}
 
-	err = db.Create(&session).Error
+	err = auth.Database.Create(&session).Error
 
 	if err != nil {
 		return err
@@ -222,14 +222,13 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 }
 
 func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
-	db := auth.Database.GetDatabase()
 	session, err := auth.GetSessionCookie(c)
 
 	if err != nil {
 		return err
 	}
 
-	res := db.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
+	res := auth.Database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
 
 	if res.Error != nil {
 		return res.Error
@@ -241,7 +240,6 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 }
 
 func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie, error) {
-	db := auth.Database.GetDatabase()
 	cookie, err := c.Cookie(auth.Config.SessionCookieName)
 
 	if err != nil {
@@ -250,7 +248,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 
 	var session model.Session
 
-	res := db.Unscoped().Where("uuid = ?", cookie).First(&session)
+	res := auth.Database.Unscoped().Where("uuid = ?", cookie).First(&session)
 
 	if res.Error != nil {
 		return config.SessionCookie{}, res.Error
@@ -263,7 +261,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	currentTime := time.Now().Unix()
 
 	if currentTime > session.Expiry {
-		res := db.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
+		res := auth.Database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
 		if res.Error != nil {
 			log.Error().Err(res.Error).Msg("Failed to delete expired session")
 		}

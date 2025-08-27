@@ -49,18 +49,24 @@ func (m *ZerologMiddleware) Middleware() gin.HandlerFunc {
 
 		latency := time.Since(tStart).String()
 
-		// logPath check if the path should be logged normally or with debug
+		subLogger := log.With().Str("method", method).
+			Str("path", path).
+			Str("address", address).
+			Str("client_ip", clientIP).
+			Int("status", code).
+			Str("latency", latency).Logger()
+
 		if m.logPath(method + " " + path) {
 			switch {
-			case code >= 200 && code < 300:
-				log.Info().Str("method", method).Str("path", path).Str("address", address).Str("clientIp", clientIP).Int("status", code).Str("latency", latency).Msg("Request")
-			case code >= 300 && code < 400:
-				log.Warn().Str("method", method).Str("path", path).Str("address", address).Str("clientIp", clientIP).Int("status", code).Str("latency", latency).Msg("Request")
-			case code >= 400:
-				log.Error().Str("method", method).Str("path", path).Str("address", address).Str("clientIp", clientIP).Int("status", code).Str("latency", latency).Msg("Request")
+			case code >= 400 && code < 500:
+				subLogger.Warn().Msg("Client Error")
+			case code >= 500:
+				subLogger.Error().Msg("Server Error")
+			default:
+				subLogger.Info().Msg("Request")
 			}
 		} else {
-			log.Debug().Str("method", method).Str("path", path).Str("address", address).Int("status", code).Str("latency", latency).Msg("Request")
+			subLogger.Debug().Msg("Request")
 		}
 	}
 }
