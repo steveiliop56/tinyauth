@@ -300,8 +300,8 @@ func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserCo
 	return utils.CheckFilter(labels.Users.Allow, context.Username)
 }
 
-func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserContext, groups string) bool {
-	if groups == "" {
+func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserContext, requiredGroups string) bool {
+	if requiredGroups == "" {
 		return true
 	}
 
@@ -310,11 +310,8 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 		return true
 	}
 
-	// No need to parse since they are from the API response
-	groupsSplit := strings.Split(groups, ",")
-
-	for _, group := range groupsSplit {
-		if utils.CheckFilter(groups, group) {
+	for _, userGroup := range strings.Split(context.OAuthGroups, ",") {
+		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
 			return true
 		}
 	}
