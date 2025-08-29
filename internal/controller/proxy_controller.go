@@ -89,7 +89,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	clientIP := c.ClientIP()
 
-	if controller.Auth.BypassedIP(labels, clientIP) {
+	if controller.Auth.IsBypassedIP(labels, clientIP) {
 		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
 		headers := utils.ParseHeaders(labels.Headers)
@@ -135,7 +135,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.Auth.AuthEnabled(uri, labels)
+	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
@@ -195,7 +195,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.Auth.ResourceAllowed(c, userContext, labels)
+		appAllowed := controller.Auth.IsResourceAllowed(c, userContext, labels)
 
 		if !appAllowed {
 			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
@@ -229,7 +229,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		}
 
 		if userContext.OAuth {
-			groupOK := controller.Auth.OAuthGroup(c, userContext, labels)
+			groupOK := controller.Auth.IsInOAuthGroup(c, userContext, labels)
 
 			if !groupOK {
 				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")

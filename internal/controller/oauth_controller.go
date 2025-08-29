@@ -144,7 +144,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.Auth.EmailWhitelisted(user.Email) {
+	if !controller.Auth.IsEmailWhitelisted(user.Email) {
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
 		})
@@ -169,8 +169,18 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
+	var usename string
+
+	if user.PreferredUsername != "" {
+		log.Debug().Msg("Using preferred username from OAuth provider")
+		usename = user.PreferredUsername
+	} else {
+		log.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
+		usename = strings.Replace(user.Email, "@", "_", -1)
+	}
+
 	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
-		Username:    user.Email,
+		Username:    usename,
 		Name:        name,
 		Email:       user.Email,
 		Provider:    req.Provider,

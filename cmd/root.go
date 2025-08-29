@@ -28,7 +28,6 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Check if secrets have a file associated with them
-		conf.Secret = utils.GetSecret(conf.Secret, conf.SecretFile)
 		conf.GithubClientSecret = utils.GetSecret(conf.GithubClientSecret, conf.GithubClientSecretFile)
 		conf.GoogleClientSecret = utils.GetSecret(conf.GoogleClientSecret, conf.GoogleClientSecretFile)
 		conf.GenericClientSecret = utils.GetSecret(conf.GenericClientSecret, conf.GenericClientSecretFile)
@@ -77,8 +76,6 @@ func init() {
 	}{
 		{"port", 3000, "Port to run the server on."},
 		{"address", "0.0.0.0", "Address to bind the server to."},
-		{"secret", "", "Secret to use for the cookie."},
-		{"secret-file", "", "Path to a file containing the secret."},
 		{"app-url", "", "The Tinyauth URL."},
 		{"users", "", "Comma separated list of users in the format username:hash."},
 		{"users-file", "", "Path to a file containing users in the format username:hash."},
@@ -115,6 +112,7 @@ func init() {
 		{"ldap-insecure", false, "Skip certificate verification for the LDAP server."},
 		{"ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup."},
 		{"resources-dir", "/data/resources", "Path to a directory containing custom resources (e.g. background image)."},
+		{"database-path", "/data/tinyauth.db", "Path to the Sqlite database file."},
 	}
 
 	for _, opt := range configOptions {

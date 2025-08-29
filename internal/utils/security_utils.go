@@ -1,17 +1,13 @@
 package utils
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"io"
 	"net"
 	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/hkdf"
 )
 
 func GetSecret(conf string, file string) string {
@@ -47,24 +43,6 @@ func ParseSecretFile(contents string) string {
 func GetBasicAuth(username string, password string) string {
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func DeriveKey(secret string, info string) (string, error) {
-	hash := sha256.New
-	hkdf := hkdf.New(hash, []byte(secret), nil, []byte(info)) // I am not using a salt because I just want two different keys from one secret, maybe bad practice
-	key := make([]byte, 24)
-
-	_, err := io.ReadFull(hkdf, key)
-	if err != nil {
-		return "", err
-	}
-
-	if bytes.Equal(key, make([]byte, 24)) {
-		return "", errors.New("derived key is empty")
-	}
-
-	encodedKey := base64.StdEncoding.EncodeToString(key)
-	return encodedKey, nil
 }
 
 func FilterIP(filter string, ip string) (bool, error) {

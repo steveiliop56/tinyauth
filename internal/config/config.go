@@ -18,8 +18,6 @@ var RedirectCookieName = "tinyauth-redirect"
 type Config struct {
 	Port                    int    `mapstructure:"port" validate:"required"`
 	Address                 string `validate:"required,ip4_addr" mapstructure:"address"`
-	Secret                  string `validate:"required,len=32" mapstructure:"secret"`
-	SecretFile              string `mapstructure:"secret-file"`
 	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
 	Users                   string `mapstructure:"users"`
 	UsersFile               string `mapstructure:"users-file"`
@@ -56,6 +54,7 @@ type Config struct {
 	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
 	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
 	ResourcesDir            string `mapstructure:"resources-dir"`
+	DatabasePath            string `mapstructure:"database-path" validate:"required"`
 }
 
 type OAuthLabels struct {
@@ -112,6 +111,7 @@ type UserSearch struct {
 }
 
 type SessionCookie struct {
+	UUID        string
 	Username    string
 	Name        string
 	Email       string
