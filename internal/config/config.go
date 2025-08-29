@@ -44,7 +44,7 @@ type Config struct {
 	Title                   string `mapstructure:"app-title"`
 	LoginTimeout            int    `mapstructure:"login-timeout"`
 	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
-	FogotPasswordMessage    string `mapstructure:"forgot-password-message"`
+	ForgotPasswordMessage   string `mapstructure:"forgot-password-message"`
 	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
 	LdapAddress             string `mapstructure:"ldap-address"`
 	LdapBindDN              string `mapstructure:"ldap-bind-dn"`
