@@ -1,19 +1,18 @@
 package config
 
-type Claims struct {
-	Name              string `json:"name"`
-	Email             string `json:"email"`
-	PreferredUsername string `json:"preferred_username"`
-	Groups            any    `json:"groups"`
-}
+// Version information, set at build time
 
 var Version = "development"
 var CommitHash = "n/a"
 var BuildTimestamp = "n/a"
 
+// Cookie name templates
+
 var SessionCookieName = "tinyauth-session"
 var CSRFCookieName = "tinyauth-csrf"
 var RedirectCookieName = "tinyauth-redirect"
+
+// Main app config
 
 type Config struct {
 	Port                    int    `mapstructure:"port" validate:"required"`
@@ -57,35 +56,13 @@ type Config struct {
 	DatabasePath            string `mapstructure:"database-path" validate:"required"`
 }
 
-type OAuthLabels struct {
-	Whitelist string
-	Groups    string
-}
+// OAuth/OIDC config
 
-type BasicLabels struct {
-	Username string
-	Password PasswordLabels
-}
-
-type PasswordLabels struct {
-	Plain string
-	File  string
-}
-
-type IPLabels struct {
-	Allow  []string
-	Block  []string
-	Bypass []string
-}
-
-type Labels struct {
-	Users   string
-	Allowed string
-	Headers []string
-	Domain  []string
-	Basic   BasicLabels
-	OAuth   OAuthLabels
-	IP      IPLabels
+type Claims struct {
+	Name              string `json:"name"`
+	Email             string `json:"email"`
+	PreferredUsername string `json:"preferred_username"`
+	Groups            any    `json:"groups"`
 }
 
 type OAuthServiceConfig struct {
@@ -98,6 +75,8 @@ type OAuthServiceConfig struct {
 	UserinfoURL        string
 	InsecureSkipVerify bool
 }
+
+// User/session related stuff
 
 type User struct {
 	Username   string
@@ -132,6 +111,8 @@ type UserContext struct {
 	TotpEnabled bool
 }
 
+// API responses and queries
+
 type UnauthorizedQuery struct {
 	Username string `url:"username"`
 	Resource string `url:"resource"`
@@ -141,4 +122,55 @@ type UnauthorizedQuery struct {
 
 type RedirectQuery struct {
 	RedirectURI string `url:"redirect_uri"`
+}
+
+// Labels
+
+type Labels struct {
+	Apps map[string]AppLabels
+}
+
+type AppLabels struct {
+	Config   ConfigLabels
+	Users    UsersLabels
+	OAuth    OAuthLabels
+	IP       IPLabels
+	Response ResponseLabels
+	Path     PathLabels
+}
+
+type ConfigLabels struct {
+	Domain string
+}
+
+type UsersLabels struct {
+	Allow string
+	Block string
+}
+
+type OAuthLabels struct {
+	Whitelist string
+	Groups    string
+}
+
+type IPLabels struct {
+	Allow  []string
+	Block  []string
+	Bypass []string
+}
+
+type ResponseLabels struct {
+	Headers   []string
+	BasicAuth BasicAuthLabels
+}
+
+type BasicAuthLabels struct {
+	Username     string
+	Password     string
+	PasswordFile string
+}
+
+type PathLabels struct {
+	Allow string
+	Block string
 }
