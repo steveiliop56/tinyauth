@@ -289,6 +289,13 @@ func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserCo
 		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
 	}
 
+	if labels.Users.Block != "" {
+		log.Debug().Msg("Checking blocked users")
+		if utils.CheckFilter(labels.Users.Block, context.Username) {
+			return false
+		}
+	}
+
 	log.Debug().Msg("Checking users")
 	return utils.CheckFilter(labels.Users.Allow, context.Username)
 }
@@ -316,19 +323,31 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 	return false
 }
 
-func (auth *AuthService) IsAuthEnabled(uri string, pathAllow string) (bool, error) {
-	if pathAllow == "" {
-		return true, nil
+func (auth *AuthService) IsAuthEnabled(uri string, path config.PathLabels) (bool, error) {
+	// Check for block list
+	if path.Block != "" {
+		regex, err := regexp.Compile(path.Block)
+
+		if err != nil {
+			return true, err
+		}
+
+		if !regex.MatchString(uri) {
+			return false, nil
+		}
 	}
 
-	regex, err := regexp.Compile(pathAllow)
+	// Check for allow list
+	if path.Allow != "" {
+		regex, err := regexp.Compile(path.Allow)
 
-	if err != nil {
-		return true, err
-	}
+		if err != nil {
+			return true, err
+		}
 
-	if regex.MatchString(uri) {
-		return false, nil
+		if regex.MatchString(uri) {
+			return false, nil
+		}
 	}
 
 	return true, nil

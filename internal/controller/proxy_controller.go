@@ -112,7 +112,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels.Path.Allow)
+	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels.Path)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
