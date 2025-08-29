@@ -89,19 +89,20 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	clientIP := c.ClientIP()
 
-	if controller.Auth.IsBypassedIP(labels, clientIP) {
+	if controller.Auth.IsBypassedIP(labels.IP, clientIP) {
 		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
-		headers := utils.ParseHeaders(labels.Headers)
+		headers := utils.ParseHeaders(labels.Response.Headers)
 
 		for key, value := range headers {
 			log.Debug().Str("header", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
-		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
-			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth header")
-			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
+		basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
+		if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
+			log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
+			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
 		}
 
 		c.JSON(200, gin.H{
@@ -111,31 +112,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.Auth.CheckIP(labels, clientIP) {
-		if req.Proxy == "nginx" || !isBrowser {
-			c.JSON(401, gin.H{
-				"status":  401,
-				"message": "Unauthorized",
-			})
-			return
-		}
-
-		queries, err := query.Values(config.UnauthorizedQuery{
-			Resource: strings.Split(host, ".")[0],
-			IP:       clientIP,
-		})
-
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to encode unauthorized query")
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
-			return
-		}
-
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
-		return
-	}
-
-	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels)
+	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels.Path)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
@@ -157,22 +134,47 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
-		headers := utils.ParseHeaders(labels.Headers)
+		headers := utils.ParseHeaders(labels.Response.Headers)
 
 		for key, value := range headers {
 			log.Debug().Str("header", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
-		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
-			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth header")
-			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
+		basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
+		if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
+			log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
+			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
 		}
 
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
 		})
+		return
+	}
+
+	if !controller.Auth.CheckIP(labels.IP, clientIP) {
+		if req.Proxy == "nginx" || !isBrowser {
+			c.JSON(401, gin.H{
+				"status":  401,
+				"message": "Unauthorized",
+			})
+			return
+		}
+
+		queries, err := query.Values(config.UnauthorizedQuery{
+			Resource: strings.Split(host, ".")[0],
+			IP:       clientIP,
+		})
+
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to encode unauthorized query")
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
 		return
 	}
 
@@ -229,7 +231,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		}
 
 		if userContext.OAuth {
-			groupOK := controller.Auth.IsInOAuthGroup(c, userContext, labels)
+			groupOK := controller.Auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
 
 			if !groupOK {
 				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
@@ -270,16 +272,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
-		headers := utils.ParseHeaders(labels.Headers)
+		headers := utils.ParseHeaders(labels.Response.Headers)
 
 		for key, value := range headers {
 			log.Debug().Str("header", key).Msg("Setting header")
 			c.Header(key, value)
 		}
 
-		if labels.Basic.Username != "" && utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File) != "" {
-			log.Debug().Str("username", labels.Basic.Username).Msg("Setting basic auth header")
-			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Basic.Username, utils.GetSecret(labels.Basic.Password.Plain, labels.Basic.Password.File))))
+		basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
+		if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
+			log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
+			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
 		}
 
 		c.JSON(200, gin.H{

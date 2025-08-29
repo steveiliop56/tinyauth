@@ -283,18 +283,25 @@ func (auth *AuthService) UserAuthConfigured() bool {
 	return len(auth.Config.Users) > 0 || auth.LDAP != nil
 }
 
-func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.Labels) bool {
+func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.AppLabels) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
 	}
 
+	if labels.Users.Block != "" {
+		log.Debug().Msg("Checking blocked users")
+		if utils.CheckFilter(labels.Users.Block, context.Username) {
+			return false
+		}
+	}
+
 	log.Debug().Msg("Checking users")
-	return utils.CheckFilter(labels.Users, context.Username)
+	return utils.CheckFilter(labels.Users.Allow, context.Username)
 }
 
-func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserContext, labels config.Labels) bool {
-	if labels.OAuth.Groups == "" {
+func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserContext, requiredGroups string) bool {
+	if requiredGroups == "" {
 		return true
 	}
 
@@ -303,11 +310,8 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 		return true
 	}
 
-	// No need to parse since they are from the API response
-	oauthGroups := strings.Split(context.OAuthGroups, ",")
-
-	for _, group := range oauthGroups {
-		if utils.CheckFilter(labels.OAuth.Groups, group) {
+	for _, userGroup := range strings.Split(context.OAuthGroups, ",") {
+		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
 			return true
 		}
 	}
@@ -316,19 +320,31 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 	return false
 }
 
-func (auth *AuthService) IsAuthEnabled(uri string, labels config.Labels) (bool, error) {
-	if labels.Allowed == "" {
-		return true, nil
+func (auth *AuthService) IsAuthEnabled(uri string, path config.PathLabels) (bool, error) {
+	// Check for block list
+	if path.Block != "" {
+		regex, err := regexp.Compile(path.Block)
+
+		if err != nil {
+			return true, err
+		}
+
+		if !regex.MatchString(uri) {
+			return false, nil
+		}
 	}
 
-	regex, err := regexp.Compile(labels.Allowed)
+	// Check for allow list
+	if path.Allow != "" {
+		regex, err := regexp.Compile(path.Allow)
 
-	if err != nil {
-		return true, err
-	}
+		if err != nil {
+			return true, err
+		}
 
-	if regex.MatchString(uri) {
-		return false, nil
+		if regex.MatchString(uri) {
+			return false, nil
+		}
 	}
 
 	return true, nil
@@ -346,8 +362,8 @@ func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 	}
 }
 
-func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
-	for _, blocked := range labels.IP.Block {
+func (auth *AuthService) CheckIP(labels config.IPLabels, ip string) bool {
+	for _, blocked := range labels.Block {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
@@ -359,7 +375,7 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 		}
 	}
 
-	for _, allowed := range labels.IP.Allow {
+	for _, allowed := range labels.Allow {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
@@ -371,7 +387,7 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 		}
 	}
 
-	if len(labels.IP.Allow) > 0 {
+	if len(labels.Allow) > 0 {
 		log.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
 	}
@@ -380,8 +396,8 @@ func (auth *AuthService) CheckIP(labels config.Labels, ip string) bool {
 	return true
 }
 
-func (auth *AuthService) IsBypassedIP(labels config.Labels, ip string) bool {
-	for _, bypassed := range labels.IP.Bypass {
+func (auth *AuthService) IsBypassedIP(labels config.IPLabels, ip string) bool {
+	for _, bypassed := range labels.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")

@@ -6,8 +6,6 @@ import (
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
 
-	"slices"
-
 	container "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/rs/zerolog/log"
@@ -57,17 +55,17 @@ func (docker *DockerService) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *DockerService) GetLabels(app string, domain string) (config.Labels, error) {
+func (docker *DockerService) GetLabels(app string, domain string) (config.AppLabels, error) {
 	isConnected := docker.DockerConnected()
 
 	if !isConnected {
 		log.Debug().Msg("Docker not connected, returning empty labels")
-		return config.Labels{}, nil
+		return config.AppLabels{}, nil
 	}
 
 	containers, err := docker.GetContainers()
 	if err != nil {
-		return config.Labels{}, err
+		return config.AppLabels{}, err
 	}
 
 	for _, container := range containers {
@@ -83,18 +81,19 @@ func (docker *DockerService) GetLabels(app string, domain string) (config.Labels
 			continue
 		}
 
-		// Check if the container matches the ID or domain
-		if slices.Contains(labels.Domain, domain) {
-			log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
-			return labels, nil
-		}
+		for appName, appLabels := range labels.Apps {
+			if appLabels.Config.Domain == domain {
+				log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
+				return appLabels, nil
+			}
 
-		if strings.TrimPrefix(inspect.Name, "/") == app {
-			log.Debug().Str("id", inspect.ID).Msg("Found matching container by name")
-			return labels, nil
+			if strings.TrimPrefix(inspect.Name, "/") == appName {
+				log.Debug().Str("id", inspect.ID).Msg("Found matching container by app name")
+				return appLabels, nil
+			}
 		}
 	}
 
 	log.Debug().Msg("No matching container found, returning empty labels")
-	return config.Labels{}, nil
+	return config.AppLabels{}, nil
 }

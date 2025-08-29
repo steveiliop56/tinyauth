@@ -11,7 +11,7 @@ import (
 func GetLabels(labels map[string]string) (config.Labels, error) {
 	var labelsParsed config.Labels
 
-	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.users", "tinyauth.allowed", "tinyauth.headers", "tinyauth.domain", "tinyauth.basic", "tinyauth.oauth", "tinyauth.ip")
+	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.apps")
 	if err != nil {
 		return config.Labels{}, err
 	}
