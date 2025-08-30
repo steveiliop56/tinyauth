@@ -12,7 +12,7 @@ import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import DOMPurify from "dompurify";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const ContinuePage = () => {
   const { isLoggedIn } = useUserContext();
@@ -21,9 +21,10 @@ export const ContinuePage = () => {
     return <Navigate to="/login" />;
   }
 
-  const { domain, disableContinue } = useAppContext();
+  const { rootDomain } = useAppContext();
   const { search } = useLocation();
   const [loading, setLoading] = useState(false);
+  const [showRedirectButton, setShowRedirectButton] = useState(false);
 
   const searchParams = new URLSearchParams(search);
   const redirectURI = searchParams.get("redirect_uri");
@@ -36,21 +37,20 @@ export const ContinuePage = () => {
     return <Navigate to="/logout" />;
   }
 
-  const handleRedirect = () => {
-    setLoading(true);
-    window.location.href = DOMPurify.sanitize(redirectURI);
-  }
-
-  if (disableContinue) {
-    handleRedirect();
-  }
-
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const url = new URL(redirectURI);
+  const handleRedirect = () => {
+    setLoading(true);
+    window.location.href = DOMPurify.sanitize(redirectURI);
+  };
 
-  if (!(url.hostname == domain) && !url.hostname.endsWith(`.${domain}`)) {
+  const redirectURLObj = new URL(redirectURI);
+
+  if (
+    !(redirectURLObj.hostname == rootDomain) &&
+    !redirectURLObj.hostname.endsWith(`.${rootDomain}`)
+  ) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -64,7 +64,7 @@ export const ContinuePage = () => {
               components={{
                 code: <code />,
               }}
-              values={{ domain }}
+              values={{ rootDomain }}
             />
           </CardDescription>
         </CardHeader>
@@ -76,7 +76,11 @@ export const ContinuePage = () => {
           >
             {t("continueTitle")}
           </Button>
-          <Button onClick={() => navigate("/logout")} variant="outline" disabled={loading}>
+          <Button
+            onClick={() => navigate("/logout")}
+            variant="outline"
+            disabled={loading}
+          >
             {t("cancelTitle")}
           </Button>
         </CardFooter>
@@ -84,7 +88,10 @@ export const ContinuePage = () => {
     );
   }
 
-  if (url.protocol === "http:" && window.location.protocol === "https:") {
+  if (
+    redirectURLObj.protocol === "http:" &&
+    window.location.protocol === "https:"
+  ) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -102,14 +109,14 @@ export const ContinuePage = () => {
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
-          <Button
-            onClick={handleRedirect}
-            loading={loading}
-            variant="warning"
-          >
+          <Button onClick={handleRedirect} loading={loading} variant="warning">
             {t("continueTitle")}
           </Button>
-          <Button onClick={() => navigate("/logout")} variant="outline" disabled={loading}>
+          <Button
+            onClick={() => navigate("/logout")}
+            variant="outline"
+            disabled={loading}
+          >
             {t("cancelTitle")}
           </Button>
         </CardFooter>
@@ -117,20 +124,31 @@ export const ContinuePage = () => {
     );
   }
 
+  useEffect(() => {
+    setTimeout(() => {
+      handleRedirect();
+    }, 100);
+    setTimeout(() => {
+      setLoading(false);
+      setShowRedirectButton(true);
+    }, 1000);
+  }, []);
+
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
-        <CardTitle className="text-3xl">{t("continueTitle")}</CardTitle>
-        <CardDescription>{t("continueSubtitle")}</CardDescription>
+        <CardTitle className="text-3xl">
+          {t("continueRedirectingTitle")}
+        </CardTitle>
+        <CardDescription>{t("continueRedirectingSubtitle")}</CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-col items-stretch">
-        <Button
-          onClick={handleRedirect}
-          loading={loading}
-        >
-          {t("continueTitle")}
-        </Button>
-      </CardFooter>
+      {showRedirectButton && (
+        <CardFooter className="flex flex-col items-stretch">
+          <Button onClick={handleRedirect}>
+            {t("continueRedirectManually")}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

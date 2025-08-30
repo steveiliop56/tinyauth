@@ -1,9 +1,13 @@
 import { useAppContext } from "@/context/app-context";
 import { LanguageSelector } from "../language/language";
 import { Outlet } from "react-router";
+import { useState } from "react";
+import { DomainWarning } from "../domain-warning/domain-warning";
 
 export const Layout = () => {
-  const { backgroundImage } = useAppContext();
+  const { backgroundImage, appUrl } = useAppContext();
+  const [ignoreDomainWarning, setIgnoreDomainWarning] = useState(false);
+  const currentUrl = window.location.origin;
 
   return (
     <div
@@ -15,7 +19,15 @@ export const Layout = () => {
       }}
     >
       <LanguageSelector />
-      <Outlet />
+      {appUrl !== currentUrl && !ignoreDomainWarning ? (
+        <DomainWarning
+          onClick={() => setIgnoreDomainWarning(true)}
+          appUrl={appUrl}
+          currentUrl={currentUrl}
+        />
+      ) : (
+        <Outlet />
+      )}
     </div>
   );
 };

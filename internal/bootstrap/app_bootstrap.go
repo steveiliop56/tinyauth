@@ -177,10 +177,10 @@ func (app *BootstrapApp) Setup() error {
 	// Create controllers
 	contextController := controller.NewContextController(controller.ContextControllerConfig{
 		ConfiguredProviders:   configuredProviders,
-		DisableContinue:       app.Config.DisableContinue,
 		Title:                 app.Config.Title,
 		GenericName:           app.Config.GenericName,
-		Domain:                domain,
+		AppURL:                app.Config.AppURL,
+		RootDomain:            domain,
 		ForgotPasswordMessage: app.Config.ForgotPasswordMessage,
 		BackgroundImage:       app.Config.BackgroundImage,
 		OAuthAutoRedirect:     app.Config.OAuthAutoRedirect,
