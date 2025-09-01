@@ -34,11 +34,13 @@ export const TotpPage = () => {
         description: t("totpSuccessSubtitle"),
       });
 
-      setTimeout(() => {
+      const redirect = setTimeout(() => {
         window.location.replace(
           `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
         );
       }, 500);
+
+      return () => clearTimeout(redirect);
     },
     onError: () => {
       toast.error(t("totpFailTitle"), {

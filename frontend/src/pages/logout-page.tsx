@@ -28,9 +28,11 @@ export const LogoutPage = () => {
         description: t("logoutSuccessSubtitle"),
       });
 
-      setTimeout(() => {
+      const redirect = setTimeout(() => {
         window.location.replace("/login");
       }, 500);
+
+      return () => clearTimeout(redirect);
     },
     onError: () => {
       toast.error(t("logoutFailTitle"), {

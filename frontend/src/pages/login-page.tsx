@@ -49,9 +49,11 @@ export const LoginPage = () => {
         description: t("loginOauthSuccessSubtitle"),
       });
 
-      setTimeout(() => {
+      const redirect = setTimeout(() => {
         window.location.replace(data.data.url);
       }, 500);
+
+      return () => clearTimeout(redirect);
     },
     onError: () => {
       toast.error(t("loginOauthFailTitle"), {
@@ -75,11 +77,13 @@ export const LoginPage = () => {
         description: t("loginSuccessSubtitle"),
       });
 
-      setTimeout(() => {
+      const redirect = setTimeout(() => {
         window.location.replace(
           `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
         );
       }, 500);
+
+      return () => clearTimeout(redirect);
     },
     onError: (error: AxiosError) => {
       toast.error(t("loginFailTitle"), {

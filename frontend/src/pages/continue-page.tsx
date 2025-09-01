@@ -11,7 +11,6 @@ import { useUserContext } from "@/context/user-context";
 import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router";
-import DOMPurify from "dompurify";
 import { useEffect, useState } from "react";
 
 export const ContinuePage = () => {
@@ -28,7 +27,7 @@ export const ContinuePage = () => {
   const redirectUri = searchParams.get("redirect_uri");
 
   const isValidRedirectUri =
-    redirectUri !== null ? isValidUrl(DOMPurify.sanitize(redirectUri)) : false;
+    redirectUri !== null ? isValidUrl(redirectUri) : false;
   const redirectUriObj = isValidRedirectUri
     ? new URL(redirectUri as string)
     : null;
@@ -36,6 +35,11 @@ export const ContinuePage = () => {
     redirectUriObj !== null
       ? redirectUriObj.hostname === rootDomain ||
         redirectUriObj.hostname.endsWith(`.${rootDomain}`)
+      : false;
+  const isAllowedRedirectProto =
+    redirectUriObj !== null
+      ? redirectUriObj.protocol === "https:" ||
+        redirectUriObj.protocol === "http:"
       : false;
   const isHttpsDowngrade =
     redirectUriObj !== null
@@ -45,7 +49,7 @@ export const ContinuePage = () => {
 
   const handleRedirect = () => {
     setLoading(true);
-    window.location.replace(DOMPurify.sanitize(redirectUriObj!.toString()));
+    window.location.replace(redirectUriObj!.toString());
   };
 
   useEffect(() => {
@@ -53,26 +57,32 @@ export const ContinuePage = () => {
       !isLoggedIn ||
       !isValidRedirectUri ||
       !isTrustedRedirectUri ||
+      !isAllowedRedirectProto ||
       isHttpsDowngrade
     ) {
       return;
     }
 
-    setTimeout(() => {
+    const auto = setTimeout(() => {
       handleRedirect();
     }, 100);
 
-    setTimeout(() => {
+    const reveal = setTimeout(() => {
       setLoading(false);
       setShowRedirectButton(true);
     }, 1000);
+
+    return () => {
+      clearTimeout(auto);
+      clearTimeout(reveal);
+    };
   }, []);
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
 
-  if (!isValidRedirectUri) {
+  if (!isValidRedirectUri || !isAllowedRedirectProto) {
     return <Navigate to="/logout" />;
   }
 
