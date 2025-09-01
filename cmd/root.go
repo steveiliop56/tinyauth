@@ -95,7 +95,6 @@ func init() {
 		{"generic-user-url", "", "Generic OAuth user info URL."},
 		{"generic-name", "Generic", "Generic OAuth provider name."},
 		{"generic-skip-ssl", false, "Skip SSL verification for the generic OAuth provider."},
-		{"disable-continue", false, "Disable continue screen and redirect to app directly."},
 		{"oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth."},
 		{"oauth-auto-redirect", "none", "Auto redirect to the specified OAuth provider if configured. (available providers: github, google, generic)"},
 		{"session-expiry", 86400, "Session (cookie) expiration time in seconds."},

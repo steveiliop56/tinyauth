@@ -28,7 +28,7 @@ type AuthServiceConfig struct {
 	OauthWhitelist    string
 	SessionExpiry     int
 	SecureCookie      bool
-	Domain            string
+	RootDomain        string
 	LoginTimeout      int
 	LoginMaxRetries   int
 	SessionCookieName string
@@ -216,7 +216,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		return err
 	}
 
-	c.SetCookie(auth.Config.SessionCookieName, session.UUID, expiry, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
+	c.SetCookie(auth.Config.SessionCookieName, session.UUID, expiry, "/", fmt.Sprintf(".%s", auth.Config.RootDomain), auth.Config.SecureCookie, true)
 
 	return nil
 }
@@ -234,7 +234,7 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 		return res.Error
 	}
 
-	c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.Domain), auth.Config.SecureCookie, true)
+	c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.RootDomain), auth.Config.SecureCookie, true)
 
 	return nil
 }

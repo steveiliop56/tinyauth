@@ -36,7 +36,6 @@ type Config struct {
 	GenericUserURL          string `mapstructure:"generic-user-url"`
 	GenericName             string `mapstructure:"generic-name"`
 	GenericSkipSSL          bool   `mapstructure:"generic-skip-ssl"`
-	DisableContinue         bool   `mapstructure:"disable-continue"`
 	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
 	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
 	SessionExpiry           int    `mapstructure:"session-expiry"`

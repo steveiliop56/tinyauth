@@ -22,7 +22,7 @@ type TotpRequest struct {
 }
 
 type UserControllerConfig struct {
-	Domain string
+	RootDomain string
 }
 
 type UserController struct {
@@ -115,7 +115,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 			err := controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.Domain),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.RootDomain),
 				Provider:    "username",
 				TotpPending: true,
 			})
@@ -141,7 +141,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	err = controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
-		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.Domain),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.RootDomain),
 		Provider: "username",
 	})
 
@@ -246,7 +246,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	err = controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
-		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.Config.Domain),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.Config.RootDomain),
 		Provider: "username",
 	})
 

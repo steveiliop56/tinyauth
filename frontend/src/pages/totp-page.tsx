@@ -12,21 +12,18 @@ import { useUserContext } from "@/context/user-context";
 import { TotpSchema } from "@/schemas/totp-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
 
 export const TotpPage = () => {
   const { totpPending } = useUserContext();
-
-  if (!totpPending) {
-    return <Navigate to="/" />;
-  }
-
   const { t } = useTranslation();
   const { search } = useLocation();
   const formId = useId();
+
+  const redirectTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
@@ -39,7 +36,7 @@ export const TotpPage = () => {
         description: t("totpSuccessSubtitle"),
       });
 
-      setTimeout(() => {
+      redirectTimer.current = window.setTimeout(() => {
         window.location.replace(
           `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
         );
@@ -51,6 +48,17 @@ export const TotpPage = () => {
       });
     },
   });
+
+  useEffect(
+    () => () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    },
+    [],
+  );
+
+  if (!totpPending) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">

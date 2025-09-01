@@ -156,7 +156,7 @@ ul {
 }
 
 code {
-  @apply relative rounded bg-muted px-[0.2rem] py-[0.1rem] font-mono text-sm font-semibold;
+  @apply relative rounded bg-muted px-[0.2rem] py-[0.1rem] font-mono text-sm font-semibold break-all;
 }
 
 .lead {

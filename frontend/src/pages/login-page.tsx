@@ -17,22 +17,20 @@ import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
 
 export const LoginPage = () => {
   const { isLoggedIn } = useUserContext();
-
-  if (isLoggedIn) {
-    return <Navigate to="/logout" />;
-  }
-
-  const { configuredProviders, title, oauthAutoRedirect, genericName } = useAppContext();
+  const { configuredProviders, title, oauthAutoRedirect, genericName } =
+    useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
+
+  const redirectTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
@@ -53,8 +51,8 @@ export const LoginPage = () => {
         description: t("loginOauthSuccessSubtitle"),
       });
 
-      setTimeout(() => {
-        window.location.href = data.data.url;
+      redirectTimer.current = window.setTimeout(() => {
+        window.location.replace(data.data.url);
       }, 500);
     },
     onError: () => {
@@ -79,7 +77,7 @@ export const LoginPage = () => {
         description: t("loginSuccessSubtitle"),
       });
 
-      setTimeout(() => {
+      redirectTimer.current = window.setTimeout(() => {
         window.location.replace(
           `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
         );
@@ -100,12 +98,33 @@ export const LoginPage = () => {
       if (
         oauthConfigured &&
         configuredProviders.includes(oauthAutoRedirect) &&
+        !isLoggedIn &&
         redirectUri
       ) {
         oauthMutation.mutate(oauthAutoRedirect);
       }
     }
   }, []);
+
+  useEffect(
+    () => () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    },
+    [],
+  );
+
+  if (isLoggedIn && redirectUri) {
+    return (
+      <Navigate
+        to={`/continue?redirect_uri=${encodeURIComponent(redirectUri)}`}
+        replace
+      />
+    );
+  }
+
+  if (isLoggedIn) {
+    return <Navigate to="/logout" replace />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
@@ -126,7 +145,10 @@ export const LoginPage = () => {
                 icon={<GoogleIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("google")}
-                loading={oauthMutation.isPending && oauthMutation.variables === "google"}
+                loading={
+                  oauthMutation.isPending &&
+                  oauthMutation.variables === "google"
+                }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
@@ -136,7 +158,10 @@ export const LoginPage = () => {
                 icon={<GithubIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("github")}
-                loading={oauthMutation.isPending && oauthMutation.variables === "github"}
+                loading={
+                  oauthMutation.isPending &&
+                  oauthMutation.variables === "github"
+                }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
@@ -146,7 +171,10 @@ export const LoginPage = () => {
                 icon={<GenericIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("generic")}
-                loading={oauthMutation.isPending && oauthMutation.variables === "generic"}
+                loading={
+                  oauthMutation.isPending &&
+                  oauthMutation.variables === "generic"
+                }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}

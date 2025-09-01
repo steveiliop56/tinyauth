@@ -12,6 +12,10 @@ import { Navigate, useLocation, useNavigate } from "react-router";
 
 export const UnauthorizedPage = () => {
   const { search } = useLocation();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
 
   const searchParams = new URLSearchParams(search);
   const username = searchParams.get("username");
@@ -19,18 +23,14 @@ export const UnauthorizedPage = () => {
   const groupErr = searchParams.get("groupErr");
   const ip = searchParams.get("ip");
 
-  if (!username && !ip) {
-    return <Navigate to="/" />;
-  }
-
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-
   const handleRedirect = () => {
     setLoading(true);
     navigate("/login");
   };
+
+  if (!username && !ip) {
+    return <Navigate to="/" />;
+  }
 
   let i18nKey = "unauthorizedLoginSubtitle";
 

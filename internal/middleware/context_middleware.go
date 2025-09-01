@@ -12,7 +12,7 @@ import (
 )
 
 type ContextMiddlewareConfig struct {
-	Domain string
+	RootDomain string
 }
 
 type ContextMiddleware struct {
@@ -134,7 +134,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Set("context", &config.UserContext{
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.Config.Domain),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.Config.RootDomain),
 				Provider:    "basic",
 				IsLoggedIn:  true,
 				TotpEnabled: user.TotpSecret != "",
@@ -146,7 +146,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Set("context", &config.UserContext{
 				Username:   basic.Username,
 				Name:       utils.Capitalize(basic.Username),
-				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.Config.Domain),
+				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.Config.RootDomain),
 				Provider:   "basic",
 				IsLoggedIn: true,
 			})

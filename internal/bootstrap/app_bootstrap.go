@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"tinyauth/internal/config"
 	"tinyauth/internal/controller"
@@ -44,15 +45,16 @@ func (app *BootstrapApp) Setup() error {
 		return err
 	}
 
-	// Get domain
-	domain, err := utils.GetUpperDomain(app.Config.AppURL)
+	// Get root domain
+	rootDomain, err := utils.GetRootDomain(app.Config.AppURL)
 
 	if err != nil {
 		return err
 	}
 
 	// Cookie names
-	cookieId := utils.GenerateIdentifier(strings.Split(domain, ".")[0])
+	appUrl, _ := url.Parse(app.Config.AppURL) // Already validated
+	cookieId := utils.GenerateIdentifier(appUrl.Hostname())
 	sessionCookieName := fmt.Sprintf("%s-%s", config.SessionCookieName, cookieId)
 	csrfCookieName := fmt.Sprintf("%s-%s", config.CSRFCookieName, cookieId)
 	redirectCookieName := fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
@@ -63,7 +65,7 @@ func (app *BootstrapApp) Setup() error {
 		OauthWhitelist:    app.Config.OAuthWhitelist,
 		SessionExpiry:     app.Config.SessionExpiry,
 		SecureCookie:      app.Config.SecureCookie,
-		Domain:            domain,
+		RootDomain:        rootDomain,
 		LoginTimeout:      app.Config.LoginTimeout,
 		LoginMaxRetries:   app.Config.LoginMaxRetries,
 		SessionCookieName: sessionCookieName,
@@ -153,7 +155,7 @@ func (app *BootstrapApp) Setup() error {
 	var middlewares []Middleware
 
 	contextMiddleware := middleware.NewContextMiddleware(middleware.ContextMiddlewareConfig{
-		Domain: domain,
+		RootDomain: rootDomain,
 	}, authService, oauthBrokerService)
 
 	uiMiddleware := middleware.NewUIMiddleware()
@@ -177,10 +179,10 @@ func (app *BootstrapApp) Setup() error {
 	// Create controllers
 	contextController := controller.NewContextController(controller.ContextControllerConfig{
 		ConfiguredProviders:   configuredProviders,
-		DisableContinue:       app.Config.DisableContinue,
 		Title:                 app.Config.Title,
 		GenericName:           app.Config.GenericName,
-		Domain:                domain,
+		AppURL:                app.Config.AppURL,
+		RootDomain:            rootDomain,
 		ForgotPasswordMessage: app.Config.ForgotPasswordMessage,
 		BackgroundImage:       app.Config.BackgroundImage,
 		OAuthAutoRedirect:     app.Config.OAuthAutoRedirect,
@@ -191,7 +193,7 @@ func (app *BootstrapApp) Setup() error {
 		SecureCookie:       app.Config.SecureCookie,
 		CSRFCookieName:     csrfCookieName,
 		RedirectCookieName: redirectCookieName,
-		Domain:             domain,
+		RootDomain:         rootDomain,
 	}, apiRouter, authService, oauthBrokerService)
 
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
@@ -199,7 +201,7 @@ func (app *BootstrapApp) Setup() error {
 	}, apiRouter, dockerService, authService)
 
 	userController := controller.NewUserController(controller.UserControllerConfig{
-		Domain: domain,
+		RootDomain: rootDomain,
 	}, apiRouter, authService)
 
 	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{

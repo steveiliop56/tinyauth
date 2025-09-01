@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+	"net/url"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +17,7 @@ type UserContextResponse struct {
 	Name        string `json:"name"`
 	Email       string `json:"email"`
 	Provider    string `json:"provider"`
-	Oauth       bool   `json:"oauth"`
+	OAuth       bool   `json:"oauth"`
 	TotpPending bool   `json:"totpPending"`
 }
 
@@ -23,10 +25,10 @@ type AppContextResponse struct {
 	Status                int      `json:"status"`
 	Message               string   `json:"message"`
 	ConfiguredProviders   []string `json:"configuredProviders"`
-	DisableContinue       bool     `json:"disableContinue"`
 	Title                 string   `json:"title"`
 	GenericName           string   `json:"genericName"`
-	Domain                string   `json:"domain"`
+	AppURL                string   `json:"appUrl"`
+	RootDomain            string   `json:"rootDomain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
 	BackgroundImage       string   `json:"backgroundImage"`
 	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
@@ -34,10 +36,10 @@ type AppContextResponse struct {
 
 type ContextControllerConfig struct {
 	ConfiguredProviders   []string
-	DisableContinue       bool
 	Title                 string
 	GenericName           string
-	Domain                string
+	AppURL                string
+	RootDomain            string
 	ForgotPasswordMessage string
 	BackgroundImage       string
 	OAuthAutoRedirect     string
@@ -72,7 +74,7 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 		Name:        context.Name,
 		Email:       context.Email,
 		Provider:    context.Provider,
-		Oauth:       context.OAuth,
+		OAuth:       context.OAuth,
 		TotpPending: context.TotpPending,
 	}
 
@@ -89,14 +91,16 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 }
 
 func (controller *ContextController) appContextHandler(c *gin.Context) {
+	appUrl, _ := url.Parse(controller.Config.AppURL) // no need to check error, validated on startup
+
 	c.JSON(200, AppContextResponse{
 		Status:                200,
 		Message:               "Success",
 		ConfiguredProviders:   controller.Config.ConfiguredProviders,
-		DisableContinue:       controller.Config.DisableContinue,
 		Title:                 controller.Config.Title,
 		GenericName:           controller.Config.GenericName,
-		Domain:                controller.Config.Domain,
+		AppURL:                fmt.Sprintf("%s://%s", appUrl.Scheme, appUrl.Host),
+		RootDomain:            controller.Config.RootDomain,
 		ForgotPasswordMessage: controller.Config.ForgotPasswordMessage,
 		BackgroundImage:       controller.Config.BackgroundImage,
 		OAuthAutoRedirect:     controller.Config.OAuthAutoRedirect,
