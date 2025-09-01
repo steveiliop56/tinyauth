@@ -49,7 +49,7 @@ export const ContinuePage = () => {
 
   const handleRedirect = () => {
     setLoading(true);
-    window.location.replace(redirectUriObj!.toString());
+    window.location.assign(redirectUriObj!.toString());
   };
 
   useEffect(() => {
@@ -79,16 +79,21 @@ export const ContinuePage = () => {
   }, []);
 
   if (!isLoggedIn) {
-    return <Navigate to="/login" />;
+    return (
+      <Navigate
+        to={`/login?redirect_uri=${encodeURIComponent(redirectUri || "")}`}
+        replace
+      />
+    );
   }
 
   if (!isValidRedirectUri || !isAllowedRedirectProto) {
-    return <Navigate to="/logout" />;
+    return <Navigate to="/logout" replace />;
   }
 
   if (!isTrustedRedirectUri) {
     return (
-      <Card className="min-w-xs sm:min-w-sm">
+      <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
           <CardTitle className="text-3xl">
             {t("continueUntrustedRedirectTitle")}
@@ -126,7 +131,7 @@ export const ContinuePage = () => {
 
   if (isHttpsDowngrade) {
     return (
-      <Card className="min-w-xs sm:min-w-sm">
+      <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
           <CardTitle className="text-3xl">
             {t("continueInsecureRedirectTitle")}

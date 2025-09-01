@@ -57,7 +57,7 @@ export const TotpPage = () => {
   );
 
   if (!totpPending) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
   return (

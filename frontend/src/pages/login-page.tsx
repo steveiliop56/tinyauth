@@ -113,8 +113,17 @@ export const LoginPage = () => {
     [],
   );
 
+  if (isLoggedIn && redirectUri) {
+    return (
+      <Navigate
+        to={`/continue?redirect_uri=${encodeURIComponent(redirectUri)}`}
+        replace
+      />
+    );
+  }
+
   if (isLoggedIn) {
-    return <Navigate to="/logout" />;
+    return <Navigate to="/logout" replace />;
   }
 
   return (

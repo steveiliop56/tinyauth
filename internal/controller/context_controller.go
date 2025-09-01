@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+	"net/url"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -34,7 +36,6 @@ type AppContextResponse struct {
 
 type ContextControllerConfig struct {
 	ConfiguredProviders   []string
-	DisableContinue       bool
 	Title                 string
 	GenericName           string
 	AppURL                string
@@ -90,13 +91,15 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 }
 
 func (controller *ContextController) appContextHandler(c *gin.Context) {
+	appUrl, _ := url.Parse(controller.Config.AppURL) // no need to check error, validated on startup
+
 	c.JSON(200, AppContextResponse{
 		Status:                200,
 		Message:               "Success",
 		ConfiguredProviders:   controller.Config.ConfiguredProviders,
 		Title:                 controller.Config.Title,
 		GenericName:           controller.Config.GenericName,
-		AppURL:                controller.Config.AppURL,
+		AppURL:                fmt.Sprintf("%s://%s", appUrl.Scheme, appUrl.Host),
 		RootDomain:            controller.Config.RootDomain,
 		ForgotPasswordMessage: controller.Config.ForgotPasswordMessage,
 		BackgroundImage:       controller.Config.BackgroundImage,

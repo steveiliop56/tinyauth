@@ -32,7 +32,7 @@ export const LogoutPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
-        window.location.replace("/login");
+        window.location.assign("/login");
       }, 500);
     },
     onError: () => {
@@ -50,7 +50,7 @@ export const LogoutPage = () => {
   );
 
   if (!isLoggedIn) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return (
