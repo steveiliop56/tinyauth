@@ -28,7 +28,7 @@ export const DomainWarning = (props: Props) => {
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
         <Button onClick={onClick} variant="warning">
-          Continue
+          Ignore
         </Button>
       </CardFooter>
     </Card>

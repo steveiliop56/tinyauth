@@ -4,10 +4,8 @@ import { Outlet } from "react-router";
 import { useState } from "react";
 import { DomainWarning } from "../domain-warning/domain-warning";
 
-export const Layout = () => {
-  const { backgroundImage, appUrl } = useAppContext();
-  const [ignoreDomainWarning, setIgnoreDomainWarning] = useState(false);
-  const currentUrl = window.location.origin;
+const BaseLayout = ({ children }: { children: React.ReactNode }) => {
+  const { backgroundImage } = useAppContext();
 
   return (
     <div
@@ -19,15 +17,41 @@ export const Layout = () => {
       }}
     >
       <LanguageSelector />
-      {appUrl !== currentUrl && !ignoreDomainWarning ? (
+      {children}
+    </div>
+  );
+};
+
+export const Layout = () => {
+  const { appUrl } = useAppContext();
+  const [ignoreDomainWarning, setIgnoreDomainWarning] = useState(false);
+  const currentUrl = window.location.origin;
+  const sessionIgnore = window.sessionStorage.getItem("ignoreDomainWarning");
+
+  const handleIgnore = () => {
+    window.sessionStorage.setItem("ignoreDomainWarning", "true");
+    setIgnoreDomainWarning(true);
+  };
+
+  if (
+    !ignoreDomainWarning &&
+    appUrl !== currentUrl &&
+    sessionIgnore !== "true"
+  ) {
+    return (
+      <BaseLayout>
         <DomainWarning
-          onClick={() => setIgnoreDomainWarning(true)}
           appUrl={appUrl}
           currentUrl={currentUrl}
+          onClick={() => handleIgnore()}
         />
-      ) : (
-        <Outlet />
-      )}
-    </div>
+      </BaseLayout>
+    );
+  }
+
+  return (
+    <BaseLayout>
+      <Outlet />
+    </BaseLayout>
   );
 };
