@@ -12,8 +12,8 @@ import (
 )
 
 type DockerService struct {
-	Client  *client.Client
-	Context context.Context
+	client  *client.Client
+	context context.Context
 }
 
 func NewDockerService() *DockerService {
@@ -29,13 +29,13 @@ func (docker *DockerService) Init() error {
 	ctx := context.Background()
 	client.NegotiateAPIVersion(ctx)
 
-	docker.Client = client
-	docker.Context = ctx
+	docker.client = client
+	docker.context = ctx
 	return nil
 }
 
 func (docker *DockerService) GetContainers() ([]container.Summary, error) {
-	containers, err := docker.Client.ContainerList(docker.Context, container.ListOptions{})
+	containers, err := docker.client.ContainerList(docker.context, container.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (docker *DockerService) GetContainers() ([]container.Summary, error) {
 }
 
 func (docker *DockerService) InspectContainer(containerId string) (container.InspectResponse, error) {
-	inspect, err := docker.Client.ContainerInspect(docker.Context, containerId)
+	inspect, err := docker.client.ContainerInspect(docker.context, containerId)
 	if err != nil {
 		return container.InspectResponse{}, err
 	}
@@ -51,11 +51,11 @@ func (docker *DockerService) InspectContainer(containerId string) (container.Ins
 }
 
 func (docker *DockerService) DockerConnected() bool {
-	_, err := docker.Client.Ping(docker.Context)
+	_, err := docker.client.Ping(docker.context)
 	return err == nil
 }
 
-func (docker *DockerService) GetLabels(app string, domain string) (config.AppLabels, error) {
+func (docker *DockerService) GetLabels(appDomain string) (config.AppLabels, error) {
 	isConnected := docker.DockerConnected()
 
 	if !isConnected {
@@ -68,21 +68,21 @@ func (docker *DockerService) GetLabels(app string, domain string) (config.AppLab
 		return config.AppLabels{}, err
 	}
 
-	for _, container := range containers {
-		inspect, err := docker.InspectContainer(container.ID)
+	for _, ctr := range containers {
+		inspect, err := docker.InspectContainer(ctr.ID)
 		if err != nil {
-			log.Warn().Str("id", container.ID).Err(err).Msg("Error inspecting container, skipping")
+			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error inspecting container, skipping")
 			continue
 		}
 
 		labels, err := utils.GetLabels(inspect.Config.Labels)
 		if err != nil {
-			log.Warn().Str("id", container.ID).Err(err).Msg("Error getting container labels, skipping")
+			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error getting container labels, skipping")
 			continue
 		}
 
 		for appName, appLabels := range labels.Apps {
-			if appLabels.Config.Domain == domain {
+			if appLabels.Config.Domain == appDomain {
 				log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
 				return appLabels, nil
 			}

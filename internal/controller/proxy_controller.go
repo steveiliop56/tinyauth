@@ -22,23 +22,23 @@ type ProxyControllerConfig struct {
 }
 
 type ProxyController struct {
-	Config ProxyControllerConfig
-	Router *gin.RouterGroup
-	Docker *service.DockerService
-	Auth   *service.AuthService
+	config ProxyControllerConfig
+	router *gin.RouterGroup
+	docker *service.DockerService
+	auth   *service.AuthService
 }
 
 func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *service.DockerService, auth *service.AuthService) *ProxyController {
 	return &ProxyController{
-		Config: config,
-		Router: router,
-		Docker: docker,
-		Auth:   auth,
+		config: config,
+		router: router,
+		docker: docker,
+		auth:   auth,
 	}
 }
 
 func (controller *ProxyController) SetupRoutes() {
-	proxyGroup := controller.Router.Group("/auth")
+	proxyGroup := controller.router.Group("/auth")
 	proxyGroup.GET("/:proxy", controller.proxyHandler)
 }
 
@@ -67,44 +67,18 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	hostWithoutPort := strings.Split(host, ":")[0]
-	id := strings.Split(hostWithoutPort, ".")[0]
-
-	labels, err := controller.Docker.GetLabels(id, hostWithoutPort)
+	labels, err := controller.docker.GetLabels(host)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get labels from Docker")
-
-		if req.Proxy == "nginx" || !isBrowser {
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
-			return
-		}
-
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		controller.handleError(c, req, isBrowser)
 		return
 	}
 
 	clientIP := c.ClientIP()
 
-	if controller.Auth.IsBypassedIP(labels.IP, clientIP) {
-		c.Header("Authorization", c.Request.Header.Get("Authorization"))
-
-		headers := utils.ParseHeaders(labels.Response.Headers)
-
-		for key, value := range headers {
-			log.Debug().Str("header", key).Msg("Setting header")
-			c.Header(key, value)
-		}
-
-		basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
-		if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
-			log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
-			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
-		}
-
+	if controller.auth.IsBypassedIP(labels.IP, clientIP) {
+		controller.setHeaders(c, labels)
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -112,41 +86,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels.Path)
+	authEnabled, err := controller.auth.IsAuthEnabled(uri, labels.Path)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
-
-		if req.Proxy == "nginx" || !isBrowser {
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
-			return
-		}
-
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		controller.handleError(c, req, isBrowser)
 		return
 	}
 
 	if !authEnabled {
 		log.Debug().Msg("Authentication disabled for resource, allowing access")
-
-		c.Header("Authorization", c.Request.Header.Get("Authorization"))
-
-		headers := utils.ParseHeaders(labels.Response.Headers)
-
-		for key, value := range headers {
-			log.Debug().Str("header", key).Msg("Setting header")
-			c.Header(key, value)
-		}
-
-		basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
-		if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
-			log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
-			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
-		}
-
+		controller.setHeaders(c, labels)
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -154,7 +104,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.Auth.CheckIP(labels.IP, clientIP) {
+	if !controller.auth.CheckIP(labels.IP, clientIP) {
 		if req.Proxy == "nginx" || !isBrowser {
 			c.JSON(401, gin.H{
 				"status":  401,
@@ -170,11 +120,11 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to encode unauthorized query")
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 		return
 	}
 
@@ -197,7 +147,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.Auth.IsResourceAllowed(c, userContext, labels)
+		appAllowed := controller.auth.IsResourceAllowed(c, userContext, labels)
 
 		if !appAllowed {
 			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
@@ -214,24 +164,24 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				Resource: strings.Split(host, ".")[0],
 			})
 
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to encode unauthorized query")
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+				return
+			}
+
 			if userContext.OAuth {
 				queries.Set("username", userContext.Email)
 			} else {
 				queries.Set("username", userContext.Username)
 			}
 
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to encode unauthorized query")
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
-				return
-			}
-
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 			return
 		}
 
 		if userContext.OAuth {
-			groupOK := controller.Auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
+			groupOK := controller.auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
 
 			if !groupOK {
 				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
@@ -249,41 +199,29 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 					GroupErr: true,
 				})
 
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to encode unauthorized query")
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+					return
+				}
+
 				if userContext.OAuth {
 					queries.Set("username", userContext.Email)
 				} else {
 					queries.Set("username", userContext.Username)
 				}
 
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to encode unauthorized query")
-					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
-					return
-				}
-
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 				return
 			}
 		}
 
-		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
-		headers := utils.ParseHeaders(labels.Response.Headers)
-
-		for key, value := range headers {
-			log.Debug().Str("header", key).Msg("Setting header")
-			c.Header(key, value)
-		}
-
-		basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
-		if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
-			log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
-			c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
-		}
+		controller.setHeaders(c, labels)
 
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -306,9 +244,39 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to encode redirect URI query")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.Config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode()))
+}
+
+func (controller *ProxyController) setHeaders(c *gin.Context, labels config.AppLabels) {
+	c.Header("Authorization", c.Request.Header.Get("Authorization"))
+
+	headers := utils.ParseHeaders(labels.Response.Headers)
+
+	for key, value := range headers {
+		log.Debug().Str("header", key).Msg("Setting header")
+		c.Header(key, value)
+	}
+
+	basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
+
+	if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
+		log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
+		c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
+	}
+}
+
+func (controller *ProxyController) handleError(c *gin.Context, req Proxy, isBrowser bool) {
+	if req.Proxy == "nginx" || !isBrowser {
+		c.JSON(500, gin.H{
+			"status":  500,
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 }

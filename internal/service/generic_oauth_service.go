@@ -16,17 +16,17 @@ import (
 )
 
 type GenericOAuthService struct {
-	Config             oauth2.Config
-	Context            context.Context
-	Token              *oauth2.Token
-	Verifier           string
-	InsecureSkipVerify bool
-	UserinfoURL        string
+	config             oauth2.Config
+	context            context.Context
+	token              *oauth2.Token
+	verifier           string
+	insecureSkipVerify bool
+	userinfoUrl        string
 }
 
 func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthService {
 	return &GenericOAuthService{
-		Config: oauth2.Config{
+		config: oauth2.Config{
 			ClientID:     config.ClientID,
 			ClientSecret: config.ClientSecret,
 			RedirectURL:  config.RedirectURL,
@@ -36,15 +36,15 @@ func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthServi
 				TokenURL: config.TokenURL,
 			},
 		},
-		InsecureSkipVerify: config.InsecureSkipVerify,
-		UserinfoURL:        config.UserinfoURL,
+		insecureSkipVerify: config.InsecureSkipVerify,
+		userinfoUrl:        config.UserinfoURL,
 	}
 }
 
 func (generic *GenericOAuthService) Init() error {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: generic.InsecureSkipVerify,
+			InsecureSkipVerify: generic.insecureSkipVerify,
 			MinVersion:         tls.VersionTLS12,
 		},
 	}
@@ -58,8 +58,8 @@ func (generic *GenericOAuthService) Init() error {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 	verifier := oauth2.GenerateVerifier()
 
-	generic.Context = ctx
-	generic.Verifier = verifier
+	generic.context = ctx
+	generic.verifier = verifier
 	return nil
 }
 
@@ -74,26 +74,26 @@ func (generic *GenericOAuthService) GenerateState() string {
 }
 
 func (generic *GenericOAuthService) GetAuthURL(state string) string {
-	return generic.Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(generic.Verifier))
+	return generic.config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(generic.verifier))
 }
 
 func (generic *GenericOAuthService) VerifyCode(code string) error {
-	token, err := generic.Config.Exchange(generic.Context, code, oauth2.VerifierOption(generic.Verifier))
+	token, err := generic.config.Exchange(generic.context, code, oauth2.VerifierOption(generic.verifier))
 
 	if err != nil {
 		return err
 	}
 
-	generic.Token = token
+	generic.token = token
 	return nil
 }
 
 func (generic *GenericOAuthService) Userinfo() (config.Claims, error) {
 	var user config.Claims
 
-	client := generic.Config.Client(generic.Context, generic.Token)
+	client := generic.config.Client(generic.context, generic.token)
 
-	res, err := client.Get(generic.UserinfoURL)
+	res, err := client.Get(generic.userinfoUrl)
 	if err != nil {
 		return user, err
 	}

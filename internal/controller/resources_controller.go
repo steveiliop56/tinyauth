@@ -11,32 +11,32 @@ type ResourcesControllerConfig struct {
 }
 
 type ResourcesController struct {
-	Config     ResourcesControllerConfig
-	Router     *gin.RouterGroup
-	FileServer http.Handler
+	config     ResourcesControllerConfig
+	router     *gin.RouterGroup
+	fileServer http.Handler
 }
 
 func NewResourcesController(config ResourcesControllerConfig, router *gin.RouterGroup) *ResourcesController {
 	fileServer := http.StripPrefix("/resources", http.FileServer(http.Dir(config.ResourcesDir)))
 
 	return &ResourcesController{
-		Config:     config,
-		Router:     router,
-		FileServer: fileServer,
+		config:     config,
+		router:     router,
+		fileServer: fileServer,
 	}
 }
 
 func (controller *ResourcesController) SetupRoutes() {
-	controller.Router.GET("/resources/*resource", controller.resourcesHandler)
+	controller.router.GET("/resources/*resource", controller.resourcesHandler)
 }
 
 func (controller *ResourcesController) resourcesHandler(c *gin.Context) {
-	if controller.Config.ResourcesDir == "" {
+	if controller.config.ResourcesDir == "" {
 		c.JSON(404, gin.H{
 			"status":  404,
 			"message": "Resources not found",
 		})
 		return
 	}
-	controller.FileServer.ServeHTTP(c.Writer, c.Request)
+	controller.fileServer.ServeHTTP(c.Writer, c.Request)
 }

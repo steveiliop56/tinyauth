@@ -27,23 +27,23 @@ type OAuthControllerConfig struct {
 }
 
 type OAuthController struct {
-	Config OAuthControllerConfig
-	Router *gin.RouterGroup
-	Auth   *service.AuthService
-	Broker *service.OAuthBrokerService
+	config OAuthControllerConfig
+	router *gin.RouterGroup
+	auth   *service.AuthService
+	broker *service.OAuthBrokerService
 }
 
 func NewOAuthController(config OAuthControllerConfig, router *gin.RouterGroup, auth *service.AuthService, broker *service.OAuthBrokerService) *OAuthController {
 	return &OAuthController{
-		Config: config,
-		Router: router,
-		Auth:   auth,
-		Broker: broker,
+		config: config,
+		router: router,
+		auth:   auth,
+		broker: broker,
 	}
 }
 
 func (controller *OAuthController) SetupRoutes() {
-	oauthGroup := controller.Router.Group("/oauth")
+	oauthGroup := controller.router.Group("/oauth")
 	oauthGroup.GET("/url/:provider", controller.oauthURLHandler)
 	oauthGroup.GET("/callback/:provider", controller.oauthCallbackHandler)
 }
@@ -61,7 +61,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	service, exists := controller.Broker.GetService(req.Provider)
+	service, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
 		log.Warn().Msgf("OAuth provider not found: %s", req.Provider)
@@ -74,13 +74,13 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 
 	state := service.GenerateState()
 	authURL := service.GetAuthURL(state)
-	c.SetCookie(controller.Config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.Config.RootDomain), controller.Config.SecureCookie, true)
+	c.SetCookie(controller.config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.RootDomain), controller.config.SecureCookie, true)
 
 	redirectURI := c.Query("redirect_uri")
 
-	if redirectURI != "" && utils.IsRedirectSafe(redirectURI, controller.Config.RootDomain) {
+	if redirectURI != "" && utils.IsRedirectSafe(redirectURI, controller.config.RootDomain) {
 		log.Debug().Msg("Setting redirect URI cookie")
-		c.SetCookie(controller.Config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.Config.RootDomain), controller.Config.SecureCookie, true)
+		c.SetCookie(controller.config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.RootDomain), controller.config.SecureCookie, true)
 	}
 
 	c.JSON(200, gin.H{
@@ -104,58 +104,58 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	state := c.Query("state")
-	csrfCookie, err := c.Cookie(controller.Config.CSRFCookieName)
+	csrfCookie, err := c.Cookie(controller.config.CSRFCookieName)
 
 	if err != nil || state != csrfCookie {
 		log.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	c.SetCookie(controller.Config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.Config.RootDomain), controller.Config.SecureCookie, true)
+	c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.RootDomain), controller.config.SecureCookie, true)
 
 	code := c.Query("code")
-	service, exists := controller.Broker.GetService(req.Provider)
+	service, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
 		log.Warn().Msgf("OAuth provider not found: %s", req.Provider)
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
 	err = service.VerifyCode(code)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to verify OAuth code")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	user, err := controller.Broker.GetUser(req.Provider)
+	user, err := controller.broker.GetUser(req.Provider)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get user from OAuth provider")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
 	if user.Email == "" {
 		log.Error().Msg("OAuth provider did not return an email")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	if !controller.Auth.IsEmailWhitelisted(user.Email) {
+	if !controller.auth.IsEmailWhitelisted(user.Email) {
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
 		})
 
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to encode unauthorized query")
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 		return
 	}
 
@@ -169,29 +169,35 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
-	var usename string
+	var username string
 
 	if user.PreferredUsername != "" {
 		log.Debug().Msg("Using preferred username from OAuth provider")
-		usename = user.PreferredUsername
+		username = user.PreferredUsername
 	} else {
 		log.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
-		usename = strings.Replace(user.Email, "@", "_", -1)
+		username = strings.Replace(user.Email, "@", "_", -1)
 	}
 
-	controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
-		Username:    usename,
+	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
+		Username:    username,
 		Name:        name,
 		Email:       user.Email,
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
 	})
 
-	redirectURI, err := c.Cookie(controller.Config.RedirectCookieName)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create session cookie")
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+		return
+	}
 
-	if err != nil || !utils.IsRedirectSafe(redirectURI, controller.Config.RootDomain) {
+	redirectURI, err := c.Cookie(controller.config.RedirectCookieName)
+
+	if err != nil || !utils.IsRedirectSafe(redirectURI, controller.config.RootDomain) {
 		log.Debug().Msg("No redirect URI cookie found, redirecting to app root")
-		c.Redirect(http.StatusTemporaryRedirect, controller.Config.AppURL)
+		c.Redirect(http.StatusTemporaryRedirect, controller.config.AppURL)
 		return
 	}
 
@@ -201,10 +207,10 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to encode redirect URI query")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	c.SetCookie(controller.Config.RedirectCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.Config.RootDomain), controller.Config.SecureCookie, true)
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", controller.Config.AppURL, queries.Encode()))
+	c.SetCookie(controller.config.RedirectCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.RootDomain), controller.config.SecureCookie, true)
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", controller.config.AppURL, queries.Encode()))
 }

@@ -46,19 +46,19 @@ type ContextControllerConfig struct {
 }
 
 type ContextController struct {
-	Config ContextControllerConfig
-	Router *gin.RouterGroup
+	config ContextControllerConfig
+	router *gin.RouterGroup
 }
 
 func NewContextController(config ContextControllerConfig, router *gin.RouterGroup) *ContextController {
 	return &ContextController{
-		Config: config,
-		Router: router,
+		config: config,
+		router: router,
 	}
 }
 
 func (controller *ContextController) SetupRoutes() {
-	contextGroup := controller.Router.Group("/context")
+	contextGroup := controller.router.Group("/context")
 	contextGroup.GET("/user", controller.userContextHandler)
 	contextGroup.GET("/app", controller.appContextHandler)
 }
@@ -91,18 +91,18 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 }
 
 func (controller *ContextController) appContextHandler(c *gin.Context) {
-	appUrl, _ := url.Parse(controller.Config.AppURL) // no need to check error, validated on startup
+	appUrl, _ := url.Parse(controller.config.AppURL) // no need to check error, validated on startup
 
 	c.JSON(200, AppContextResponse{
 		Status:                200,
 		Message:               "Success",
-		ConfiguredProviders:   controller.Config.ConfiguredProviders,
-		Title:                 controller.Config.Title,
-		GenericName:           controller.Config.GenericName,
+		ConfiguredProviders:   controller.config.ConfiguredProviders,
+		Title:                 controller.config.Title,
+		GenericName:           controller.config.GenericName,
 		AppURL:                fmt.Sprintf("%s://%s", appUrl.Scheme, appUrl.Host),
-		RootDomain:            controller.Config.RootDomain,
-		ForgotPasswordMessage: controller.Config.ForgotPasswordMessage,
-		BackgroundImage:       controller.Config.BackgroundImage,
-		OAuthAutoRedirect:     controller.Config.OAuthAutoRedirect,
+		RootDomain:            controller.config.RootDomain,
+		ForgotPasswordMessage: controller.config.ForgotPasswordMessage,
+		BackgroundImage:       controller.config.BackgroundImage,
+		OAuthAutoRedirect:     controller.config.OAuthAutoRedirect,
 	})
 }

@@ -35,21 +35,21 @@ type AuthServiceConfig struct {
 }
 
 type AuthService struct {
-	Config        AuthServiceConfig
-	Docker        *DockerService
-	LoginAttempts map[string]*LoginAttempt
-	LoginMutex    sync.RWMutex
-	LDAP          *LdapService
-	Database      *gorm.DB
+	config        AuthServiceConfig
+	docker        *DockerService
+	loginAttempts map[string]*LoginAttempt
+	loginMutex    sync.RWMutex
+	ldap          *LdapService
+	database      *gorm.DB
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, database *gorm.DB) *AuthService {
 	return &AuthService{
-		Config:        config,
-		Docker:        docker,
-		LoginAttempts: make(map[string]*LoginAttempt),
-		LDAP:          ldap,
-		Database:      database,
+		config:        config,
+		docker:        docker,
+		loginAttempts: make(map[string]*LoginAttempt),
+		ldap:          ldap,
+		database:      database,
 	}
 }
 
@@ -65,12 +65,14 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 		}
 	}
 
-	if auth.LDAP != nil {
-		userDN, err := auth.LDAP.Search(username)
+	if auth.ldap != nil {
+		userDN, err := auth.ldap.Search(username)
 
 		if err != nil {
 			log.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
-			return config.UserSearch{}
+			return config.UserSearch{
+				Type: "error",
+			}
 		}
 
 		return config.UserSearch{
@@ -90,14 +92,14 @@ func (auth *AuthService) VerifyUser(search config.UserSearch, password string) b
 		user := auth.GetLocalUser(search.Username)
 		return auth.CheckPassword(user, password)
 	case "ldap":
-		if auth.LDAP != nil {
-			err := auth.LDAP.Bind(search.Username, password)
+		if auth.ldap != nil {
+			err := auth.ldap.Bind(search.Username, password)
 			if err != nil {
 				log.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
 				return false
 			}
 
-			err = auth.LDAP.Bind(auth.LDAP.Config.BindDN, auth.LDAP.Config.BindPassword)
+			err = auth.ldap.Bind(auth.ldap.Config.BindDN, auth.ldap.Config.BindPassword)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
 				return false
@@ -115,7 +117,7 @@ func (auth *AuthService) VerifyUser(search config.UserSearch, password string) b
 }
 
 func (auth *AuthService) GetLocalUser(username string) config.User {
-	for _, user := range auth.Config.Users {
+	for _, user := range auth.config.Users {
 		if user.Username == username {
 			return user
 		}
@@ -130,14 +132,14 @@ func (auth *AuthService) CheckPassword(user config.User, password string) bool {
 }
 
 func (auth *AuthService) IsAccountLocked(identifier string) (bool, int) {
-	auth.LoginMutex.RLock()
-	defer auth.LoginMutex.RUnlock()
+	auth.loginMutex.RLock()
+	defer auth.loginMutex.RUnlock()
 
-	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
+	if auth.config.LoginMaxRetries <= 0 || auth.config.LoginTimeout <= 0 {
 		return false, 0
 	}
 
-	attempt, exists := auth.LoginAttempts[identifier]
+	attempt, exists := auth.loginAttempts[identifier]
 	if !exists {
 		return false, 0
 	}
@@ -151,17 +153,17 @@ func (auth *AuthService) IsAccountLocked(identifier string) (bool, int) {
 }
 
 func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
-	if auth.Config.LoginMaxRetries <= 0 || auth.Config.LoginTimeout <= 0 {
+	if auth.config.LoginMaxRetries <= 0 || auth.config.LoginTimeout <= 0 {
 		return
 	}
 
-	auth.LoginMutex.Lock()
-	defer auth.LoginMutex.Unlock()
+	auth.loginMutex.Lock()
+	defer auth.loginMutex.Unlock()
 
-	attempt, exists := auth.LoginAttempts[identifier]
+	attempt, exists := auth.loginAttempts[identifier]
 	if !exists {
 		attempt = &LoginAttempt{}
-		auth.LoginAttempts[identifier] = attempt
+		auth.loginAttempts[identifier] = attempt
 	}
 
 	attempt.LastAttempt = time.Now()
@@ -174,14 +176,14 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 
 	attempt.FailedAttempts++
 
-	if attempt.FailedAttempts >= auth.Config.LoginMaxRetries {
-		attempt.LockedUntil = time.Now().Add(time.Duration(auth.Config.LoginTimeout) * time.Second)
-		log.Warn().Str("identifier", identifier).Int("timeout", auth.Config.LoginTimeout).Msg("Account locked due to too many failed login attempts")
+	if attempt.FailedAttempts >= auth.config.LoginMaxRetries {
+		attempt.LockedUntil = time.Now().Add(time.Duration(auth.config.LoginTimeout) * time.Second)
+		log.Warn().Str("identifier", identifier).Int("timeout", auth.config.LoginTimeout).Msg("Account locked due to too many failed login attempts")
 	}
 }
 
 func (auth *AuthService) IsEmailWhitelisted(email string) bool {
-	return utils.CheckFilter(auth.Config.OauthWhitelist, email)
+	return utils.CheckFilter(auth.config.OauthWhitelist, email)
 }
 
 func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
@@ -196,7 +198,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 	if data.TotpPending {
 		expiry = 3600
 	} else {
-		expiry = auth.Config.SessionExpiry
+		expiry = auth.config.SessionExpiry
 	}
 
 	session := model.Session{
@@ -210,37 +212,37 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
 	}
 
-	err = auth.Database.Create(&session).Error
+	err = auth.database.Create(&session).Error
 
 	if err != nil {
 		return err
 	}
 
-	c.SetCookie(auth.Config.SessionCookieName, session.UUID, expiry, "/", fmt.Sprintf(".%s", auth.Config.RootDomain), auth.Config.SecureCookie, true)
+	c.SetCookie(auth.config.SessionCookieName, session.UUID, expiry, "/", fmt.Sprintf(".%s", auth.config.RootDomain), auth.config.SecureCookie, true)
 
 	return nil
 }
 
 func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
-	cookie, err := c.Cookie(auth.Config.SessionCookieName)
+	cookie, err := c.Cookie(auth.config.SessionCookieName)
 
 	if err != nil {
 		return err
 	}
 
-	res := auth.Database.Unscoped().Where("uuid = ?", cookie).Delete(&model.Session{})
+	res := auth.database.Unscoped().Where("uuid = ?", cookie).Delete(&model.Session{})
 
 	if res.Error != nil {
 		return res.Error
 	}
 
-	c.SetCookie(auth.Config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.Config.RootDomain), auth.Config.SecureCookie, true)
+	c.SetCookie(auth.config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.config.RootDomain), auth.config.SecureCookie, true)
 
 	return nil
 }
 
 func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie, error) {
-	cookie, err := c.Cookie(auth.Config.SessionCookieName)
+	cookie, err := c.Cookie(auth.config.SessionCookieName)
 
 	if err != nil {
 		return config.SessionCookie{}, err
@@ -248,7 +250,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 
 	var session model.Session
 
-	res := auth.Database.Unscoped().Where("uuid = ?", cookie).First(&session)
+	res := auth.database.Unscoped().Where("uuid = ?", cookie).First(&session)
 
 	if res.Error != nil {
 		return config.SessionCookie{}, res.Error
@@ -261,7 +263,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	currentTime := time.Now().Unix()
 
 	if currentTime > session.Expiry {
-		res := auth.Database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
+		res := auth.database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
 		if res.Error != nil {
 			log.Error().Err(res.Error).Msg("Failed to delete expired session")
 		}
@@ -280,7 +282,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 }
 
 func (auth *AuthService) UserAuthConfigured() bool {
-	return len(auth.Config.Users) > 0 || auth.LDAP != nil
+	return len(auth.config.Users) > 0 || auth.ldap != nil
 }
 
 func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.AppLabels) bool {

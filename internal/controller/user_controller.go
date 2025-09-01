@@ -26,21 +26,21 @@ type UserControllerConfig struct {
 }
 
 type UserController struct {
-	Config UserControllerConfig
-	Router *gin.RouterGroup
-	Auth   *service.AuthService
+	config UserControllerConfig
+	router *gin.RouterGroup
+	auth   *service.AuthService
 }
 
 func NewUserController(config UserControllerConfig, router *gin.RouterGroup, auth *service.AuthService) *UserController {
 	return &UserController{
-		Config: config,
-		Router: router,
-		Auth:   auth,
+		config: config,
+		router: router,
+		auth:   auth,
 	}
 }
 
 func (controller *UserController) SetupRoutes() {
-	userGroup := controller.Router.Group("/user")
+	userGroup := controller.router.Group("/user")
 	userGroup.POST("/login", controller.loginHandler)
 	userGroup.POST("/logout", controller.logoutHandler)
 	userGroup.POST("/totp", controller.totpHandler)
@@ -69,7 +69,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	log.Debug().Str("username", req.Username).Str("ip", clientIP).Msg("Login attempt")
 
-	isLocked, remainingTime := controller.Auth.IsAccountLocked(rateIdentifier)
+	isLocked, remainingTime := controller.auth.IsAccountLocked(rateIdentifier)
 
 	if isLocked {
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed login attempts")
@@ -80,11 +80,11 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
-	userSearch := controller.Auth.SearchUser(req.Username)
+	userSearch := controller.auth.SearchUser(req.Username)
 
-	if userSearch.Type == "" {
+	if userSearch.Type == "unknown" {
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("User not found")
-		controller.Auth.RecordLoginAttempt(rateIdentifier, false)
+		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -92,9 +92,9 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.Auth.VerifyUser(userSearch, req.Password) {
+	if !controller.auth.VerifyUser(userSearch, req.Password) {
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Invalid password")
-		controller.Auth.RecordLoginAttempt(rateIdentifier, false)
+		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -104,18 +104,18 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	log.Info().Str("username", req.Username).Str("ip", clientIP).Msg("Login successful")
 
-	controller.Auth.RecordLoginAttempt(rateIdentifier, true)
+	controller.auth.RecordLoginAttempt(rateIdentifier, true)
 
 	if userSearch.Type == "local" {
-		user := controller.Auth.GetLocalUser(userSearch.Username)
+		user := controller.auth.GetLocalUser(userSearch.Username)
 
 		if user.TotpSecret != "" {
 			log.Debug().Str("username", req.Username).Msg("User has TOTP enabled, requiring TOTP verification")
 
-			err := controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
+			err := controller.auth.CreateSessionCookie(c, &config.SessionCookie{
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.RootDomain),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.RootDomain),
 				Provider:    "username",
 				TotpPending: true,
 			})
@@ -138,10 +138,10 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		}
 	}
 
-	err = controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
+	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
-		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.Config.RootDomain),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.RootDomain),
 		Provider: "username",
 	})
 
@@ -163,7 +163,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 func (controller *UserController) logoutHandler(c *gin.Context) {
 	log.Debug().Msg("Logout request received")
 
-	controller.Auth.DeleteSessionCookie(c)
+	controller.auth.DeleteSessionCookie(c)
 
 	c.JSON(200, gin.H{
 		"status":  200,
@@ -214,24 +214,24 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	log.Debug().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification attempt")
 
-	isLocked, remainingTime := controller.Auth.IsAccountLocked(rateIdentifier)
+	isLocked, remainingTime := controller.auth.IsAccountLocked(rateIdentifier)
 
 	if isLocked {
 		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed TOTP attempts")
 		c.JSON(429, gin.H{
 			"status":  429,
-			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remainingTime),
+			"message": fmt.Sprintf("Too many failed TOTP attempts. Try again in %d seconds", remainingTime),
 		})
 		return
 	}
 
-	user := controller.Auth.GetLocalUser(context.Username)
+	user := controller.auth.GetLocalUser(context.Username)
 
 	ok := totp.Validate(req.Code, user.TotpSecret)
 
 	if !ok {
 		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Invalid TOTP code")
-		controller.Auth.RecordLoginAttempt(rateIdentifier, false)
+		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -241,12 +241,12 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	log.Info().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification successful")
 
-	controller.Auth.RecordLoginAttempt(rateIdentifier, true)
+	controller.auth.RecordLoginAttempt(rateIdentifier, true)
 
-	err = controller.Auth.CreateSessionCookie(c, &config.SessionCookie{
+	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
-		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.Config.RootDomain),
+		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.config.RootDomain),
 		Provider: "username",
 	})
 

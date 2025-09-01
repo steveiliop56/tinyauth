@@ -16,16 +16,16 @@ type ContextMiddlewareConfig struct {
 }
 
 type ContextMiddleware struct {
-	Config ContextMiddlewareConfig
-	Auth   *service.AuthService
-	Broker *service.OAuthBrokerService
+	config ContextMiddlewareConfig
+	auth   *service.AuthService
+	broker *service.OAuthBrokerService
 }
 
 func NewContextMiddleware(config ContextMiddlewareConfig, auth *service.AuthService, broker *service.OAuthBrokerService) *ContextMiddleware {
 	return &ContextMiddleware{
-		Config: config,
-		Auth:   auth,
-		Broker: broker,
+		config: config,
+		auth:   auth,
+		broker: broker,
 	}
 }
 
@@ -35,7 +35,7 @@ func (m *ContextMiddleware) Init() error {
 
 func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cookie, err := m.Auth.GetSessionCookie(c)
+		cookie, err := m.auth.GetSessionCookie(c)
 
 		if err != nil {
 			log.Debug().Err(err).Msg("No valid session cookie found")
@@ -57,11 +57,11 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 
 		switch cookie.Provider {
 		case "username":
-			userSearch := m.Auth.SearchUser(cookie.Username)
+			userSearch := m.auth.SearchUser(cookie.Username)
 
-			if userSearch.Type == "unknown" {
+			if userSearch.Type == "unknown" || userSearch.Type == "error" {
 				log.Debug().Msg("User from session cookie not found")
-				m.Auth.DeleteSessionCookie(c)
+				m.auth.DeleteSessionCookie(c)
 				goto basic
 			}
 
@@ -75,17 +75,17 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		default:
-			_, exists := m.Broker.GetService(cookie.Provider)
+			_, exists := m.broker.GetService(cookie.Provider)
 
 			if !exists {
 				log.Debug().Msg("OAuth provider from session cookie not found")
-				m.Auth.DeleteSessionCookie(c)
+				m.auth.DeleteSessionCookie(c)
 				goto basic
 			}
 
-			if !m.Auth.IsEmailWhitelisted(cookie.Email) {
+			if !m.auth.IsEmailWhitelisted(cookie.Email) {
 				log.Debug().Msg("Email from session cookie not whitelisted")
-				m.Auth.DeleteSessionCookie(c)
+				m.auth.DeleteSessionCookie(c)
 				goto basic
 			}
 
@@ -103,7 +103,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		}
 
 	basic:
-		basic := m.Auth.GetBasicAuth(c)
+		basic := m.auth.GetBasicAuth(c)
 
 		if basic == nil {
 			log.Debug().Msg("No basic auth provided")
@@ -111,15 +111,15 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		userSearch := m.Auth.SearchUser(basic.Username)
+		userSearch := m.auth.SearchUser(basic.Username)
 
-		if userSearch.Type == "unknown" {
+		if userSearch.Type == "unknown" || userSearch.Type == "error" {
 			log.Debug().Msg("User from basic auth not found")
 			c.Next()
 			return
 		}
 
-		if !m.Auth.VerifyUser(userSearch, basic.Password) {
+		if !m.auth.VerifyUser(userSearch, basic.Password) {
 			log.Debug().Msg("Invalid password for basic auth user")
 			c.Next()
 			return
@@ -129,12 +129,12 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		case "local":
 			log.Debug().Msg("Basic auth user is local")
 
-			user := m.Auth.GetLocalUser(basic.Username)
+			user := m.auth.GetLocalUser(basic.Username)
 
 			c.Set("context", &config.UserContext{
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.Config.RootDomain),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.config.RootDomain),
 				Provider:    "basic",
 				IsLoggedIn:  true,
 				TotpEnabled: user.TotpSecret != "",
@@ -146,7 +146,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Set("context", &config.UserContext{
 				Username:   basic.Username,
 				Name:       utils.Capitalize(basic.Username),
-				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.Config.RootDomain),
+				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.config.RootDomain),
 				Provider:   "basic",
 				IsLoggedIn: true,
 			})

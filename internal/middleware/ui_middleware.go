@@ -11,8 +11,8 @@ import (
 )
 
 type UIMiddleware struct {
-	UIFS         fs.FS
-	UIFileServer http.Handler
+	uiFs         fs.FS
+	uiFileServer http.Handler
 }
 
 func NewUIMiddleware() *UIMiddleware {
@@ -26,8 +26,8 @@ func (m *UIMiddleware) Init() error {
 		return err
 	}
 
-	m.UIFS = ui
-	m.UIFileServer = http.FileServer(http.FS(ui))
+	m.uiFs = ui
+	m.uiFileServer = http.FileServer(http.FS(ui))
 
 	return nil
 }
@@ -42,13 +42,13 @@ func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		default:
-			_, err := fs.Stat(m.UIFS, strings.TrimPrefix(c.Request.URL.Path, "/"))
+			_, err := fs.Stat(m.uiFs, strings.TrimPrefix(c.Request.URL.Path, "/"))
 
 			if os.IsNotExist(err) {
 				c.Request.URL.Path = "/"
 			}
 
-			m.UIFileServer.ServeHTTP(c.Writer, c.Request)
+			m.uiFileServer.ServeHTTP(c.Writer, c.Request)
 			c.Abort()
 			return
 		}
