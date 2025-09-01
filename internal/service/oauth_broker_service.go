@@ -5,6 +5,7 @@ import (
 	"tinyauth/internal/config"
 
 	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slices"
 )
 
 type OAuthService interface {
@@ -59,6 +60,7 @@ func (broker *OAuthBrokerService) GetConfiguredServices() []string {
 	for name := range broker.services {
 		services = append(services, name)
 	}
+	slices.Sort(services)
 	return services
 }
 

@@ -71,7 +71,7 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 		if err != nil {
 			log.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
 			return config.UserSearch{
-				Type: "unknown",
+				Type: "error",
 			}
 		}
 

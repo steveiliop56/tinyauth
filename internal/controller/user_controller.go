@@ -82,7 +82,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	userSearch := controller.auth.SearchUser(req.Username)
 
-	if userSearch.Type == "" {
+	if userSearch.Type == "unknown" {
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("User not found")
 		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
@@ -220,7 +220,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed TOTP attempts")
 		c.JSON(429, gin.H{
 			"status":  429,
-			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remainingTime),
+			"message": fmt.Sprintf("Too many failed TOTP attempts. Try again in %d seconds", remainingTime),
 		})
 		return
 	}

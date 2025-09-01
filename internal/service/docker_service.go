@@ -55,7 +55,7 @@ func (docker *DockerService) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *DockerService) GetLabels(app string, domain string) (config.AppLabels, error) {
+func (docker *DockerService) GetLabels(appDomain string) (config.AppLabels, error) {
 	isConnected := docker.DockerConnected()
 
 	if !isConnected {
@@ -68,21 +68,21 @@ func (docker *DockerService) GetLabels(app string, domain string) (config.AppLab
 		return config.AppLabels{}, err
 	}
 
-	for _, container := range containers {
-		inspect, err := docker.InspectContainer(container.ID)
+	for _, ctr := range containers {
+		inspect, err := docker.InspectContainer(ctr.ID)
 		if err != nil {
-			log.Warn().Str("id", container.ID).Err(err).Msg("Error inspecting container, skipping")
+			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error inspecting container, skipping")
 			continue
 		}
 
 		labels, err := utils.GetLabels(inspect.Config.Labels)
 		if err != nil {
-			log.Warn().Str("id", container.ID).Err(err).Msg("Error getting container labels, skipping")
+			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error getting container labels, skipping")
 			continue
 		}
 
 		for appName, appLabels := range labels.Apps {
-			if appLabels.Config.Domain == domain {
+			if appLabels.Config.Domain == appDomain {
 				log.Debug().Str("id", inspect.ID).Msg("Found matching container by domain")
 				return appLabels, nil
 			}

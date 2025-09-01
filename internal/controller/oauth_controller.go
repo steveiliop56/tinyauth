@@ -169,23 +169,29 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
-	var usename string
+	var username string
 
 	if user.PreferredUsername != "" {
 		log.Debug().Msg("Using preferred username from OAuth provider")
-		usename = user.PreferredUsername
+		username = user.PreferredUsername
 	} else {
 		log.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
-		usename = strings.Replace(user.Email, "@", "_", -1)
+		username = strings.Replace(user.Email, "@", "_", -1)
 	}
 
-	controller.auth.CreateSessionCookie(c, &config.SessionCookie{
-		Username:    usename,
+	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
+		Username:    username,
 		Name:        name,
 		Email:       user.Email,
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
 	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create session cookie")
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+		return
+	}
 
 	redirectURI, err := c.Cookie(controller.config.RedirectCookieName)
 

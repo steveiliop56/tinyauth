@@ -59,7 +59,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		case "username":
 			userSearch := m.auth.SearchUser(cookie.Username)
 
-			if userSearch.Type == "unknown" {
+			if userSearch.Type == "unknown" || userSearch.Type == "error" {
 				log.Debug().Msg("User from session cookie not found")
 				m.auth.DeleteSessionCookie(c)
 				goto basic
@@ -113,7 +113,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 
 		userSearch := m.auth.SearchUser(basic.Username)
 
-		if userSearch.Type == "unknown" {
+		if userSearch.Type == "unknown" || userSearch.Type == "error" {
 			log.Debug().Msg("User from basic auth not found")
 			c.Next()
 			return

@@ -92,11 +92,12 @@ func (ldap *LdapService) Search(username string) (string, error) {
 	)
 
 	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
+
 	searchResult, err := ldap.conn.Search(searchRequest)
 	if err != nil {
 		return "", err
 	}
-	ldap.mutex.Unlock()
 
 	if len(searchResult.Entries) != 1 {
 		return "", fmt.Errorf("multiple or no entries found for user %s", username)
@@ -128,11 +129,11 @@ func (ldap *LdapService) heartbeat() error {
 	)
 
 	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
 	_, err := ldap.conn.Search(searchRequest)
 	if err != nil {
 		return err
 	}
-	ldap.mutex.Unlock()
 
 	// No error means the connection is alive
 	return nil
