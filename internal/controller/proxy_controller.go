@@ -22,23 +22,23 @@ type ProxyControllerConfig struct {
 }
 
 type ProxyController struct {
-	Config ProxyControllerConfig
-	Router *gin.RouterGroup
-	Docker *service.DockerService
-	Auth   *service.AuthService
+	config ProxyControllerConfig
+	router *gin.RouterGroup
+	docker *service.DockerService
+	auth   *service.AuthService
 }
 
 func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *service.DockerService, auth *service.AuthService) *ProxyController {
 	return &ProxyController{
-		Config: config,
-		Router: router,
-		Docker: docker,
-		Auth:   auth,
+		config: config,
+		router: router,
+		docker: docker,
+		auth:   auth,
 	}
 }
 
 func (controller *ProxyController) SetupRoutes() {
-	proxyGroup := controller.Router.Group("/auth")
+	proxyGroup := controller.router.Group("/auth")
 	proxyGroup.GET("/:proxy", controller.proxyHandler)
 }
 
@@ -70,7 +70,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	hostWithoutPort := strings.Split(host, ":")[0]
 	id := strings.Split(hostWithoutPort, ".")[0]
 
-	labels, err := controller.Docker.GetLabels(id, hostWithoutPort)
+	labels, err := controller.docker.GetLabels(id, hostWithoutPort)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get labels from Docker")
@@ -83,13 +83,13 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
 	clientIP := c.ClientIP()
 
-	if controller.Auth.IsBypassedIP(labels.IP, clientIP) {
+	if controller.auth.IsBypassedIP(labels.IP, clientIP) {
 		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
 		headers := utils.ParseHeaders(labels.Response.Headers)
@@ -112,7 +112,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.Auth.IsAuthEnabled(uri, labels.Path)
+	authEnabled, err := controller.auth.IsAuthEnabled(uri, labels.Path)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
@@ -125,7 +125,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
@@ -154,7 +154,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.Auth.CheckIP(labels.IP, clientIP) {
+	if !controller.auth.CheckIP(labels.IP, clientIP) {
 		if req.Proxy == "nginx" || !isBrowser {
 			c.JSON(401, gin.H{
 				"status":  401,
@@ -170,11 +170,11 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to encode unauthorized query")
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 		return
 	}
 
@@ -197,7 +197,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.Auth.IsResourceAllowed(c, userContext, labels)
+		appAllowed := controller.auth.IsResourceAllowed(c, userContext, labels)
 
 		if !appAllowed {
 			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
@@ -222,16 +222,16 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to encode unauthorized query")
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 				return
 			}
 
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 			return
 		}
 
 		if userContext.OAuth {
-			groupOK := controller.Auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
+			groupOK := controller.auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
 
 			if !groupOK {
 				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
@@ -257,11 +257,11 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to encode unauthorized query")
-					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 					return
 				}
 
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.Config.AppURL, queries.Encode()))
+				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
 				return
 			}
 		}
@@ -306,9 +306,9 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to encode redirect URI query")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.Config.AppURL))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.Config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode()))
 }

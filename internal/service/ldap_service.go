@@ -22,9 +22,9 @@ type LdapServiceConfig struct {
 }
 
 type LdapService struct {
-	Config LdapServiceConfig
-	Conn   *ldapgo.Conn
-	Mutex  sync.RWMutex
+	Config LdapServiceConfig // exported so as the auth service can use it
+	conn   *ldapgo.Conn
+	mutex  sync.RWMutex
 }
 
 func NewLdapService(config LdapServiceConfig) *LdapService {
@@ -57,7 +57,8 @@ func (ldap *LdapService) Init() error {
 }
 
 func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
-	ldap.Mutex.Lock()
+	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
 
 	conn, err := ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 		InsecureSkipVerify: ldap.Config.Insecure,
@@ -72,10 +73,8 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 		return nil, err
 	}
 
-	ldap.Mutex.Unlock()
-
 	// Set and return the connection
-	ldap.Conn = conn
+	ldap.conn = conn
 	return conn, nil
 }
 
@@ -92,12 +91,12 @@ func (ldap *LdapService) Search(username string) (string, error) {
 		nil,
 	)
 
-	ldap.Mutex.Lock()
-	searchResult, err := ldap.Conn.Search(searchRequest)
+	ldap.mutex.Lock()
+	searchResult, err := ldap.conn.Search(searchRequest)
 	if err != nil {
 		return "", err
 	}
-	ldap.Mutex.Unlock()
+	ldap.mutex.Unlock()
 
 	if len(searchResult.Entries) != 1 {
 		return "", fmt.Errorf("multiple or no entries found for user %s", username)
@@ -108,12 +107,12 @@ func (ldap *LdapService) Search(username string) (string, error) {
 }
 
 func (ldap *LdapService) Bind(userDN string, password string) error {
-	ldap.Mutex.Lock()
-	err := ldap.Conn.Bind(userDN, password)
+	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
+	err := ldap.conn.Bind(userDN, password)
 	if err != nil {
 		return err
 	}
-	ldap.Mutex.Unlock()
 	return nil
 }
 
@@ -128,12 +127,12 @@ func (ldap *LdapService) heartbeat() error {
 		nil,
 	)
 
-	ldap.Mutex.Lock()
-	_, err := ldap.Conn.Search(searchRequest)
+	ldap.mutex.Lock()
+	_, err := ldap.conn.Search(searchRequest)
 	if err != nil {
 		return err
 	}
-	ldap.Mutex.Unlock()
+	ldap.mutex.Unlock()
 
 	// No error means the connection is alive
 	return nil
@@ -149,7 +148,7 @@ func (ldap *LdapService) reconnect() error {
 	exp.Reset()
 
 	operation := func() (*ldapgo.Conn, error) {
-		ldap.Conn.Close()
+		ldap.conn.Close()
 		conn, err := ldap.connect()
 		if err != nil {
 			return nil, err

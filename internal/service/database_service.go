@@ -16,18 +16,18 @@ type DatabaseServiceConfig struct {
 }
 
 type DatabaseService struct {
-	Config   DatabaseServiceConfig
-	Database *gorm.DB
+	config   DatabaseServiceConfig
+	database *gorm.DB
 }
 
 func NewDatabaseService(config DatabaseServiceConfig) *DatabaseService {
 	return &DatabaseService{
-		Config: config,
+		config: config,
 	}
 }
 
 func (ds *DatabaseService) Init() error {
-	gormDB, err := gorm.Open(sqlite.Open(ds.Config.DatabasePath), &gorm.Config{})
+	gormDB, err := gorm.Open(sqlite.Open(ds.config.DatabasePath), &gorm.Config{})
 
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (ds *DatabaseService) Init() error {
 		return err
 	}
 
-	ds.Database = gormDB
+	ds.database = gormDB
 	return nil
 }
 
@@ -74,5 +74,5 @@ func (ds *DatabaseService) migrateDatabase(sqlDB *sql.DB) error {
 }
 
 func (ds *DatabaseService) GetDatabase() *gorm.DB {
-	return ds.Database
+	return ds.database
 }

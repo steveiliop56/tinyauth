@@ -29,15 +29,15 @@ type GithubUserInfoResponse struct {
 }
 
 type GithubOAuthService struct {
-	Config   oauth2.Config
-	Context  context.Context
-	Token    *oauth2.Token
-	Verifier string
+	config   oauth2.Config
+	context  context.Context
+	token    *oauth2.Token
+	verifier string
 }
 
 func NewGithubOAuthService(config config.OAuthServiceConfig) *GithubOAuthService {
 	return &GithubOAuthService{
-		Config: oauth2.Config{
+		config: oauth2.Config{
 			ClientID:     config.ClientID,
 			ClientSecret: config.ClientSecret,
 			RedirectURL:  config.RedirectURL,
@@ -53,8 +53,8 @@ func (github *GithubOAuthService) Init() error {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 	verifier := oauth2.GenerateVerifier()
 
-	github.Context = ctx
-	github.Verifier = verifier
+	github.context = ctx
+	github.verifier = verifier
 	return nil
 }
 
@@ -69,24 +69,24 @@ func (github *GithubOAuthService) GenerateState() string {
 }
 
 func (github *GithubOAuthService) GetAuthURL(state string) string {
-	return github.Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(github.Verifier))
+	return github.config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(github.verifier))
 }
 
 func (github *GithubOAuthService) VerifyCode(code string) error {
-	token, err := github.Config.Exchange(github.Context, code, oauth2.VerifierOption(github.Verifier))
+	token, err := github.config.Exchange(github.context, code, oauth2.VerifierOption(github.verifier))
 
 	if err != nil {
 		return err
 	}
 
-	github.Token = token
+	github.token = token
 	return nil
 }
 
 func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 	var user config.Claims
 
-	client := github.Config.Client(github.Context, github.Token)
+	client := github.config.Client(github.context, github.token)
 
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {

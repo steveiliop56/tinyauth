@@ -24,15 +24,15 @@ type GoogleUserInfoResponse struct {
 }
 
 type GoogleOAuthService struct {
-	Config   oauth2.Config
-	Context  context.Context
-	Token    *oauth2.Token
-	Verifier string
+	config   oauth2.Config
+	context  context.Context
+	token    *oauth2.Token
+	verifier string
 }
 
 func NewGoogleOAuthService(config config.OAuthServiceConfig) *GoogleOAuthService {
 	return &GoogleOAuthService{
-		Config: oauth2.Config{
+		config: oauth2.Config{
 			ClientID:     config.ClientID,
 			ClientSecret: config.ClientSecret,
 			RedirectURL:  config.RedirectURL,
@@ -48,8 +48,8 @@ func (google *GoogleOAuthService) Init() error {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 	verifier := oauth2.GenerateVerifier()
 
-	google.Context = ctx
-	google.Verifier = verifier
+	google.context = ctx
+	google.verifier = verifier
 	return nil
 }
 
@@ -64,24 +64,24 @@ func (oauth *GoogleOAuthService) GenerateState() string {
 }
 
 func (google *GoogleOAuthService) GetAuthURL(state string) string {
-	return google.Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(google.Verifier))
+	return google.config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(google.verifier))
 }
 
 func (google *GoogleOAuthService) VerifyCode(code string) error {
-	token, err := google.Config.Exchange(google.Context, code, oauth2.VerifierOption(google.Verifier))
+	token, err := google.config.Exchange(google.context, code, oauth2.VerifierOption(google.verifier))
 
 	if err != nil {
 		return err
 	}
 
-	google.Token = token
+	google.token = token
 	return nil
 }
 
 func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 	var user config.Claims
 
-	client := google.Config.Client(google.Context, google.Token)
+	client := google.config.Client(google.context, google.token)
 
 	res, err := client.Get("https://www.googleapis.com/userinfo/v2/me")
 	if err != nil {

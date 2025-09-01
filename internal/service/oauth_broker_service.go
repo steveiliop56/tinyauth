@@ -16,33 +16,33 @@ type OAuthService interface {
 }
 
 type OAuthBrokerService struct {
-	Services map[string]OAuthService
-	Configs  map[string]config.OAuthServiceConfig
+	services map[string]OAuthService
+	configs  map[string]config.OAuthServiceConfig
 }
 
 func NewOAuthBrokerService(configs map[string]config.OAuthServiceConfig) *OAuthBrokerService {
 	return &OAuthBrokerService{
-		Services: make(map[string]OAuthService),
-		Configs:  configs,
+		services: make(map[string]OAuthService),
+		configs:  configs,
 	}
 }
 
 func (broker *OAuthBrokerService) Init() error {
-	for name, cfg := range broker.Configs {
+	for name, cfg := range broker.configs {
 		switch name {
 		case "github":
 			service := NewGithubOAuthService(cfg)
-			broker.Services[name] = service
+			broker.services[name] = service
 		case "google":
 			service := NewGoogleOAuthService(cfg)
-			broker.Services[name] = service
+			broker.services[name] = service
 		default:
 			service := NewGenericOAuthService(cfg)
-			broker.Services[name] = service
+			broker.services[name] = service
 		}
 	}
 
-	for name, service := range broker.Services {
+	for name, service := range broker.services {
 		err := service.Init()
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to initialize OAuth service: %s", name)
@@ -55,20 +55,20 @@ func (broker *OAuthBrokerService) Init() error {
 }
 
 func (broker *OAuthBrokerService) GetConfiguredServices() []string {
-	services := make([]string, 0, len(broker.Services))
-	for name := range broker.Services {
+	services := make([]string, 0, len(broker.services))
+	for name := range broker.services {
 		services = append(services, name)
 	}
 	return services
 }
 
 func (broker *OAuthBrokerService) GetService(name string) (OAuthService, bool) {
-	service, exists := broker.Services[name]
+	service, exists := broker.services[name]
 	return service, exists
 }
 
 func (broker *OAuthBrokerService) GetUser(service string) (config.Claims, error) {
-	oauthService, exists := broker.Services[service]
+	oauthService, exists := broker.services[service]
 	if !exists {
 		return config.Claims{}, errors.New("oauth service not found")
 	}
