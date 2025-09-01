@@ -12,8 +12,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Get upper domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
-func GetUpperDomain(appUrl string) (string, error) {
+// Get root domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
+func GetRootDomain(appUrl string) (string, error) {
 	appUrlParsed, err := url.Parse(appUrl)
 	if err != nil {
 		return "", err
@@ -88,7 +88,7 @@ func IsRedirectSafe(redirectURL string, domain string) bool {
 		return false
 	}
 
-	upper, err := GetUpperDomain(redirectURL)
+	upper, err := GetRootDomain(redirectURL)
 
 	if err != nil {
 		return false
