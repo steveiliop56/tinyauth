@@ -24,12 +24,8 @@ import { toast } from "sonner";
 
 export const LoginPage = () => {
   const { isLoggedIn } = useUserContext();
-
-  if (isLoggedIn) {
-    return <Navigate to="/logout" />;
-  }
-
-  const { configuredProviders, title, oauthAutoRedirect, genericName } = useAppContext();
+  const { configuredProviders, title, oauthAutoRedirect, genericName } =
+    useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
@@ -54,7 +50,7 @@ export const LoginPage = () => {
       });
 
       setTimeout(() => {
-        window.location.href = data.data.url;
+        window.location.replace(data.data.url);
       }, 500);
     },
     onError: () => {
@@ -100,12 +96,17 @@ export const LoginPage = () => {
       if (
         oauthConfigured &&
         configuredProviders.includes(oauthAutoRedirect) &&
+        !isLoggedIn &&
         redirectUri
       ) {
         oauthMutation.mutate(oauthAutoRedirect);
       }
     }
   }, []);
+
+  if (isLoggedIn) {
+    return <Navigate to="/logout" />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
@@ -126,7 +127,10 @@ export const LoginPage = () => {
                 icon={<GoogleIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("google")}
-                loading={oauthMutation.isPending && oauthMutation.variables === "google"}
+                loading={
+                  oauthMutation.isPending &&
+                  oauthMutation.variables === "google"
+                }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
@@ -136,7 +140,10 @@ export const LoginPage = () => {
                 icon={<GithubIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("github")}
-                loading={oauthMutation.isPending && oauthMutation.variables === "github"}
+                loading={
+                  oauthMutation.isPending &&
+                  oauthMutation.variables === "github"
+                }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}
@@ -146,7 +153,10 @@ export const LoginPage = () => {
                 icon={<GenericIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate("generic")}
-                loading={oauthMutation.isPending && oauthMutation.variables === "generic"}
+                loading={
+                  oauthMutation.isPending &&
+                  oauthMutation.variables === "generic"
+                }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
             )}

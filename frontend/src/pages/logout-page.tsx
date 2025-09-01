@@ -17,11 +17,6 @@ import { toast } from "sonner";
 
 export const LogoutPage = () => {
   const { provider, username, isLoggedIn, email } = useUserContext();
-
-  if (!isLoggedIn) {
-    return <Navigate to="/login" />;
-  }
-
   const { genericName } = useAppContext();
   const { t } = useTranslation();
 
@@ -33,7 +28,7 @@ export const LogoutPage = () => {
         description: t("logoutSuccessSubtitle"),
       });
 
-      setTimeout(async () => {
+      setTimeout(() => {
         window.location.replace("/login");
       }, 500);
     },
@@ -43,6 +38,10 @@ export const LogoutPage = () => {
       });
     },
   });
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">

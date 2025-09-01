@@ -19,11 +19,6 @@ import { toast } from "sonner";
 
 export const TotpPage = () => {
   const { totpPending } = useUserContext();
-
-  if (!totpPending) {
-    return <Navigate to="/" />;
-  }
-
   const { t } = useTranslation();
   const { search } = useLocation();
   const formId = useId();
@@ -51,6 +46,10 @@ export const TotpPage = () => {
       });
     },
   });
+
+  if (!totpPending) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">

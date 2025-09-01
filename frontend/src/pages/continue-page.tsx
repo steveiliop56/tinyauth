@@ -15,42 +15,68 @@ import DOMPurify from "dompurify";
 import { useEffect, useState } from "react";
 
 export const ContinuePage = () => {
+  const { rootDomain } = useAppContext();
   const { isLoggedIn } = useUserContext();
+  const { search } = useLocation();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
+  const [showRedirectButton, setShowRedirectButton] = useState(false);
+
+  const searchParams = new URLSearchParams(search);
+  const redirectUri = searchParams.get("redirect_uri");
+
+  const isValidRedirectUri =
+    redirectUri !== null ? isValidUrl(DOMPurify.sanitize(redirectUri)) : false;
+  const redirectUriObj = isValidRedirectUri
+    ? new URL(redirectUri as string)
+    : null;
+  const isTrustedRedirectUri =
+    redirectUriObj !== null
+      ? redirectUriObj.hostname === rootDomain ||
+        redirectUriObj.hostname.endsWith(`.${rootDomain}`)
+      : false;
+  const isHttpsDowngrade =
+    redirectUriObj !== null
+      ? redirectUriObj.protocol === "http:" &&
+        window.location.protocol === "https:"
+      : false;
+
+  const handleRedirect = () => {
+    setLoading(true);
+    window.location.replace(DOMPurify.sanitize(redirectUriObj!.toString()));
+  };
+
+  useEffect(() => {
+    if (
+      !isLoggedIn ||
+      !isValidRedirectUri ||
+      !isTrustedRedirectUri ||
+      isHttpsDowngrade
+    ) {
+      return;
+    }
+
+    setTimeout(() => {
+      handleRedirect();
+    }, 100);
+
+    setTimeout(() => {
+      setLoading(false);
+      setShowRedirectButton(true);
+    }, 1000);
+  }, []);
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
 
-  const { rootDomain } = useAppContext();
-  const { search } = useLocation();
-  const [loading, setLoading] = useState(false);
-  const [showRedirectButton, setShowRedirectButton] = useState(false);
-
-  const searchParams = new URLSearchParams(search);
-  const redirectURI = searchParams.get("redirect_uri");
-
-  if (!redirectURI) {
+  if (!isValidRedirectUri) {
     return <Navigate to="/logout" />;
   }
 
-  if (!isValidUrl(DOMPurify.sanitize(redirectURI))) {
-    return <Navigate to="/logout" />;
-  }
-
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  const handleRedirect = () => {
-    setLoading(true);
-    window.location.href = DOMPurify.sanitize(redirectURI);
-  };
-
-  const redirectURLObj = new URL(redirectURI);
-
-  if (
-    !(redirectURLObj.hostname == rootDomain) &&
-    !redirectURLObj.hostname.endsWith(`.${rootDomain}`)
-  ) {
+  if (!isTrustedRedirectUri) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -88,10 +114,7 @@ export const ContinuePage = () => {
     );
   }
 
-  if (
-    redirectURLObj.protocol === "http:" &&
-    window.location.protocol === "https:"
-  ) {
+  if (isHttpsDowngrade) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -123,16 +146,6 @@ export const ContinuePage = () => {
       </Card>
     );
   }
-
-  useEffect(() => {
-    setTimeout(() => {
-      handleRedirect();
-    }, 100);
-    setTimeout(() => {
-      setLoading(false);
-      setShowRedirectButton(true);
-    }, 1000);
-  }, []);
 
   return (
     <Card className="min-w-xs sm:min-w-sm">

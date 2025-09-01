@@ -1,7 +1,7 @@
 import { useAppContext } from "@/context/app-context";
 import { LanguageSelector } from "../language/language";
 import { Outlet } from "react-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { DomainWarning } from "../domain-warning/domain-warning";
 
 const BaseLayout = ({ children }: { children: React.ReactNode }) => {
@@ -24,20 +24,17 @@ const BaseLayout = ({ children }: { children: React.ReactNode }) => {
 
 export const Layout = () => {
   const { appUrl } = useAppContext();
-  const [ignoreDomainWarning, setIgnoreDomainWarning] = useState(false);
+  const [ignoreDomainWarning, setIgnoreDomainWarning] = useState(() => {
+    return window.sessionStorage.getItem("ignoreDomainWarning") === "true";
+  });
   const currentUrl = window.location.origin;
-  const sessionIgnore = window.sessionStorage.getItem("ignoreDomainWarning");
 
-  const handleIgnore = () => {
+  const handleIgnore = useCallback(() => {
     window.sessionStorage.setItem("ignoreDomainWarning", "true");
     setIgnoreDomainWarning(true);
-  };
+  }, [setIgnoreDomainWarning]);
 
-  if (
-    !ignoreDomainWarning &&
-    appUrl !== currentUrl &&
-    sessionIgnore !== "true"
-  ) {
+  if (!ignoreDomainWarning && appUrl !== currentUrl) {
     return (
       <BaseLayout>
         <DomainWarning
