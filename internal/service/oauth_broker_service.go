@@ -46,10 +46,10 @@ func (broker *OAuthBrokerService) Init() error {
 	for name, service := range broker.services {
 		err := service.Init()
 		if err != nil {
-			log.Error().Err(err).Msgf("Failed to initialize OAuth service: %s", name)
+			log.Error().Err(err).Msgf("Failed to initialize OAuth service: %T", name)
 			return err
 		}
-		log.Info().Msgf("Initialized OAuth service: %s", name)
+		log.Info().Msgf("Initialized OAuth service: %T", name)
 	}
 
 	return nil

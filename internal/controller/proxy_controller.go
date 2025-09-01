@@ -78,7 +78,6 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	clientIP := c.ClientIP()
 
 	if controller.auth.IsBypassedIP(labels.IP, clientIP) {
-		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 		controller.setHeaders(c, labels)
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -165,16 +164,16 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				Resource: strings.Split(host, ".")[0],
 			})
 
-			if userContext.OAuth {
-				queries.Set("username", userContext.Email)
-			} else {
-				queries.Set("username", userContext.Username)
-			}
-
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to encode unauthorized query")
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 				return
+			}
+
+			if userContext.OAuth {
+				queries.Set("username", userContext.Email)
+			} else {
+				queries.Set("username", userContext.Username)
 			}
 
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
@@ -200,16 +199,16 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 					GroupErr: true,
 				})
 
-				if userContext.OAuth {
-					queries.Set("username", userContext.Email)
-				} else {
-					queries.Set("username", userContext.Username)
-				}
-
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to encode unauthorized query")
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 					return
+				}
+
+				if userContext.OAuth {
+					queries.Set("username", userContext.Email)
+				} else {
+					queries.Set("username", userContext.Username)
 				}
 
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
@@ -217,7 +216,6 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			}
 		}
 
-		c.Header("Authorization", c.Request.Header.Get("Authorization"))
 		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
