@@ -11,6 +11,7 @@ import { useUserContext } from "@/context/user-context";
 import { capitalize } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { useEffect, useRef } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ export const LogoutPage = () => {
   const { genericName } = useAppContext();
   const { t } = useTranslation();
 
+  const redirectTimer = useRef<number | null>(null);
+
   const logoutMutation = useMutation({
     mutationFn: () => axios.post("/api/user/logout"),
     mutationKey: ["logout"],
@@ -28,11 +31,9 @@ export const LogoutPage = () => {
         description: t("logoutSuccessSubtitle"),
       });
 
-      const redirect = setTimeout(() => {
+      redirectTimer.current = window.setTimeout(() => {
         window.location.replace("/login");
       }, 500);
-
-      return () => clearTimeout(redirect);
     },
     onError: () => {
       toast.error(t("logoutFailTitle"), {
@@ -40,6 +41,13 @@ export const LogoutPage = () => {
       });
     },
   });
+
+  useEffect(
+    () => () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    },
+    [],
+  );
 
   if (!isLoggedIn) {
     return <Navigate to="/login" />;

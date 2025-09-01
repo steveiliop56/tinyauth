@@ -17,7 +17,7 @@ import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
@@ -29,6 +29,8 @@ export const LoginPage = () => {
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
+
+  const redirectTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
@@ -49,11 +51,9 @@ export const LoginPage = () => {
         description: t("loginOauthSuccessSubtitle"),
       });
 
-      const redirect = setTimeout(() => {
+      redirectTimer.current = window.setTimeout(() => {
         window.location.replace(data.data.url);
       }, 500);
-
-      return () => clearTimeout(redirect);
     },
     onError: () => {
       toast.error(t("loginOauthFailTitle"), {
@@ -77,13 +77,11 @@ export const LoginPage = () => {
         description: t("loginSuccessSubtitle"),
       });
 
-      const redirect = setTimeout(() => {
+      redirectTimer.current = window.setTimeout(() => {
         window.location.replace(
           `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
         );
       }, 500);
-
-      return () => clearTimeout(redirect);
     },
     onError: (error: AxiosError) => {
       toast.error(t("loginFailTitle"), {
@@ -107,6 +105,13 @@ export const LoginPage = () => {
       }
     }
   }, []);
+
+  useEffect(
+    () => () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    },
+    [],
+  );
 
   if (isLoggedIn) {
     return <Navigate to="/logout" />;
