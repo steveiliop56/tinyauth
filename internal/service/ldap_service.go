@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
@@ -23,6 +24,7 @@ type LdapServiceConfig struct {
 type LdapService struct {
 	Config LdapServiceConfig
 	Conn   *ldapgo.Conn
+	Mutex  sync.RWMutex
 }
 
 func NewLdapService(config LdapServiceConfig) *LdapService {
@@ -55,6 +57,8 @@ func (ldap *LdapService) Init() error {
 }
 
 func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
+	ldap.Mutex.Lock()
+
 	conn, err := ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 		InsecureSkipVerify: ldap.Config.Insecure,
 		MinVersion:         tls.VersionTLS12,
@@ -67,6 +71,8 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ldap.Mutex.Unlock()
 
 	// Set and return the connection
 	ldap.Conn = conn
@@ -86,10 +92,12 @@ func (ldap *LdapService) Search(username string) (string, error) {
 		nil,
 	)
 
+	ldap.Mutex.Lock()
 	searchResult, err := ldap.Conn.Search(searchRequest)
 	if err != nil {
 		return "", err
 	}
+	ldap.Mutex.Unlock()
 
 	if len(searchResult.Entries) != 1 {
 		return "", fmt.Errorf("multiple or no entries found for user %s", username)
@@ -100,10 +108,12 @@ func (ldap *LdapService) Search(username string) (string, error) {
 }
 
 func (ldap *LdapService) Bind(userDN string, password string) error {
+	ldap.Mutex.Lock()
 	err := ldap.Conn.Bind(userDN, password)
 	if err != nil {
 		return err
 	}
+	ldap.Mutex.Unlock()
 	return nil
 }
 
@@ -118,10 +128,12 @@ func (ldap *LdapService) heartbeat() error {
 		nil,
 	)
 
+	ldap.Mutex.Lock()
 	_, err := ldap.Conn.Search(searchRequest)
 	if err != nil {
 		return err
 	}
+	ldap.Mutex.Unlock()
 
 	// No error means the connection is alive
 	return nil
