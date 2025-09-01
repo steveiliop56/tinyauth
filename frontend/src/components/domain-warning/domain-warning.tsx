@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "../ui/card";
 import { Button } from "../ui/button";
+import { Trans, useTranslation } from "react-i18next";
 
 interface Props {
   onClick: () => void;
@@ -15,20 +16,24 @@ interface Props {
 
 export const DomainWarning = (props: Props) => {
   const { onClick, appUrl, currentUrl } = props;
+  const { t } = useTranslation();
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
-        <CardTitle className="text-3xl">Incorrect Domain</CardTitle>
+        <CardTitle className="text-3xl">{t("domainWarningTitle")}</CardTitle>
         <CardDescription>
-          This instance is configured to be accessed from <code>{appUrl}</code>,
-          but <code>{currentUrl}</code> is being used. Authentication will most
-          likely fail if you proceed.
+          <Trans
+            t={t}
+            i18nKey="domainWarningSubtitle"
+            values={{ appUrl, currentUrl }}
+            components={{ code: <code /> }}
+          />
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
         <Button onClick={onClick} variant="warning">
-          Ignore
+          {t("ignoreTitle")}
         </Button>
       </CardFooter>
     </Card>

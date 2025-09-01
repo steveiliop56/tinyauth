@@ -55,11 +55,11 @@ export const ContinuePage = () => {
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
           <CardTitle className="text-3xl">
-            {t("untrustedRedirectTitle")}
+            {t("continueUntrustedRedirectTitle")}
           </CardTitle>
           <CardDescription>
             <Trans
-              i18nKey="untrustedRedirectSubtitle"
+              i18nKey="continueUntrustedRedirectSubtitle"
               t={t}
               components={{
                 code: <code />,
