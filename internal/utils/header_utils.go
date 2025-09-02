@@ -32,3 +32,13 @@ func SanitizeHeader(header string) string {
 		return -1
 	}, header)
 }
+
+func NormalizeHeaders(headers http.Header) map[string]string {
+	var result = make(map[string]string)
+
+	for key, values := range headers {
+		result[key] = strings.Join(values, ",")
+	}
+
+	return result
+}

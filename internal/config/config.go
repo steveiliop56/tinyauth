@@ -123,13 +123,11 @@ type RedirectQuery struct {
 	RedirectURI string `url:"redirect_uri"`
 }
 
-// Labels
+// App config
 
-type Labels struct {
+type AppConfigs struct {
 	Apps map[string]App
 }
-
-// App config
 
 type App struct {
 	Config   AppConfig

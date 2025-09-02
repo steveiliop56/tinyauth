@@ -11,13 +11,13 @@ import (
 
 // Based on: https://github.com/traefik/paerser/blob/master/parser/labels_decode.go (Apache 2.0 License)
 
-func DecodeHeaders(headers map[string]string) (config.App, error) {
-	var app config.App
+func DecodeHeaders(headers map[string]string) (config.AppConfigs, error) {
+	var app config.AppConfigs
 
-	err := decodeHeadersHelper(headers, &app, "tinyauth")
+	err := decodeHeadersHelper(headers, &app, "tinyauth", "tinyauth-apps")
 
 	if err != nil {
-		return config.App{}, err
+		return config.AppConfigs{}, err
 	}
 
 	return app, nil

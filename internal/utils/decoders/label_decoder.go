@@ -6,13 +6,13 @@ import (
 	"github.com/traefik/paerser/parser"
 )
 
-func DecodeLabels(labels map[string]string) (config.Labels, error) {
-	var appLabels config.Labels
+func DecodeLabels(labels map[string]string) (config.AppConfigs, error) {
+	var appLabels config.AppConfigs
 
-	err := parser.Decode(labels, &appLabels, "tinyauth")
+	err := parser.Decode(labels, &appLabels, "tinyauth", "tinyauth.apps")
 
 	if err != nil {
-		return config.Labels{}, err
+		return config.AppConfigs{}, err
 	}
 
 	return appLabels, nil

@@ -9,7 +9,7 @@ import (
 
 func TestDecodeLabels(t *testing.T) {
 	// Variables
-	expected := config.Labels{
+	expected := config.AppConfigs{
 		Apps: map[string]config.App{
 			"foo": {
 				Config: config.AppConfig{
