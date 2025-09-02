@@ -52,20 +52,17 @@ func decodeHeadersToNode(headers map[string]string, rootName string, filters ...
 			return nil, fmt.Errorf("invalid header root %s", split[0])
 		}
 
-		var parts []string
 		for _, v := range split {
 			if v == "" {
 				return nil, fmt.Errorf("invalid element: %s", key)
 			}
-
-			parts = append(parts, v)
 		}
 
 		if i == 0 {
 			node = &parser.Node{}
 		}
 
-		decodeHeaderToNode(node, parts, headers[key])
+		decodeHeaderToNode(node, split, headers[key])
 	}
 
 	return node, nil
