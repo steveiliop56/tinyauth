@@ -108,6 +108,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	if err != nil || state != csrfCookie {
 		log.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
+		c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.RootDomain), controller.config.SecureCookie, true)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
