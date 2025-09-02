@@ -46,6 +46,8 @@ func GetBasicAuth(username string, password string) string {
 }
 
 func FilterIP(filter string, ip string) (bool, error) {
+	filter = strings.Replace(filter, "-", "/", -1)
+
 	ipAddr := net.ParseIP(ip)
 
 	if strings.Contains(filter, "/") {

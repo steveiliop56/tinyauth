@@ -7,6 +7,7 @@ import (
 	"tinyauth/internal/config"
 	"tinyauth/internal/service"
 	"tinyauth/internal/utils"
+	"tinyauth/internal/utils/decoders"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -67,6 +68,16 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
+	var app config.App
+
+	headers, err := decoders.DecodeHeaders(utils.NormalizeHeaders(c.Request.Header))
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to decode headers")
+		controller.handleError(c, req, isBrowser)
+		return
+	}
+
 	labels, err := controller.docker.GetLabels(host)
 
 	if err != nil {
@@ -75,10 +86,21 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
+	if len(headers.Apps) > 0 {
+		for k, v := range headers.Apps {
+			log.Debug().Str("app", k).Msg("Using headers for app config instead of labels")
+			app = v
+			break
+		}
+	} else {
+		log.Debug().Msg("No app config found in headers, using labels")
+		app = labels
+	}
+
 	clientIP := c.ClientIP()
 
-	if controller.auth.IsBypassedIP(labels.IP, clientIP) {
-		controller.setHeaders(c, labels)
+	if controller.auth.IsBypassedIP(app.IP, clientIP) {
+		controller.setHeaders(c, app)
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -86,7 +108,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.auth.IsAuthEnabled(uri, labels.Path)
+	authEnabled, err := controller.auth.IsAuthEnabled(uri, app.Path)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
@@ -96,7 +118,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	if !authEnabled {
 		log.Debug().Msg("Authentication disabled for resource, allowing access")
-		controller.setHeaders(c, labels)
+		controller.setHeaders(c, app)
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -104,7 +126,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.auth.CheckIP(labels.IP, clientIP) {
+	if !controller.auth.CheckIP(app.IP, clientIP) {
 		if req.Proxy == "nginx" || !isBrowser {
 			c.JSON(401, gin.H{
 				"status":  401,
@@ -147,7 +169,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.auth.IsResourceAllowed(c, userContext, labels)
+		appAllowed := controller.auth.IsResourceAllowed(c, userContext, app)
 
 		if !appAllowed {
 			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
@@ -181,7 +203,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		}
 
 		if userContext.OAuth {
-			groupOK := controller.auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
+			groupOK := controller.auth.IsInOAuthGroup(c, userContext, app.OAuth.Groups)
 
 			if !groupOK {
 				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
@@ -221,7 +243,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
-		controller.setHeaders(c, labels)
+		controller.setHeaders(c, app)
 
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -251,7 +273,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode()))
 }
 
-func (controller *ProxyController) setHeaders(c *gin.Context, labels config.AppLabels) {
+func (controller *ProxyController) setHeaders(c *gin.Context, labels config.App) {
 	c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
 	headers := utils.ParseHeaders(labels.Response.Headers)
