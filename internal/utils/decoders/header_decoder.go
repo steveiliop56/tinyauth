@@ -107,7 +107,7 @@ func sortKeys(headers map[string]string, filters []string) []string {
 		}
 
 		for _, filter := range filters {
-			if len(key) >= len(filter) && strings.EqualFold(key[:len(filter)], filter) {
+			if strings.HasPrefix(key, filter+"-") {
 				sortedKeys = append(sortedKeys, key)
 				continue
 			}
