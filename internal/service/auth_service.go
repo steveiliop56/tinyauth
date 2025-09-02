@@ -285,7 +285,7 @@ func (auth *AuthService) UserAuthConfigured() bool {
 	return len(auth.config.Users) > 0 || auth.ldap != nil
 }
 
-func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.AppLabels) bool {
+func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.App) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
@@ -322,7 +322,7 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 	return false
 }
 
-func (auth *AuthService) IsAuthEnabled(uri string, path config.PathLabels) (bool, error) {
+func (auth *AuthService) IsAuthEnabled(uri string, path config.AppPath) (bool, error) {
 	// Check for block list
 	if path.Block != "" {
 		regex, err := regexp.Compile(path.Block)
@@ -364,7 +364,7 @@ func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 	}
 }
 
-func (auth *AuthService) CheckIP(labels config.IPLabels, ip string) bool {
+func (auth *AuthService) CheckIP(labels config.AppIP, ip string) bool {
 	for _, blocked := range labels.Block {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
@@ -398,7 +398,7 @@ func (auth *AuthService) CheckIP(labels config.IPLabels, ip string) bool {
 	return true
 }
 
-func (auth *AuthService) IsBypassedIP(labels config.IPLabels, ip string) bool {
+func (auth *AuthService) IsBypassedIP(labels config.AppIP, ip string) bool {
 	for _, bypassed := range labels.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {

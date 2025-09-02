@@ -126,50 +126,52 @@ type RedirectQuery struct {
 // Labels
 
 type Labels struct {
-	Apps map[string]AppLabels
+	Apps map[string]App
 }
 
-type AppLabels struct {
-	Config   ConfigLabels
-	Users    UsersLabels
-	OAuth    OAuthLabels
-	IP       IPLabels
-	Response ResponseLabels
-	Path     PathLabels
+// App config
+
+type App struct {
+	Config   AppConfig
+	Users    AppUsers
+	OAuth    AppOAuth
+	IP       AppIP
+	Response AppResponse
+	Path     AppPath
 }
 
-type ConfigLabels struct {
+type AppConfig struct {
 	Domain string
 }
 
-type UsersLabels struct {
+type AppUsers struct {
 	Allow string
 	Block string
 }
 
-type OAuthLabels struct {
+type AppOAuth struct {
 	Whitelist string
 	Groups    string
 }
 
-type IPLabels struct {
+type AppIP struct {
 	Allow  []string
 	Block  []string
 	Bypass []string
 }
 
-type ResponseLabels struct {
+type AppResponse struct {
 	Headers   []string
-	BasicAuth BasicAuthLabels
+	BasicAuth AppBasicAuth
 }
 
-type BasicAuthLabels struct {
+type AppBasicAuth struct {
 	Username     string
 	Password     string
 	PasswordFile string
 }
 
-type PathLabels struct {
+type AppPath struct {
 	Allow string
 	Block string
 }

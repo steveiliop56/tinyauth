@@ -251,7 +251,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode()))
 }
 
-func (controller *ProxyController) setHeaders(c *gin.Context, labels config.AppLabels) {
+func (controller *ProxyController) setHeaders(c *gin.Context, labels config.App) {
 	c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
 	headers := utils.ParseHeaders(labels.Response.Headers)
