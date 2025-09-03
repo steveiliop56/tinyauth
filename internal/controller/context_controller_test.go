@@ -34,16 +34,17 @@ var userContext = config.UserContext{
 	TotpEnabled: false,
 }
 
-func setupContextController() (*gin.Engine, *httptest.ResponseRecorder) {
+func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
 	// Setup
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 	recorder := httptest.NewRecorder()
 
-	router.Use(func(c *gin.Context) {
-		c.Set("context", &userContext)
-		c.Next()
-	})
+	if middlewares != nil {
+		for _, m := range *middlewares {
+			router.Use(m)
+		}
+	}
 
 	group := router.Group("/api")
 
@@ -67,7 +68,7 @@ func TestAppContextHandler(t *testing.T) {
 		OAuthAutoRedirect:     controllerCfg.OAuthAutoRedirect,
 	}
 
-	router, recorder := setupContextController()
+	router, recorder := setupContextController(nil)
 	req := httptest.NewRequest("GET", "/api/context/app", nil)
 	router.ServeHTTP(recorder, req)
 
@@ -94,7 +95,14 @@ func TestUserContextHandler(t *testing.T) {
 		TotpPending: userContext.TotpPending,
 	}
 
-	router, recorder := setupContextController()
+	// Test with context
+	router, recorder := setupContextController(&[]gin.HandlerFunc{
+		func(c *gin.Context) {
+			c.Set("context", &userContext)
+			c.Next()
+		},
+	})
+
 	req := httptest.NewRequest("GET", "/api/context/user", nil)
 	router.ServeHTTP(recorder, req)
 
@@ -103,6 +111,24 @@ func TestUserContextHandler(t *testing.T) {
 	var ctrlRes controller.UserContextResponse
 
 	err := json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
+
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expectedRes, ctrlRes)
+
+	// Test no context
+	expectedRes = controller.UserContextResponse{
+		Status:     401,
+		Message:    "Unauthorized",
+		IsLoggedIn: false,
+	}
+
+	router, recorder = setupContextController(nil)
+	req = httptest.NewRequest("GET", "/api/context/user", nil)
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 200, recorder.Code)
+
+	err = json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
 
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expectedRes, ctrlRes)
