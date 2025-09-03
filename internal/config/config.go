@@ -123,53 +123,53 @@ type RedirectQuery struct {
 	RedirectURI string `url:"redirect_uri"`
 }
 
-// App config
+// Labels
 
-type AppConfigs struct {
-	Apps map[string]App
+type Labels struct {
+	Apps map[string]AppLabels
 }
 
-type App struct {
-	Config   AppConfig
-	Users    AppUsers
-	OAuth    AppOAuth
-	IP       AppIP
-	Response AppResponse
-	Path     AppPath
+type AppLabels struct {
+	Config   ConfigLabels
+	Users    UsersLabels
+	OAuth    OAuthLabels
+	IP       IPLabels
+	Response ResponseLabels
+	Path     PathLabels
 }
 
-type AppConfig struct {
+type ConfigLabels struct {
 	Domain string
 }
 
-type AppUsers struct {
+type UsersLabels struct {
 	Allow string
 	Block string
 }
 
-type AppOAuth struct {
+type OAuthLabels struct {
 	Whitelist string
 	Groups    string
 }
 
-type AppIP struct {
+type IPLabels struct {
 	Allow  []string
 	Block  []string
 	Bypass []string
 }
 
-type AppResponse struct {
+type ResponseLabels struct {
 	Headers   []string
-	BasicAuth AppBasicAuth
+	BasicAuth BasicAuthLabels
 }
 
-type AppBasicAuth struct {
+type BasicAuthLabels struct {
 	Username     string
 	Password     string
 	PasswordFile string
 }
 
-type AppPath struct {
+type PathLabels struct {
 	Allow string
 	Block string
 }
