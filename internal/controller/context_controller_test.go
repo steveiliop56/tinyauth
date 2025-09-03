@@ -11,19 +11,49 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestAppContextHandler(t *testing.T) {
-	// Setup
-	controllerCfg := controller.ContextControllerConfig{
-		ConfiguredProviders:   []string{"github", "google", "generic"},
-		Title:                 "Test App",
-		GenericName:           "Generic",
-		AppURL:                "http://localhost:8080",
-		RootDomain:            "localhost",
-		ForgotPasswordMessage: "Contact admin to reset your password.",
-		BackgroundImage:       "/assets/bg.jpg",
-		OAuthAutoRedirect:     "google",
-	}
+var controllerCfg = controller.ContextControllerConfig{
+	ConfiguredProviders:   []string{"github", "google", "generic"},
+	Title:                 "Test App",
+	GenericName:           "Generic",
+	AppURL:                "http://localhost:8080",
+	RootDomain:            "localhost",
+	ForgotPasswordMessage: "Contact admin to reset your password.",
+	BackgroundImage:       "/assets/bg.jpg",
+	OAuthAutoRedirect:     "google",
+}
 
+var userContext = config.UserContext{
+	Username:    "testuser",
+	Name:        "testuser",
+	Email:       "test@example.com",
+	IsLoggedIn:  true,
+	OAuth:       false,
+	Provider:    "username",
+	TotpPending: false,
+	OAuthGroups: "",
+	TotpEnabled: false,
+}
+
+func setupContextController() (*gin.Engine, *httptest.ResponseRecorder) {
+	// Setup
+	gin.SetMode(gin.TestMode)
+	router := gin.Default()
+	recorder := httptest.NewRecorder()
+
+	router.Use(func(c *gin.Context) {
+		c.Set("context", &userContext)
+		c.Next()
+	})
+
+	group := router.Group("/api")
+
+	ctrl := controller.NewContextController(controllerCfg, group)
+	ctrl.SetupRoutes()
+
+	return router, recorder
+}
+
+func TestAppContextHandler(t *testing.T) {
 	expectedRes := controller.AppContextResponse{
 		Status:                200,
 		Message:               "Success",
@@ -37,15 +67,7 @@ func TestAppContextHandler(t *testing.T) {
 		OAuthAutoRedirect:     controllerCfg.OAuthAutoRedirect,
 	}
 
-	gin.SetMode(gin.TestMode)
-	router := gin.Default()
-	group := router.Group("/api")
-	recorder := httptest.NewRecorder()
-
-	// Test
-	ctrl := controller.NewContextController(controllerCfg, group)
-	ctrl.SetupRoutes()
-
+	router, recorder := setupContextController()
 	req := httptest.NewRequest("GET", "/api/context/app", nil)
 	router.ServeHTTP(recorder, req)
 
@@ -59,22 +81,7 @@ func TestAppContextHandler(t *testing.T) {
 	assert.DeepEqual(t, expectedRes, ctrlRes)
 }
 
-func TestUserContextController(t *testing.T) {
-	// Setup
-	controllerCfg := controller.ContextControllerConfig{}
-
-	userContext := config.UserContext{
-		Username:    "testuser",
-		Name:        "testuser",
-		Email:       "test@example.com",
-		IsLoggedIn:  true,
-		OAuth:       false,
-		Provider:    "username",
-		TotpPending: false,
-		OAuthGroups: "",
-		TotpEnabled: false,
-	}
-
+func TestUserContextHandler(t *testing.T) {
 	expectedRes := controller.UserContextResponse{
 		Status:      200,
 		Message:     "Success",
@@ -87,21 +94,7 @@ func TestUserContextController(t *testing.T) {
 		TotpPending: userContext.TotpPending,
 	}
 
-	gin.SetMode(gin.TestMode)
-	router := gin.Default()
-	recorder := httptest.NewRecorder()
-
-	router.Use(func(c *gin.Context) {
-		c.Set("context", &userContext)
-		c.Next()
-	})
-
-	group := router.Group("/api")
-
-	// Test
-	ctrl := controller.NewContextController(controllerCfg, group)
-	ctrl.SetupRoutes()
-
+	router, recorder := setupContextController()
 	req := httptest.NewRequest("GET", "/api/context/user", nil)
 	router.ServeHTTP(recorder, req)
 
