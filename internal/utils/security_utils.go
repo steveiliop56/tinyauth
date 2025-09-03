@@ -73,6 +73,8 @@ func CheckFilter(filter string, str string) bool {
 		return true
 	}
 
+	filter = strings.Replace(filter, "-", "/", -1)
+
 	if strings.HasPrefix(filter, "/") && strings.HasSuffix(filter, "/") {
 		re, err := regexp.Compile(filter[1 : len(filter)-1])
 		if err != nil {
