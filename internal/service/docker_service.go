@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 	"tinyauth/internal/config"
-	"tinyauth/internal/utils/decoders"
+	"tinyauth/internal/utils"
 
 	container "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -55,17 +55,17 @@ func (docker *DockerService) DockerConnected() bool {
 	return err == nil
 }
 
-func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
+func (docker *DockerService) GetLabels(appDomain string) (config.AppLabels, error) {
 	isConnected := docker.DockerConnected()
 
 	if !isConnected {
 		log.Debug().Msg("Docker not connected, returning empty labels")
-		return config.App{}, nil
+		return config.AppLabels{}, nil
 	}
 
 	containers, err := docker.GetContainers()
 	if err != nil {
-		return config.App{}, err
+		return config.AppLabels{}, err
 	}
 
 	for _, ctr := range containers {
@@ -75,7 +75,7 @@ func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 			continue
 		}
 
-		labels, err := decoders.DecodeLabels(inspect.Config.Labels)
+		labels, err := utils.GetLabels(inspect.Config.Labels)
 		if err != nil {
 			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error getting container labels, skipping")
 			continue
@@ -95,5 +95,5 @@ func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 	}
 
 	log.Debug().Msg("No matching container found, returning empty labels")
-	return config.App{}, nil
+	return config.AppLabels{}, nil
 }
