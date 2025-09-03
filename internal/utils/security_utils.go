@@ -48,6 +48,12 @@ func GetBasicAuth(username string, password string) string {
 func FilterIP(filter string, ip string) (bool, error) {
 	ipAddr := net.ParseIP(ip)
 
+	if ipAddr == nil {
+		return false, errors.New("invalid IP address")
+	}
+
+	filter = strings.Replace(filter, "-", "/", -1)
+
 	if strings.Contains(filter, "/") {
 		_, cidr, err := net.ParseCIDR(filter)
 		if err != nil {
@@ -72,8 +78,6 @@ func CheckFilter(filter string, str string) bool {
 	if len(strings.TrimSpace(filter)) == 0 {
 		return true
 	}
-
-	filter = strings.Replace(filter, "-", "/", -1)
 
 	if strings.HasPrefix(filter, "/") && strings.HasSuffix(filter, "/") {
 		re, err := regexp.Compile(filter[1 : len(filter)-1])

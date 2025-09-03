@@ -13,13 +13,13 @@ import (
 )
 
 // Get root domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
-func GetRootDomain(appUrl string) (string, error) {
-	appUrlParsed, err := url.Parse(appUrl)
+func GetRootDomain(u string) (string, error) {
+	appUrl, err := url.Parse(u)
 	if err != nil {
 		return "", err
 	}
 
-	host := appUrlParsed.Hostname()
+	host := appUrl.Hostname()
 
 	if netIP := net.ParseIP(host); netIP != nil {
 		return "", errors.New("IP addresses are not allowed")
@@ -27,7 +27,7 @@ func GetRootDomain(appUrl string) (string, error) {
 
 	urlParts := strings.Split(host, ".")
 
-	if len(urlParts) < 2 {
+	if len(urlParts) < 3 {
 		return "", errors.New("invalid domain, must be at least second level domain")
 	}
 
@@ -49,6 +49,7 @@ func ParseFileToLine(content string) string {
 }
 
 func Filter[T any](slice []T, test func(T) bool) (res []T) {
+	res = make([]T, 0)
 	for _, value := range slice {
 		if test(value) {
 			res = append(res, value)
