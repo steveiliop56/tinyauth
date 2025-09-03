@@ -112,6 +112,7 @@ func init() {
 		{"ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup."},
 		{"resources-dir", "/data/resources", "Path to a directory containing custom resources (e.g. background image)."},
 		{"database-path", "/data/tinyauth.db", "Path to the Sqlite database file."},
+		{"trusted-proxies", "", "Comma separated list of trusted proxies (IP addresses) for correct client IP detection and for header ACLs."},
 	}
 
 	for _, opt := range configOptions {

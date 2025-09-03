@@ -53,6 +53,7 @@ type Config struct {
 	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
 	ResourcesDir            string `mapstructure:"resources-dir"`
 	DatabasePath            string `mapstructure:"database-path" validate:"required"`
+	TrustedProxies          string `mapstructure:"trusted-proxies"`
 }
 
 // OAuth/OIDC config
