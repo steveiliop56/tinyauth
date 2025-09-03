@@ -55,6 +55,15 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
+	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" {
+		log.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
+		c.JSON(400, gin.H{
+			"status":  400,
+			"message": "Bad Request",
+		})
+		return
+	}
+
 	isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
 
 	if isBrowser {
