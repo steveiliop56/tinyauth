@@ -137,6 +137,13 @@ func TestLoginHandler(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, string(loginResJson), recorder.Body.String())
 
+	// Test invalid json
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("POST", "/api/user/login", strings.NewReader("{invalid json}"))
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 400, recorder.Code)
+
 	// Test rate limiting
 	loginReq = controller.LoginRequest{
 		Username: "testuser",
@@ -218,6 +225,13 @@ func TestTotpHandler(t *testing.T) {
 
 	assert.Equal(t, "tinyauth-session", cookie.Name)
 	assert.Assert(t, cookie.Value != "")
+
+	// Test invalid json
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("POST", "/api/user/totp", strings.NewReader("{invalid json}"))
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 400, recorder.Code)
 
 	// Test rate limiting
 	totpReq = controller.TotpRequest{
