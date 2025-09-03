@@ -3,21 +3,7 @@ package utils
 import (
 	"net/http"
 	"strings"
-	"tinyauth/internal/config"
-
-	"github.com/traefik/paerser/parser"
 )
-
-func GetLabels(labels map[string]string) (config.Labels, error) {
-	var labelsParsed config.Labels
-
-	err := parser.Decode(labels, &labelsParsed, "tinyauth", "tinyauth.apps")
-	if err != nil {
-		return config.Labels{}, err
-	}
-
-	return labelsParsed, nil
-}
 
 func ParseHeaders(headers []string) map[string]string {
 	headerMap := make(map[string]string)
