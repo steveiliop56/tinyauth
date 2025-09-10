@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "不安全的重定向",
     "continueInsecureRedirectSubtitle": "您正在尝试从<code>https</code>重定向到<code>http</code>可能存在风险。您确定要继续吗？",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "注销失败",
     "logoutFailSubtitle": "请重试",
     "logoutSuccessTitle": "已登出",
