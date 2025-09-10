@@ -5,6 +5,7 @@ export const appContextSchema = z.object({
   title: z.string(),
   genericName: z.string(),
   appUrl: z.string(),
+  cookieDomain: z.string(),
   forgotPasswordMessage: z.string(),
   oauthAutoRedirect: z.enum(["none", "github", "google", "generic"]),
   backgroundImage: z.string(),

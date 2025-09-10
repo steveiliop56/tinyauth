@@ -28,6 +28,7 @@ type AppContextResponse struct {
 	Title                 string   `json:"title"`
 	GenericName           string   `json:"genericName"`
 	AppURL                string   `json:"appUrl"`
+	CookieDomain          string   `json:"cookieDomain"`
 	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
 	BackgroundImage       string   `json:"backgroundImage"`
 	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
@@ -38,6 +39,7 @@ type ContextControllerConfig struct {
 	Title                 string
 	GenericName           string
 	AppURL                string
+	CookieDomain          string
 	ForgotPasswordMessage string
 	BackgroundImage       string
 	OAuthAutoRedirect     string
@@ -98,6 +100,7 @@ func (controller *ContextController) appContextHandler(c *gin.Context) {
 		Title:                 controller.config.Title,
 		GenericName:           controller.config.GenericName,
 		AppURL:                fmt.Sprintf("%s://%s", appUrl.Scheme, appUrl.Host),
+		CookieDomain:          controller.config.CookieDomain,
 		ForgotPasswordMessage: controller.config.ForgotPasswordMessage,
 		BackgroundImage:       controller.config.BackgroundImage,
 		OAuthAutoRedirect:     controller.config.OAuthAutoRedirect,

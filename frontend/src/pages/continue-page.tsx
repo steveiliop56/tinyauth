@@ -14,7 +14,7 @@ import { Navigate, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
 export const ContinuePage = () => {
-  const { rootDomain } = useAppContext();
+  const { cookieDomain } = useAppContext();
   const { isLoggedIn } = useUserContext();
   const { search } = useLocation();
   const { t } = useTranslation();
@@ -33,8 +33,8 @@ export const ContinuePage = () => {
     : null;
   const isTrustedRedirectUri =
     redirectUriObj !== null
-      ? redirectUriObj.hostname === rootDomain ||
-        redirectUriObj.hostname.endsWith(`.${rootDomain}`)
+      ? redirectUriObj.hostname === cookieDomain ||
+        redirectUriObj.hostname.endsWith(`.${cookieDomain}`)
       : false;
   const isAllowedRedirectProto =
     redirectUriObj !== null
@@ -105,7 +105,7 @@ export const ContinuePage = () => {
               components={{
                 code: <code />,
               }}
-              values={{ rootDomain }}
+              values={{ cookieDomain }}
             />
           </CardDescription>
         </CardHeader>

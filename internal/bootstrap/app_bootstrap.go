@@ -183,6 +183,7 @@ func (app *BootstrapApp) Setup() error {
 		Title:                 app.Config.Title,
 		GenericName:           app.Config.GenericName,
 		AppURL:                app.Config.AppURL,
+		CookieDomain:          cookieDomain,
 		ForgotPasswordMessage: app.Config.ForgotPasswordMessage,
 		BackgroundImage:       app.Config.BackgroundImage,
 		OAuthAutoRedirect:     app.Config.OAuthAutoRedirect,
