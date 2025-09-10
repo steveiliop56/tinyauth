@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Redirection non sécurisée",
     "continueInsecureRedirectSubtitle": "Vous tentez de rediriger de <code>https</code> vers <code>http</code>, ce qui n'est pas sécurisé. Êtes-vous sûr de vouloir continuer ?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Échec de la déconnexion",
     "logoutFailSubtitle": "Veuillez réessayer",
     "logoutSuccessTitle": "Déconnecté",
