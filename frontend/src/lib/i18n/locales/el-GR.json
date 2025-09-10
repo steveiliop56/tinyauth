@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Μη ασφαλής ανακατεύθυνση",
     "continueInsecureRedirectSubtitle": "Προσπαθείτε να ανακατευθύνετε από <code>https</code> σε <code>http</code> το οποίο δεν είναι ασφαλές. Είστε σίγουροι ότι θέλετε να συνεχίσετε;",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Αποτυχία αποσύνδεσης",
     "logoutFailSubtitle": "Παρακαλώ δοκιμάστε ξανά",
     "logoutSuccessTitle": "Αποσυνδεδεμένος",
