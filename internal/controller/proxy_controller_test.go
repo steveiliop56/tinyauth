@@ -50,7 +50,7 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 		OauthWhitelist:    "",
 		SessionExpiry:     3600,
 		SecureCookie:      false,
-		RootDomain:        "localhost",
+		CookieDomain:      "localhost",
 		LoginTimeout:      300,
 		LoginMaxRetries:   3,
 		SessionCookieName: "tinyauth-session",

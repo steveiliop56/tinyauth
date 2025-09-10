@@ -8,30 +8,38 @@ import (
 	"tinyauth/internal/config"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/rs/zerolog"
+	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
 
-// Get root domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
-func GetRootDomain(u string) (string, error) {
-	appUrl, err := url.Parse(u)
+// Get cookie domain parses a hostname and returns the upper domain (e.g. sub1.sub2.domain.com -> sub2.domain.com)
+func GetCookieDomain(u string) (string, error) {
+	parsed, err := url.Parse(u)
 	if err != nil {
 		return "", err
 	}
 
-	host := appUrl.Hostname()
+	host := parsed.Hostname()
 
 	if netIP := net.ParseIP(host); netIP != nil {
-		return "", errors.New("IP addresses are not allowed")
+		return "", errors.New("IP addresses not allowed")
 	}
 
-	urlParts := strings.Split(host, ".")
+	parts := strings.Split(host, ".")
 
-	if len(urlParts) < 3 {
-		return "", errors.New("invalid domain, must be at least second level domain")
+	if len(parts) < 3 {
+		return "", errors.New("invalid app url, must be at least second level domain")
 	}
 
-	return strings.Join(urlParts[1:], "."), nil
+	domain := strings.Join(parts[1:], ".")
+
+	_, err = publicsuffix.DomainFromListWithOptions(publicsuffix.DefaultList, domain, nil)
+
+	if err != nil {
+		return "", errors.New("domain in public suffix list, cannot set cookies")
+	}
+
+	return domain, nil
 }
 
 func ParseFileToLine(content string) string {
@@ -89,13 +97,13 @@ func IsRedirectSafe(redirectURL string, domain string) bool {
 		return false
 	}
 
-	upper, err := GetRootDomain(redirectURL)
+	cookieDomain, err := GetCookieDomain(redirectURL)
 
 	if err != nil {
 		return false
 	}
 
-	if upper != domain {
+	if cookieDomain != domain {
 		return false
 	}
 

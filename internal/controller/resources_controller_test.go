@@ -24,6 +24,7 @@ func TestResourcesHandler(t *testing.T) {
 	// Create test data
 	err := os.Mkdir("/tmp/tinyauth", 0755)
 	assert.NilError(t, err)
+	defer os.RemoveAll("/tmp/tinyauth")
 
 	file, err := os.Create("/tmp/tinyauth/test.txt")
 	assert.NilError(t, err)

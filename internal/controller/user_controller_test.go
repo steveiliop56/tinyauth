@@ -58,7 +58,7 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 		OauthWhitelist:    "",
 		SessionExpiry:     3600,
 		SecureCookie:      false,
-		RootDomain:        "localhost",
+		CookieDomain:      "localhost",
 		LoginTimeout:      300,
 		LoginMaxRetries:   3,
 		SessionCookieName: "tinyauth-session",
@@ -66,7 +66,7 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 
 	// Controller
 	ctrl := controller.NewUserController(controller.UserControllerConfig{
-		RootDomain: "localhost",
+		CookieDomain: "localhost",
 	}, group, authService)
 	ctrl.SetupRoutes()
 

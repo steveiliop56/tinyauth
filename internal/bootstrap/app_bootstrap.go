@@ -45,8 +45,8 @@ func (app *BootstrapApp) Setup() error {
 		return err
 	}
 
-	// Get root domain
-	rootDomain, err := utils.GetRootDomain(app.Config.AppURL)
+	// Get cookie domain
+	cookieDomain, err := utils.GetCookieDomain(app.Config.AppURL)
 
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (app *BootstrapApp) Setup() error {
 		OauthWhitelist:    app.Config.OAuthWhitelist,
 		SessionExpiry:     app.Config.SessionExpiry,
 		SecureCookie:      app.Config.SecureCookie,
-		RootDomain:        rootDomain,
+		CookieDomain:      cookieDomain,
 		LoginTimeout:      app.Config.LoginTimeout,
 		LoginMaxRetries:   app.Config.LoginMaxRetries,
 		SessionCookieName: sessionCookieName,
@@ -156,7 +156,7 @@ func (app *BootstrapApp) Setup() error {
 	var middlewares []Middleware
 
 	contextMiddleware := middleware.NewContextMiddleware(middleware.ContextMiddlewareConfig{
-		RootDomain: rootDomain,
+		CookieDomain: cookieDomain,
 	}, authService, oauthBrokerService)
 
 	uiMiddleware := middleware.NewUIMiddleware()
@@ -183,7 +183,6 @@ func (app *BootstrapApp) Setup() error {
 		Title:                 app.Config.Title,
 		GenericName:           app.Config.GenericName,
 		AppURL:                app.Config.AppURL,
-		RootDomain:            rootDomain,
 		ForgotPasswordMessage: app.Config.ForgotPasswordMessage,
 		BackgroundImage:       app.Config.BackgroundImage,
 		OAuthAutoRedirect:     app.Config.OAuthAutoRedirect,
@@ -194,7 +193,7 @@ func (app *BootstrapApp) Setup() error {
 		SecureCookie:       app.Config.SecureCookie,
 		CSRFCookieName:     csrfCookieName,
 		RedirectCookieName: redirectCookieName,
-		RootDomain:         rootDomain,
+		CookieDomain:       cookieDomain,
 	}, apiRouter, authService, oauthBrokerService)
 
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
@@ -202,7 +201,7 @@ func (app *BootstrapApp) Setup() error {
 	}, apiRouter, dockerService, authService)
 
 	userController := controller.NewUserController(controller.UserControllerConfig{
-		RootDomain: rootDomain,
+		CookieDomain: cookieDomain,
 	}, apiRouter, authService)
 
 	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{

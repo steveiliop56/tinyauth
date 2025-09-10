@@ -11,53 +11,58 @@ import (
 
 func TestGetRootDomain(t *testing.T) {
 	// Normal case
-	domain := "http://sub.example.com"
-	expected := "example.com"
-	result, err := utils.GetRootDomain(domain)
+	domain := "http://sub.tinyauth.app"
+	expected := "tinyauth.app"
+	result, err := utils.GetCookieDomain(domain)
 	assert.NilError(t, err)
 	assert.Equal(t, expected, result)
 
 	// Domain with multiple subdomains
-	domain = "http://b.c.example.com"
-	expected = "c.example.com"
-	result, err = utils.GetRootDomain(domain)
+	domain = "http://b.c.tinyauth.app"
+	expected = "c.tinyauth.app"
+	result, err = utils.GetCookieDomain(domain)
 	assert.NilError(t, err)
 	assert.Equal(t, expected, result)
 
 	// Domain with no subdomain
-	domain = "http://example.com"
-	expected = "example.com"
-	_, err = utils.GetRootDomain(domain)
-	assert.Error(t, err, "invalid domain, must be at least second level domain")
+	domain = "http://tinyauth.app"
+	expected = "tinyauth.app"
+	_, err = utils.GetCookieDomain(domain)
+	assert.Error(t, err, "invalid app url, must be at least second level domain")
 
 	// Invalid domain (only TLD)
 	domain = "com"
-	_, err = utils.GetRootDomain(domain)
-	assert.ErrorContains(t, err, "invalid domain")
+	_, err = utils.GetCookieDomain(domain)
+	assert.ErrorContains(t, err, "invalid app url, must be at least second level domain")
 
 	// IP address
 	domain = "http://10.10.10.10"
-	_, err = utils.GetRootDomain(domain)
-	assert.ErrorContains(t, err, "IP addresses are not allowed")
+	_, err = utils.GetCookieDomain(domain)
+	assert.ErrorContains(t, err, "IP addresses not allowed")
 
 	// Invalid URL
 	domain = "http://[::1]:namedport"
-	_, err = utils.GetRootDomain(domain)
+	_, err = utils.GetCookieDomain(domain)
 	assert.ErrorContains(t, err, "parse \"http://[::1]:namedport\": invalid port \":namedport\" after host")
 
 	// URL with scheme and path
-	domain = "https://sub.example.com/path"
-	expected = "example.com"
-	result, err = utils.GetRootDomain(domain)
+	domain = "https://sub.tinyauth.app/path"
+	expected = "tinyauth.app"
+	result, err = utils.GetCookieDomain(domain)
 	assert.NilError(t, err)
 	assert.Equal(t, expected, result)
 
 	// URL with port
-	domain = "http://sub.example.com:8080"
-	expected = "example.com"
-	result, err = utils.GetRootDomain(domain)
+	domain = "http://sub.tinyauth.app:8080"
+	expected = "tinyauth.app"
+	result, err = utils.GetCookieDomain(domain)
 	assert.NilError(t, err)
 	assert.Equal(t, expected, result)
+
+	// Domain managed by ICANN
+	domain = "http://example.co.uk"
+	_, err = utils.GetCookieDomain(domain)
+	assert.Error(t, err, "domain in public suffix list, cannot set cookies")
 }
 
 func TestParseFileToLine(t *testing.T) {
