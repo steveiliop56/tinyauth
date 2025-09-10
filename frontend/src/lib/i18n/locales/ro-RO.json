@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Insecure redirect",
     "continueInsecureRedirectSubtitle": "You are trying to redirect from <code>https</code> to <code>http</code> which is not secure. Are you sure you want to continue?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Failed to log out",
     "logoutFailSubtitle": "Please try again",
     "logoutSuccessTitle": "Logged out",
