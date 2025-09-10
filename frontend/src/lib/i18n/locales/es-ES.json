@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Redirección insegura",
     "continueInsecureRedirectSubtitle": "Está intentando redirigir desde <code>https</code> a <code>http</code> lo cual no es seguro. ¿Está seguro que desea continuar?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Fallo al cerrar sesión",
     "logoutFailSubtitle": "Por favor intente nuevamente",
     "logoutSuccessTitle": "Sesión cerrada",
