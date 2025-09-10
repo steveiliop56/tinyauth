@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Небезопасное перенаправление",
     "continueInsecureRedirectSubtitle": "Попытка перенаправления с <code>https</code> на <code>http</code>, уверены, что хотите продолжить?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Не удалось выйти",
     "logoutFailSubtitle": "Попробуйте ещё раз",
     "logoutSuccessTitle": "Выход",
