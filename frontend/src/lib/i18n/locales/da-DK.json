@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Usikker omdirigering",
     "continueInsecureRedirectSubtitle": "Du forsøger at omdirigere fra <code>https</code> til <code>http</code>, som ikke er sikker. Er du sikker på, at du vil fortsætte?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Log ud mislykkedes",
     "logoutFailSubtitle": "Prøv venligst igen",
     "logoutSuccessTitle": "Logget ud",
