@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Nezabezpečené přesměrování",
     "continueInsecureRedirectSubtitle": "Pokoušíte se přesměrovat z <code>https</code> na <code>http</code>, které není bezpečné. Opravdu chcete pokračovat?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Odhlášení se nezdařilo",
     "logoutFailSubtitle": "Zkuste to prosím znovu",
     "logoutSuccessTitle": "Odhlášen",
