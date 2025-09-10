@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "Небезбедно преусмеравање",
     "continueInsecureRedirectSubtitle": "Покушавате да преусмерите са <code>https</code> на <code>http</code> што није безбедно. Да ли желите да наставите?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "Неуспешно одјављивање",
     "logoutFailSubtitle": "Молим вас покушајте поново",
     "logoutSuccessTitle": "Одјављени",
