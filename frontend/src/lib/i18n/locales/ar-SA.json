@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "إعادة توجيه غير آمنة",
     "continueInsecureRedirectSubtitle": "أنت تحاول إعادة التوجيه من <code>https</code> إلى <code>http</code>، هل أنت متأكد أنك تريد المتابعة؟",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "فشل تسجيل الخروج",
     "logoutFailSubtitle": "يرجى إعادة المحاولة",
     "logoutSuccessTitle": "تم تسجيل الخروج",
