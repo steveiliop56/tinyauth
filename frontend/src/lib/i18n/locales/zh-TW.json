@@ -21,7 +21,7 @@
     "continueInsecureRedirectTitle": "不安全的重新導向",
     "continueInsecureRedirectSubtitle": "您正嘗試從安全的 <code>https</code> 重新導向至不安全的 <code>http</code>。您確定要繼續嗎？",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
-    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{rootDomain}}</code>). Are you sure you want to continue?",
+    "continueUntrustedRedirectSubtitle": "You are trying to redirect to a domain that does not match your configured domain (<code>{{cookieDomain}}</code>). Are you sure you want to continue?",
     "logoutFailTitle": "登出失敗",
     "logoutFailSubtitle": "請再試一次",
     "logoutSuccessTitle": "登出成功",
