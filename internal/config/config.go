@@ -174,3 +174,13 @@ type AppPath struct {
 	Allow string
 	Block string
 }
+
+// Flags
+
+type Providers struct {
+	Providers map[string]ProviderConfig
+}
+
+type ProviderConfig struct {
+	Config OAuthServiceConfig
+}
