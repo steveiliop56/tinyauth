@@ -12,9 +12,19 @@ import (
 )
 
 var controllerCfg = controller.ContextControllerConfig{
-	ConfiguredProviders:   []string{"github", "google", "generic"},
+	Providers: []controller.Provider{
+		{
+			Name:  "Username",
+			ID:    "username",
+			OAuth: false,
+		},
+		{
+			Name:  "Google",
+			ID:    "google",
+			OAuth: true,
+		},
+	},
 	Title:                 "Test App",
-	GenericName:           "Generic",
 	AppURL:                "http://localhost:8080",
 	CookieDomain:          "localhost",
 	ForgotPasswordMessage: "Contact admin to reset your password.",
@@ -58,9 +68,8 @@ func TestAppContextHandler(t *testing.T) {
 	expectedRes := controller.AppContextResponse{
 		Status:                200,
 		Message:               "Success",
-		ConfiguredProviders:   controllerCfg.ConfiguredProviders,
+		Providers:             controllerCfg.Providers,
 		Title:                 controllerCfg.Title,
-		GenericName:           controllerCfg.GenericName,
 		AppURL:                controllerCfg.AppURL,
 		CookieDomain:          controllerCfg.CookieDomain,
 		ForgotPasswordMessage: controllerCfg.ForgotPasswordMessage,

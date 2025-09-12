@@ -14,6 +14,7 @@ type OAuthService interface {
 	GetAuthURL(state string) string
 	VerifyCode(code string) error
 	Userinfo() (config.Claims, error)
+	GetName() string
 }
 
 type OAuthBrokerService struct {

@@ -22,6 +22,7 @@ type GenericOAuthService struct {
 	verifier           string
 	insecureSkipVerify bool
 	userinfoUrl        string
+	name               string
 }
 
 func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthService {
@@ -38,6 +39,7 @@ func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthServi
 		},
 		insecureSkipVerify: config.InsecureSkipVerify,
 		userinfoUrl:        config.UserinfoURL,
+		name:               config.Name,
 	}
 }
 
@@ -114,4 +116,8 @@ func (generic *GenericOAuthService) Userinfo() (config.Claims, error) {
 	}
 
 	return user, nil
+}
+
+func (generic *GenericOAuthService) GetName() string {
+	return generic.name
 }

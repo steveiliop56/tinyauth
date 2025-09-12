@@ -186,6 +186,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		Email:       user.Email,
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
+		OAuthName:   service.GetName(),
 	})
 
 	if err != nil {
