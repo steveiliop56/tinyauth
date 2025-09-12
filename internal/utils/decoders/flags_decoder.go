@@ -10,6 +10,8 @@ import (
 	"github.com/traefik/paerser/parser"
 )
 
+// Based on https://github.com/traefik/paerser/blob/master/parser/labels_decode.go
+
 func DecodeFlags(flags map[string]string) (config.Providers, error) {
 	normalized := normalizeFlags(flags, "tinyauth")
 
@@ -44,7 +46,7 @@ func decodeFlagsToNode(flags map[string]string, rootName string, filters ...stri
 	var node *parser.Node
 
 	for i, k := range sorted {
-		split := strings.SplitN(k, "_", 4)
+		split := strings.SplitN(k, "_", 4) // Something like --providers-my-awesome-client is not supported because it will confuse the parser
 
 		if split[0] != rootName {
 			return nil, fmt.Errorf("invalid flag root %s", split[0])
@@ -69,7 +71,7 @@ func decodeFlagToNode(root *parser.Node, path []string, value string) {
 		root.Name = path[0]
 	}
 
-	if !(len(path) > 1) {
+	if len(path) <= 1 {
 		root.Value = value
 		return
 	}

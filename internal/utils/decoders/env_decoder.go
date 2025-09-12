@@ -10,6 +10,8 @@ import (
 	"github.com/traefik/paerser/parser"
 )
 
+// Based on https://github.com/traefik/paerser/blob/master/parser/labels_decode.go
+
 func DecodeEnv(env map[string]string) (config.Providers, error) {
 	normalized := normalizeEnv(env, "tinyauth")
 
@@ -44,7 +46,7 @@ func decodeEnvsToNode(env map[string]string, rootName string, filters ...string)
 	var node *parser.Node
 
 	for i, k := range sorted {
-		split := strings.SplitN(k, "_", 4)
+		split := strings.SplitN(k, "_", 4) // Something like PROVIDERS_MY_AWESOME_CLIENT is not supported because it will confuse the parser
 
 		if split[0] != rootName {
 			return nil, fmt.Errorf("invalid env root %s", split[0])
@@ -69,7 +71,7 @@ func decodeEnvToNode(root *parser.Node, path []string, value string) {
 		root.Name = path[0]
 	}
 
-	if !(len(path) > 1) {
+	if len(path) <= 1 {
 		root.Value = value
 		return
 	}
