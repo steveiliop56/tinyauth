@@ -217,7 +217,7 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 		},
 	}
 
-	result, err := utils.GetOAuthProvidersConfig(env, args)
+	result, err := utils.GetOAuthProvidersConfig(env, args, "")
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 
@@ -226,7 +226,7 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 	args = []string{"/tinyauth/tinyauth"}
 	expected = map[string]config.OAuthServiceConfig{}
 
-	result, err = utils.GetOAuthProvidersConfig(env, args)
+	result, err = utils.GetOAuthProvidersConfig(env, args, "")
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 
@@ -250,7 +250,22 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 		},
 	}
 
-	result, err = utils.GetOAuthProvidersConfig(env, args)
+	result, err = utils.GetOAuthProvidersConfig(env, args, "")
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, result)
+
+	// Case with google provider and no redirect URL
+	env = []string{"PROVIDERS_GOOGLE_CLIENT_ID=google-id", "PROVIDERS_GOOGLE_CLIENT_SECRET=google-secret"}
+	args = []string{"/tinyauth/tinyauth"}
+	expected = map[string]config.OAuthServiceConfig{
+		"google": {
+			ClientID:     "google-id",
+			ClientSecret: "google-secret",
+			RedirectURL:  "http://app.url/api/oauth/callback/google",
+		},
+	}
+
+	result, err = utils.GetOAuthProvidersConfig(env, args, "http://app.url")
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 }

@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"tinyauth/internal/config"
 	"tinyauth/internal/controller"
@@ -40,6 +41,13 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 func (app *BootstrapApp) Setup() error {
 	// Parse users
 	users, err := utils.GetUsers(app.Config.Users, app.Config.UsersFile)
+
+	if err != nil {
+		return err
+	}
+
+	// Get OAuth configs
+	oauthProviders, err := utils.GetOAuthProvidersConfig(os.Environ(), os.Args, app.Config.AppURL)
 
 	if err != nil {
 		return err
@@ -112,7 +120,7 @@ func (app *BootstrapApp) Setup() error {
 	// Create services
 	dockerService := service.NewDockerService()
 	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
-	oauthBrokerService := service.NewOAuthBrokerService(app.getOAuthBrokerConfig())
+	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
 
 	// Initialize services
 	services := []Service{
@@ -132,13 +140,39 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Configured providers
-	var configuredProviders []string
+	babysit := map[string]string{
+		"google": "Google",
+		"github": "GitHub",
+	}
+	configuredProviders := make([]controller.Provider, 0)
 
-	if authService.UserAuthConfigured() || ldapService != nil {
-		configuredProviders = append(configuredProviders, "username")
+	for id, provider := range oauthProviders {
+		if id == "" {
+			continue
+		}
+
+		if provider.Name == "" && babysit[id] != "" {
+			provider.Name = babysit[id]
+		} else {
+			provider.Name = utils.Capitalize(id)
+		}
+
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  provider.Name,
+			ID:    id,
+			OAuth: true,
+		})
 	}
 
-	configuredProviders = append(configuredProviders, oauthBrokerService.GetConfiguredServices()...)
+	if authService.UserAuthConfigured() || ldapService != nil {
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  "Username",
+			ID:    "username",
+			OAuth: false,
+		})
+	}
+
+	log.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
 
 	if len(configuredProviders) == 0 {
 		return fmt.Errorf("no authentication providers configured")
@@ -179,9 +213,8 @@ func (app *BootstrapApp) Setup() error {
 
 	// Create controllers
 	contextController := controller.NewContextController(controller.ContextControllerConfig{
-		ConfiguredProviders:   configuredProviders,
+		Providers:             configuredProviders,
 		Title:                 app.Config.Title,
-		GenericName:           app.Config.GenericName,
 		AppURL:                app.Config.AppURL,
 		CookieDomain:          cookieDomain,
 		ForgotPasswordMessage: app.Config.ForgotPasswordMessage,
@@ -234,31 +267,4 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	return nil
-}
-
-// Temporary
-func (app *BootstrapApp) getOAuthBrokerConfig() map[string]config.OAuthServiceConfig {
-	return map[string]config.OAuthServiceConfig{
-		"google": {
-			ClientID:     app.Config.GoogleClientId,
-			ClientSecret: app.Config.GoogleClientSecret,
-			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/google", app.Config.AppURL),
-		},
-		"github": {
-			ClientID:     app.Config.GithubClientId,
-			ClientSecret: app.Config.GithubClientSecret,
-			RedirectURL:  fmt.Sprintf("%s/api/oauth/callback/github", app.Config.AppURL),
-		},
-		"generic": {
-			ClientID:           app.Config.GenericClientId,
-			ClientSecret:       app.Config.GenericClientSecret,
-			RedirectURL:        fmt.Sprintf("%s/api/oauth/callback/generic", app.Config.AppURL),
-			Scopes:             strings.Split(app.Config.GenericScopes, ","),
-			AuthURL:            app.Config.GenericAuthURL,
-			TokenURL:           app.Config.GenericTokenURL,
-			UserinfoURL:        app.Config.GenericUserURL,
-			InsecureSkipVerify: app.Config.GenericSkipSSL,
-		},
-	}
-
 }

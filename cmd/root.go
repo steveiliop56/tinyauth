@@ -27,11 +27,6 @@ var rootCmd = &cobra.Command{
 			log.Fatal().Err(err).Msg("Failed to parse config")
 		}
 
-		// Check if secrets have a file associated with them
-		conf.GithubClientSecret = utils.GetSecret(conf.GithubClientSecret, conf.GithubClientSecretFile)
-		conf.GoogleClientSecret = utils.GetSecret(conf.GoogleClientSecret, conf.GoogleClientSecretFile)
-		conf.GenericClientSecret = utils.GetSecret(conf.GenericClientSecret, conf.GenericClientSecretFile)
-
 		// Validate config
 		v := validator.New()
 
@@ -80,21 +75,6 @@ func init() {
 		{"users", "", "Comma separated list of users in the format username:hash."},
 		{"users-file", "", "Path to a file containing users in the format username:hash."},
 		{"secure-cookie", false, "Send cookie over secure connection only."},
-		{"github-client-id", "", "Github OAuth client ID."},
-		{"github-client-secret", "", "Github OAuth client secret."},
-		{"github-client-secret-file", "", "Github OAuth client secret file."},
-		{"google-client-id", "", "Google OAuth client ID."},
-		{"google-client-secret", "", "Google OAuth client secret."},
-		{"google-client-secret-file", "", "Google OAuth client secret file."},
-		{"generic-client-id", "", "Generic OAuth client ID."},
-		{"generic-client-secret", "", "Generic OAuth client secret."},
-		{"generic-client-secret-file", "", "Generic OAuth client secret file."},
-		{"generic-scopes", "", "Generic OAuth scopes."},
-		{"generic-auth-url", "", "Generic OAuth auth URL."},
-		{"generic-token-url", "", "Generic OAuth token URL."},
-		{"generic-user-url", "", "Generic OAuth user info URL."},
-		{"generic-name", "Generic", "Generic OAuth provider name."},
-		{"generic-skip-ssl", false, "Skip SSL verification for the generic OAuth provider."},
 		{"oauth-whitelist", "", "Comma separated list of email addresses to whitelist when using OAuth."},
 		{"oauth-auto-redirect", "none", "Auto redirect to the specified OAuth provider if configured. (available providers: github, google, generic)"},
 		{"session-expiry", 86400, "Session (cookie) expiration time in seconds."},

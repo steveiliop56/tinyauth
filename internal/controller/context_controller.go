@@ -22,22 +22,26 @@ type UserContextResponse struct {
 }
 
 type AppContextResponse struct {
-	Status                int      `json:"status"`
-	Message               string   `json:"message"`
-	ConfiguredProviders   []string `json:"configuredProviders"`
-	Title                 string   `json:"title"`
-	GenericName           string   `json:"genericName"`
-	AppURL                string   `json:"appUrl"`
-	CookieDomain          string   `json:"cookieDomain"`
-	ForgotPasswordMessage string   `json:"forgotPasswordMessage"`
-	BackgroundImage       string   `json:"backgroundImage"`
-	OAuthAutoRedirect     string   `json:"oauthAutoRedirect"`
+	Status                int        `json:"status"`
+	Message               string     `json:"message"`
+	Providers             []Provider `json:"providers"`
+	Title                 string     `json:"title"`
+	AppURL                string     `json:"appUrl"`
+	CookieDomain          string     `json:"cookieDomain"`
+	ForgotPasswordMessage string     `json:"forgotPasswordMessage"`
+	BackgroundImage       string     `json:"backgroundImage"`
+	OAuthAutoRedirect     string     `json:"oauthAutoRedirect"`
+}
+
+type Provider struct {
+	Name  string `json:"name"`
+	ID    string `json:"id"`
+	OAuth bool   `json:"oauth"`
 }
 
 type ContextControllerConfig struct {
-	ConfiguredProviders   []string
+	Providers             []Provider
 	Title                 string
-	GenericName           string
 	AppURL                string
 	CookieDomain          string
 	ForgotPasswordMessage string
@@ -96,9 +100,8 @@ func (controller *ContextController) appContextHandler(c *gin.Context) {
 	c.JSON(200, AppContextResponse{
 		Status:                200,
 		Message:               "Success",
-		ConfiguredProviders:   controller.config.ConfiguredProviders,
+		Providers:             controller.config.Providers,
 		Title:                 controller.config.Title,
-		GenericName:           controller.config.GenericName,
 		AppURL:                fmt.Sprintf("%s://%s", appUrl.Scheme, appUrl.Host),
 		CookieDomain:          controller.config.CookieDomain,
 		ForgotPasswordMessage: controller.config.ForgotPasswordMessage,

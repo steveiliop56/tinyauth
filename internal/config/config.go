@@ -15,45 +15,30 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	Port                    int    `mapstructure:"port" validate:"required"`
-	Address                 string `validate:"required,ip4_addr" mapstructure:"address"`
-	AppURL                  string `validate:"required,url" mapstructure:"app-url"`
-	Users                   string `mapstructure:"users"`
-	UsersFile               string `mapstructure:"users-file"`
-	SecureCookie            bool   `mapstructure:"secure-cookie"`
-	GithubClientId          string `mapstructure:"github-client-id"`
-	GithubClientSecret      string `mapstructure:"github-client-secret"`
-	GithubClientSecretFile  string `mapstructure:"github-client-secret-file"`
-	GoogleClientId          string `mapstructure:"google-client-id"`
-	GoogleClientSecret      string `mapstructure:"google-client-secret"`
-	GoogleClientSecretFile  string `mapstructure:"google-client-secret-file"`
-	GenericClientId         string `mapstructure:"generic-client-id"`
-	GenericClientSecret     string `mapstructure:"generic-client-secret"`
-	GenericClientSecretFile string `mapstructure:"generic-client-secret-file"`
-	GenericScopes           string `mapstructure:"generic-scopes"`
-	GenericAuthURL          string `mapstructure:"generic-auth-url"`
-	GenericTokenURL         string `mapstructure:"generic-token-url"`
-	GenericUserURL          string `mapstructure:"generic-user-url"`
-	GenericName             string `mapstructure:"generic-name"`
-	GenericSkipSSL          bool   `mapstructure:"generic-skip-ssl"`
-	OAuthWhitelist          string `mapstructure:"oauth-whitelist"`
-	OAuthAutoRedirect       string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
-	SessionExpiry           int    `mapstructure:"session-expiry"`
-	LogLevel                string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
-	Title                   string `mapstructure:"app-title"`
-	LoginTimeout            int    `mapstructure:"login-timeout"`
-	LoginMaxRetries         int    `mapstructure:"login-max-retries"`
-	ForgotPasswordMessage   string `mapstructure:"forgot-password-message"`
-	BackgroundImage         string `mapstructure:"background-image" validate:"required"`
-	LdapAddress             string `mapstructure:"ldap-address"`
-	LdapBindDN              string `mapstructure:"ldap-bind-dn"`
-	LdapBindPassword        string `mapstructure:"ldap-bind-password"`
-	LdapBaseDN              string `mapstructure:"ldap-base-dn"`
-	LdapInsecure            bool   `mapstructure:"ldap-insecure"`
-	LdapSearchFilter        string `mapstructure:"ldap-search-filter"`
-	ResourcesDir            string `mapstructure:"resources-dir"`
-	DatabasePath            string `mapstructure:"database-path" validate:"required"`
-	TrustedProxies          string `mapstructure:"trusted-proxies"`
+	Port                  int    `mapstructure:"port" validate:"required"`
+	Address               string `validate:"required,ip4_addr" mapstructure:"address"`
+	AppURL                string `validate:"required,url" mapstructure:"app-url"`
+	Users                 string `mapstructure:"users"`
+	UsersFile             string `mapstructure:"users-file"`
+	SecureCookie          bool   `mapstructure:"secure-cookie"`
+	OAuthWhitelist        string `mapstructure:"oauth-whitelist"`
+	OAuthAutoRedirect     string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
+	SessionExpiry         int    `mapstructure:"session-expiry"`
+	LogLevel              string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
+	Title                 string `mapstructure:"app-title"`
+	LoginTimeout          int    `mapstructure:"login-timeout"`
+	LoginMaxRetries       int    `mapstructure:"login-max-retries"`
+	ForgotPasswordMessage string `mapstructure:"forgot-password-message"`
+	BackgroundImage       string `mapstructure:"background-image" validate:"required"`
+	LdapAddress           string `mapstructure:"ldap-address"`
+	LdapBindDN            string `mapstructure:"ldap-bind-dn"`
+	LdapBindPassword      string `mapstructure:"ldap-bind-password"`
+	LdapBaseDN            string `mapstructure:"ldap-base-dn"`
+	LdapInsecure          bool   `mapstructure:"ldap-insecure"`
+	LdapSearchFilter      string `mapstructure:"ldap-search-filter"`
+	ResourcesDir          string `mapstructure:"resources-dir"`
+	DatabasePath          string `mapstructure:"database-path" validate:"required"`
+	TrustedProxies        string `mapstructure:"trusted-proxies"`
 }
 
 // OAuth/OIDC config

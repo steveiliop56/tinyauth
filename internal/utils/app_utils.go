@@ -134,7 +134,7 @@ func GetLogLevel(level string) zerolog.Level {
 	}
 }
 
-func GetOAuthProvidersConfig(env []string, args []string) (map[string]config.OAuthServiceConfig, error) {
+func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[string]config.OAuthServiceConfig, error) {
 	providers := make(map[string]config.OAuthServiceConfig)
 
 	// Get from environment variables
@@ -179,6 +179,18 @@ func GetOAuthProvidersConfig(env []string, args []string) (map[string]config.OAu
 		provider.ClientSecret = secret
 		provider.ClientSecretFile = ""
 		providers[name] = provider
+	}
+
+	// If we have google/github providers and no redirect URL babysit them
+	babysitProviders := []string{"google", "github"}
+
+	for _, name := range babysitProviders {
+		if provider, exists := providers[name]; exists {
+			if provider.RedirectURL == "" {
+				provider.RedirectURL = appUrl + "/api/oauth/callback/" + name
+				providers[name] = provider
+			}
+		}
 	}
 
 	// Return combined providers
