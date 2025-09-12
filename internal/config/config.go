@@ -74,6 +74,7 @@ type OAuthServiceConfig struct {
 	TokenURL           string
 	UserinfoURL        string
 	InsecureSkipVerify bool
+	Name               string
 }
 
 // User/session related stuff
@@ -178,9 +179,5 @@ type AppPath struct {
 // Flags
 
 type Providers struct {
-	Providers map[string]ProviderConfig
-}
-
-type ProviderConfig struct {
-	Config OAuthServiceConfig
+	Providers map[string]OAuthServiceConfig
 }
