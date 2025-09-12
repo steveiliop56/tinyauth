@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 	"tinyauth/internal/config"
-	"tinyauth/internal/utils"
 
 	"github.com/traefik/paerser/parser"
 )
@@ -127,7 +126,7 @@ func normalizeEnv(env map[string]string, rootName string) map[string]string {
 				fkb += s
 				continue
 			}
-			fkb += utils.Capitalize(s)
+			fkb += strings.ToUpper(string([]rune(s)[0])) + string([]rune(s)[1:])
 		}
 		fk = rootName + "_" + strings.Join(fks[:len(fks)-1], "_") + "_" + fkb
 		n[fk] = v

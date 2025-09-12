@@ -68,6 +68,7 @@ type Claims struct {
 type OAuthServiceConfig struct {
 	ClientID           string
 	ClientSecret       string
+	ClientSecretFile   string
 	Scopes             []string
 	RedirectURL        string
 	AuthURL            string

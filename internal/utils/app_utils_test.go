@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"os"
 	"testing"
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
@@ -199,4 +200,57 @@ func TestIsRedirectSafe(t *testing.T) {
 	redirectURL = "http://example.org/page"
 	result = utils.IsRedirectSafe(redirectURL, domain)
 	assert.Equal(t, false, result)
+}
+
+func TestGetOAuthProvidersConfig(t *testing.T) {
+	env := []string{"PROVIDERS_CLIENT1_CLIENT_ID=client1-id", "PROVIDERS_CLIENT1_CLIENT_SECRET=client1-secret"}
+	args := []string{"/tinyauth/tinyauth", "--providers-client2-client-id=client2-id", "--providers-client2-client-secret=client2-secret"}
+
+	expected := map[string]config.OAuthServiceConfig{
+		"client1": {
+			ClientID:     "client1-id",
+			ClientSecret: "client1-secret",
+		},
+		"client2": {
+			ClientID:     "client2-id",
+			ClientSecret: "client2-secret",
+		},
+	}
+
+	result, err := utils.GetOAuthProvidersConfig(env, args)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, result)
+
+	// Case with no providers
+	env = []string{}
+	args = []string{"/tinyauth/tinyauth"}
+	expected = map[string]config.OAuthServiceConfig{}
+
+	result, err = utils.GetOAuthProvidersConfig(env, args)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, result)
+
+	// Case with secret from file
+	file, err := os.Create("/tmp/tinyauth_test_file")
+	assert.NilError(t, err)
+
+	_, err = file.WriteString("file content\n")
+	assert.NilError(t, err)
+
+	err = file.Close()
+	assert.NilError(t, err)
+	defer os.Remove("/tmp/tinyauth_test_file")
+
+	env = []string{"PROVIDERS_CLIENT1_CLIENT_ID=client1-id", "PROVIDERS_CLIENT1_CLIENT_SECRET_FILE=/tmp/tinyauth_test_file"}
+	args = []string{"/tinyauth/tinyauth"}
+	expected = map[string]config.OAuthServiceConfig{
+		"client1": {
+			ClientID:     "client1-id",
+			ClientSecret: "file content",
+		},
+	}
+
+	result, err = utils.GetOAuthProvidersConfig(env, args)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, result)
 }

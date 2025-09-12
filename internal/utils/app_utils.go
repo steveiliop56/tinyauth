@@ -6,6 +6,9 @@ import (
 	"net/url"
 	"strings"
 	"tinyauth/internal/config"
+	"tinyauth/internal/utils/decoders"
+
+	"maps"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -129,4 +132,55 @@ func GetLogLevel(level string) zerolog.Level {
 	default:
 		return zerolog.InfoLevel
 	}
+}
+
+func GetOAuthProvidersConfig(env []string, args []string) (map[string]config.OAuthServiceConfig, error) {
+	providers := make(map[string]config.OAuthServiceConfig)
+
+	// Get from environment variables
+	envMap := make(map[string]string)
+
+	for _, e := range env {
+		pair := strings.SplitN(e, "=", 2)
+		envMap[pair[0]] = pair[1]
+	}
+
+	envProviders, err := decoders.DecodeEnv(envMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	maps.Copy(providers, envProviders.Providers)
+
+	// Get from flags
+	flagsMap := make(map[string]string)
+
+	for _, arg := range args[1:] {
+		if strings.HasPrefix(arg, "--") {
+			pair := strings.SplitN(arg[2:], "=", 2)
+			if len(pair) == 2 {
+				flagsMap[pair[0]] = pair[1]
+			}
+		}
+	}
+
+	flagProviders, err := decoders.DecodeFlags(flagsMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	maps.Copy(providers, flagProviders.Providers)
+
+	// For every provider get correct secret from file if set
+	for name, provider := range providers {
+		secret := GetSecret(provider.ClientSecret, provider.ClientSecretFile)
+		provider.ClientSecret = secret
+		provider.ClientSecretFile = ""
+		providers[name] = provider
+	}
+
+	// Return combined providers
+	return providers, nil
 }
