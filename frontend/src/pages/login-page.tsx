@@ -1,7 +1,5 @@
 import { LoginForm } from "@/components/auth/login-form";
-import { GenericIcon } from "@/components/icons/generic";
-import { GithubIcon } from "@/components/icons/github";
-import { GoogleIcon } from "@/components/icons/google";
+import { OAuthIcon } from "@/components/icons/oauth";
 import {
   Card,
   CardHeader,
@@ -24,8 +22,7 @@ import { toast } from "sonner";
 
 export const LoginPage = () => {
   const { isLoggedIn } = useUserContext();
-  const { configuredProviders, title, oauthAutoRedirect, genericName } =
-    useAppContext();
+  const { providers, title, oauthAutoRedirect } = useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
@@ -35,10 +32,11 @@ export const LoginPage = () => {
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
 
-  const oauthConfigured =
-    configuredProviders.filter((provider) => provider !== "username").length >
-    0;
-  const userAuthConfigured = configuredProviders.includes("username");
+  const oauthProviders = providers.filter(
+    (provider) => provider.id !== "username",
+  );
+  const userAuthConfigured =
+    providers.find((provider) => provider.id === "username") !== undefined;
 
   const oauthMutation = useMutation({
     mutationFn: (provider: string) =>
@@ -96,8 +94,8 @@ export const LoginPage = () => {
   useEffect(() => {
     if (isMounted()) {
       if (
-        oauthConfigured &&
-        configuredProviders.includes(oauthAutoRedirect) &&
+        oauthProviders.length !== 0 &&
+        providers.find((provider) => provider.id === oauthAutoRedirect) &&
         !isLoggedIn &&
         redirectUri
       ) {
@@ -130,57 +128,33 @@ export const LoginPage = () => {
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
         <CardTitle className="text-center text-3xl">{title}</CardTitle>
-        {configuredProviders.length > 0 && (
+        {providers.length > 0 && (
           <CardDescription className="text-center">
-            {oauthConfigured ? t("loginTitle") : t("loginTitleSimple")}
+            {oauthProviders.length !== 0
+              ? t("loginTitle")
+              : t("loginTitleSimple")}
           </CardDescription>
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {oauthConfigured && (
+        {oauthProviders.length !== 0 && (
           <div className="flex flex-col gap-2 items-center justify-center">
-            {configuredProviders.includes("google") && (
+            {oauthProviders.map((provider) => (
               <OAuthButton
-                title="Google"
-                icon={<GoogleIcon />}
+                title={provider.name}
+                icon={<OAuthIcon />}
                 className="w-full"
-                onClick={() => oauthMutation.mutate("google")}
+                onClick={() => oauthMutation.mutate(provider.id)}
                 loading={
                   oauthMutation.isPending &&
-                  oauthMutation.variables === "google"
+                  oauthMutation.variables === provider.id
                 }
                 disabled={oauthMutation.isPending || loginMutation.isPending}
               />
-            )}
-            {configuredProviders.includes("github") && (
-              <OAuthButton
-                title="Github"
-                icon={<GithubIcon />}
-                className="w-full"
-                onClick={() => oauthMutation.mutate("github")}
-                loading={
-                  oauthMutation.isPending &&
-                  oauthMutation.variables === "github"
-                }
-                disabled={oauthMutation.isPending || loginMutation.isPending}
-              />
-            )}
-            {configuredProviders.includes("generic") && (
-              <OAuthButton
-                title={genericName}
-                icon={<GenericIcon />}
-                className="w-full"
-                onClick={() => oauthMutation.mutate("generic")}
-                loading={
-                  oauthMutation.isPending &&
-                  oauthMutation.variables === "generic"
-                }
-                disabled={oauthMutation.isPending || loginMutation.isPending}
-              />
-            )}
+            ))}
           </div>
         )}
-        {userAuthConfigured && oauthConfigured && (
+        {userAuthConfigured && oauthProviders.length !== 0 && (
           <SeperatorWithChildren>{t("loginDivider")}</SeperatorWithChildren>
         )}
         {userAuthConfigured && (
@@ -189,7 +163,7 @@ export const LoginPage = () => {
             loading={loginMutation.isPending || oauthMutation.isPending}
           />
         )}
-        {configuredProviders.length == 0 && (
+        {providers.length == 0 && (
           <p className="text-center text-red-600 max-w-sm">
             {t("failedToFetchProvidersTitle")}
           </p>

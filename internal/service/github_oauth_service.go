@@ -33,6 +33,7 @@ type GithubOAuthService struct {
 	context  context.Context
 	token    *oauth2.Token
 	verifier string
+	name     string
 }
 
 func NewGithubOAuthService(config config.OAuthServiceConfig) *GithubOAuthService {
@@ -44,6 +45,7 @@ func NewGithubOAuthService(config config.OAuthServiceConfig) *GithubOAuthService
 			Scopes:       GithubOAuthScopes,
 			Endpoint:     endpoints.GitHub,
 		},
+		name: config.Name,
 	}
 }
 
@@ -166,4 +168,8 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 	user.Name = userInfo.Name
 
 	return user, nil
+}
+
+func (github *GithubOAuthService) GetName() string {
+	return github.name
 }

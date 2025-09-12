@@ -19,6 +19,7 @@ type UserContextResponse struct {
 	Provider    string `json:"provider"`
 	OAuth       bool   `json:"oauth"`
 	TotpPending bool   `json:"totpPending"`
+	OAuthName   string `json:"oauthName"`
 }
 
 type AppContextResponse struct {
@@ -80,6 +81,7 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 		Provider:    context.Provider,
 		OAuth:       context.OAuth,
 		TotpPending: context.TotpPending,
+		OAuthName:   context.OAuthName,
 	}
 
 	if err != nil {

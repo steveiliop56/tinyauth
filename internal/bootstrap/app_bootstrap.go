@@ -151,10 +151,12 @@ func (app *BootstrapApp) Setup() error {
 			continue
 		}
 
-		if provider.Name == "" && babysit[id] != "" {
-			provider.Name = babysit[id]
-		} else {
-			provider.Name = utils.Capitalize(id)
+		if provider.Name == "" {
+			if name, ok := babysit[id]; ok {
+				provider.Name = name
+			} else {
+				provider.Name = utils.Capitalize(id)
+			}
 		}
 
 		configuredProviders = append(configuredProviders, controller.Provider{

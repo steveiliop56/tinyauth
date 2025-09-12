@@ -84,6 +84,7 @@ type SessionCookie struct {
 	Provider    string
 	TotpPending bool
 	OAuthGroups string
+	OAuthName   string
 }
 
 type UserContext struct {
@@ -96,6 +97,7 @@ type UserContext struct {
 	TotpPending bool
 	OAuthGroups string
 	TotpEnabled bool
+	OAuthName   string
 }
 
 // API responses and queries
