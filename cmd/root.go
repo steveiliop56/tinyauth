@@ -52,6 +52,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	err := rootCmd.Execute()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to execute command")
@@ -92,7 +93,7 @@ func init() {
 		{"ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup."},
 		{"resources-dir", "/data/resources", "Path to a directory containing custom resources (e.g. background image)."},
 		{"database-path", "/data/tinyauth.db", "Path to the Sqlite database file."},
-		{"trusted-proxies", "", "Comma separated list of trusted proxies (IP addresses) for correct client IP detection and for header ACLs."},
+		{"trusted-proxies", "", "Comma separated list of trusted proxies (IP addresses or CIDRs) for correct client IP detection."},
 	}
 
 	for _, opt := range configOptions {

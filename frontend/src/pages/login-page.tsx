@@ -5,12 +5,14 @@ import { MicrosoftIcon } from "@/components/icons/microsoft";
 import { OAuthIcon } from "@/components/icons/oauth";
 import { PocketIDIcon } from "@/components/icons/pocket-id";
 import { TailscaleIcon } from "@/components/icons/tailscale";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
+  CardFooter,
 } from "@/components/ui/card";
 import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
@@ -20,7 +22,7 @@ import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
@@ -39,8 +41,12 @@ export const LoginPage = () => {
   const { search } = useLocation();
   const { t } = useTranslation();
   const isMounted = useIsMounted();
+  const [oauthAutoRedirectHandover, setOauthAutoRedirectHandover] =
+    useState(false);
+  const [showRedirectButton, setShowRedirectButton] = useState(false);
 
   const redirectTimer = useRef<number | null>(null);
+  const redirectButtonTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
@@ -67,6 +73,7 @@ export const LoginPage = () => {
       }, 500);
     },
     onError: () => {
+      setOauthAutoRedirectHandover(false);
       toast.error(t("loginOauthFailTitle"), {
         description: t("loginOauthFailSubtitle"),
       });
@@ -112,7 +119,11 @@ export const LoginPage = () => {
         !isLoggedIn &&
         redirectUri
       ) {
+        setOauthAutoRedirectHandover(true);
         oauthMutation.mutate(oauthAutoRedirect);
+        redirectButtonTimer.current = window.setTimeout(() => {
+          setShowRedirectButton(true);
+        }, 5000);
       }
     }
   }, []);
@@ -120,6 +131,8 @@ export const LoginPage = () => {
   useEffect(
     () => () => {
       if (redirectTimer.current) clearTimeout(redirectTimer.current);
+      if (redirectButtonTimer.current)
+        clearTimeout(redirectButtonTimer.current);
     },
     [],
   );
@@ -137,6 +150,31 @@ export const LoginPage = () => {
     return <Navigate to="/logout" replace />;
   }
 
+  if (oauthAutoRedirectHandover) {
+    return (
+      <Card className="min-w-xs sm:min-w-sm">
+        <CardHeader>
+          <CardTitle className="text-3xl">
+            {t("loginOauthAutoRedirectTitle")}
+          </CardTitle>
+          <CardDescription>
+            {t("loginOauthAutoRedirectSubtitle")}
+          </CardDescription>
+        </CardHeader>
+        {showRedirectButton && (
+          <CardFooter className="flex flex-col items-stretch">
+            <Button
+              onClick={() => {
+                window.location.replace(oauthMutation.data?.data.url);
+              }}
+            >
+              {t("loginOauthAutoRedirectButton")}
+            </Button>
+          </CardFooter>
+        )}
+      </Card>
+    );
+  }
   return (
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>

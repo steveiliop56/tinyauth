@@ -22,7 +22,7 @@ type Config struct {
 	UsersFile             string `mapstructure:"users-file"`
 	SecureCookie          bool   `mapstructure:"secure-cookie"`
 	OAuthWhitelist        string `mapstructure:"oauth-whitelist"`
-	OAuthAutoRedirect     string `mapstructure:"oauth-auto-redirect" validate:"oneof=none github google generic"`
+	OAuthAutoRedirect     string `mapstructure:"oauth-auto-redirect"`
 	SessionExpiry         int    `mapstructure:"session-expiry"`
 	LogLevel              string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
 	Title                 string `mapstructure:"app-title"`
