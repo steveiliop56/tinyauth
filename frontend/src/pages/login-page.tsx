@@ -1,5 +1,10 @@
 import { LoginForm } from "@/components/auth/login-form";
+import { GithubIcon } from "@/components/icons/github";
+import { GoogleIcon } from "@/components/icons/google";
+import { MicrosoftIcon } from "@/components/icons/microsoft";
 import { OAuthIcon } from "@/components/icons/oauth";
+import { PocketIDIcon } from "@/components/icons/pocket-id";
+import { TailscaleIcon } from "@/components/icons/tailscale";
 import {
   Card,
   CardHeader,
@@ -19,6 +24,14 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
+
+const iconMap: Record<string, React.ReactNode> = {
+  google: <GoogleIcon />,
+  github: <GithubIcon />,
+  tailscale: <TailscaleIcon />,
+  microsoft: <MicrosoftIcon />,
+  pocketid: <PocketIDIcon />,
+};
 
 export const LoginPage = () => {
   const { isLoggedIn } = useUserContext();
@@ -141,8 +154,9 @@ export const LoginPage = () => {
           <div className="flex flex-col gap-2 items-center justify-center">
             {oauthProviders.map((provider) => (
               <OAuthButton
+                key={provider.id}
                 title={provider.name}
-                icon={<OAuthIcon />}
+                icon={iconMap[provider.id] ?? <OAuthIcon />}
                 className="w-full"
                 onClick={() => oauthMutation.mutate(provider.id)}
                 loading={
