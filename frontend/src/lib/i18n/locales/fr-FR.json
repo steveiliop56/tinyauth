@@ -17,7 +17,7 @@
     "continueTitle": "Continuer",
     "continueRedirectingTitle": "Redirection...",
     "continueRedirectingSubtitle": "Vous devriez être redirigé vers l'application bientôt",
-    "continueRedirectManually": "Redirect me manually",
+    "continueRedirectManually": "Redirection manuelle",
     "continueInsecureRedirectTitle": "Redirection non sécurisée",
     "continueInsecureRedirectSubtitle": "Vous tentez de rediriger de <code>https</code> vers <code>http</code>, ce qui n'est pas sécurisé. Êtes-vous sûr de vouloir continuer ?",
     "continueUntrustedRedirectTitle": "Untrusted redirect",
