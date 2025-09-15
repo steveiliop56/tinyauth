@@ -142,7 +142,9 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 
 	for _, e := range env {
 		pair := strings.SplitN(e, "=", 2)
-		envMap[pair[0]] = pair[1]
+		if len(pair) == 2 {
+			envMap[pair[0]] = pair[1]
+		}
 	}
 
 	envProviders, err := decoders.DecodeEnv(envMap)
