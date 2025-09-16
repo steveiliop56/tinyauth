@@ -182,7 +182,10 @@ func (app *BootstrapApp) Setup() error {
 
 	// Create engine
 	engine := gin.New()
-	engine.SetTrustedProxies(strings.Split(app.Config.TrustedProxies, ","))
+
+	if len(app.Config.TrustedProxies) > 0 {
+		engine.SetTrustedProxies(strings.Split(app.Config.TrustedProxies, ","))
+	}
 
 	if config.Version != "development" {
 		gin.SetMode(gin.ReleaseMode)
