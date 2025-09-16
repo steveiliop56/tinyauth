@@ -95,6 +95,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Email:       cookie.Email,
 				Provider:    cookie.Provider,
 				OAuthGroups: cookie.OAuthGroups,
+				OAuthName:   cookie.OAuthName,
 				IsLoggedIn:  true,
 				OAuth:       true,
 			})

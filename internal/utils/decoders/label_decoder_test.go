@@ -1,10 +1,11 @@
 package decoders_test
 
 import (
-	"reflect"
 	"testing"
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils/decoders"
+
+	"gotest.tools/v3/assert"
 )
 
 func TestDecodeLabels(t *testing.T) {
@@ -62,12 +63,6 @@ func TestDecodeLabels(t *testing.T) {
 
 	// Test
 	result, err := decoders.DecodeLabels(test)
-
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if reflect.DeepEqual(expected, result) == false {
-		t.Fatalf("Expected %v but got %v", expected, result)
-	}
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, result)
 }

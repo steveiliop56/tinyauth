@@ -70,7 +70,7 @@ export const ContinuePage = () => {
     const reveal = setTimeout(() => {
       setLoading(false);
       setShowRedirectButton(true);
-    }, 1000);
+    }, 5000);
 
     return () => {
       clearTimeout(auto);

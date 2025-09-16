@@ -28,6 +28,7 @@ type GoogleOAuthService struct {
 	context  context.Context
 	token    *oauth2.Token
 	verifier string
+	name     string
 }
 
 func NewGoogleOAuthService(config config.OAuthServiceConfig) *GoogleOAuthService {
@@ -39,6 +40,7 @@ func NewGoogleOAuthService(config config.OAuthServiceConfig) *GoogleOAuthService
 			Scopes:       GoogleOAuthScopes,
 			Endpoint:     endpoints.Google,
 		},
+		name: config.Name,
 	}
 }
 
@@ -110,4 +112,8 @@ func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 	user.Email = userInfo.Email
 
 	return user, nil
+}
+
+func (google *GoogleOAuthService) GetName() string {
+	return google.name
 }

@@ -210,6 +210,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		TOTPPending: data.TotpPending,
 		OAuthGroups: data.OAuthGroups,
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
+		OAuthName:   data.OAuthName,
 	}
 
 	err = auth.database.Create(&session).Error
@@ -278,6 +279,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		Provider:    session.Provider,
 		TotpPending: session.TOTPPending,
 		OAuthGroups: session.OAuthGroups,
+		OAuthName:   session.OAuthName,
 	}, nil
 }
 
