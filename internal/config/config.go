@@ -39,6 +39,7 @@ type Config struct {
 	ResourcesDir          string `mapstructure:"resources-dir"`
 	DatabasePath          string `mapstructure:"database-path" validate:"required"`
 	TrustedProxies        string `mapstructure:"trusted-proxies"`
+	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
 }
 
 // OAuth/OIDC config
@@ -169,3 +170,7 @@ type AppPath struct {
 type Providers struct {
 	Providers map[string]OAuthServiceConfig
 }
+
+// API server
+
+var ApiServer = "https://api.tinyauth.app"

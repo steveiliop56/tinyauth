@@ -136,16 +136,13 @@ func TestCheckFilter(t *testing.T) {
 	assert.Equal(t, false, utils.CheckFilter("apple, banana, cherry", "grape"))
 }
 
-func TestGenerateIdentifier(t *testing.T) {
+func TestGenerateUUID(t *testing.T) {
 	// Consistent output for same input
-	id1 := utils.GenerateIdentifier("teststring")
-	id2 := utils.GenerateIdentifier("teststring")
+	id1 := utils.GenerateUUID("teststring")
+	id2 := utils.GenerateUUID("teststring")
 	assert.Equal(t, id1, id2)
 
 	// Different output for different input
-	id3 := utils.GenerateIdentifier("differentstring")
+	id3 := utils.GenerateUUID("differentstring")
 	assert.Assert(t, id1 != id3)
-
-	// Check length (should be 8 characters from first segment of UUID)
-	assert.Equal(t, 8, len(id1))
 }
