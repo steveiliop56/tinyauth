@@ -191,7 +191,11 @@ func (app *BootstrapApp) Setup() error {
 	engine := gin.New()
 
 	if len(app.config.TrustedProxies) > 0 {
-		engine.SetTrustedProxies(strings.Split(app.config.TrustedProxies, ","))
+		err := engine.SetTrustedProxies(strings.Split(app.config.TrustedProxies, ","))
+
+		if err != nil {
+			return fmt.Errorf("failed to set trusted proxies: %w", err)
+		}
 	}
 
 	if config.Version != "development" {
