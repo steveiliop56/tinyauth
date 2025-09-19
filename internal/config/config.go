@@ -3,8 +3,8 @@ package config
 // Version information, set at build time
 
 var Version = "development"
-var CommitHash = "n/a"
-var BuildTimestamp = "n/a"
+var CommitHash = "development"
+var BuildTimestamp = "0000-00-00T00:00:00Z"
 
 // Cookie name templates
 

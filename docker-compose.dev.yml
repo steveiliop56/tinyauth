@@ -34,6 +34,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+      args:
+        - VERSION=development
+        - COMMIT_HASH=development
+        - BUILD_TIMESTAMP=000-00-00T00:00:00Z
     env_file: .env
     volumes:
       - ./internal:/tinyauth/internal

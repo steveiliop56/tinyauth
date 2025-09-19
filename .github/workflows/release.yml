@@ -58,7 +58,7 @@ jobs:
       - name: Build
         run: |
           cp -r frontend/dist internal/assets/dist
-          go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/constants.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/constants.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-amd64
+          go build -ldflags "-s -w -X tinyauth/internal/config.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/config.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/config.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-amd64
         env:
           CGO_ENABLED: 0
 
@@ -101,7 +101,7 @@ jobs:
       - name: Build
         run: |
           cp -r frontend/dist internal/assets/dist
-          go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/constants.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/constants.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-arm64
+          go build -ldflags "-s -w -X tinyauth/internal/config.Version=${{ needs.generate-metadata.outputs.VERSION }} -X tinyauth/internal/config.CommitHash=${{ needs.generate-metadata.outputs.COMMIT_HASH }} -X tinyauth/internal/config.BuildTimestamp=${{ needs.generate-metadata.outputs.BUILD_TIMESTAMP }}" -o tinyauth-arm64
         env:
           CGO_ENABLED: 0
 
