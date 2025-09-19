@@ -101,8 +101,7 @@ func CheckFilter(filter string, str string) bool {
 	return false
 }
 
-func GenerateIdentifier(str string) string {
+func GenerateUUID(str string) string {
 	uuid := uuid.NewSHA1(uuid.NameSpaceURL, []byte(str))
-	uuidString := uuid.String()
-	return strings.Split(uuidString, "-")[0]
+	return uuid.String()
 }

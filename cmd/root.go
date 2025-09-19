@@ -94,6 +94,7 @@ func init() {
 		{"resources-dir", "/data/resources", "Path to a directory containing custom resources (e.g. background image)."},
 		{"database-path", "/data/tinyauth.db", "Path to the Sqlite database file."},
 		{"trusted-proxies", "", "Comma separated list of trusted proxies (IP addresses or CIDRs) for correct client IP detection."},
+		{"disable-analytics", false, "Disable anonymous version collection."},
 	}
 
 	for _, opt := range configOptions {
