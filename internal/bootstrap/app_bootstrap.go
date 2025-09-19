@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -307,12 +308,14 @@ func (app *BootstrapApp) heartbeat() {
 		return
 	}
 
+	client := &http.Client{}
+
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"
 
 	for ; true; <-ticker.C {
 		log.Debug().Msg("Sending heartbeat")
 
-		req, err := http.NewRequest(http.MethodPost, heartbeatURL, strings.NewReader(string(bodyJson)))
+		req, err := http.NewRequest(http.MethodPost, heartbeatURL, bytes.NewReader(bodyJson))
 
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to create heartbeat request")
@@ -320,8 +323,6 @@ func (app *BootstrapApp) heartbeat() {
 		}
 
 		req.Header.Add("Content-Type", "application/json")
-
-		client := &http.Client{}
 
 		res, err := client.Do(req)
 
