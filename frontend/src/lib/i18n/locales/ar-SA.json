@@ -57,6 +57,6 @@
     "invalidInput": "Invalid input",
     "domainWarningTitle": "Invalid Domain",
     "domainWarningSubtitle": "This instance is configured to be accessed from <code>{{appUrl}}</code>, but <code>{{currentUrl}}</code> is being used. If you proceed, you may encounter issues with authentication.",
-    "ignoreTitle": "Ignore",
+    "ignoreTitle": "تجاهل",
     "goToCorrectDomainTitle": "Go to correct domain"
 }
