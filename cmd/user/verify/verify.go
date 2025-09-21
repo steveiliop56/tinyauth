@@ -70,7 +70,7 @@ var VerifyCmd = &cobra.Command{
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(iPassword))
 		if err != nil {
-			log.Fatal().Msg("Ppassword is incorrect")
+			log.Fatal().Msg("Password is incorrect")
 		}
 
 		if user.TotpSecret == "" {
