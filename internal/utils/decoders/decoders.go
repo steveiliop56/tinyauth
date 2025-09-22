@@ -18,10 +18,14 @@ func NormalizeKeys(keys map[string]string, rootName string, sep string) map[stri
 
 		finalKey = append(finalKey, rootName)
 		finalKey = append(finalKey, "providers")
-		kebabKey := strings.ToLower(k)
+		lowerKey := strings.ToLower(k)
+
+		if !strings.HasPrefix(lowerKey, "providers"+sep) {
+			continue
+		}
 
 		for _, known := range knownKeys {
-			if strings.HasSuffix(kebabKey, strings.ReplaceAll(known, "-", sep)) {
+			if strings.HasSuffix(lowerKey, strings.ReplaceAll(known, "-", sep)) {
 				suffix = known
 				break
 			}
@@ -31,7 +35,11 @@ func NormalizeKeys(keys map[string]string, rootName string, sep string) map[stri
 			continue
 		}
 
-		clientNameParts := strings.Split(strings.TrimPrefix(strings.TrimSuffix(kebabKey, sep+strings.ReplaceAll(suffix, "-", sep)), "providers"+sep), sep)
+		if strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(lowerKey, "providers"+sep), strings.ReplaceAll(suffix, "-", sep))) == "" {
+			continue
+		}
+
+		clientNameParts := strings.Split(strings.TrimPrefix(strings.TrimSuffix(lowerKey, sep+strings.ReplaceAll(suffix, "-", sep)), "providers"+sep), sep)
 
 		for i, p := range clientNameParts {
 			if i == 0 {
