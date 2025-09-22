@@ -255,7 +255,8 @@ func (app *BootstrapApp) Setup() error {
 	}, apiRouter, authService)
 
 	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{
-		ResourcesDir: app.config.ResourcesDir,
+		ResourcesDir:      app.config.ResourcesDir,
+		ResourcesDisabled: app.config.DisableResources,
 	}, mainRouter)
 
 	healthController := controller.NewHealthController(apiRouter)

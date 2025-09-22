@@ -40,6 +40,7 @@ type Config struct {
 	DatabasePath          string `mapstructure:"database-path" validate:"required"`
 	TrustedProxies        string `mapstructure:"trusted-proxies"`
 	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
+	DisableResources      bool   `mapstructure:"disable-resources"`
 }
 
 // OAuth/OIDC config

@@ -7,7 +7,8 @@ import (
 )
 
 type ResourcesControllerConfig struct {
-	ResourcesDir string
+	ResourcesDir      string
+	ResourcesDisabled bool
 }
 
 type ResourcesController struct {
@@ -35,6 +36,13 @@ func (controller *ResourcesController) resourcesHandler(c *gin.Context) {
 		c.JSON(404, gin.H{
 			"status":  404,
 			"message": "Resources not found",
+		})
+		return
+	}
+	if controller.config.ResourcesDisabled {
+		c.JSON(403, gin.H{
+			"status":  403,
+			"message": "Resources are disabled",
 		})
 		return
 	}
