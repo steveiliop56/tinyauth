@@ -338,8 +338,8 @@ func (app *BootstrapApp) heartbeat() {
 
 		res.Body.Close()
 
-		if res.StatusCode != 200 {
-			log.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200 status")
+		if res.StatusCode != 200 && res.StatusCode != 201 {
+			log.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
 		}
 	}
 }
