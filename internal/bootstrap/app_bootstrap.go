@@ -188,6 +188,10 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Create engine
+	if config.Version != "development" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	engine := gin.New()
 
 	if len(app.config.TrustedProxies) > 0 {
@@ -196,10 +200,6 @@ func (app *BootstrapApp) Setup() error {
 		if err != nil {
 			return fmt.Errorf("failed to set trusted proxies: %w", err)
 		}
-	}
-
-	if config.Version != "development" {
-		gin.SetMode(gin.ReleaseMode)
 	}
 
 	// Create middlewares

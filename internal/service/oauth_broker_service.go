@@ -50,7 +50,7 @@ func (broker *OAuthBrokerService) Init() error {
 			log.Error().Err(err).Msgf("Failed to initialize OAuth service: %T", name)
 			return err
 		}
-		log.Info().Msgf("Initialized OAuth service: %T", name)
+		log.Info().Str("service", service.GetName()).Msg("Initialized OAuth service")
 	}
 
 	return nil
