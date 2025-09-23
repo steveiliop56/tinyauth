@@ -15,7 +15,7 @@
     "loginOauthSuccessTitle": "Redirection",
     "loginOauthSuccessSubtitle": "Redirection vers votre fournisseur OAuth",
     "loginOauthAutoRedirectTitle": "Redirection automatique OAuth",
-    "loginOauthAutoRedirectSubtitle": "Vous allez être automatiquement redirigé(e) vers votre fournisseur OAuth pour vous authentifier.",
+    "loginOauthAutoRedirectSubtitle": "Vous allez être automatiquement redirigé vers votre fournisseur OAuth pour vous authentifier.",
     "loginOauthAutoRedirectButton": "Rediriger",
     "continueTitle": "Continuer",
     "continueRedirectingTitle": "Redirection...",
