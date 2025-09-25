@@ -183,14 +183,13 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 		providers[name] = provider
 	}
 
-	// If we have google/github providers and no redirect URL babysit them
-	babysitProviders := []string{"google", "github"}
+	// If we have google/github providers and no redirect URL then set a default
 
-	for _, name := range babysitProviders {
-		if provider, exists := providers[name]; exists {
+	for id := range config.OverrideProviders {
+		if provider, exists := providers[id]; exists {
 			if provider.RedirectURL == "" {
-				provider.RedirectURL = appUrl + "/api/oauth/callback/" + name
-				providers[name] = provider
+				provider.RedirectURL = appUrl + "/api/oauth/callback/" + id
+				providers[id] = provider
 			}
 		}
 	}

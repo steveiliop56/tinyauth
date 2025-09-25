@@ -147,10 +147,6 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Configured providers
-	babysit := map[string]string{
-		"google": "Google",
-		"github": "GitHub",
-	}
 	configuredProviders := make([]controller.Provider, 0)
 
 	for id, provider := range oauthProviders {
@@ -159,7 +155,7 @@ func (app *BootstrapApp) Setup() error {
 		}
 
 		if provider.Name == "" {
-			if name, ok := babysit[id]; ok {
+			if name, ok := config.OverrideProviders[id]; ok {
 				provider.Name = name
 			} else {
 				provider.Name = utils.Capitalize(id)

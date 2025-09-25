@@ -309,12 +309,14 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 		return true
 	}
 
-	if context.Provider != "generic" {
-		log.Debug().Msg("Not using generic provider, skipping group check")
-		return true
+	for id := range config.OverrideProviders {
+		if context.Provider == id {
+			log.Info().Str("provider", id).Msg("OAuth groups not supported for this provider")
+			return true
+		}
 	}
 
-	for _, userGroup := range strings.Split(context.OAuthGroups, ",") {
+	for userGroup := range strings.SplitSeq(context.OAuthGroups, ",") {
 		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
 			return true
 		}

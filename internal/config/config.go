@@ -65,6 +65,11 @@ type OAuthServiceConfig struct {
 	Name               string   `key:"name"`
 }
 
+var OverrideProviders = map[string]string{
+	"google": "Google",
+	"github": "GitHub",
+}
+
 // User/session related stuff
 
 type User struct {
