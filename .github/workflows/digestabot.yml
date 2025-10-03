@@ -1,0 +1,26 @@
+---
+name: Docker image digests update
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  image-update:
+    name: Docker image digests update
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+
+      - name: Update Docker image digests
+        uses: chainguard-dev/digestabot@a3b776c1ca57d3127c85578cde8fef6eed3c75d3  # v1.2.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+...
