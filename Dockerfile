@@ -27,8 +27,6 @@ ARG VERSION
 ARG COMMIT_HASH
 ARG BUILD_TIMESTAMP
 
-RUN apk add upx
-
 WORKDIR /tinyauth
 
 COPY go.mod ./
@@ -43,6 +41,8 @@ COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}"
 
+# compress the binary with upx
+RUN apk add upx
 RUN upx --best --lzma tinyauth
 
 # Runner
