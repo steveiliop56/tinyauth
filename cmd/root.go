@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"strings"
-	totpCmd "tinyauth/cmd/totp"
-	userCmd "tinyauth/cmd/user"
 	"tinyauth/internal/bootstrap"
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
@@ -15,55 +13,28 @@ import (
 	"github.com/spf13/viper"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "tinyauth",
-	Short: "The simplest way to protect your apps with a login screen.",
-	Long:  `Tinyauth is a simple authentication middleware that adds simple username/password login or OAuth with Google, Github and any generic OAuth provider to all of your docker apps.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		var conf config.Config
+type rootCmd struct {
+	root *cobra.Command
+	cmd  *cobra.Command
 
-		err := viper.Unmarshal(&conf)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to parse config")
-		}
-
-		// Validate config
-		v := validator.New()
-
-		err = v.Struct(conf)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Invalid config")
-		}
-
-		log.Logger = log.Level(zerolog.Level(utils.GetLogLevel(conf.LogLevel)))
-		log.Info().Str("version", strings.TrimSpace(config.Version)).Msg("Starting tinyauth")
-
-		// Create bootstrap app
-		app := bootstrap.NewBootstrapApp(conf)
-
-		// Run
-		err = app.Setup()
-
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to setup app")
-		}
-
-	},
+	viper *viper.Viper
 }
 
-func Execute() {
-	rootCmd.FParseErrWhitelist.UnknownFlags = true
-	err := rootCmd.Execute()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to execute command")
+func newRootCmd() *rootCmd {
+	return &rootCmd{
+		viper: viper.New(),
 	}
 }
 
-func init() {
-	rootCmd.AddCommand(userCmd.UserCmd())
-	rootCmd.AddCommand(totpCmd.TotpCmd())
+func (c *rootCmd) Register() {
+	c.cmd = &cobra.Command{
+		Use:   "tinyauth",
+		Short: "The simplest way to protect your apps with a login screen",
+		Long:  `Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github and any provider to all of your docker apps.`,
+		Run:   c.run,
+	}
 
-	viper.AutomaticEnv()
+	c.viper.AutomaticEnv()
 
 	configOptions := []struct {
 		name        string
@@ -101,17 +72,81 @@ func init() {
 	for _, opt := range configOptions {
 		switch v := opt.defaultVal.(type) {
 		case bool:
-			rootCmd.Flags().Bool(opt.name, v, opt.description)
+			c.cmd.Flags().Bool(opt.name, v, opt.description)
 		case int:
-			rootCmd.Flags().Int(opt.name, v, opt.description)
+			c.cmd.Flags().Int(opt.name, v, opt.description)
 		case string:
-			rootCmd.Flags().String(opt.name, v, opt.description)
+			c.cmd.Flags().String(opt.name, v, opt.description)
 		}
 
 		// Create uppercase env var name
 		envVar := strings.ReplaceAll(strings.ToUpper(opt.name), "-", "_")
-		viper.BindEnv(opt.name, envVar)
+		c.viper.BindEnv(opt.name, envVar)
 	}
 
-	viper.BindPFlags(rootCmd.Flags())
+	c.viper.BindPFlags(c.cmd.Flags())
+
+	if c.root != nil {
+		c.root.AddCommand(c.cmd)
+	}
+}
+
+func (c *rootCmd) GetCmd() *cobra.Command {
+	return c.cmd
+}
+
+func (c *rootCmd) run(cmd *cobra.Command, args []string) {
+	var conf config.Config
+
+	err := c.viper.Unmarshal(&conf)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to parse config")
+	}
+
+	v := validator.New()
+	err = v.Struct(conf)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Invalid config")
+	}
+
+	log.Logger = log.Level(zerolog.Level(utils.GetLogLevel(conf.LogLevel)))
+	log.Info().Str("version", strings.TrimSpace(config.Version)).Msg("Starting Tinyauth")
+
+	app := bootstrap.NewBootstrapApp(conf)
+
+	err = app.Setup()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to setup app")
+	}
+}
+
+func Run() {
+	rootCmd := newRootCmd()
+	rootCmd.Register()
+	root := rootCmd.GetCmd()
+
+	userCmd := &cobra.Command{
+		Use:   "user",
+		Short: "User utilities",
+		Long:  `Utilities for creating and verifying tinyauth compatible users.`,
+	}
+	totpCmd := &cobra.Command{
+		Use:   "totp",
+		Short: "Totp utilities",
+		Long:  `Utilities for creating and verifying totp codes.`,
+	}
+
+	newCreateUserCmd(userCmd).Register()
+	newVerifyUserCmd(userCmd).Register()
+	newGenerateTotpCmd(totpCmd).Register()
+	newVersionCmd(root).Register()
+
+	root.AddCommand(userCmd)
+	root.AddCommand(totpCmd)
+
+	err := root.Execute()
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to execute root command")
+	}
 }
