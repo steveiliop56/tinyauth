@@ -140,6 +140,7 @@ func Run() {
 	newVerifyUserCmd(userCmd).Register()
 	newGenerateTotpCmd(totpCmd).Register()
 	newVersionCmd(root).Register()
+	newHealthCmd(root).Register()
 
 	root.AddCommand(userCmd)
 	root.AddCommand(totpCmd)

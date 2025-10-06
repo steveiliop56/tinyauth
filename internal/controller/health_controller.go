@@ -13,8 +13,8 @@ func NewHealthController(router *gin.RouterGroup) *HealthController {
 }
 
 func (controller *HealthController) SetupRoutes() {
-	controller.router.GET("/health", controller.healthHandler)
-	controller.router.HEAD("/health", controller.healthHandler)
+	controller.router.GET("/healthz", controller.healthHandler)
+	controller.router.HEAD("/healthz", controller.healthHandler)
 }
 
 func (controller *HealthController) healthHandler(c *gin.Context) {

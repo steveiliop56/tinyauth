@@ -45,8 +45,6 @@ FROM alpine:3.22 AS runner
 
 WORKDIR /tinyauth
 
-RUN apk add --no-cache curl
-
 COPY --from=builder /tinyauth/tinyauth ./
 
 EXPOSE 3000
