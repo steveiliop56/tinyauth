@@ -30,7 +30,7 @@ func (c *rootCmd) Register() {
 	c.cmd = &cobra.Command{
 		Use:   "tinyauth",
 		Short: "The simplest way to protect your apps with a login screen",
-		Long:  `Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github and any provider to all of your docker apps.`,
+		Long:  `Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github or any other provider to all of your docker apps.`,
 		Run:   c.run,
 	}
 
