@@ -38,7 +38,7 @@ func (c *verifyUserCmd) Register() {
 		Run:   c.run,
 	}
 
-	c.cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "Create a user interactively")
+	c.cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "Validate a user interactively")
 	c.cmd.Flags().StringVar(&c.username, "username", "", "Username")
 	c.cmd.Flags().StringVar(&c.password, "password", "", "Password")
 	c.cmd.Flags().StringVar(&c.totp, "totp", "", "TOTP code")

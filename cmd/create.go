@@ -82,7 +82,7 @@ func (c *createUserCmd) run(cmd *cobra.Command, args []string) {
 		log.Fatal().Err(errors.New("error invalid input")).Msg("Username and password cannot be empty")
 	}
 
-	log.Info().Str("username", c.username).Str("password", c.password).Bool("docker", c.docker).Msg("Creating user")
+	log.Info().Str("username", c.username).Msg("Creating user")
 
 	passwd, err := bcrypt.GenerateFromPassword([]byte(c.password), bcrypt.DefaultCost)
 	if err != nil {
