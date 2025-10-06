@@ -11,5 +11,5 @@ import (
 
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()
-	cmd.Execute()
+	cmd.Run()
 }
