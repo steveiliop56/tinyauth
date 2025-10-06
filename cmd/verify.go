@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"strings"
 	"tinyauth/internal/utils"
 
 	"github.com/charmbracelet/huh"
@@ -96,14 +95,7 @@ func (c *verifyUserCmd) run(cmd *cobra.Command, args []string) {
 		log.Fatal().Msg("Username is incorrect")
 	}
 
-	var passwd string
-	if strings.Contains(user.Password, "$$") {
-		passwd = strings.ReplaceAll(user.Password, "$$", "$")
-	} else {
-		passwd = c.password
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(passwd))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(c.password))
 	if err != nil {
 		log.Fatal().Msg("Password is incorrect")
 	}
