@@ -17,24 +17,24 @@ type healthzResponse struct {
 	Message string `json:"message"`
 }
 
-type healthCmd struct {
+type healthcheckCmd struct {
 	root *cobra.Command
 	cmd  *cobra.Command
 
 	viper *viper.Viper
 }
 
-func newHealthCmd(root *cobra.Command) *healthCmd {
-	return &healthCmd{
+func newHealthcheckCmd(root *cobra.Command) *healthcheckCmd {
+	return &healthcheckCmd{
 		root:  root,
 		viper: viper.New(),
 	}
 }
 
-func (c *healthCmd) Register() {
+func (c *healthcheckCmd) Register() {
 	c.cmd = &cobra.Command{
-		Use:   "health",
-		Short: "Health check",
+		Use:   "healthcheck [app-url]",
+		Short: "Perform a health check",
 		Long:  `Use the health check endpoint to verify that Tinyauth is running and it's healthy.`,
 		Run:   c.run,
 	}
@@ -46,25 +46,33 @@ func (c *healthCmd) Register() {
 	}
 }
 
-func (c *healthCmd) GetCmd() *cobra.Command {
+func (c *healthcheckCmd) GetCmd() *cobra.Command {
 	return c.cmd
 }
 
-func (c *healthCmd) run(cmd *cobra.Command, args []string) {
+func (c *healthcheckCmd) run(cmd *cobra.Command, args []string) {
 	log.Logger = log.Level(zerolog.InfoLevel)
 
-	appUrl := "http://127.0.0.1:3000"
+	var appUrl string
 
 	port := c.viper.GetString("PORT")
 	address := c.viper.GetString("ADDRESS")
 
-	if address != "" && port != "" {
-		appUrl = "http://" + address + ":" + port
+	if port == "" {
+		port = "3000"
 	}
+
+	if address == "" {
+		address = "127.0.0.1"
+	}
+
+	appUrl = "http://" + address + ":" + port
 
 	if len(args) > 0 {
 		appUrl = args[0]
 	}
+
+	log.Info().Str("appUrl", appUrl).Msg("Performing health check")
 
 	client := http.Client{}
 
