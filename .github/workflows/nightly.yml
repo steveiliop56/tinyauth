@@ -173,6 +173,7 @@ jobs:
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
             VERSION=${{ needs.generate-metadata.outputs.VERSION }}
             COMMIT_HASH=${{ needs.generate-metadata.outputs.COMMIT_HASH }}
@@ -231,6 +232,7 @@ jobs:
           file: Dockerfile.distroless
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
             VERSION=${{ needs.generate-metadata.outputs.VERSION }}
             COMMIT_HASH=${{ needs.generate-metadata.outputs.COMMIT_HASH }}
@@ -287,6 +289,7 @@ jobs:
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
             VERSION=${{ needs.generate-metadata.outputs.VERSION }}
             COMMIT_HASH=${{ needs.generate-metadata.outputs.COMMIT_HASH }}
@@ -345,6 +348,7 @@ jobs:
           file: Dockerfile.distroless
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           build-args: |
             VERSION=${{ needs.generate-metadata.outputs.VERSION }}
             COMMIT_HASH=${{ needs.generate-metadata.outputs.COMMIT_HASH }}
