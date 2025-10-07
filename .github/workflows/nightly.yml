@@ -245,7 +245,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-distoless-linux-amd64
+          name: digests-distroless-linux-amd64
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
