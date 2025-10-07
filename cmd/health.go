@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"tinyauth/internal/config"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -22,8 +21,7 @@ type healthCmd struct {
 	root *cobra.Command
 	cmd  *cobra.Command
 
-	viper  *viper.Viper
-	appUrl string
+	viper *viper.Viper
 }
 
 func newHealthCmd(root *cobra.Command) *healthCmd {
@@ -42,9 +40,6 @@ func (c *healthCmd) Register() {
 	}
 
 	c.viper.AutomaticEnv()
-	c.cmd.Flags().StringVar(&c.appUrl, "app-url", "http://localhost:3000", "The URL where the Tinyauth server is running on.")
-	c.viper.BindEnv("app-url", "APP_URL")
-	c.viper.BindPFlags(c.cmd.Flags())
 
 	if c.root != nil {
 		c.root.AddCommand(c.cmd)
@@ -58,18 +53,18 @@ func (c *healthCmd) GetCmd() *cobra.Command {
 func (c *healthCmd) run(cmd *cobra.Command, args []string) {
 	log.Logger = log.Level(zerolog.InfoLevel)
 
-	appUrl := c.viper.GetString("app-url")
+	appUrl := "http://127.0.0.1:3000"
 
-	if appUrl == "" {
-		log.Fatal().Err(errors.New("app-url is required")).Msg("App URL is required")
+	port := c.viper.GetString("PORT")
+	address := c.viper.GetString("ADDRESS")
+
+	if address != "" && port != "" {
+		appUrl = "http://" + address + ":" + port
 	}
 
-	if config.Version == "development" {
-		log.Warn().Msg("Running in development mode. Overriding the app-url to http://localhost:3000")
-		appUrl = "http://localhost:3000"
+	if len(args) > 0 {
+		appUrl = args[0]
 	}
-
-	log.Info().Msgf("Health check endpoint is available at %s/api/healthz", appUrl)
 
 	client := http.Client{}
 
@@ -105,5 +100,5 @@ func (c *healthCmd) run(cmd *cobra.Command, args []string) {
 		log.Fatal().Err(err).Msg("Failed to decode response")
 	}
 
-	log.Info().Interface("response", healthResp).Msg("Service is healthy")
+	log.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
 }
