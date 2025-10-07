@@ -72,7 +72,7 @@ func (c *healthcheckCmd) run(cmd *cobra.Command, args []string) {
 		appUrl = args[0]
 	}
 
-	log.Info().Str("appUrl", appUrl).Msg("Performing health check")
+	log.Info().Str("app_url", appUrl).Msg("Performing health check")
 
 	client := http.Client{}
 
