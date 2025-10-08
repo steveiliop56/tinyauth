@@ -396,6 +396,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/tinyauth
+          flavor: |
+            latest=false
           tags: |
             type=raw,nightly
 
@@ -433,6 +435,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/tinyauth
+          flavor: |
+            latest=false
           tags: |
             type=raw,nightly-distroless
 
