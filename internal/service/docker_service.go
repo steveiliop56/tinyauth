@@ -71,14 +71,12 @@ func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 	for _, ctr := range containers {
 		inspect, err := docker.InspectContainer(ctr.ID)
 		if err != nil {
-			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error inspecting container, skipping")
-			continue
+			return config.App{}, err
 		}
 
 		labels, err := decoders.DecodeLabels(inspect.Config.Labels)
 		if err != nil {
-			log.Warn().Str("id", ctr.ID).Err(err).Msg("Error getting container labels, skipping")
-			continue
+			return config.App{}, err
 		}
 
 		for appName, appLabels := range labels.Apps {
