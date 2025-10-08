@@ -1,11 +1,17 @@
 import { useAppContext } from "@/context/app-context";
 import { LanguageSelector } from "../language/language";
 import { Outlet } from "react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DomainWarning } from "../domain-warning/domain-warning";
 
 const BaseLayout = ({ children }: { children: React.ReactNode }) => {
-  const { backgroundImage } = useAppContext();
+  const { backgroundImage, title } = useAppContext();
+
+  useEffect(() => {
+    if (title !== "Tinyauth") {
+      document.title = title + " - Tinyauth";
+    }
+  }, [title]);
 
   return (
     <div
