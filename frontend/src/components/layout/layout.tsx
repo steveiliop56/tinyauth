@@ -8,9 +8,7 @@ const BaseLayout = ({ children }: { children: React.ReactNode }) => {
   const { backgroundImage, title } = useAppContext();
 
   useEffect(() => {
-    if (title !== "Tinyauth") {
-      document.title = title + " - Tinyauth";
-    }
+    document.title = title;
   }, [title]);
 
   return (
