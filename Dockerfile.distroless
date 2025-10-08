@@ -6,7 +6,7 @@ WORKDIR /frontend
 COPY ./frontend/package.json ./
 COPY ./frontend/bun.lock ./
 
-RUN bun install
+RUN bun install --frozen-lockfile
 
 COPY ./frontend/public ./public
 COPY ./frontend/src ./src

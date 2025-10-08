@@ -44,7 +44,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          bun install
+          bun install --frozen-lockfile
 
       - name: Install backend dependencies
         run: |
@@ -87,7 +87,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          bun install
+          bun install --frozen-lockfile
 
       - name: Install backend dependencies
         run: |
