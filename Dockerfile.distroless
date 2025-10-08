@@ -53,4 +53,6 @@ VOLUME ["/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/tinyauth/tinyauth", "healthcheck"]
 
+ENV GIN_MODE=release
+
 ENTRYPOINT ["/tinyauth/tinyauth"]

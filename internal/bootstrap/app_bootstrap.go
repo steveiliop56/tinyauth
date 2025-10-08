@@ -172,10 +172,6 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Create engine
-	if config.Version != "development" {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
 	engine := gin.New()
 
 	if len(app.config.TrustedProxies) > 0 {
