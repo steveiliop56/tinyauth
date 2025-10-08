@@ -58,7 +58,7 @@ func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 				maxAge = 30 * 24 * time.Hour
 			}
 
-			c.Writer.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge.Seconds()))
+			c.Writer.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", int(maxAge.Seconds())))
 			m.uiFileServer.ServeHTTP(c.Writer, c.Request)
 			c.Abort()
 			return
