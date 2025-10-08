@@ -210,10 +210,12 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 		"client1": {
 			ClientID:     "client1-id",
 			ClientSecret: "client1-secret",
+			Name:         "Client1",
 		},
 		"client2": {
 			ClientID:     "client2-id",
 			ClientSecret: "client2-secret",
+			Name:         "Client2",
 		},
 	}
 
@@ -247,6 +249,7 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 		"client1": {
 			ClientID:     "client1-id",
 			ClientSecret: "file content",
+			Name:         "Client1",
 		},
 	}
 
@@ -262,6 +265,7 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 			ClientID:     "google-id",
 			ClientSecret: "google-secret",
 			RedirectURL:  "http://app.url/api/oauth/callback/google",
+			Name:         "Google",
 		},
 	}
 

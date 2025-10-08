@@ -150,18 +150,6 @@ func (app *BootstrapApp) Setup() error {
 	configuredProviders := make([]controller.Provider, 0)
 
 	for id, provider := range oauthProviders {
-		if id == "" {
-			continue
-		}
-
-		if provider.Name == "" {
-			if name, ok := config.OverrideProviders[id]; ok {
-				provider.Name = name
-			} else {
-				provider.Name = utils.Capitalize(id)
-			}
-		}
-
 		configuredProviders = append(configuredProviders, controller.Provider{
 			Name:  provider.Name,
 			ID:    id,

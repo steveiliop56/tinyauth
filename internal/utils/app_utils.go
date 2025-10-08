@@ -184,7 +184,6 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 	}
 
 	// If we have google/github providers and no redirect URL then set a default
-
 	for id := range config.OverrideProviders {
 		if provider, exists := providers[id]; exists {
 			if provider.RedirectURL == "" {
@@ -192,6 +191,18 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 				providers[id] = provider
 			}
 		}
+	}
+
+	// Set names
+	for id, provider := range providers {
+		if provider.Name == "" {
+			if name, ok := config.OverrideProviders[id]; ok {
+				provider.Name = name
+			} else {
+				provider.Name = Capitalize(id)
+			}
+		}
+		providers[id] = provider
 	}
 
 	// Return combined providers
