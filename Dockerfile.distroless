@@ -38,6 +38,8 @@ COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
+RUN mkdir -p /data
+
 RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" 
  
 # Runner
@@ -46,6 +48,9 @@ FROM gcr.io/distroless/static-debian12:latest AS runner
 WORKDIR /tinyauth
 
 COPY --from=builder /tinyauth/tinyauth ./
+
+# Since it's distroless, we need to copy the data directory from the builder stage
+COPY --from=builder /tinyauth/data /data
 
 EXPOSE 3000
 

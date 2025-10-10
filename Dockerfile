@@ -47,6 +47,8 @@ WORKDIR /tinyauth
 
 COPY --from=builder /tinyauth/tinyauth ./
 
+RUN mkdir -p /data
+
 EXPOSE 3000
 
 VOLUME ["/data"]
