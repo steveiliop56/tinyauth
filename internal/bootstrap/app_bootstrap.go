@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"time"
 	"tinyauth/internal/config"
@@ -156,6 +157,10 @@ func (app *BootstrapApp) Setup() error {
 			OAuth: true,
 		})
 	}
+
+	sort.Slice(configuredProviders, func(i, j int) bool {
+		return configuredProviders[i].Name < configuredProviders[j].Name
+	})
 
 	if authService.UserAuthConfigured() || ldapService != nil {
 		configuredProviders = append(configuredProviders, controller.Provider{
