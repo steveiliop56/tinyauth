@@ -12,8 +12,9 @@ import (
 )
 
 type DockerService struct {
-	client  *client.Client
-	context context.Context
+	client      *client.Client
+	context     context.Context
+	isConnected bool
 }
 
 func NewDockerService() *DockerService {
@@ -31,10 +32,24 @@ func (docker *DockerService) Init() error {
 
 	docker.client = client
 	docker.context = ctx
+
+	_, err = docker.client.Ping(docker.context)
+
+	if err != nil {
+		log.Debug().Err(err).Msg("Docker not connected")
+		docker.isConnected = false
+		docker.client = nil
+		docker.context = nil
+		return nil
+	}
+
+	docker.isConnected = true
+	log.Debug().Msg("Docker connected")
+
 	return nil
 }
 
-func (docker *DockerService) GetContainers() ([]container.Summary, error) {
+func (docker *DockerService) getContainers() ([]container.Summary, error) {
 	containers, err := docker.client.ContainerList(docker.context, container.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -42,7 +57,7 @@ func (docker *DockerService) GetContainers() ([]container.Summary, error) {
 	return containers, nil
 }
 
-func (docker *DockerService) InspectContainer(containerId string) (container.InspectResponse, error) {
+func (docker *DockerService) inspectContainer(containerId string) (container.InspectResponse, error) {
 	inspect, err := docker.client.ContainerInspect(docker.context, containerId)
 	if err != nil {
 		return container.InspectResponse{}, err
@@ -50,26 +65,19 @@ func (docker *DockerService) InspectContainer(containerId string) (container.Ins
 	return inspect, nil
 }
 
-func (docker *DockerService) DockerConnected() bool {
-	_, err := docker.client.Ping(docker.context)
-	return err == nil
-}
-
 func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
-	isConnected := docker.DockerConnected()
-
-	if !isConnected {
+	if !docker.isConnected {
 		log.Debug().Msg("Docker not connected, returning empty labels")
 		return config.App{}, nil
 	}
 
-	containers, err := docker.GetContainers()
+	containers, err := docker.getContainers()
 	if err != nil {
 		return config.App{}, err
 	}
 
 	for _, ctr := range containers {
-		inspect, err := docker.InspectContainer(ctr.ID)
+		inspect, err := docker.inspectContainer(ctr.ID)
 		if err != nil {
 			return config.App{}, err
 		}
