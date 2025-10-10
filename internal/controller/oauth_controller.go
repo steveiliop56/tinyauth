@@ -162,7 +162,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	var name string
 
-	if user.Name != "" {
+	if strings.TrimSpace(user.Name) != "" {
 		log.Debug().Msg("Using name from OAuth provider")
 		name = user.Name
 	} else {
@@ -172,7 +172,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	var username string
 
-	if user.PreferredUsername != "" {
+	if strings.TrimSpace(user.PreferredUsername) != "" {
 		log.Debug().Msg("Using preferred username from OAuth provider")
 		username = user.PreferredUsername
 	} else {
