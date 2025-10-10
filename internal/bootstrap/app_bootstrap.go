@@ -173,6 +173,7 @@ func (app *BootstrapApp) Setup() error {
 
 	// Create engine
 	engine := gin.New()
+	engine.Use(gin.Recovery())
 
 	if len(app.config.TrustedProxies) > 0 {
 		err := engine.SetTrustedProxies(strings.Split(app.config.TrustedProxies, ","))
