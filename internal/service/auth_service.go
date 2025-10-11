@@ -318,6 +318,7 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 
 	for userGroup := range strings.SplitSeq(context.OAuthGroups, ",") {
 		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
+			log.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
 			return true
 		}
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 	"tinyauth/internal/config"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 )
 
@@ -109,6 +110,8 @@ func (generic *GenericOAuthService) Userinfo() (config.Claims, error) {
 	if err != nil {
 		return user, err
 	}
+
+	log.Trace().Str("body", string(body)).Msg("Userinfo response body")
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {

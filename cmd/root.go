@@ -112,6 +112,10 @@ func (c *rootCmd) run(cmd *cobra.Command, args []string) {
 	log.Logger = log.Level(zerolog.Level(utils.GetLogLevel(conf.LogLevel)))
 	log.Info().Str("version", strings.TrimSpace(config.Version)).Msg("Starting Tinyauth")
 
+	if log.Logger.GetLevel() == zerolog.TraceLevel {
+		log.Warn().Msg("Log level set to trace, this will log sensitive information!")
+	}
+
 	app := bootstrap.NewBootstrapApp(conf)
 
 	err = app.Setup()

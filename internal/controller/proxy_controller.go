@@ -84,6 +84,8 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
+	log.Trace().Interface("labels", labels).Msg("Labels for resource")
+
 	clientIP := c.ClientIP()
 
 	if controller.auth.IsBypassedIP(labels.IP, clientIP) {
@@ -149,6 +151,8 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	} else {
 		userContext = context
 	}
+
+	log.Trace().Interface("context", userContext).Msg("User context from request")
 
 	if userContext.Provider == "basic" && userContext.TotpEnabled {
 		log.Debug().Msg("User has TOTP enabled, denying basic auth access")
