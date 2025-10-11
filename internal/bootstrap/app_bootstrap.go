@@ -75,6 +75,15 @@ func (app *BootstrapApp) Setup() error {
 	csrfCookieName := fmt.Sprintf("%s-%s", config.CSRFCookieName, cookieId)
 	redirectCookieName := fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
 
+	// Dumps
+	log.Trace().Interface("config", app.config).Msg("Config dump")
+	log.Trace().Interface("users", users).Msg("Users dump")
+	log.Trace().Interface("oauthProviders", oauthProviders).Msg("OAuth providers dump")
+	log.Trace().Str("cookieDomain", cookieDomain).Msg("Cookie domain")
+	log.Trace().Str("sessionCookieName", sessionCookieName).Msg("Session cookie name")
+	log.Trace().Str("csrfCookieName", csrfCookieName).Msg("CSRF cookie name")
+	log.Trace().Str("redirectCookieName", redirectCookieName).Msg("Redirect cookie name")
+
 	// Create configs
 	authConfig := service.AuthServiceConfig{
 		Users:             users,
