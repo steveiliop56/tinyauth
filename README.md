@@ -23,7 +23,7 @@ Tinyauth is a simple authentication middleware that adds a simple login screen o
 
 ## Getting Started
 
-You can easily get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started.html). There is also an available [docker compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities.
+You can easily get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started). There is also an available [docker compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities.
 
 ## Demo
 
