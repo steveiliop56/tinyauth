@@ -93,7 +93,7 @@ func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 				return appLabels, nil
 			}
 
-			if strings.TrimPrefix(inspect.Name, "/") == appName {
+			if strings.SplitN(appDomain, ".", 2)[0] == appName {
 				log.Debug().Str("id", inspect.ID).Str("name", inspect.Name).Msg("Found matching container by app name")
 				return appLabels, nil
 			}
