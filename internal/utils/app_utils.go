@@ -100,17 +100,17 @@ func IsRedirectSafe(redirectURL string, domain string) bool {
 		return false
 	}
 
-	cookieDomain, err := GetCookieDomain(redirectURL)
+	host := parsedURL.Hostname()
+	if host == domain {
+		return true
+	}
 
+	cookieDomain, err := GetCookieDomain(redirectURL)
 	if err != nil {
 		return false
 	}
 
-	if cookieDomain != domain {
-		return false
-	}
-
-	return true
+	return cookieDomain == domain
 }
 
 func GetLogLevel(level string) zerolog.Level {
