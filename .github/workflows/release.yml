@@ -360,7 +360,6 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/tinyauth
           flavor: |
-            latest=true
             prefix=v,onlatest=false
           tags: |
             type=semver,pattern={{version}}
@@ -403,8 +402,8 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/tinyauth
           flavor: |
             latest=false
-            prefix=v,onlatest=false
-            suffix=-distroless,onlatest=false
+            prefix=v
+            suffix=-distroless
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}
