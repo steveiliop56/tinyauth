@@ -24,13 +24,11 @@ func (label *LabelService) Init() error {
 	// Check if any TINYAUTH_APPS_ environment variables exist
 	if slices.ContainsFunc(envVars, func(s string) bool { return strings.HasPrefix(s, "TINYAUTH_APPS_") }) {
 		log.Debug().Msg("TINYAUTH_APPS_ environment variables found, initializing LabelService")
-		label.LoadLabels(envVars)
-		return nil
-	} else {
-		log.Debug().Msg("No TINYAUTH_APPS_ environment variables found")
-		label.labelsFoundInEnv = false
-		return nil
+		return label.LoadLabels(envVars)
 	}
+	log.Debug().Msg("No TINYAUTH_APPS_ environment variables found")
+	label.labelsFoundInEnv = false
+	return nil
 }
 
 func (label *LabelService) LoadLabels(envVars []string) error {
