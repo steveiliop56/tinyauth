@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,11 +14,13 @@ import (
 	"tinyauth/internal/config"
 	"tinyauth/internal/controller"
 	"tinyauth/internal/middleware"
+	"tinyauth/internal/model"
 	"tinyauth/internal/service"
 	"tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 )
 
 type Controller interface {
@@ -277,6 +280,10 @@ func (app *BootstrapApp) Setup() error {
 		go app.heartbeat()
 	}
 
+	// Start DB cleanup routine
+	log.Debug().Msg("Starting database cleanup routine")
+	go app.dbCleanup(database)
+
 	// Start server
 	address := fmt.Sprintf("%s:%d", app.config.Address, app.config.Port)
 	log.Info().Msgf("Starting server on %s", address)
@@ -335,6 +342,20 @@ func (app *BootstrapApp) heartbeat() {
 
 		if res.StatusCode != 200 && res.StatusCode != 201 {
 			log.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
+		}
+	}
+}
+
+func (app *BootstrapApp) dbCleanup(db *gorm.DB) {
+	ticker := time.NewTicker(time.Duration(30) * time.Minute)
+	defer ticker.Stop()
+	ctx := context.Background()
+
+	for ; true; <-ticker.C {
+		log.Debug().Msg("Cleaning up old database sessions")
+		_, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().UnixMilli()).Delete(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to cleanup old sessions")
 		}
 	}
 }
