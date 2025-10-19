@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 	"tinyauth/internal/config"
 	"tinyauth/internal/service"
@@ -78,10 +79,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// Ignore previous docker method for now
-	// TODO: Combine both methods if needed
-	// labels, err := controller.docker.GetLabels(host)
-	labels, err := controller.label.GetLabels(host)
+	// Get labels from environment variables
+	envLabels, err := controller.label.GetLabels(host)
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get labels from environment variables")
+		controller.handleError(c, req, isBrowser)
+		return
+	}
+
+	// Get labels from Docker
+	dockerLabels, err := controller.docker.GetLabels(host)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get labels from Docker")
@@ -89,6 +97,18 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
+	// Determine which labels to use, prioritizing environment variables
+	var labels config.App
+	if !reflect.DeepEqual(envLabels, config.App{}) {
+		log.Debug().Msg("Using labels from environment variables")
+		labels = envLabels
+	} else if !reflect.DeepEqual(dockerLabels, config.App{}) {
+		log.Debug().Msg("Using labels from Docker")
+		labels = dockerLabels
+	} else {
+		log.Debug().Msg("No labels found for resource")
+		labels = config.App{}
+	}
 	log.Trace().Interface("labels", labels).Msg("Labels for resource")
 
 	clientIP := c.ClientIP()
