@@ -59,10 +59,8 @@ func (generic *GenericOAuthService) Init() error {
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
-	verifier := oauth2.GenerateVerifier()
 
 	generic.context = ctx
-	generic.verifier = verifier
 	return nil
 }
 
@@ -74,6 +72,12 @@ func (generic *GenericOAuthService) GenerateState() string {
 	}
 	state := base64.RawURLEncoding.EncodeToString(b)
 	return state
+}
+
+func (generic *GenericOAuthService) GenerateVerifier() string {
+	verifier := oauth2.GenerateVerifier()
+	generic.verifier = verifier
+	return verifier
 }
 
 func (generic *GenericOAuthService) GetAuthURL(state string) string {

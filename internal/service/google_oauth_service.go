@@ -48,10 +48,7 @@ func (google *GoogleOAuthService) Init() error {
 	httpClient := &http.Client{}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
-	verifier := oauth2.GenerateVerifier()
-
 	google.context = ctx
-	google.verifier = verifier
 	return nil
 }
 
@@ -63,6 +60,12 @@ func (oauth *GoogleOAuthService) GenerateState() string {
 	}
 	state := base64.RawURLEncoding.EncodeToString(b)
 	return state
+}
+
+func (google *GoogleOAuthService) GenerateVerifier() string {
+	verifier := oauth2.GenerateVerifier()
+	google.verifier = verifier
+	return verifier
 }
 
 func (google *GoogleOAuthService) GetAuthURL(state string) string {

@@ -72,6 +72,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
+	service.GenerateVerifier()
 	state := service.GenerateState()
 	authURL := service.GetAuthURL(state)
 	c.SetCookie(controller.config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)

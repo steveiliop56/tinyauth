@@ -11,6 +11,7 @@ import (
 type OAuthService interface {
 	Init() error
 	GenerateState() string
+	GenerateVerifier() string
 	GetAuthURL(state string) string
 	VerifyCode(code string) error
 	Userinfo() (config.Claims, error)

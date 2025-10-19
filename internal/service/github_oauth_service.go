@@ -53,10 +53,7 @@ func (github *GithubOAuthService) Init() error {
 	httpClient := &http.Client{}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
-	verifier := oauth2.GenerateVerifier()
-
 	github.context = ctx
-	github.verifier = verifier
 	return nil
 }
 
@@ -68,6 +65,12 @@ func (github *GithubOAuthService) GenerateState() string {
 	}
 	state := base64.RawURLEncoding.EncodeToString(b)
 	return state
+}
+
+func (github *GithubOAuthService) GenerateVerifier() string {
+	verifier := oauth2.GenerateVerifier()
+	github.verifier = verifier
+	return verifier
 }
 
 func (github *GithubOAuthService) GetAuthURL(state string) string {
