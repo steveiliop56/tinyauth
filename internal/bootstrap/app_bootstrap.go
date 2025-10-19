@@ -136,12 +136,14 @@ func (app *BootstrapApp) Setup() error {
 
 	// Create services
 	dockerService := service.NewDockerService()
+	labelService := service.NewLabelService()
 	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
 	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
 
 	// Initialize services
 	services := []Service{
 		dockerService,
+		labelService,
 		authService,
 		oauthBrokerService,
 	}
@@ -243,7 +245,7 @@ func (app *BootstrapApp) Setup() error {
 
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
 		AppURL: app.config.AppURL,
-	}, apiRouter, dockerService, authService)
+	}, apiRouter, dockerService, labelService, authService)
 
 	userController := controller.NewUserController(controller.UserControllerConfig{
 		CookieDomain: cookieDomain,

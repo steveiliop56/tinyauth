@@ -25,14 +25,16 @@ type ProxyController struct {
 	config ProxyControllerConfig
 	router *gin.RouterGroup
 	docker *service.DockerService
+	label  *service.LabelService
 	auth   *service.AuthService
 }
 
-func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *service.DockerService, auth *service.AuthService) *ProxyController {
+func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *service.DockerService, label *service.LabelService, auth *service.AuthService) *ProxyController {
 	return &ProxyController{
 		config: config,
 		router: router,
 		docker: docker,
+		label:  label,
 		auth:   auth,
 	}
 }
@@ -76,7 +78,10 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	labels, err := controller.docker.GetLabels(host)
+	// Ignore previous docker method for now
+	// TODO: Combine both methods if needed
+	// labels, err := controller.docker.GetLabels(host)
+	labels, err := controller.label.GetLabels(host)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get labels from Docker")
