@@ -7,7 +7,6 @@ import (
 	"tinyauth/internal/utils/decoders"
 
 	"github.com/rs/zerolog/log"
-	"golang.org/x/exp/slices"
 )
 
 type LabelService struct {
@@ -22,9 +21,17 @@ func NewLabelService() *LabelService {
 func (label *LabelService) Init() error {
 	envVars := os.Environ()
 	// Check if any TINYAUTH_APPS_ environment variables exist
-	if slices.ContainsFunc(envVars, func(s string) bool { return strings.HasPrefix(s, "TINYAUTH_APPS_") }) {
+	var tinyauthAppEnvVars []string
+	for _, e := range envVars {
+		if strings.HasPrefix(e, "TINYAUTH_APPS_") {
+			tinyauthAppEnvVars = append(tinyauthAppEnvVars, e)
+		}
+	}
+
+	// If found, load labels from environment variables
+	if len(tinyauthAppEnvVars) > 0 {
 		log.Debug().Msg("TINYAUTH_APPS_ environment variables found, initializing LabelService")
-		return label.LoadLabels(envVars)
+		return label.LoadLabels(tinyauthAppEnvVars)
 	}
 	log.Debug().Msg("No TINYAUTH_APPS_ environment variables found")
 	label.labelsFoundInEnv = false
@@ -35,19 +42,17 @@ func (label *LabelService) LoadLabels(envVars []string) error {
 	// Load environment variables and map them to label format
 	labelsFromEnv := make(map[string]string)
 	for _, e := range envVars {
-		if strings.HasPrefix(e, "TINYAUTH_APPS_") {
-			parts := strings.SplitN(e, "=", 2)
-			if len(parts) == 2 {
-				key := parts[0]
+		parts := strings.SplitN(e, "=", 2)
+		if len(parts) == 2 {
+			key := parts[0]
 
-				// Convert to label format
-				// e.g. TINYAUTH_APPS_[APP]_CONFIG_DOMAIN → tinyauth.apps.[app].config.domain
-				key = strings.ToLower(key)
-				key = strings.ReplaceAll(key, "_", ".")
+			// Convert to label format
+			// e.g. TINYAUTH_APPS_[APP]_CONFIG_DOMAIN → tinyauth.apps.[app].config.domain
+			key = strings.ToLower(key)
+			key = strings.ReplaceAll(key, "_", ".")
 
-				value := parts[1]
-				labelsFromEnv[key] = value
-			}
+			value := parts[1]
+			labelsFromEnv[key] = value
 		}
 	}
 
