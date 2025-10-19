@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -41,6 +43,7 @@ type AuthService struct {
 	loginMutex    sync.RWMutex
 	ldap          *LdapService
 	database      *gorm.DB
+	ctx           context.Context
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, database *gorm.DB) *AuthService {
@@ -54,6 +57,7 @@ func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapS
 }
 
 func (auth *AuthService) Init() error {
+	auth.ctx = context.Background()
 	return nil
 }
 
@@ -213,7 +217,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		OAuthName:   data.OAuthName,
 	}
 
-	err = auth.database.Create(&session).Error
+	err = gorm.G[model.Session](auth.database).Create(auth.ctx, &session)
 
 	if err != nil {
 		return err
@@ -231,10 +235,10 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	res := auth.database.Unscoped().Where("uuid = ?", cookie).Delete(&model.Session{})
+	_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Delete(auth.ctx)
 
-	if res.Error != nil {
-		return res.Error
+	if err != nil {
+		return err
 	}
 
 	c.SetCookie(auth.config.SessionCookieName, "", -1, "/", fmt.Sprintf(".%s", auth.config.CookieDomain), auth.config.SecureCookie, true)
@@ -249,15 +253,13 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		return config.SessionCookie{}, err
 	}
 
-	var session model.Session
+	session, err := gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).First(auth.ctx)
 
-	res := auth.database.Unscoped().Where("uuid = ?", cookie).First(&session)
-
-	if res.Error != nil {
-		return config.SessionCookie{}, res.Error
+	if err != nil {
+		return config.SessionCookie{}, err
 	}
 
-	if res.RowsAffected == 0 {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return config.SessionCookie{}, fmt.Errorf("session not found")
 	}
 
