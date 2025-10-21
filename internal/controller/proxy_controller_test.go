@@ -39,6 +39,11 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 
 	assert.NilError(t, dockerService.Init())
 
+	// Access controls
+	accessControlsService := service.NewAccessControlsService(dockerService)
+
+	assert.NilError(t, accessControlsService.Init())
+
 	// Auth service
 	authService := service.NewAuthService(service.AuthServiceConfig{
 		Users: []config.User{
@@ -59,7 +64,7 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	// Controller
 	ctrl := controller.NewProxyController(controller.ProxyControllerConfig{
 		AppURL: "http://localhost:8080",
-	}, group, dockerService, authService)
+	}, group, accessControlsService, authService)
 	ctrl.SetupRoutes()
 
 	return router, recorder, authService

@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
 	"tinyauth/internal/config"
 	"tinyauth/internal/service"
@@ -25,17 +24,15 @@ type ProxyControllerConfig struct {
 type ProxyController struct {
 	config ProxyControllerConfig
 	router *gin.RouterGroup
-	docker *service.DockerService
-	label  *service.LabelService
+	acls   *service.AccessControlsService
 	auth   *service.AuthService
 }
 
-func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, docker *service.DockerService, label *service.LabelService, auth *service.AuthService) *ProxyController {
+func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, acls *service.AccessControlsService, auth *service.AuthService) *ProxyController {
 	return &ProxyController{
 		config: config,
 		router: router,
-		docker: docker,
-		label:  label,
+		acls:   acls,
 		auth:   auth,
 	}
 }
@@ -79,42 +76,21 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
-	// Get labels from environment variables
-	envLabels, err := controller.label.GetLabels(host)
+	// Get acls
+	acls, err := controller.acls.GetAccessControls(host)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get labels from environment variables")
+		log.Error().Err(err).Msg("Failed to get access controls for resource")
 		controller.handleError(c, req, isBrowser)
 		return
 	}
 
-	// Get labels from Docker
-	dockerLabels, err := controller.docker.GetLabels(host)
-
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get labels from Docker")
-		controller.handleError(c, req, isBrowser)
-		return
-	}
-
-	// Determine which labels to use, prioritizing environment variables
-	var labels config.App
-	if !reflect.DeepEqual(envLabels, config.App{}) {
-		log.Debug().Msg("Using labels from environment variables")
-		labels = envLabels
-	} else if !reflect.DeepEqual(dockerLabels, config.App{}) {
-		log.Debug().Msg("Using labels from Docker")
-		labels = dockerLabels
-	} else {
-		log.Debug().Msg("No labels found for resource")
-		labels = config.App{}
-	}
-	log.Trace().Interface("labels", labels).Msg("Labels for resource")
+	log.Trace().Interface("acls", acls).Msg("ACLs for resource")
 
 	clientIP := c.ClientIP()
 
-	if controller.auth.IsBypassedIP(labels.IP, clientIP) {
-		controller.setHeaders(c, labels)
+	if controller.auth.IsBypassedIP(acls.IP, clientIP) {
+		controller.setHeaders(c, acls)
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -122,7 +98,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.auth.IsAuthEnabled(uri, labels.Path)
+	authEnabled, err := controller.auth.IsAuthEnabled(uri, acls.Path)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
@@ -132,7 +108,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	if !authEnabled {
 		log.Debug().Msg("Authentication disabled for resource, allowing access")
-		controller.setHeaders(c, labels)
+		controller.setHeaders(c, acls)
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "Authenticated",
@@ -140,7 +116,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.auth.CheckIP(labels.IP, clientIP) {
+	if !controller.auth.CheckIP(acls.IP, clientIP) {
 		if req.Proxy == "nginx" || !isBrowser {
 			c.JSON(401, gin.H{
 				"status":  401,
@@ -185,7 +161,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.auth.IsResourceAllowed(c, userContext, labels)
+		appAllowed := controller.auth.IsResourceAllowed(c, userContext, acls)
 
 		if !appAllowed {
 			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
@@ -219,7 +195,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		}
 
 		if userContext.OAuth {
-			groupOK := controller.auth.IsInOAuthGroup(c, userContext, labels.OAuth.Groups)
+			groupOK := controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
 
 			if !groupOK {
 				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
@@ -259,7 +235,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
 
-		controller.setHeaders(c, labels)
+		controller.setHeaders(c, acls)
 
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -289,21 +265,21 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode()))
 }
 
-func (controller *ProxyController) setHeaders(c *gin.Context, labels config.App) {
+func (controller *ProxyController) setHeaders(c *gin.Context, acls config.App) {
 	c.Header("Authorization", c.Request.Header.Get("Authorization"))
 
-	headers := utils.ParseHeaders(labels.Response.Headers)
+	headers := utils.ParseHeaders(acls.Response.Headers)
 
 	for key, value := range headers {
 		log.Debug().Str("header", key).Msg("Setting header")
 		c.Header(key, value)
 	}
 
-	basicPassword := utils.GetSecret(labels.Response.BasicAuth.Password, labels.Response.BasicAuth.PasswordFile)
+	basicPassword := utils.GetSecret(acls.Response.BasicAuth.Password, acls.Response.BasicAuth.PasswordFile)
 
-	if labels.Response.BasicAuth.Username != "" && basicPassword != "" {
-		log.Debug().Str("username", labels.Response.BasicAuth.Username).Msg("Setting basic auth header")
-		c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(labels.Response.BasicAuth.Username, basicPassword)))
+	if acls.Response.BasicAuth.Username != "" && basicPassword != "" {
+		log.Debug().Str("username", acls.Response.BasicAuth.Username).Msg("Setting basic auth header")
+		c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(acls.Response.BasicAuth.Username, basicPassword)))
 	}
 }
 

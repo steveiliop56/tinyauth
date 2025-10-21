@@ -287,21 +287,21 @@ func (auth *AuthService) UserAuthConfigured() bool {
 	return len(auth.config.Users) > 0 || auth.ldap != nil
 }
 
-func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, labels config.App) bool {
+func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
-		return utils.CheckFilter(labels.OAuth.Whitelist, context.Email)
+		return utils.CheckFilter(acls.OAuth.Whitelist, context.Email)
 	}
 
-	if labels.Users.Block != "" {
+	if acls.Users.Block != "" {
 		log.Debug().Msg("Checking blocked users")
-		if utils.CheckFilter(labels.Users.Block, context.Username) {
+		if utils.CheckFilter(acls.Users.Block, context.Username) {
 			return false
 		}
 	}
 
 	log.Debug().Msg("Checking users")
-	return utils.CheckFilter(labels.Users.Allow, context.Username)
+	return utils.CheckFilter(acls.Users.Allow, context.Username)
 }
 
 func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserContext, requiredGroups string) bool {
@@ -369,8 +369,8 @@ func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 	}
 }
 
-func (auth *AuthService) CheckIP(labels config.AppIP, ip string) bool {
-	for _, blocked := range labels.Block {
+func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
+	for _, blocked := range acls.Block {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
@@ -382,7 +382,7 @@ func (auth *AuthService) CheckIP(labels config.AppIP, ip string) bool {
 		}
 	}
 
-	for _, allowed := range labels.Allow {
+	for _, allowed := range acls.Allow {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
@@ -394,7 +394,7 @@ func (auth *AuthService) CheckIP(labels config.AppIP, ip string) bool {
 		}
 	}
 
-	if len(labels.Allow) > 0 {
+	if len(acls.Allow) > 0 {
 		log.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
 	}
@@ -403,8 +403,8 @@ func (auth *AuthService) CheckIP(labels config.AppIP, ip string) bool {
 	return true
 }
 
-func (auth *AuthService) IsBypassedIP(labels config.AppIP, ip string) bool {
-	for _, bypassed := range labels.Bypass {
+func (auth *AuthService) IsBypassedIP(acls config.AppIP, ip string) bool {
+	for _, bypassed := range acls.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
