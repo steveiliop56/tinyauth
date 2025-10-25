@@ -2,30 +2,27 @@ package decoders
 
 import (
 	"reflect"
+	"regexp"
 	"strings"
-	"tinyauth/internal/config"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
-func NormalizeKeys(keys map[string]string, rootName string, sep string) map[string]string {
+func normalizeKeys[T any](input map[string]string, root string, sep string) map[string]string {
+	knownKeys := getKnownKeys[T]()
 	normalized := make(map[string]string)
-	knownKeys := getKnownKeys()
 
-	for k, v := range keys {
-		var finalKey []string
-		var suffix string
-		var camelClientName string
-		var camelField string
+	for k, v := range input {
+		parts := []string{"tinyauth"}
 
-		finalKey = append(finalKey, rootName)
-		finalKey = append(finalKey, "providers")
-		lowerKey := strings.ToLower(k)
+		key := strings.ToLower(k)
+		key = strings.ReplaceAll(key, sep, "-")
 
-		if !strings.HasPrefix(lowerKey, "providers"+sep) {
-			continue
-		}
+		suffix := ""
 
 		for _, known := range knownKeys {
-			if strings.HasSuffix(lowerKey, strings.ReplaceAll(known, "-", sep)) {
+			if strings.HasSuffix(key, known) {
 				suffix = known
 				break
 			}
@@ -35,55 +32,76 @@ func NormalizeKeys(keys map[string]string, rootName string, sep string) map[stri
 			continue
 		}
 
-		if strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(lowerKey, "providers"+sep), strings.ReplaceAll(suffix, "-", sep))) == "" {
+		parts = append(parts, root)
+
+		id := strings.TrimPrefix(key, root+"-")
+		id = strings.TrimSuffix(id, "-"+suffix)
+
+		if id == "" {
 			continue
 		}
 
-		clientNameParts := strings.Split(strings.TrimPrefix(strings.TrimSuffix(lowerKey, sep+strings.ReplaceAll(suffix, "-", sep)), "providers"+sep), sep)
+		parts = append(parts, id)
+		parts = append(parts, suffix)
 
-		for i, p := range clientNameParts {
+		final := ""
+
+		for i, part := range parts {
 			if i == 0 {
-				camelClientName += p
+				final += kebabToCamel(part)
 				continue
 			}
-			if p == "" {
-				continue
-			}
-			camelClientName += strings.ToUpper(string([]rune(p)[0])) + string([]rune(p)[1:])
+			final += "." + kebabToCamel(part)
 		}
 
-		finalKey = append(finalKey, camelClientName)
-
-		fieldParts := strings.Split(suffix, "-")
-
-		for i, p := range fieldParts {
-			if i == 0 {
-				camelField += p
-				continue
-			}
-			if p == "" {
-				continue
-			}
-			camelField += strings.ToUpper(string([]rune(p)[0])) + string([]rune(p)[1:])
-		}
-
-		finalKey = append(finalKey, camelField)
-		normalized[strings.Join(finalKey, ".")] = v
+		normalized[final] = v
 	}
 
 	return normalized
 }
 
-func getKnownKeys() []string {
-	var known []string
+func getKnownKeys[T any]() []string {
+	var keys []string
+	var t T
 
-	p := config.OAuthServiceConfig{}
-	v := reflect.ValueOf(p)
-	typeOfP := v.Type()
+	v := reflect.ValueOf(t)
+	typeOfT := v.Type()
 
-	for field := range typeOfP.NumField() {
-		known = append(known, typeOfP.Field(field).Tag.Get("key"))
+	re := regexp.MustCompile(`[A-Z]`)
+
+	for field := range typeOfT.NumField() {
+		if typeOfT.Field(field).Tag.Get("field") != "" {
+			keys = append(keys, typeOfT.Field(field).Tag.Get("field"))
+			continue
+		}
+
+		var key string
+
+		for i, char := range typeOfT.Field(field).Name {
+			if re.MatchString(string(char)) && i != 0 {
+				key += "-" + strings.ToLower(string(char))
+				continue
+			}
+			key += strings.ToLower(string(char))
+		}
+
+		keys = append(keys, key)
 	}
 
-	return known
+	return keys
+}
+
+func kebabToCamel(input string) string {
+	res := ""
+	parts := strings.Split(input, "-")
+
+	for i, part := range parts {
+		if i == 0 {
+			res += part
+			continue
+		}
+		res += cases.Title(language.English).String(part)
+	}
+
+	return res
 }

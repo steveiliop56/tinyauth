@@ -2,23 +2,23 @@ package decoders
 
 import (
 	"strings"
-	"tinyauth/internal/config"
 
 	"github.com/traefik/paerser/parser"
 )
 
-func DecodeFlags(flags map[string]string) (config.Providers, error) {
-	filtered := filterFlags(flags)
-	normalized := NormalizeKeys(filtered, "tinyauth", "-")
-	var providers config.Providers
+func DecodeFlags[T any, C any](flags map[string]string, subName string) (T, error) {
+	var result T
 
-	err := parser.Decode(normalized, &providers, "tinyauth", "tinyauth.providers")
+	filtered := filterFlags(flags)
+	normalized := normalizeKeys[C](filtered, subName, "_")
+
+	err := parser.Decode(normalized, &result, "tinyauth", "tinyauth."+subName)
 
 	if err != nil {
-		return config.Providers{}, err
+		return result, err
 	}
 
-	return providers, nil
+	return result, nil
 }
 
 func filterFlags(flags map[string]string) map[string]string {
