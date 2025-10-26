@@ -2,11 +2,9 @@ package decoders
 
 import (
 	"reflect"
-	"regexp"
 	"strings"
 
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	"github.com/stoewer/go-strcase"
 )
 
 func normalizeKeys[T any](input map[string]string, root string, sep string) map[string]string {
@@ -47,11 +45,10 @@ func normalizeKeys[T any](input map[string]string, root string, sep string) map[
 		final := ""
 
 		for i, part := range parts {
-			if i == 0 {
-				final += kebabToCamel(part)
-				continue
+			if i > 0 {
+				final += "."
 			}
-			final += "." + kebabToCamel(part)
+			final += strcase.LowerCamelCase(part)
 		}
 
 		normalized[final] = v
@@ -67,41 +64,13 @@ func getKnownKeys[T any]() []string {
 	v := reflect.ValueOf(t)
 	typeOfT := v.Type()
 
-	re := regexp.MustCompile(`[A-Z]`)
-
 	for field := range typeOfT.NumField() {
 		if typeOfT.Field(field).Tag.Get("field") != "" {
 			keys = append(keys, typeOfT.Field(field).Tag.Get("field"))
 			continue
 		}
-
-		var key string
-
-		for i, char := range typeOfT.Field(field).Name {
-			if re.MatchString(string(char)) && i != 0 {
-				key += "-" + strings.ToLower(string(char))
-				continue
-			}
-			key += strings.ToLower(string(char))
-		}
-
-		keys = append(keys, key)
+		keys = append(keys, strcase.KebabCase(typeOfT.Field(field).Name))
 	}
 
 	return keys
-}
-
-func kebabToCamel(input string) string {
-	res := ""
-	parts := strings.Split(input, "-")
-
-	for i, part := range parts {
-		if i == 0 {
-			res += part
-			continue
-		}
-		res += cases.Title(language.English).String(part)
-	}
-
-	return res
 }
