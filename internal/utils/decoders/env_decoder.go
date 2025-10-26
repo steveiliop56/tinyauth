@@ -1,20 +1,19 @@
 package decoders
 
 import (
-	"tinyauth/internal/config"
-
 	"github.com/traefik/paerser/parser"
 )
 
-func DecodeEnv(env map[string]string) (config.Providers, error) {
-	normalized := NormalizeKeys(env, "tinyauth", "_")
-	var providers config.Providers
+func DecodeEnv[T any, C any](env map[string]string, subName string) (T, error) {
+	var result T
 
-	err := parser.Decode(normalized, &providers, "tinyauth", "tinyauth.providers")
+	normalized := normalizeKeys[C](env, subName, "_")
+
+	err := parser.Decode(normalized, &result, "tinyauth", "tinyauth."+subName)
 
 	if err != nil {
-		return config.Providers{}, err
+		return result, err
 	}
 
-	return providers, nil
+	return result, nil
 }

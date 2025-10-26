@@ -9,52 +9,29 @@ import (
 )
 
 func TestDecodeFlags(t *testing.T) {
-	// Variables
+	// Setup
+	flags := map[string]string{
+		"--providers-google-client-id":        "google-client-id",
+		"--providers-google-client-secret":    "google-client-secret",
+		"--providers-my-github-client-id":     "github-client-id",
+		"--providers-my-github-client-secret": "github-client-secret",
+	}
+
 	expected := config.Providers{
 		Providers: map[string]config.OAuthServiceConfig{
-			"client1": {
-				ClientID:           "client1-id",
-				ClientSecret:       "client1-secret",
-				Scopes:             []string{"client1-scope1", "client1-scope2"},
-				RedirectURL:        "client1-redirect-url",
-				AuthURL:            "client1-auth-url",
-				UserinfoURL:        "client1-user-info-url",
-				Name:               "Client1",
-				InsecureSkipVerify: false,
+			"google": {
+				ClientID:     "google-client-id",
+				ClientSecret: "google-client-secret",
 			},
-			"client2": {
-				ClientID:           "client2-id",
-				ClientSecret:       "client2-secret",
-				Scopes:             []string{"client2-scope1", "client2-scope2"},
-				RedirectURL:        "client2-redirect-url",
-				AuthURL:            "client2-auth-url",
-				UserinfoURL:        "client2-user-info-url",
-				Name:               "My Awesome Client2",
-				InsecureSkipVerify: false,
+			"myGithub": {
+				ClientID:     "github-client-id",
+				ClientSecret: "github-client-secret",
 			},
 		},
 	}
-	test := map[string]string{
-		"--providers-client1-client-id":            "client1-id",
-		"--providers-client1-client-secret":        "client1-secret",
-		"--providers-client1-scopes":               "client1-scope1,client1-scope2",
-		"--providers-client1-redirect-url":         "client1-redirect-url",
-		"--providers-client1-auth-url":             "client1-auth-url",
-		"--providers-client1-user-info-url":        "client1-user-info-url",
-		"--providers-client1-name":                 "Client1",
-		"--providers-client1-insecure-skip-verify": "false",
-		"--providers-client2-client-id":            "client2-id",
-		"--providers-client2-client-secret":        "client2-secret",
-		"--providers-client2-scopes":               "client2-scope1,client2-scope2",
-		"--providers-client2-redirect-url":         "client2-redirect-url",
-		"--providers-client2-auth-url":             "client2-auth-url",
-		"--providers-client2-user-info-url":        "client2-user-info-url",
-		"--providers-client2-name":                 "My Awesome Client2",
-		"--providers-client2-insecure-skip-verify": "false",
-	}
 
-	// Test
-	res, err := decoders.DecodeFlags(test)
+	// Execute
+	result, err := decoders.DecodeFlags[config.Providers, config.OAuthServiceConfig](flags, "providers")
 	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, res)
+	assert.DeepEqual(t, result, expected)
 }

@@ -147,7 +147,7 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 		}
 	}
 
-	envProviders, err := decoders.DecodeEnv(envMap)
+	envProviders, err := decoders.DecodeEnv[config.Providers, config.OAuthServiceConfig](envMap, "providers")
 
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 		}
 	}
 
-	flagProviders, err := decoders.DecodeFlags(flagsMap)
+	flagProviders, err := decoders.DecodeFlags[config.Providers, config.OAuthServiceConfig](flagsMap, "providers")
 
 	if err != nil {
 		return nil, err

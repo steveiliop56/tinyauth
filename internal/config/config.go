@@ -53,16 +53,16 @@ type Claims struct {
 }
 
 type OAuthServiceConfig struct {
-	ClientID           string   `key:"client-id"`
-	ClientSecret       string   `key:"client-secret"`
-	ClientSecretFile   string   `key:"client-secret-file"`
-	Scopes             []string `key:"scopes"`
-	RedirectURL        string   `key:"redirect-url"`
-	AuthURL            string   `key:"auth-url"`
-	TokenURL           string   `key:"token-url"`
-	UserinfoURL        string   `key:"user-info-url"`
-	InsecureSkipVerify bool     `key:"insecure-skip-verify"`
-	Name               string   `key:"name"`
+	ClientID           string `field:"client-id"`
+	ClientSecret       string
+	ClientSecretFile   string
+	Scopes             []string
+	RedirectURL        string `field:"redirect-url"`
+	AuthURL            string `field:"auth-url"`
+	TokenURL           string `field:"token-url"`
+	UserinfoURL        string `field:"user-info-url"`
+	InsecureSkipVerify bool
+	Name               string
 }
 
 var OverrideProviders = map[string]string{
