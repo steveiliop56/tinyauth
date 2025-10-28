@@ -208,3 +208,53 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 	// Return combined providers
 	return providers, nil
 }
+
+func GetACLsConfig(env []string, flagsMap map[string]string) (config.Apps, error) {
+	apps := config.Apps{Apps: make(map[string]config.App)}
+
+	envMap := make(map[string]string)
+
+	for _, e := range env {
+		pair := strings.SplitN(e, "=", 2)
+		if len(pair) == 2 {
+			envMap[pair[0]] = pair[1]
+		}
+	}
+
+	envApps, err := decoders.DecodeACLEnv[config.Apps](envMap, "apps")
+
+	if err != nil {
+		return config.Apps{}, err
+	}
+
+	if envApps.Apps != nil {
+		maps.Copy(apps.Apps, envApps.Apps)
+	}
+
+	flagApps, err := decoders.DecodeACLFlags[config.Apps](flagsMap, "apps")
+
+	if err != nil {
+		return config.Apps{}, err
+	}
+
+	if flagApps.Apps != nil {
+		maps.Copy(apps.Apps, flagApps.Apps)
+	}
+
+	return apps, nil
+}
+
+func ExtractACLFlags(args []string) map[string]string {
+	aclFlags := make(map[string]string)
+
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--apps-") || strings.HasPrefix(arg, "--tinyauth-apps-") {
+			pair := strings.SplitN(arg[2:], "=", 2)
+			if len(pair) == 2 {
+				aclFlags[pair[0]] = pair[1]
+			}
+		}
+	}
+
+	return aclFlags
+}

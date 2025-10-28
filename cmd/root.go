@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"strings"
 	"tinyauth/internal/bootstrap"
 	"tinyauth/internal/config"
@@ -14,15 +15,16 @@ import (
 )
 
 type rootCmd struct {
-	root *cobra.Command
-	cmd  *cobra.Command
-
-	viper *viper.Viper
+	root     *cobra.Command
+	cmd      *cobra.Command
+	viper    *viper.Viper
+	aclFlags map[string]string
 }
 
 func newRootCmd() *rootCmd {
 	return &rootCmd{
-		viper: viper.New(),
+		viper:    viper.New(),
+		aclFlags: make(map[string]string),
 	}
 }
 
@@ -116,7 +118,7 @@ func (c *rootCmd) run(cmd *cobra.Command, args []string) {
 		log.Warn().Msg("Log level set to trace, this will log sensitive information!")
 	}
 
-	app := bootstrap.NewBootstrapApp(conf)
+	app := bootstrap.NewBootstrapApp(conf, c.aclFlags)
 
 	err = app.Setup()
 	if err != nil {
@@ -126,6 +128,9 @@ func (c *rootCmd) run(cmd *cobra.Command, args []string) {
 
 func Run() {
 	rootCmd := newRootCmd()
+	rootCmd.aclFlags = utils.ExtractACLFlags(os.Args[1:])
+	os.Args = filterACLFlags(os.Args)
+
 	rootCmd.Register()
 	root := rootCmd.GetCmd()
 
@@ -154,4 +159,24 @@ func Run() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to execute root command")
 	}
+}
+
+func filterACLFlags(args []string) []string {
+	filtered := make([]string, 0)
+
+	for i, arg := range args {
+		// Program name
+		if i == 0 {
+			filtered = append(filtered, arg)
+			continue
+		}
+
+		if strings.HasPrefix(arg, "--apps-") || strings.HasPrefix(arg, "--tinyauth-apps-") {
+			continue
+		}
+
+		filtered = append(filtered, arg)
+	}
+
+	return filtered
 }
