@@ -13,10 +13,9 @@ func ParsePath(parts []string, idx int, t reflect.Type) []string {
 	}
 
 	if t.Kind() == reflect.Map {
-		mapName := strings.ToLower(parts[idx])
 
-		if idx+1 >= len(parts) {
-			return []string{mapName}
+		if idx >= len(parts) {
+			return []string{}
 		}
 
 		elemType := t.Elem()
@@ -41,19 +40,31 @@ func ParsePath(parts []string, idx int, t reflect.Type) []string {
 			}
 		}
 
-		keyParts := parts[idx+1 : keyEndIdx]
+		keyParts := parts[idx:keyEndIdx]
 		keyName := strings.ToLower(strings.Join(keyParts, "_"))
 
 		rest := ParsePath(parts, keyEndIdx, elemType)
-		return append([]string{mapName, keyName}, rest...)
+		result := append([]string{keyName}, rest...)
+		return result
 	}
 
 	if t.Kind() == reflect.Struct {
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
+			if field.Type.Kind() == reflect.Map {
+				rest := ParsePath(parts, idx, field.Type)
+				if len(rest) > 0 {
+					return rest
+				}
+			}
+		}
+
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
 			if strings.EqualFold(parts[idx], field.Name) {
 				rest := ParsePath(parts, idx+1, field.Type)
-				return append([]string{strings.ToLower(field.Name)}, rest...)
+				result := append([]string{strings.ToLower(field.Name)}, rest...)
+				return result
 			}
 		}
 	}
@@ -141,26 +152,39 @@ func normalizeACLKeys[T any](input map[string]string, root string, sep string) m
 			continue
 		}
 
-		if parts[0] != "tinyauth" {
+		// Two cases:
+		// 1. Keys starting with "tinyauth" (env vars): tinyauth_apps_...
+		// 2. Keys starting with root directly (flags): apps-...
+		startIdx := 0
+		if parts[0] == "tinyauth" {
+			if len(parts) < 3 {
+				continue
+			}
+			if parts[1] != root {
+				continue
+			}
+			startIdx = 2 // Skip "tinyauth" and root
+		} else if parts[0] == root {
+			startIdx = 1 // Skip root only
+		} else {
 			continue
 		}
 
-		if parts[1] != root {
-			continue
-		}
-
-		if len(parts) > 2 {
-			parsedParts := ParsePath(parts[2:], 0, rootType)
+		if startIdx < len(parts) {
+			parsedParts := ParsePath(parts[startIdx:], 0, rootType)
 
 			if len(parsedParts) == 0 {
 				continue
 			}
 
-			final := "tinyauth"
-			final += "." + root
+			final := "tinyauth." + root
 
 			for _, part := range parsedParts {
-				final += "." + strcase.LowerCamelCase(part)
+				if strings.Contains(part, "_") {
+					final += "." + part
+				} else {
+					final += "." + strcase.LowerCamelCase(part)
+				}
 			}
 
 			normalized[final] = v
