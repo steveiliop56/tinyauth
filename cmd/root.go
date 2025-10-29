@@ -34,6 +34,9 @@ func (c *rootCmd) Register() {
 		Short: "The simplest way to protect your apps with a login screen",
 		Long:  `Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github or any other provider to all of your docker apps.`,
 		Run:   c.run,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: true,
+		},
 	}
 
 	c.viper.AutomaticEnv()
@@ -129,7 +132,6 @@ func (c *rootCmd) run(cmd *cobra.Command, args []string) {
 func Run() {
 	rootCmd := newRootCmd()
 	rootCmd.aclFlags = utils.ExtractACLFlags(os.Args[1:])
-	os.Args = filterACLFlags(os.Args)
 
 	rootCmd.Register()
 	root := rootCmd.GetCmd()
@@ -159,24 +161,4 @@ func Run() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to execute root command")
 	}
-}
-
-func filterACLFlags(args []string) []string {
-	filtered := make([]string, 0)
-
-	for i, arg := range args {
-		// Program name
-		if i == 0 {
-			filtered = append(filtered, arg)
-			continue
-		}
-
-		if strings.HasPrefix(arg, "--apps-") || strings.HasPrefix(arg, "--tinyauth-apps-") {
-			continue
-		}
-
-		filtered = append(filtered, arg)
-	}
-
-	return filtered
 }
