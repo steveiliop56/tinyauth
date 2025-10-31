@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"strings"
 	"tinyauth/internal/bootstrap"
 	"tinyauth/internal/config"
@@ -14,15 +15,16 @@ import (
 )
 
 type rootCmd struct {
-	root *cobra.Command
-	cmd  *cobra.Command
-
-	viper *viper.Viper
+	root     *cobra.Command
+	cmd      *cobra.Command
+	viper    *viper.Viper
+	aclFlags map[string]string
 }
 
 func newRootCmd() *rootCmd {
 	return &rootCmd{
-		viper: viper.New(),
+		viper:    viper.New(),
+		aclFlags: make(map[string]string),
 	}
 }
 
@@ -32,6 +34,9 @@ func (c *rootCmd) Register() {
 		Short: "The simplest way to protect your apps with a login screen",
 		Long:  `Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github or any other provider to all of your docker apps.`,
 		Run:   c.run,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: true,
+		},
 	}
 
 	c.viper.AutomaticEnv()
@@ -116,7 +121,7 @@ func (c *rootCmd) run(cmd *cobra.Command, args []string) {
 		log.Warn().Msg("Log level set to trace, this will log sensitive information!")
 	}
 
-	app := bootstrap.NewBootstrapApp(conf)
+	app := bootstrap.NewBootstrapApp(conf, c.aclFlags)
 
 	err = app.Setup()
 	if err != nil {
@@ -126,6 +131,8 @@ func (c *rootCmd) run(cmd *cobra.Command, args []string) {
 
 func Run() {
 	rootCmd := newRootCmd()
+	rootCmd.aclFlags = utils.ExtractACLFlags(os.Args[1:])
+
 	rootCmd.Register()
 	root := rootCmd.GetCmd()
 

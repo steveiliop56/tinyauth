@@ -4,70 +4,39 @@ import (
 	"os"
 	"strings"
 	"tinyauth/internal/config"
-	"tinyauth/internal/utils/decoders"
+	"tinyauth/internal/utils"
 
 	"github.com/rs/zerolog/log"
 )
 
 type AccessControlsService struct {
-	docker  *DockerService
-	envACLs config.Apps
+	docker   *DockerService
+	envACLs  config.Apps
+	aclFlags map[string]string
 }
 
 func NewAccessControlsService(docker *DockerService) *AccessControlsService {
 	return &AccessControlsService{
-		docker: docker,
+		docker:   docker,
+		aclFlags: make(map[string]string),
 	}
+}
+
+func (acls *AccessControlsService) SetACLFlags(flags map[string]string) {
+	acls.aclFlags = flags
 }
 
 func (acls *AccessControlsService) Init() error {
-	acls.envACLs = config.Apps{}
 	env := os.Environ()
-	appEnvVars := []string{}
 
-	for _, e := range env {
-		if strings.HasPrefix(e, "TINYAUTH_APPS_") {
-			appEnvVars = append(appEnvVars, e)
-		}
-	}
-
-	err := acls.loadEnvACLs(appEnvVars)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (acls *AccessControlsService) loadEnvACLs(appEnvVars []string) error {
-	if len(appEnvVars) == 0 {
-		return nil
-	}
-
-	envAcls := map[string]string{}
-
-	for _, e := range appEnvVars {
-		parts := strings.SplitN(e, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		// Normalize key, this should use the same normalization logic as in utils/decoders/decoders.go
-		key := parts[0]
-		key = strings.ToLower(key)
-		key = strings.ReplaceAll(key, "_", ".")
-		value := parts[1]
-		envAcls[key] = value
-	}
-
-	apps, err := decoders.DecodeLabels(envAcls)
+	apps, err := utils.GetACLsConfig(env, acls.aclFlags)
 
 	if err != nil {
 		return err
 	}
 
 	acls.envACLs = apps
+
 	return nil
 }
 

@@ -7,6 +7,71 @@ import (
 	"github.com/stoewer/go-strcase"
 )
 
+func ParsePath(parts []string, idx int, t reflect.Type) []string {
+	if idx >= len(parts) {
+		return []string{}
+	}
+
+	if t.Kind() == reflect.Map {
+
+		if idx >= len(parts) {
+			return []string{}
+		}
+
+		elemType := t.Elem()
+		keyEndIdx := idx + 1
+
+		if elemType.Kind() == reflect.Struct {
+			for i := idx + 1; i < len(parts); i++ {
+				found := false
+
+				for j := 0; j < elemType.NumField(); j++ {
+					field := elemType.Field(j)
+					if strings.EqualFold(parts[i], field.Name) {
+						keyEndIdx = i
+						found = true
+						break
+					}
+				}
+
+				if found {
+					break
+				}
+			}
+		}
+
+		keyParts := parts[idx:keyEndIdx]
+		keyName := strings.ToLower(strings.Join(keyParts, "_"))
+
+		rest := ParsePath(parts, keyEndIdx, elemType)
+		result := append([]string{keyName}, rest...)
+		return result
+	}
+
+	if t.Kind() == reflect.Struct {
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			if field.Type.Kind() == reflect.Map {
+				rest := ParsePath(parts, idx, field.Type)
+				if len(rest) > 0 {
+					return rest
+				}
+			}
+		}
+
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			if strings.EqualFold(parts[idx], field.Name) {
+				rest := ParsePath(parts, idx+1, field.Type)
+				result := append([]string{strings.ToLower(field.Name)}, rest...)
+				return result
+			}
+		}
+	}
+
+	return []string{}
+}
+
 func normalizeKeys[T any](input map[string]string, root string, sep string) map[string]string {
 	knownKeys := getKnownKeys[T]()
 	normalized := make(map[string]string)
@@ -73,4 +138,58 @@ func getKnownKeys[T any]() []string {
 	}
 
 	return keys
+}
+
+func normalizeACLKeys[T any](input map[string]string, root string, sep string) map[string]string {
+	normalized := make(map[string]string)
+	var t T
+	rootType := reflect.TypeOf(t)
+
+	for k, v := range input {
+		parts := strings.Split(strings.ToLower(k), sep)
+
+		if len(parts) < 2 {
+			continue
+		}
+
+		// Two cases:
+		// 1. Keys starting with "tinyauth" (env vars): tinyauth_apps_...
+		// 2. Keys starting with root directly (flags): apps-...
+		startIdx := 0
+		if parts[0] == "tinyauth" {
+			if len(parts) < 3 {
+				continue
+			}
+			if parts[1] != root {
+				continue
+			}
+			startIdx = 2 // Skip "tinyauth" and root
+		} else if parts[0] == root {
+			startIdx = 1 // Skip root only
+		} else {
+			continue
+		}
+
+		if startIdx < len(parts) {
+			parsedParts := ParsePath(parts[startIdx:], 0, rootType)
+
+			if len(parsedParts) == 0 {
+				continue
+			}
+
+			final := "tinyauth." + root
+
+			for _, part := range parsedParts {
+				if strings.Contains(part, "_") {
+					final += "." + part
+				} else {
+					final += "." + strcase.LowerCamelCase(part)
+				}
+			}
+
+			normalized[final] = v
+		}
+	}
+
+	return normalized
 }

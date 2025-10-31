@@ -37,13 +37,15 @@ type Service interface {
 }
 
 type BootstrapApp struct {
-	config config.Config
-	uuid   string
+	config   config.Config
+	aclFlags map[string]string
+	uuid     string
 }
 
-func NewBootstrapApp(config config.Config) *BootstrapApp {
+func NewBootstrapApp(config config.Config, aclFlags map[string]string) *BootstrapApp {
 	return &BootstrapApp{
-		config: config,
+		config:   config,
+		aclFlags: aclFlags,
 	}
 }
 
@@ -140,6 +142,7 @@ func (app *BootstrapApp) Setup() error {
 	// Create services
 	dockerService := service.NewDockerService()
 	aclsService := service.NewAccessControlsService(dockerService)
+	aclsService.SetACLFlags(app.aclFlags)
 	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
 	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
 
