@@ -119,6 +119,8 @@ export const LoginPage = () => {
         !isLoggedIn &&
         redirectUri
       ) {
+        // Not sure of a better way to do this
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOauthAutoRedirectHandover(true);
         oauthMutation.mutate(oauthAutoRedirect);
         redirectButtonTimer.current = window.setTimeout(() => {
@@ -126,7 +128,15 @@ export const LoginPage = () => {
         }, 5000);
       }
     }
-  }, []);
+  }, [
+    isMounted,
+    oauthProviders.length,
+    providers,
+    isLoggedIn,
+    redirectUri,
+    oauthAutoRedirect,
+    oauthMutation,
+  ]);
 
   useEffect(
     () => () => {

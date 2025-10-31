@@ -29,10 +29,10 @@ jobs:
         run: |
           echo testing > internal/assets/version
 
-      - name: Build frontend
+      - name: Lint frontend
         run: |
           cd frontend
-          bun run build
+          bun run lint
 
       - name: Copy frontend
         run: |

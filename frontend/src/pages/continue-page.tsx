@@ -76,7 +76,14 @@ export const ContinuePage = () => {
       clearTimeout(auto);
       clearTimeout(reveal);
     };
-  }, []);
+  }, [
+    handleRedirect,
+    isAllowedRedirectProto,
+    isHttpsDowngrade,
+    isLoggedIn,
+    isTrustedRedirectUri,
+    isValidRedirectUri,
+  ]);
 
   if (!isLoggedIn) {
     return (
