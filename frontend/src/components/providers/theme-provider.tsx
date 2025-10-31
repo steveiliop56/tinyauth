@@ -1,53 +1,73 @@
-import React from "react";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-interface ThemeSchema {
-  darkMode: boolean;
-  setDarkMode: (darkMode: boolean) => void;
-}
+type Theme = "dark" | "light" | "system";
 
-const ThemeContext = createContext<ThemeSchema | null>(null);
+type ThemeProviderProps = {
+  children: React.ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
+};
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+type ThemeProviderState = {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+};
+
+const initialState: ThemeProviderState = {
+  theme: "system",
+  setTheme: () => null,
+};
+
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  storageKey = "vite-ui-theme",
+  ...props
+}: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
+  );
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem("tinyauth-theme");
-    if (storedTheme) {
-      setDarkMode(storedTheme === "dark");
+    const root = window.document.documentElement;
+
+    root.classList.remove("light", "dark");
+
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+
+      root.classList.add(systemTheme);
       return;
     }
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    setDarkMode(prefersDark);
-  }, []);
 
-  useEffect(() => {
-    const rootElement = document.documentElement;
-    rootElement.classList.remove("dark", "light");
-    rootElement.classList.add(darkMode ? "dark" : "light");
-  }, [darkMode]);
+    root.classList.add(theme);
+  }, [theme]);
 
-  const values = {
-    darkMode,
-    setDarkMode: (darkMode: boolean) => {
-      localStorage.setItem("tinyauth-theme", darkMode ? "dark" : "light");
-      setDarkMode(darkMode);
+  const value = {
+    theme,
+    setTheme: (theme: Theme) => {
+      localStorage.setItem(storageKey, theme);
+      setTheme(theme);
     },
   };
 
   return (
-    <ThemeContext.Provider value={values}>{children}</ThemeContext.Provider>
+    <ThemeProviderContext.Provider {...props} value={value}>
+      {children}
+    </ThemeProviderContext.Provider>
   );
-};
+}
 
 export const useTheme = () => {
-  const context = React.useContext(ThemeContext);
+  const context = useContext(ThemeProviderContext);
 
-  if (!context) {
+  if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");
-  }
 
   return context;
 };

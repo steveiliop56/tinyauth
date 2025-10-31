@@ -3,7 +3,7 @@ import { LanguageSelector } from "../language/language";
 import { Outlet } from "react-router";
 import { useCallback, useEffect, useState } from "react";
 import { DomainWarning } from "../domain-warning/domain-warning";
-import { ThemeSwitch } from "../theme-switch/theme-switch";
+import { ThemeToggle } from "../theme-toggle/theme-toggle";
 
 const BaseLayout = ({ children }: { children: React.ReactNode }) => {
   const { backgroundImage, title } = useAppContext();
@@ -22,7 +22,7 @@ const BaseLayout = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       <div className="absolute top-5 right-5 flex flex-row gap-2">
-        <ThemeSwitch />
+        <ThemeToggle />
         <LanguageSelector />
       </div>
       {children}

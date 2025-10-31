@@ -21,7 +21,7 @@ export const LanguageSelector = () => {
 
   return (
     <Select onValueChange={handleSelect} value={language}>
-      <SelectTrigger className="bg-card">
+      <SelectTrigger>
         <SelectValue placeholder="Select language" />
       </SelectTrigger>
       <SelectContent>

@@ -25,7 +25,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AppContextProvider>
         <UserContextProvider>
-          <ThemeProvider>
+          <ThemeProvider defaultTheme="system" storageKey="tinyauth-theme">
             <BrowserRouter>
               <Routes>
                 <Route element={<Layout />} errorElement={<ErrorPage />}>
