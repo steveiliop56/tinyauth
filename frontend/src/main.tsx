@@ -16,6 +16,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppContextProvider } from "./context/app-context.tsx";
 import { UserContextProvider } from "./context/user-context.tsx";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "./components/providers/theme-provider.tsx";
 
 const queryClient = new QueryClient();
 
@@ -24,25 +25,27 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AppContextProvider>
         <UserContextProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<Layout />} errorElement={<ErrorPage />}>
-                <Route path="/" element={<App />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/logout" element={<LogoutPage />} />
-                <Route path="/continue" element={<ContinuePage />} />
-                <Route path="/totp" element={<TotpPage />} />
-                <Route
-                  path="/forgot-password"
-                  element={<ForgotPasswordPage />}
-                />
-                <Route path="/unauthorized" element={<UnauthorizedPage />} />
-                <Route path="/error" element={<ErrorPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-          <Toaster />
+          <ThemeProvider defaultTheme="system" storageKey="tinyauth-theme">
+            <BrowserRouter>
+              <Routes>
+                <Route element={<Layout />} errorElement={<ErrorPage />}>
+                  <Route path="/" element={<App />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/logout" element={<LogoutPage />} />
+                  <Route path="/continue" element={<ContinuePage />} />
+                  <Route path="/totp" element={<TotpPage />} />
+                  <Route
+                    path="/forgot-password"
+                    element={<ForgotPasswordPage />}
+                  />
+                  <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                  <Route path="/error" element={<ErrorPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+            <Toaster />
+          </ThemeProvider>
         </UserContextProvider>
       </AppContextProvider>
     </QueryClientProvider>
