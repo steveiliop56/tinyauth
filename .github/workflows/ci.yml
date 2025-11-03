@@ -34,6 +34,11 @@ jobs:
           cd frontend
           bun run lint
 
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun run build
+
       - name: Copy frontend
         run: |
           cp -r frontend/dist internal/assets/dist
