@@ -34,6 +34,9 @@ func (c *rootCmd) Register() {
 		Run:   c.run,
 	}
 
+	// Ignore unknown flags to allow --providers-*
+	c.cmd.FParseErrWhitelist.UnknownFlags = true
+
 	c.viper.AutomaticEnv()
 
 	configOptions := []struct {
