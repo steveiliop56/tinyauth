@@ -41,6 +41,7 @@ type Config struct {
 	TrustedProxies        string `mapstructure:"trusted-proxies"`
 	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
 	DisableResources      bool   `mapstructure:"disable-resources"`
+	SocketPath            string `mapstructure:"socket-path"`
 }
 
 // OAuth/OIDC config

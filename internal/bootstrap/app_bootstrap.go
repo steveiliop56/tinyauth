@@ -286,6 +286,26 @@ func (app *BootstrapApp) Setup() error {
 	log.Debug().Msg("Starting database cleanup routine")
 	go app.dbCleanup(database)
 
+	// If we have an socket path, bind to it
+	if app.config.SocketPath != "" {
+		// Remove existing socket file
+		if _, err := os.Stat(app.config.SocketPath); err == nil {
+			log.Info().Msgf("Removing existing socket file %s", app.config.SocketPath)
+			err := os.Remove(app.config.SocketPath)
+			if err != nil {
+				return fmt.Errorf("failed to remove existing socket file: %w", err)
+			}
+		}
+
+		// Start server with unix socket
+		log.Info().Msgf("Starting server on unix socket %s", app.config.SocketPath)
+		if err := engine.RunUnix(app.config.SocketPath); err != nil {
+			log.Fatal().Err(err).Msg("Failed to start server")
+		}
+
+		return nil
+	}
+
 	// Start server
 	address := fmt.Sprintf("%s:%d", app.config.Address, app.config.Port)
 	log.Info().Msgf("Starting server on %s", address)

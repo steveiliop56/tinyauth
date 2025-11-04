@@ -70,6 +70,7 @@ func (c *rootCmd) Register() {
 		{"trusted-proxies", "", "Comma separated list of trusted proxies (IP addresses or CIDRs) for correct client IP detection."},
 		{"disable-analytics", false, "Disable anonymous version collection."},
 		{"disable-resources", false, "Disable the resources server."},
+		{"socket-path", "", "Path to the Unix socket to bind the server to."},
 	}
 
 	for _, opt := range configOptions {

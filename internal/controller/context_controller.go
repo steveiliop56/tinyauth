@@ -97,7 +97,15 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 }
 
 func (controller *ContextController) appContextHandler(c *gin.Context) {
-	appUrl, _ := url.Parse(controller.config.AppURL) // no need to check error, validated on startup
+	appUrl, err := url.Parse(controller.config.AppURL)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to parse app URL")
+		c.JSON(500, gin.H{
+			"status":  500,
+			"message": "Internal Server Error",
+		})
+		return
+	}
 
 	c.JSON(200, AppContextResponse{
 		Status:                200,
