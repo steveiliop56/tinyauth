@@ -10,11 +10,11 @@ import (
 
 func TestDecodeEnv(t *testing.T) {
 	// Setup
-	env := map[string]string{
-		"PROVIDERS_GOOGLE_CLIENT_ID":        "google-client-id",
-		"PROVIDERS_GOOGLE_CLIENT_SECRET":    "google-client-secret",
-		"PROVIDERS_MY_GITHUB_CLIENT_ID":     "github-client-id",
-		"PROVIDERS_MY_GITHUB_CLIENT_SECRET": "github-client-secret",
+	env := []string{
+		"TINYAUTH_PROVIDERS_GOOGLE_CLIENTID=google-client-id",
+		"TINYAUTH_PROVIDERS_GOOGLE_CLIENTSECRET=google-client-secret",
+		"TINYAUTH_PROVIDERS_GITHUB_CLIENTID=github-client-id",
+		"TINYAUTH_PROVIDERS_GITHUB_CLIENTSECRET=github-client-secret",
 	}
 
 	expected := config.Providers{
@@ -23,7 +23,7 @@ func TestDecodeEnv(t *testing.T) {
 				ClientID:     "google-client-id",
 				ClientSecret: "google-client-secret",
 			},
-			"myGithub": {
+			"github": {
 				ClientID:     "github-client-id",
 				ClientSecret: "github-client-secret",
 			},
@@ -31,7 +31,7 @@ func TestDecodeEnv(t *testing.T) {
 	}
 
 	// Execute
-	result, err := decoders.DecodeEnv[config.Providers, config.OAuthServiceConfig](env, "providers")
+	result, err := decoders.DecodeEnv[config.Providers](env)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, result, expected)
 }

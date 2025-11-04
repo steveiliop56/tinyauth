@@ -134,20 +134,11 @@ func GetLogLevel(level string) zerolog.Level {
 	}
 }
 
-func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[string]config.OAuthServiceConfig, error) {
+func GetOAuthProvidersConfig(environ []string, args []string, appUrl string) (map[string]config.OAuthServiceConfig, error) {
 	providers := make(map[string]config.OAuthServiceConfig)
 
 	// Get from environment variables
-	envMap := make(map[string]string)
-
-	for _, e := range env {
-		pair := strings.SplitN(e, "=", 2)
-		if len(pair) == 2 {
-			envMap[pair[0]] = pair[1]
-		}
-	}
-
-	envProviders, err := decoders.DecodeEnv[config.Providers, config.OAuthServiceConfig](envMap, "providers")
+	envProviders, err := decoders.DecodeEnv[config.Providers](environ)
 
 	if err != nil {
 		return nil, err
@@ -155,25 +146,14 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 
 	maps.Copy(providers, envProviders.Providers)
 
-	// Get from flags
-	flagsMap := make(map[string]string)
-
-	for _, arg := range args[1:] {
-		if strings.HasPrefix(arg, "--") {
-			pair := strings.SplitN(arg[2:], "=", 2)
-			if len(pair) == 2 {
-				flagsMap[pair[0]] = pair[1]
-			}
-		}
-	}
-
-	flagProviders, err := decoders.DecodeFlags[config.Providers, config.OAuthServiceConfig](flagsMap, "providers")
+	// Get from args
+	argProviders, err := decoders.DecodeFlags[config.Providers](args)
 
 	if err != nil {
 		return nil, err
 	}
 
-	maps.Copy(providers, flagProviders.Providers)
+	maps.Copy(providers, argProviders.Providers)
 
 	// For every provider get correct secret from file if set
 	for name, provider := range providers {
@@ -207,4 +187,29 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 
 	// Return combined providers
 	return providers, nil
+}
+
+func GetACLS(environ []string, args []string) (config.Apps, error) {
+	acls := config.Apps{}
+	acls.Apps = make(map[string]config.App)
+
+	// Get from environment variables
+	envACLs, err := decoders.DecodeEnv[config.Apps](environ)
+
+	if err != nil {
+		return config.Apps{}, err
+	}
+
+	maps.Copy(acls.Apps, envACLs.Apps)
+
+	// Get from args
+	argACLs, err := decoders.DecodeFlags[config.Apps](args)
+
+	if err != nil {
+		return config.Apps{}, err
+	}
+
+	maps.Copy(acls.Apps, argACLs.Apps)
+
+	return acls, nil
 }

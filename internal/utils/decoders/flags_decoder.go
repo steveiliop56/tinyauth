@@ -3,28 +3,32 @@ package decoders
 import (
 	"strings"
 
-	"github.com/traefik/paerser/parser"
+	"github.com/traefik/paerser/flag"
 )
 
-func DecodeFlags[T any, C any](flags map[string]string, subName string) (T, error) {
-	var result T
+func DecodeFlags[T any](args []string) (T, error) {
+	var target T
+	var formatted = []string{}
 
-	filtered := filterFlags(flags)
-	normalized := normalizeKeys[C](filtered, subName, "_")
+	for _, arg := range args {
+		argFmt := strings.TrimPrefix(arg, "--")
+		argParts := strings.SplitN(argFmt, "=", 2)
 
-	err := parser.Decode(normalized, &result, "tinyauth", "tinyauth."+subName)
+		if len(argParts) != 2 {
+			continue
+		}
+
+		key := argParts[0]
+		value := argParts[1]
+
+		formatted = append(formatted, "--"+strings.ReplaceAll(key, "-", ".")+"="+value)
+	}
+
+	err := flag.Decode(formatted, &target)
 
 	if err != nil {
-		return result, err
+		return target, err
 	}
 
-	return result, nil
-}
-
-func filterFlags(flags map[string]string) map[string]string {
-	filtered := make(map[string]string)
-	for k, v := range flags {
-		filtered[strings.TrimPrefix(k, "--")] = v
-	}
-	return filtered
+	return target, nil
 }

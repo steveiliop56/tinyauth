@@ -238,8 +238,8 @@ func TestIsRedirectSafeMultiLevel(t *testing.T) {
 }
 
 func TestGetOAuthProvidersConfig(t *testing.T) {
-	env := []string{"PROVIDERS_CLIENT1_CLIENT_ID=client1-id", "PROVIDERS_CLIENT1_CLIENT_SECRET=client1-secret"}
-	args := []string{"/tinyauth/tinyauth", "--providers-client2-client-id=client2-id", "--providers-client2-client-secret=client2-secret"}
+	env := []string{"PROVIDERS_CLIENT1_CLIENTID=client1-id", "PROVIDERS_CLIENT1_CLIENTSECRET=client1-secret"}
+	args := []string{"/tinyauth/tinyauth", "--providers-client2-clientid=client2-id", "--providers-client2-clientsecret=client2-secret"}
 
 	expected := map[string]config.OAuthServiceConfig{
 		"client1": {
@@ -278,7 +278,7 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 	assert.NilError(t, err)
 	defer os.Remove("/tmp/tinyauth_test_file")
 
-	env = []string{"PROVIDERS_CLIENT1_CLIENT_ID=client1-id", "PROVIDERS_CLIENT1_CLIENT_SECRET_FILE=/tmp/tinyauth_test_file"}
+	env = []string{"PROVIDERS_CLIENT1_CLIENTID=client1-id", "PROVIDERS_CLIENT1_CLIENTSECRETFILE=/tmp/tinyauth_test_file"}
 	args = []string{"/tinyauth/tinyauth"}
 	expected = map[string]config.OAuthServiceConfig{
 		"client1": {
@@ -293,7 +293,7 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 	assert.DeepEqual(t, expected, result)
 
 	// Case with google provider and no redirect URL
-	env = []string{"PROVIDERS_GOOGLE_CLIENT_ID=google-id", "PROVIDERS_GOOGLE_CLIENT_SECRET=google-secret"}
+	env = []string{"PROVIDERS_GOOGLE_CLIENTID=google-id", "PROVIDERS_GOOGLE_CLIENTSECRET=google-secret"}
 	args = []string{"/tinyauth/tinyauth"}
 	expected = map[string]config.OAuthServiceConfig{
 		"google": {
@@ -305,6 +305,42 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 	}
 
 	result, err = utils.GetOAuthProvidersConfig(env, args, "http://app.url")
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, result)
+}
+
+func TestGetACLS(t *testing.T) {
+	// Setup
+	env := []string{"TINYAUTH_APPS_APP1_CONFIG_DOMAIN=app1.com", "TINYAUTH_APPS_APP2_CONFIG_DOMAIN=app2.com"}
+	args := []string{"--apps-app3-config-domain=app3.com", "--apps-app4-config-domain=app4.com"}
+
+	expected := config.Apps{
+		Apps: map[string]config.App{
+			"app1": {
+				Config: config.AppConfig{
+					Domain: "app1.com",
+				},
+			},
+			"app2": {
+				Config: config.AppConfig{
+					Domain: "app2.com",
+				},
+			},
+			"app3": {
+				Config: config.AppConfig{
+					Domain: "app3.com",
+				},
+			},
+			"app4": {
+				Config: config.AppConfig{
+					Domain: "app4.com",
+				},
+			},
+		},
+	}
+
+	// Test
+	result, err := utils.GetACLS(env, args)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 }

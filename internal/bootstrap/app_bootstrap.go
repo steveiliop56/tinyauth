@@ -62,6 +62,13 @@ func (app *BootstrapApp) Setup() error {
 		return err
 	}
 
+	// Get access controls
+	acls, err := utils.GetACLS(os.Environ(), os.Args)
+
+	if err != nil {
+		return err
+	}
+
 	// Get cookie domain
 	cookieDomain, err := utils.GetCookieDomain(app.config.AppURL)
 
@@ -139,7 +146,7 @@ func (app *BootstrapApp) Setup() error {
 
 	// Create services
 	dockerService := service.NewDockerService()
-	aclsService := service.NewAccessControlsService(dockerService)
+	aclsService := service.NewAccessControlsService(dockerService, acls)
 	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
 	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
 

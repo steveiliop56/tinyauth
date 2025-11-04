@@ -1,19 +1,17 @@
 package decoders
 
 import (
-	"github.com/traefik/paerser/parser"
+	"github.com/traefik/paerser/env"
 )
 
-func DecodeEnv[T any, C any](env map[string]string, subName string) (T, error) {
-	var result T
+func DecodeEnv[T any](environ []string) (T, error) {
+	var target T
 
-	normalized := normalizeKeys[C](env, subName, "_")
-
-	err := parser.Decode(normalized, &result, "tinyauth", "tinyauth."+subName)
+	err := env.Decode(environ, "TINYAUTH_", &target)
 
 	if err != nil {
-		return result, err
+		return target, err
 	}
 
-	return result, nil
+	return target, nil
 }

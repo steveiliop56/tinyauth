@@ -1,19 +1,17 @@
 package decoders
 
 import (
-	"tinyauth/internal/config"
-
 	"github.com/traefik/paerser/parser"
 )
 
-func DecodeLabels(labels map[string]string) (config.Apps, error) {
-	var appLabels config.Apps
+func DecodeLabels[T any](labels map[string]string) (T, error) {
+	var target T
 
-	err := parser.Decode(labels, &appLabels, "tinyauth", "tinyauth.apps")
+	err := parser.Decode(labels, &target, "tinyauth")
 
 	if err != nil {
-		return config.Apps{}, err
+		return target, err
 	}
 
-	return appLabels, nil
+	return target, nil
 }

@@ -10,11 +10,11 @@ import (
 
 func TestDecodeFlags(t *testing.T) {
 	// Setup
-	flags := map[string]string{
-		"--providers-google-client-id":        "google-client-id",
-		"--providers-google-client-secret":    "google-client-secret",
-		"--providers-my-github-client-id":     "github-client-id",
-		"--providers-my-github-client-secret": "github-client-secret",
+	args := []string{
+		"--providers-google-clientid=google-client-id",
+		"--providers-google-clientsecret=google-client-secret",
+		"--providers-github-clientid=github-client-id",
+		"--providers-github-clientsecret=github-client-secret",
 	}
 
 	expected := config.Providers{
@@ -23,7 +23,7 @@ func TestDecodeFlags(t *testing.T) {
 				ClientID:     "google-client-id",
 				ClientSecret: "google-client-secret",
 			},
-			"myGithub": {
+			"github": {
 				ClientID:     "github-client-id",
 				ClientSecret: "github-client-secret",
 			},
@@ -31,7 +31,7 @@ func TestDecodeFlags(t *testing.T) {
 	}
 
 	// Execute
-	result, err := decoders.DecodeFlags[config.Providers, config.OAuthServiceConfig](flags, "providers")
+	result, err := decoders.DecodeFlags[config.Providers](args)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, result, expected)
 }
