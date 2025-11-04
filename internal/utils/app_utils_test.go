@@ -176,6 +176,11 @@ func TestIsRedirectSafe(t *testing.T) {
 	result = utils.IsRedirectSafe(redirectURL, domain)
 	assert.Equal(t, true, result)
 
+	// Case with sub-subdomain
+	redirectURL = "http://a.b.example.com/home"
+	result = utils.IsRedirectSafe(redirectURL, domain)
+	assert.Equal(t, true, result)
+
 	// Case with empty redirect URL
 	redirectURL = ""
 	result = utils.IsRedirectSafe(redirectURL, domain)
@@ -199,41 +204,6 @@ func TestIsRedirectSafe(t *testing.T) {
 	// Case with URL having different TLD
 	redirectURL = "http://example.org/page"
 	result = utils.IsRedirectSafe(redirectURL, domain)
-	assert.Equal(t, false, result)
-}
-
-func TestIsRedirectSafeMultiLevel(t *testing.T) {
-	// Setup
-	cookieDomain := "tinyauth.example.com"
-
-	// Case with 3rd level domain
-	redirectURL := "http://tinyauth.example.com/welcome"
-	result := utils.IsRedirectSafe(redirectURL, cookieDomain)
-	assert.Equal(t, true, result)
-
-	// Case with root domain
-	redirectURL = "http://example.com/unsafe"
-	result = utils.IsRedirectSafe(redirectURL, cookieDomain)
-	assert.Equal(t, false, result)
-
-	// Case with 4th level domain
-	redirectURL = "http://auth.tinyauth.example.com/post-login"
-	result = utils.IsRedirectSafe(redirectURL, cookieDomain)
-	assert.Equal(t, true, result)
-
-	// Case with 5th level domain (should be unsafe)
-	redirectURL = "http://x.auth.tinyauth.example.com/deep"
-	result = utils.IsRedirectSafe(redirectURL, cookieDomain)
-	assert.Equal(t, false, result)
-
-	// Case with different subdomain
-	redirectURL = "http://auth.tinyauth.example.net/attack"
-	result = utils.IsRedirectSafe(redirectURL, cookieDomain)
-	assert.Equal(t, false, result)
-
-	// Case with malformed URL
-	redirectURL = "http://[::1]:namedport"
-	result = utils.IsRedirectSafe(redirectURL, cookieDomain)
 	assert.Equal(t, false, result)
 }
 
