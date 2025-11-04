@@ -17,6 +17,10 @@ func normalizeKeys[T any](input map[string]string, root string, sep string) map[
 		key := strings.ToLower(k)
 		key = strings.ReplaceAll(key, sep, "-")
 
+		if !strings.HasPrefix(key, root+"-") {
+			continue
+		}
+
 		suffix := ""
 
 		for _, known := range knownKeys {
