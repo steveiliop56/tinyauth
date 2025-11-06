@@ -278,3 +278,21 @@ func TestGetOAuthProvidersConfig(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 }
+
+func TestShoudLogJSON(t *testing.T) {
+	// Test with no env or args
+	result := utils.ShoudLogJSON([]string{"FOO=bar"}, []string{"tinyauth", "--foo-bar=baz"})
+	assert.Equal(t, false, result)
+
+	// Test with env variable set
+	result = utils.ShoudLogJSON([]string{"LOG_JSON=true"}, []string{"tinyauth", "--foo-bar=baz"})
+	assert.Equal(t, true, result)
+
+	// Test with flag set
+	result = utils.ShoudLogJSON([]string{"FOO=bar"}, []string{"tinyauth", "--log-json=true"})
+	assert.Equal(t, true, result)
+
+	// Test with both env and flag set to false
+	result = utils.ShoudLogJSON([]string{"LOG_JSON=false"}, []string{"tinyauth", "--log-json=false"})
+	assert.Equal(t, false, result)
+}

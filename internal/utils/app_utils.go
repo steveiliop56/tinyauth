@@ -200,3 +200,23 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 	// Return combined providers
 	return providers, nil
 }
+
+func ShoudLogJSON(environ []string, args []string) bool {
+	for _, e := range environ {
+		pair := strings.SplitN(e, "=", 2)
+		if len(pair) == 2 && pair[0] == "LOG_JSON" && strings.ToLower(pair[1]) == "true" {
+			return true
+		}
+	}
+
+	for _, arg := range args[1:] {
+		if strings.HasPrefix(arg, "--log-json=") {
+			value := strings.SplitN(arg, "=", 2)[1]
+			if strings.ToLower(value) == "true" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
