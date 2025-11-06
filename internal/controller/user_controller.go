@@ -138,12 +138,16 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		}
 	}
 
-	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
+	sessionCookie := config.SessionCookie{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
 		Provider: "username",
-	})
+	}
+
+	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
+
+	err = controller.auth.CreateSessionCookie(c, &sessionCookie)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create session cookie")
@@ -243,12 +247,16 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	controller.auth.RecordLoginAttempt(rateIdentifier, true)
 
-	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
+	sessionCookie := config.SessionCookie{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.config.CookieDomain),
 		Provider: "username",
-	})
+	}
+
+	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
+
+	err = controller.auth.CreateSessionCookie(c, &sessionCookie)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create session cookie")

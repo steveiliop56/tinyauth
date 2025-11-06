@@ -147,6 +147,8 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.IsEmailWhitelisted(user.Email) {
+		log.Warn().Str("email", user.Email).Msg("Email not whitelisted")
+
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
 		})
@@ -181,14 +183,18 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		username = strings.Replace(user.Email, "@", "_", -1)
 	}
 
-	err = controller.auth.CreateSessionCookie(c, &config.SessionCookie{
+	sessionCookie := config.SessionCookie{
 		Username:    username,
 		Name:        name,
 		Email:       user.Email,
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
 		OAuthName:   service.GetName(),
-	})
+	}
+
+	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
+
+	err = controller.auth.CreateSessionCookie(c, &sessionCookie)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create session cookie")
