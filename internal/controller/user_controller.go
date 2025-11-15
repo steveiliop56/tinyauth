@@ -29,13 +29,15 @@ type UserController struct {
 	config UserControllerConfig
 	router *gin.RouterGroup
 	auth   *service.AuthService
+	als    *service.AccessLogService
 }
 
-func NewUserController(config UserControllerConfig, router *gin.RouterGroup, auth *service.AuthService) *UserController {
+func NewUserController(config UserControllerConfig, router *gin.RouterGroup, auth *service.AuthService, als *service.AccessLogService) *UserController {
 	return &UserController{
 		config: config,
 		router: router,
 		auth:   auth,
+		als:    als,
 	}
 }
 
@@ -72,6 +74,13 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	isLocked, remainingTime := controller.auth.IsAccountLocked(rateIdentifier)
 
 	if isLocked {
+		controller.als.Log(service.AccessLog{
+			Provider: "username",
+			Username: req.Username,
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "Account is locked due to too many failed login attempts",
+		})
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed login attempts")
 		c.JSON(429, gin.H{
 			"status":  429,
@@ -83,6 +92,13 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	userSearch := controller.auth.SearchUser(req.Username)
 
 	if userSearch.Type == "unknown" {
+		controller.als.Log(service.AccessLog{
+			Provider: "username",
+			Username: req.Username,
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "User not found",
+		})
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("User not found")
 		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
@@ -93,6 +109,13 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.VerifyUser(userSearch, req.Password) {
+		controller.als.Log(service.AccessLog{
+			Provider: "username",
+			Username: req.Username,
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "Invalid password",
+		})
 		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Invalid password")
 		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
@@ -102,14 +125,18 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().Str("username", req.Username).Str("ip", clientIP).Msg("Login successful")
-
-	controller.auth.RecordLoginAttempt(rateIdentifier, true)
-
 	if userSearch.Type == "local" {
 		user := controller.auth.GetLocalUser(userSearch.Username)
 
 		if user.TotpSecret != "" {
+			controller.als.Log(service.AccessLog{
+				Provider: "username",
+				Username: req.Username,
+				ClientIP: clientIP,
+				Success:  true,
+				Message:  "User has TOTP enabled, requiring TOTP verification",
+			})
+
 			log.Debug().Str("username", req.Username).Msg("User has TOTP enabled, requiring TOTP verification")
 
 			err := controller.auth.CreateSessionCookie(c, &config.SessionCookie{
@@ -158,6 +185,18 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
+	controller.als.Log(service.AccessLog{
+		Provider: "username",
+		Username: req.Username,
+		ClientIP: clientIP,
+		Success:  true,
+		Message:  "Login successful",
+	})
+
+	log.Info().Str("username", req.Username).Str("ip", clientIP).Msg("Login successful")
+
+	controller.auth.RecordLoginAttempt(rateIdentifier, true)
+
 	c.JSON(200, gin.H{
 		"status":  200,
 		"message": "Login successful",
@@ -167,7 +206,27 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 func (controller *UserController) logoutHandler(c *gin.Context) {
 	log.Debug().Msg("Logout request received")
 
+	context, err := utils.GetContext(c)
+
+	if err != nil {
+		log.Debug().Msg("Not logged in, nothing to do")
+		c.JSON(200, gin.H{
+			"status":  200,
+			"message": "Not logged in",
+		})
+		return
+	}
+
+	clientIP := c.ClientIP()
 	controller.auth.DeleteSessionCookie(c)
+
+	controller.als.Log(service.AccessLog{
+		Provider: "username",
+		Username: context.Username,
+		ClientIP: clientIP,
+		Success:  true,
+		Message:  "Logout successful",
+	})
 
 	c.JSON(200, gin.H{
 		"status":  200,
@@ -188,6 +247,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		return
 	}
 
+	clientIP := c.ClientIP()
 	context, err := utils.GetContext(c)
 
 	if err != nil {
@@ -208,8 +268,6 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		return
 	}
 
-	clientIP := c.ClientIP()
-
 	rateIdentifier := context.Username
 
 	if rateIdentifier == "" {
@@ -221,6 +279,13 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	isLocked, remainingTime := controller.auth.IsAccountLocked(rateIdentifier)
 
 	if isLocked {
+		controller.als.Log(service.AccessLog{
+			Provider: "username",
+			Username: context.Username,
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "Account is locked due to too many failed TOTP attempts",
+		})
 		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed TOTP attempts")
 		c.JSON(429, gin.H{
 			"status":  429,
@@ -234,6 +299,13 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	ok := totp.Validate(req.Code, user.TotpSecret)
 
 	if !ok {
+		controller.als.Log(service.AccessLog{
+			Provider: "username",
+			Username: context.Username,
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "Invalid TOTP code",
+		})
 		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Invalid TOTP code")
 		controller.auth.RecordLoginAttempt(rateIdentifier, false)
 		c.JSON(401, gin.H{
@@ -242,6 +314,14 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	controller.als.Log(service.AccessLog{
+		Provider: "username",
+		Username: context.Username,
+		ClientIP: clientIP,
+		Success:  true,
+		Message:  "TOTP verification successful",
+	})
 
 	log.Info().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification successful")
 

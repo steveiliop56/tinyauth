@@ -64,10 +64,18 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 		SessionCookieName: "tinyauth-session",
 	}, nil, nil, database)
 
+	// Access log service
+	als := service.NewAccessLogService(&service.AccessLogServiceConfig{
+		LogFile: "",
+		LogJson: true,
+	})
+
+	assert.NilError(t, als.Init())
+
 	// Controller
 	ctrl := controller.NewUserController(controller.UserControllerConfig{
 		CookieDomain: "localhost",
-	}, group, authService)
+	}, group, authService, als)
 	ctrl.SetupRoutes()
 
 	return router, recorder

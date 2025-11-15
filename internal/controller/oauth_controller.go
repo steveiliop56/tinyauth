@@ -31,14 +31,16 @@ type OAuthController struct {
 	router *gin.RouterGroup
 	auth   *service.AuthService
 	broker *service.OAuthBrokerService
+	als    *service.AccessLogService
 }
 
-func NewOAuthController(config OAuthControllerConfig, router *gin.RouterGroup, auth *service.AuthService, broker *service.OAuthBrokerService) *OAuthController {
+func NewOAuthController(config OAuthControllerConfig, router *gin.RouterGroup, auth *service.AuthService, broker *service.OAuthBrokerService, als *service.AccessLogService) *OAuthController {
 	return &OAuthController{
 		config: config,
 		router: router,
 		auth:   auth,
 		broker: broker,
+		als:    als,
 	}
 }
 
@@ -61,7 +63,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	service, exists := controller.broker.GetService(req.Provider)
+	svc, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
 		log.Warn().Msgf("OAuth provider not found: %s", req.Provider)
@@ -72,9 +74,9 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	service.GenerateVerifier()
-	state := service.GenerateState()
-	authURL := service.GetAuthURL(state)
+	svc.GenerateVerifier()
+	state := svc.GenerateState()
+	authURL := svc.GetAuthURL(state)
 	c.SetCookie(controller.config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 
 	redirectURI := c.Query("redirect_uri")
@@ -106,8 +108,16 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	state := c.Query("state")
 	csrfCookie, err := c.Cookie(controller.config.CSRFCookieName)
+	clientIP := c.ClientIP()
 
 	if err != nil || state != csrfCookie {
+		controller.als.Log(service.AccessLog{
+			Provider: req.Provider,
+			Username: "",
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "CSRF token mismatch or cookie missing",
+		})
 		log.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
 		c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
@@ -117,16 +127,30 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 
 	code := c.Query("code")
-	service, exists := controller.broker.GetService(req.Provider)
+	svc, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
+		controller.als.Log(service.AccessLog{
+			Provider: req.Provider,
+			Username: "",
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "OAuth provider not found",
+		})
 		log.Warn().Msgf("OAuth provider not found: %s", req.Provider)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	err = service.VerifyCode(code)
+	err = svc.VerifyCode(code)
 	if err != nil {
+		controller.als.Log(service.AccessLog{
+			Provider: req.Provider,
+			Username: "",
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "Failed to verify OAuth code",
+		})
 		log.Error().Err(err).Msg("Failed to verify OAuth code")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
@@ -147,6 +171,14 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.IsEmailWhitelisted(user.Email) {
+		controller.als.Log(service.AccessLog{
+			Provider: req.Provider,
+			Username: user.Email,
+			ClientIP: clientIP,
+			Success:  false,
+			Message:  "Email not whitelisted",
+		})
+
 		log.Warn().Str("email", user.Email).Msg("Email not whitelisted")
 
 		queries, err := query.Values(config.UnauthorizedQuery{
@@ -189,7 +221,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		Email:       user.Email,
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
-		OAuthName:   service.GetName(),
+		OAuthName:   svc.GetName(),
 	}
 
 	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
@@ -201,6 +233,14 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
+
+	controller.als.Log(service.AccessLog{
+		Provider: req.Provider,
+		Username: user.Email,
+		ClientIP: clientIP,
+		Success:  true,
+		Message:  "OAuth login successful",
+	})
 
 	redirectURI, err := c.Cookie(controller.config.RedirectCookieName)
 

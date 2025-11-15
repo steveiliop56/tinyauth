@@ -7,12 +7,13 @@ COPY go.sum ./
 
 RUN go mod download
 
+RUN go install github.com/air-verse/air@v1.61.7
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY ./main.go ./
 COPY ./air.toml ./
-
-RUN go install github.com/air-verse/air@v1.61.7
 
 EXPOSE 3000
 

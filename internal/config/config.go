@@ -42,6 +42,7 @@ type Config struct {
 	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
 	DisableResources      bool   `mapstructure:"disable-resources"`
 	SocketPath            string `mapstructure:"socket-path"`
+	AccessLogFile         string `mapstructure:"access-log-file"`
 }
 
 // OAuth/OIDC config

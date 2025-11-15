@@ -213,7 +213,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		Provider:    data.Provider,
 		TOTPPending: data.TotpPending,
 		OAuthGroups: data.OAuthGroups,
-		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
+		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).UnixMilli(),
 		OAuthName:   data.OAuthName,
 	}
 
@@ -263,12 +263,12 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		return config.SessionCookie{}, fmt.Errorf("session not found")
 	}
 
-	currentTime := time.Now().Unix()
+	currentTime := time.Now().UnixMilli()
 
 	if currentTime > session.Expiry {
-		res := auth.database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
-		if res.Error != nil {
-			log.Error().Err(res.Error).Msg("Failed to delete expired session")
+		_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Delete(auth.ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to delete expired session")
 		}
 		return config.SessionCookie{}, fmt.Errorf("session expired")
 	}

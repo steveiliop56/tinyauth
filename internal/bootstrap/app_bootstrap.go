@@ -48,6 +48,9 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 }
 
 func (app *BootstrapApp) Setup() error {
+	// Log json
+	shoudLogJson := utils.ShoudLogJSON(os.Environ(), os.Args)
+
 	// Parse users
 	users, err := utils.GetUsers(app.config.Users, app.config.UsersFile)
 
@@ -142,6 +145,10 @@ func (app *BootstrapApp) Setup() error {
 	aclsService := service.NewAccessControlsService(dockerService)
 	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
 	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
+	accessLogService := service.NewAccessLogService(&service.AccessLogServiceConfig{
+		LogFile: app.config.AccessLogFile,
+		LogJson: shoudLogJson,
+	})
 
 	// Initialize services (order matters)
 	services := []Service{
@@ -149,6 +156,7 @@ func (app *BootstrapApp) Setup() error {
 		aclsService,
 		authService,
 		oauthBrokerService,
+		accessLogService,
 	}
 
 	for _, svc := range services {
@@ -244,7 +252,7 @@ func (app *BootstrapApp) Setup() error {
 		CSRFCookieName:     csrfCookieName,
 		RedirectCookieName: redirectCookieName,
 		CookieDomain:       cookieDomain,
-	}, apiRouter, authService, oauthBrokerService)
+	}, apiRouter, authService, oauthBrokerService, accessLogService)
 
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
 		AppURL: app.config.AppURL,
@@ -252,7 +260,7 @@ func (app *BootstrapApp) Setup() error {
 
 	userController := controller.NewUserController(controller.UserControllerConfig{
 		CookieDomain: cookieDomain,
-	}, apiRouter, authService)
+	}, apiRouter, authService, accessLogService)
 
 	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{
 		ResourcesDir:      app.config.ResourcesDir,
@@ -375,7 +383,8 @@ func (app *BootstrapApp) dbCleanup(db *gorm.DB) {
 
 	for ; true; <-ticker.C {
 		log.Debug().Msg("Cleaning up old database sessions")
-		_, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().UnixMilli()).Delete(ctx)
+		rows, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().UnixMilli()).Delete(ctx)
+		log.Debug().Int("rows_affected", rows).Msg("Old sessions cleanup completed")
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to cleanup old sessions")
 		}

@@ -71,6 +71,7 @@ func (c *rootCmd) Register() {
 		{"disable-analytics", false, "Disable anonymous version collection."},
 		{"disable-resources", false, "Disable the resources server."},
 		{"socket-path", "", "Path to the Unix socket to bind the server to."},
+		{"access-log-file", "", "Path to the access log file."},
 	}
 
 	for _, opt := range configOptions {
