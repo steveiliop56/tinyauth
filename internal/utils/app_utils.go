@@ -201,7 +201,7 @@ func GetOAuthProvidersConfig(env []string, args []string, appUrl string) (map[st
 	return providers, nil
 }
 
-func ShoudLogJSON(environ []string, args []string) bool {
+func ShouldLogJSON(environ []string, args []string) bool {
 	for _, e := range environ {
 		pair := strings.SplitN(e, "=", 2)
 		if len(pair) == 2 && pair[0] == "LOG_JSON" && strings.ToLower(pair[1]) == "true" {

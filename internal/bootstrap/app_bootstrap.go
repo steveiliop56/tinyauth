@@ -49,7 +49,7 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 
 func (app *BootstrapApp) Setup() error {
 	// Log json
-	shoudLogJson := utils.ShoudLogJSON(os.Environ(), os.Args)
+	shouldLogJson := utils.ShouldLogJSON(os.Environ(), os.Args)
 
 	// Parse users
 	users, err := utils.GetUsers(app.config.Users, app.config.UsersFile)
@@ -147,7 +147,7 @@ func (app *BootstrapApp) Setup() error {
 	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
 	accessLogService := service.NewAccessLogService(&service.AccessLogServiceConfig{
 		LogFile: app.config.AccessLogFile,
-		LogJson: shoudLogJson,
+		LogJson: shouldLogJson,
 	})
 
 	// Initialize services (order matters)

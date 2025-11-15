@@ -89,7 +89,7 @@ func (als *AccessLogService) Log(log AccessLog) {
 		Str("provider", log.Provider).
 		Str("username", log.Username).
 		Str("client_ip", log.ClientIP).
-		Int64("time", time.Now().UnixMilli()).
+		Int64("time", time.Now().Unix()).
 		Bool("success", log.Success)
 
 	event.Msg(log.Message)
