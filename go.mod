@@ -19,7 +19,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/traefik/paerser v0.2.2
 	github.com/weppos/publicsuffix-go v0.50.0
-	golang.org/x/crypto v0.44.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	gorm.io/gorm v1.31.1
 	gotest.tools/v3 v3.5.2
@@ -131,7 +131,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
-	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.33.0
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
