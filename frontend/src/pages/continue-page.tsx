@@ -14,7 +14,7 @@ import { Navigate, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
 export const ContinuePage = () => {
-  const { cookieDomain } = useAppContext();
+  const { cookieDomain, disableUiWarnings } = useAppContext();
   const { isLoggedIn } = useUserContext();
   const { search } = useLocation();
   const { t } = useTranslation();
@@ -53,12 +53,16 @@ export const ContinuePage = () => {
   };
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
     if (
-      !isLoggedIn ||
-      !isValidRedirectUri ||
-      !isTrustedRedirectUri ||
-      !isAllowedRedirectProto ||
-      isHttpsDowngrade
+      (!isValidRedirectUri ||
+        !isAllowedRedirectProto ||
+        !isTrustedRedirectUri ||
+        isHttpsDowngrade) &&
+      !disableUiWarnings
     ) {
       return;
     }
@@ -76,14 +80,7 @@ export const ContinuePage = () => {
       clearTimeout(auto);
       clearTimeout(reveal);
     };
-  }, [
-    handleRedirect,
-    isAllowedRedirectProto,
-    isHttpsDowngrade,
-    isLoggedIn,
-    isTrustedRedirectUri,
-    isValidRedirectUri,
-  ]);
+  }, []);
 
   if (!isLoggedIn) {
     return (
@@ -98,7 +95,7 @@ export const ContinuePage = () => {
     return <Navigate to="/logout" replace />;
   }
 
-  if (!isTrustedRedirectUri) {
+  if (!isTrustedRedirectUri && !disableUiWarnings) {
     return (
       <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -136,7 +133,7 @@ export const ContinuePage = () => {
     );
   }
 
-  if (isHttpsDowngrade) {
+  if (isHttpsDowngrade && !disableUiWarnings) {
     return (
       <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>

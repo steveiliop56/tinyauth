@@ -41,6 +41,7 @@ type Config struct {
 	TrustedProxies        string `mapstructure:"trusted-proxies"`
 	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
 	DisableResources      bool   `mapstructure:"disable-resources"`
+	DisableUIWarnings     bool   `mapstructure:"disable-ui-warnings"`
 	SocketPath            string `mapstructure:"socket-path"`
 }
 

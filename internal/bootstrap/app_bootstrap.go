@@ -236,6 +236,7 @@ func (app *BootstrapApp) Setup() error {
 		ForgotPasswordMessage: app.config.ForgotPasswordMessage,
 		BackgroundImage:       app.config.BackgroundImage,
 		OAuthAutoRedirect:     app.config.OAuthAutoRedirect,
+		DisableUIWarnings:     app.config.DisableUIWarnings,
 	}, apiRouter)
 
 	oauthController := controller.NewOAuthController(controller.OAuthControllerConfig{

@@ -30,6 +30,7 @@ var controllerCfg = controller.ContextControllerConfig{
 	ForgotPasswordMessage: "Contact admin to reset your password.",
 	BackgroundImage:       "/assets/bg.jpg",
 	OAuthAutoRedirect:     "google",
+	DisableUIWarnings:     false,
 }
 
 var userContext = config.UserContext{
@@ -75,6 +76,7 @@ func TestAppContextHandler(t *testing.T) {
 		ForgotPasswordMessage: controllerCfg.ForgotPasswordMessage,
 		BackgroundImage:       controllerCfg.BackgroundImage,
 		OAuthAutoRedirect:     controllerCfg.OAuthAutoRedirect,
+		DisableUIWarnings:     controllerCfg.DisableUIWarnings,
 	}
 
 	router, recorder := setupContextController(nil)
@@ -102,6 +104,7 @@ func TestUserContextHandler(t *testing.T) {
 		Provider:    userContext.Provider,
 		OAuth:       userContext.OAuth,
 		TotpPending: userContext.TotpPending,
+		OAuthName:   userContext.OAuthName,
 	}
 
 	// Test with context

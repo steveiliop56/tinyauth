@@ -14,6 +14,7 @@ export const appContextSchema = z.object({
   forgotPasswordMessage: z.string(),
   backgroundImage: z.string(),
   oauthAutoRedirect: z.string(),
+  disableUiWarnings: z.boolean(),
 });
 
 export type AppContextSchema = z.infer<typeof appContextSchema>;

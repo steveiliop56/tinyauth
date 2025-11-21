@@ -18,7 +18,6 @@ import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
-import { useIsMounted } from "@/lib/hooks/use-is-mounted";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -40,7 +39,6 @@ export const LoginPage = () => {
   const { providers, title, oauthAutoRedirect } = useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
-  const isMounted = useIsMounted();
   const [oauthAutoRedirectHandover, setOauthAutoRedirectHandover] =
     useState(false);
   const [showRedirectButton, setShowRedirectButton] = useState(false);
@@ -112,31 +110,20 @@ export const LoginPage = () => {
   });
 
   useEffect(() => {
-    if (isMounted()) {
-      if (
-        oauthProviders.length !== 0 &&
-        providers.find((provider) => provider.id === oauthAutoRedirect) &&
-        !isLoggedIn &&
-        redirectUri
-      ) {
-        // Not sure of a better way to do this
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setOauthAutoRedirectHandover(true);
-        oauthMutation.mutate(oauthAutoRedirect);
-        redirectButtonTimer.current = window.setTimeout(() => {
-          setShowRedirectButton(true);
-        }, 5000);
-      }
+    if (
+      providers.find((provider) => provider.id === oauthAutoRedirect) &&
+      !isLoggedIn &&
+      redirectUri
+    ) {
+      // Not sure of a better way to do this
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOauthAutoRedirectHandover(true);
+      oauthMutation.mutate(oauthAutoRedirect);
+      redirectButtonTimer.current = window.setTimeout(() => {
+        setShowRedirectButton(true);
+      }, 5000);
     }
-  }, [
-    isMounted,
-    oauthProviders.length,
-    providers,
-    isLoggedIn,
-    redirectUri,
-    oauthAutoRedirect,
-    oauthMutation,
-  ]);
+  }, []);
 
   useEffect(
     () => () => {
