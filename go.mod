@@ -18,7 +18,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/traefik/paerser v0.2.2
-	github.com/weppos/publicsuffix-go v0.50.0
+	github.com/weppos/publicsuffix-go v0.50.1
 	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	gorm.io/gorm v1.31.1
