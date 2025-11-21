@@ -2,9 +2,10 @@ root = "/tinyauth"
 tmp_dir = "tmp"
 
 [build]
-pre_cmd = ["mkdir -p internal/assets/dist", "mkdir -p /data", "echo 'backend running' > internal/assets/dist/index.html", "go install github.com/go-delve/delve/cmd/dlv@v1.25.0"]
+pre_cmd = ["mkdir -p internal/assets/dist", "mkdir -p /data", "echo 'backend running' > internal/assets/dist/index.html"]
 cmd = "CGO_ENABLED=0 go build -gcflags=\"all=-N -l\" -o tmp/tinyauth ."
-bin = "/go/bin/dlv --listen :4000 --headless=true --api-version=2 --accept-multiclient --log=true exec tmp/tinyauth --continue --check-go-version=false"
+bin = "tmp/tinyauth"
+full_bin = "dlv --listen :4000 --headless=true --api-version=2 --accept-multiclient --log=true exec tmp/tinyauth --continue --check-go-version=false"
 include_ext = ["go"]
 exclude_dir = ["internal/assets/dist"]
 exclude_regex = [".*_test\\.go"]

@@ -375,7 +375,7 @@ func (app *BootstrapApp) dbCleanup(db *gorm.DB) {
 
 	for ; true; <-ticker.C {
 		log.Debug().Msg("Cleaning up old database sessions")
-		_, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().UnixMilli()).Delete(ctx)
+		_, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().Unix()).Delete(ctx)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to cleanup old sessions")
 		}

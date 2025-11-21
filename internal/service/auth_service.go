@@ -266,9 +266,9 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	currentTime := time.Now().Unix()
 
 	if currentTime > session.Expiry {
-		res := auth.database.Unscoped().Where("uuid = ?", session.UUID).Delete(&model.Session{})
-		if res.Error != nil {
-			log.Error().Err(res.Error).Msg("Failed to delete expired session")
+		_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Delete(auth.ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to delete expired session")
 		}
 		return config.SessionCookie{}, fmt.Errorf("session expired")
 	}
