@@ -18,8 +18,8 @@ export const languages = {
   "nl-NL": "Nederlands",
   "no-NO": "Norsk",
   "pl-PL": "Polski",
-  "pt-BR": "Português",
-  "pt-PT": "Português",
+  "pt-BR": "Português (Brasil)",
+  "pt-PT": "Português (Portugal)",
   "ro-RO": "Română",
   "ru-RU": "Русский",
   "sr-SP": "Српски",
@@ -28,7 +28,7 @@ export const languages = {
   "uk-UA": "Українська",
   "vi-VN": "Tiếng Việt",
   "zh-CN": "简体中文",
-  "zh-TW": "繁體中文（台灣）",
+  "zh-TW": "繁體中文",
 };
 
 export type SupportedLanguage = keyof typeof languages;
