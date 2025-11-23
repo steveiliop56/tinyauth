@@ -78,8 +78,14 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 	c.SetCookie(controller.config.CSRFCookieName, state, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 
 	redirectURI := c.Query("redirect_uri")
+	isRedirectSafe := utils.IsRedirectSafe(redirectURI, controller.config.CookieDomain)
 
-	if redirectURI != "" && utils.IsRedirectSafe(redirectURI, controller.config.CookieDomain) {
+	if !isRedirectSafe {
+		log.Warn().Str("redirect_uri", redirectURI).Msg("Unsafe redirect URI detected, ignoring")
+		redirectURI = ""
+	}
+
+	if redirectURI != "" && isRedirectSafe {
 		log.Debug().Msg("Setting redirect URI cookie")
 		c.SetCookie(controller.config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 	}
