@@ -19,6 +19,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      "/resources": {
+        target: "http://tinyauth-backend:3000/resources",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/resources/, ""),
+      },
     },
     allowedHosts: true,
   },

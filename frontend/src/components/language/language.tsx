@@ -18,9 +18,10 @@ export const LanguageSelector = () => {
     setLanguage(option as SupportedLanguage);
     i18n.changeLanguage(option as SupportedLanguage);
   };
+
   return (
     <Select onValueChange={handleSelect} value={language}>
-      <SelectTrigger className="absolute top-5 right-5">
+      <SelectTrigger>
         <SelectValue placeholder="Select language" />
       </SelectTrigger>
       <SelectContent>

@@ -5,8 +5,8 @@ export const App = () => {
   const { isLoggedIn } = useUserContext();
 
   if (isLoggedIn) {
-    return <Navigate to="/logout" />;
+    return <Navigate to="/logout" replace />;
   }
 
-  return <Navigate to="/login" />;
+  return <Navigate to="/login" replace />;
 };

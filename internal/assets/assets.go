@@ -4,7 +4,12 @@ import (
 	"embed"
 )
 
-// UI assets
+// Frontend
 //
 //go:embed dist
-var Assets embed.FS
+var FrontendAssets embed.FS
+
+// Migrations
+//
+//go:embed migrations/*.sql
+var Migrations embed.FS

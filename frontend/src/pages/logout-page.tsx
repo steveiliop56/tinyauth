@@ -6,35 +6,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
-import { capitalize } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { useEffect, useRef } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { toast } from "sonner";
 
 export const LogoutPage = () => {
-  const { provider, username, isLoggedIn, email } = useUserContext();
-
-  if (!isLoggedIn) {
-    return <Navigate to="/login" />;
-  }
-
-  const { genericName } = useAppContext();
+  const { provider, username, isLoggedIn, email, oauthName } = useUserContext();
   const { t } = useTranslation();
 
+  const redirectTimer = useRef<number | null>(null);
+
   const logoutMutation = useMutation({
-    mutationFn: () => axios.post("/api/logout"),
+    mutationFn: () => axios.post("/api/user/logout"),
     mutationKey: ["logout"],
     onSuccess: () => {
       toast.success(t("logoutSuccessTitle"), {
         description: t("logoutSuccessSubtitle"),
       });
 
-      setTimeout(async () => {
-        window.location.replace("/login");
+      redirectTimer.current = window.setTimeout(() => {
+        window.location.assign("/login");
       }, 500);
     },
     onError: () => {
@@ -43,6 +38,17 @@ export const LogoutPage = () => {
       });
     },
   });
+
+  useEffect(
+    () => () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    },
+    [],
+  );
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <Card className="min-w-xs sm:min-w-sm">
@@ -58,8 +64,7 @@ export const LogoutPage = () => {
               }}
               values={{
                 username: email,
-                provider:
-                  provider === "generic" ? genericName : capitalize(provider),
+                provider: oauthName,
               }}
             />
           ) : (

@@ -34,12 +34,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+      args:
+        - VERSION=development
+        - COMMIT_HASH=development
+        - BUILD_TIMESTAMP=000-00-00T00:00:00Z
     env_file: .env
     volumes:
       - ./internal:/tinyauth/internal
       - ./cmd:/tinyauth/cmd
       - ./main.go:/tinyauth/main.go
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
     ports:
       - 3000:3000
       - 4000:4000

@@ -24,3 +24,6 @@ tmp
 
 # version files
 internal/assets/version
+
+# data directory
+data

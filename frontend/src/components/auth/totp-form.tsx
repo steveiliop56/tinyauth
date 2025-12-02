@@ -44,6 +44,7 @@ export const TotpForm = (props: Props) => {
                   disabled={loading}
                   {...field}
                   autoComplete="one-time-code"
+                  autoFocus
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />

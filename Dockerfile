@@ -1,12 +1,12 @@
 # Site builder
-FROM oven/bun:1.2.20-alpine AS frontend-builder
+FROM oven/bun:1.3.2-alpine AS frontend-builder
 
 WORKDIR /frontend
 
 COPY ./frontend/package.json ./
 COPY ./frontend/bun.lock ./
 
-RUN bun install
+RUN bun install --frozen-lockfile
 
 COPY ./frontend/public ./public
 COPY ./frontend/src ./src
@@ -38,17 +38,25 @@ COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
-RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/constants.Version=${VERSION} -X tinyauth/internal/constants.CommitHash=${COMMIT_HASH} -X tinyauth/internal/constants.BuildTimestamp=${BUILD_TIMESTAMP}" 
+RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" 
  
 # Runner
 FROM alpine:3.22 AS runner
 
 WORKDIR /tinyauth
 
-RUN apk add --no-cache curl
-
 COPY --from=builder /tinyauth/tinyauth ./
+
+RUN mkdir -p /data
 
 EXPOSE 3000
 
-ENTRYPOINT ["./tinyauth"]
+VOLUME ["/data"]
+
+ENV GIN_MODE=release
+
+ENV PATH=$PATH:/tinyauth
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["tinyauth", "healthcheck"]
+
+ENTRYPOINT ["tinyauth"]
