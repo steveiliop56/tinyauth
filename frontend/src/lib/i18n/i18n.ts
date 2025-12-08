@@ -2,6 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import resourcesToBackend from "i18next-resources-to-backend";
+import { languages } from "./locales";
 
 i18n
   .use(LanguageDetector)
@@ -14,12 +15,12 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.MODE === "development",
-
-    interpolation: {
-      escapeValue: false,
-    },
-
+    nonExplicitSupportedLngs: true,
+    supportedLngs: Object.keys(languages),
     load: "currentOnly",
+    detection: {
+      lookupLocalStorage: "tinyauth-lang",
+    },
   });
 
 export default i18n;
