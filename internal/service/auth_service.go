@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"regexp"
@@ -360,14 +361,34 @@ func (auth *AuthService) IsAuthEnabled(uri string, path config.AppPath) (bool, e
 }
 
 func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
-	username, password, ok := c.Request.BasicAuth()
-	if !ok {
-		log.Debug().Msg("No basic auth provided")
+
+	for k, v := range c.Request.Header {
+		log.Info().Msgf("HEADER %s = %v", k, v)
+	}
+
+	authHeader := c.Request.Header.Get("X-Api-Key")
+	if authHeader == "" {
 		return nil
 	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Basic" {
+		return nil
+	}
+
+	payload, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil
+	}
+
+	pair := strings.SplitN(string(payload), ":", 2)
+	if len(pair) != 2 {
+		return nil
+	}
+
 	return &config.User{
-		Username: username,
-		Password: password,
+		Username: pair[0],
+		Password: pair[1],
 	}
 }
 
