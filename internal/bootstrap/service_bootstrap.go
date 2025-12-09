@@ -37,6 +37,8 @@ func (app *BootstrapApp) initServices() (Services, error) {
 		BaseDN:       app.config.Ldap.BaseDN,
 		Insecure:     app.config.Ldap.Insecure,
 		SearchFilter: app.config.Ldap.SearchFilter,
+		AuthCert:     app.config.Ldap.AuthCert,
+		AuthKey:      app.config.Ldap.AuthKey,
 	})
 
 	err = ldapService.Init()

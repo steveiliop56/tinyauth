@@ -66,6 +66,8 @@ type LdapConfig struct {
 	BaseDN       string `description:"Base DN for LDAP searches." yaml:"baseDn"`
 	Insecure     bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
 	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
+	AuthCert     string `description:"Certificate for mTLS authentication." yaml:"authCert"`
+	AuthKey      string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
 }
 
 type ExperimentalConfig struct {
