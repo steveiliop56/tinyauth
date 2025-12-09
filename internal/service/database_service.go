@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"tinyauth/internal/assets"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/glebarez/sqlite"
 	"github.com/golang-migrate/migrate/v4"
 	sqliteMigrate "github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -30,6 +32,7 @@ func (ds *DatabaseService) Init() error {
 	gormDB, err := gorm.Open(sqlite.Open(ds.config.DatabasePath), &gorm.Config{})
 
 	if err != nil {
+		log.Warn().Err(err).Str("database_path", ds.config.DatabasePath).Msg("Unable to open database")
 		return err
 	}
 
