@@ -34,6 +34,8 @@ type Config struct {
 	LdapBindDN            string `mapstructure:"ldap-bind-dn"`
 	LdapBindPassword      string `mapstructure:"ldap-bind-password"`
 	LdapBaseDN            string `mapstructure:"ldap-base-dn"`
+	LdapAuthCert          string `mapstructure:"ldap-auth-cert"`
+	LdapAuthKey           string `mapstructure:"ldap-auth-key"`
 	LdapInsecure          bool   `mapstructure:"ldap-insecure"`
 	LdapSearchFilter      string `mapstructure:"ldap-search-filter"`
 	ResourcesDir          string `mapstructure:"resources-dir"`

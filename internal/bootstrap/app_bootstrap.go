@@ -110,6 +110,8 @@ func (app *BootstrapApp) Setup() error {
 			BaseDN:       app.config.LdapBaseDN,
 			Insecure:     app.config.LdapInsecure,
 			SearchFilter: app.config.LdapSearchFilter,
+			AuthCert:     app.config.LdapAuthCert,
+			AuthKey:      app.config.LdapAuthKey,
 		}
 
 		ldapService = service.NewLdapService(ldapConfig)
