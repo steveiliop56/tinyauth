@@ -24,7 +24,7 @@ type LdapServiceConfig struct {
 }
 
 type LdapService struct {
-	Config LdapServiceConfig // exported so as the auth service can use it
+	config LdapServiceConfig
 	conn   *ldapgo.Conn
 	mutex  sync.RWMutex
 	cert   *tls.Certificate
@@ -32,14 +32,14 @@ type LdapService struct {
 
 func NewLdapService(config LdapServiceConfig) *LdapService {
 	return &LdapService{
-		Config: config,
+		config: config,
 	}
 }
 
 func (ldap *LdapService) Init() error {
 	// Check whether authentication with client certificate is possible
-	if ldap.Config.AuthCert != "" && ldap.Config.AuthKey != "" {
-		cert, err := tls.LoadX509KeyPair(ldap.Config.AuthCert, ldap.Config.AuthKey)
+	if ldap.config.AuthCert != "" && ldap.config.AuthKey != "" {
+		cert, err := tls.LoadX509KeyPair(ldap.config.AuthCert, ldap.config.AuthKey)
 		if err != nil {
 			log.Error().Err(err).Msg("LDAP client certificate error")
 		} else {
@@ -77,13 +77,13 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	var err error
 
 	if ldap.cert != nil {
-		conn, err = ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		conn, err = ldapgo.DialURL(ldap.config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 			MinVersion:   tls.VersionTLS12,
 			Certificates: []tls.Certificate{*ldap.cert},
 		}))
 	} else {
-		conn, err = ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: ldap.Config.Insecure,
+		conn, err = ldapgo.DialURL(ldap.config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+			InsecureSkipVerify: ldap.config.Insecure,
 			MinVersion:         tls.VersionTLS12,
 		}))
 	}
@@ -103,10 +103,10 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 func (ldap *LdapService) Search(username string) (string, error) {
 	// Escape the username to prevent LDAP injection
 	escapedUsername := ldapgo.EscapeFilter(username)
-	filter := fmt.Sprintf(ldap.Config.SearchFilter, escapedUsername)
+	filter := fmt.Sprintf(ldap.config.SearchFilter, escapedUsername)
 
 	searchRequest := ldapgo.NewSearchRequest(
-		ldap.Config.BaseDN,
+		ldap.config.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
 		filter,
 		[]string{"dn"},
@@ -139,7 +139,7 @@ func (ldap *LdapService) BindService(rebind bool) error {
 	if ldap.cert != nil {
 		return ldap.conn.ExternalBind()
 	} else {
-		return ldap.conn.Bind(ldap.Config.BindDN, ldap.Config.BindPassword)
+		return ldap.conn.Bind(ldap.config.BindDN, ldap.config.BindPassword)
 	}
 }
 
