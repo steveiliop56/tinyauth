@@ -72,41 +72,31 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	ldap.mutex.Lock()
 	defer ldap.mutex.Unlock()
 
+	var conn *ldapgo.Conn
+	var err error
+
 	if ldap.cert != nil {
-		conn, err := ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		conn, err = ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 			MinVersion:   tls.VersionTLS12,
 			Certificates: []tls.Certificate{*ldap.cert},
 		}))
-		if err != nil {
-			return nil, err
-		}
-
-		err = conn.ExternalBind()
-		if err != nil {
-			log.Error().Err(err).Msg("LDAP mTLS bind failed?")
-			return nil, err
-		}
-		// Set and return the connection
-		ldap.conn = conn
-		return conn, nil
 	} else {
-		conn, err := ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		conn, err = ldapgo.DialURL(ldap.Config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 			InsecureSkipVerify: ldap.Config.Insecure,
 			MinVersion:         tls.VersionTLS12,
 		}))
-		if err != nil {
-			return nil, err
-		}
-
-		err = conn.Bind(ldap.Config.BindDN, ldap.Config.BindPassword)
-		if err != nil {
-			return nil, err
-		}
-		// Set and return the connection
-		ldap.conn = conn
-		return conn, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 
+	ldap.conn = conn
+
+	err = ldap.BindService(false)
+	if err != nil {
+		return nil, err
+	}
+	return ldap.conn, nil
 }
 
 func (ldap *LdapService) Search(username string) (string, error) {
@@ -138,17 +128,17 @@ func (ldap *LdapService) Search(username string) (string, error) {
 	return userDN, nil
 }
 
-func (ldap *LdapService) BindService() error {
-	ldap.mutex.Lock()
-	defer ldap.mutex.Unlock()
-
-	var err error
-	if ldap.cert != nil {
-		err = ldap.conn.ExternalBind()
-	} else {
-		err = ldap.conn.Bind(ldap.Config.BindDN, ldap.Config.BindPassword)
+func (ldap *LdapService) BindService(rebind bool) error {
+	// Locks must not be used for initial binding attempt
+	if rebind {
+		ldap.mutex.Lock()
+		defer ldap.mutex.Unlock()
 	}
-	return err
+
+	if ldap.cert != nil {
+		return ldap.conn.ExternalBind()
+	}
+	return ldap.conn.Bind(ldap.Config.BindDN, ldap.Config.BindPassword)
 }
 
 func (ldap *LdapService) Bind(userDN string, password string) error {

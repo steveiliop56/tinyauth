@@ -101,7 +101,7 @@ func (auth *AuthService) VerifyUser(search config.UserSearch, password string) b
 				return false
 			}
 
-			err = auth.ldap.BindService()
+			err = auth.ldap.BindService(true)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
 				return false
