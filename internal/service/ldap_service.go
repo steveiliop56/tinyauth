@@ -41,10 +41,10 @@ func (ldap *LdapService) Init() error {
 	if ldap.config.AuthCert != "" && ldap.config.AuthKey != "" {
 		cert, err := tls.LoadX509KeyPair(ldap.config.AuthCert, ldap.config.AuthKey)
 		if err != nil {
-			log.Error().Err(err).Msg("LDAP client certificate error")
+			log.Fatal().Err(err).Msg("LDAP mTLS authentication")
 		} else {
 			ldap.cert = &cert
-			log.Info().Msg("Using LDAP client certificate authentication")
+			log.Info().Msg("Using LDAP mTLS authentication")
 		}
 	}
 	_, err := ldap.connect()
