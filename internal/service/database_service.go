@@ -2,6 +2,9 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
+	"path/filepath"
 	"tinyauth/internal/assets"
 
 	"github.com/glebarez/sqlite"
@@ -27,7 +30,17 @@ func NewDatabaseService(config DatabaseServiceConfig) *DatabaseService {
 }
 
 func (ds *DatabaseService) Init() error {
-	gormDB, err := gorm.Open(sqlite.Open(ds.config.DatabasePath), &gorm.Config{})
+	dbPath := ds.config.DatabasePath
+	if dbPath == "" {
+		dbPath = "/data/tinyauth.db"
+	}
+
+	dir := filepath.Dir(dbPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create database directory %s: %w", dir, err)
+	}
+
+	gormDB, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 
 	if err != nil {
 		return err

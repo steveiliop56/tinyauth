@@ -66,7 +66,7 @@ func (c *rootCmd) Register() {
 		{"ldap-insecure", false, "Skip certificate verification for the LDAP server."},
 		{"ldap-search-filter", "(uid=%s)", "LDAP search filter for user lookup."},
 		{"resources-dir", "/data/resources", "Path to a directory containing custom resources (e.g. background image)."},
-		{"database-path", "/data/tinyauth.db", "Path to the Sqlite database file."},
+		{"database-path", "/data/tinyauth.db", "Path to the Sqlite database file. Directory will be created if it doesn't exist."},
 		{"trusted-proxies", "", "Comma separated list of trusted proxies (IP addresses or CIDRs) for correct client IP detection."},
 		{"disable-analytics", false, "Disable anonymous version collection."},
 		{"disable-resources", false, "Disable the resources server."},
