@@ -75,6 +75,12 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	var conn *ldapgo.Conn
 	var err error
 
+	// TODO: There's also STARTTLS (or SASL)-based mTLS authentication
+	// scenarion, where we first connect to plain text port (389) and
+	// continue with a STARTTLS negotiation:
+	// 1. conn = ldap.DialURL("ldap://ldap.example.com:389")
+	// 2. conn.StartTLS(tlsConfig)
+	// 3. conn.externalBind()
 	if ldap.cert != nil {
 		conn, err = ldapgo.DialURL(ldap.config.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 			MinVersion:   tls.VersionTLS12,
