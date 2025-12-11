@@ -37,7 +37,7 @@ type Config struct {
 	LdapInsecure          bool   `mapstructure:"ldap-insecure"`
 	LdapSearchFilter      string `mapstructure:"ldap-search-filter"`
 	ResourcesDir          string `mapstructure:"resources-dir"`
-	DatabasePath          string `mapstructure:"database-path" validate:"required"`
+	DatabasePath          string `mapstructure:"database-path"`
 	TrustedProxies        string `mapstructure:"trusted-proxies"`
 	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
 	DisableResources      bool   `mapstructure:"disable-resources"`
