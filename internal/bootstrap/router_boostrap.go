@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (app *BootstrapApp) setupRoutes() (*gin.Engine, error) {
+func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 

@@ -124,8 +124,8 @@ func (app *BootstrapApp) Setup() error {
 		return fmt.Errorf("no authentication providers configured")
 	}
 
-	// Setup routes
-	engine, err := app.setupRoutes()
+	// Setup router
+	engine, err := app.setupRouter()
 
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
