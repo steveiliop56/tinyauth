@@ -124,8 +124,10 @@ func (app *BootstrapApp) Setup() error {
 		return fmt.Errorf("no authentication providers configured")
 	}
 
+	app.context.configuredProviders = configuredProviders
+
 	// Setup router
-	engine, err := app.setupRouter()
+	router, err := app.setupRouter()
 
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
@@ -152,7 +154,7 @@ func (app *BootstrapApp) Setup() error {
 		}
 
 		log.Info().Msgf("Starting server on unix socket %s", app.config.SocketPath)
-		if err := engine.RunUnix(app.config.SocketPath); err != nil {
+		if err := router.RunUnix(app.config.SocketPath); err != nil {
 			log.Fatal().Err(err).Msg("Failed to start server")
 		}
 
@@ -162,7 +164,7 @@ func (app *BootstrapApp) Setup() error {
 	// Start server
 	address := fmt.Sprintf("%s:%d", app.config.Address, app.config.Port)
 	log.Info().Msgf("Starting server on %s", address)
-	if err := engine.Run(address); err != nil {
+	if err := router.Run(address); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")
 	}
 
