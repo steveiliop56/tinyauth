@@ -33,6 +33,8 @@ If you are still not sure if Tinyauth suits your needs you can try out the [demo
 
 You can find documentation and guides on all of the available configuration of Tinyauth in the [website](https://tinyauth.app).
 
+If you whish to contribute to the documentation head over to the [repositoy](https://github.com/steveiliop56/tinyauth-docs).
+
 ## Discord
 
 Tinyauth has a [discord](https://discord.gg/eHzVaCzRRd) server. Feel free to hop in to chat about self-hosting, homelabs and of course Tinyauth. See you there!
