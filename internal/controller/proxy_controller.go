@@ -40,6 +40,9 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
 	proxyGroup.GET("/:proxy", controller.proxyHandler)
+	// envoy uses the original request method for ext_authz
+	// https://github.com/envoyproxy/envoy/issues/5357
+	proxyGroup.Any("/envoy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
@@ -55,7 +58,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" {
+	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" && req.Proxy != "envoy" {
 		log.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
 		c.JSON(400, gin.H{
 			"status":  400,
