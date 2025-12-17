@@ -66,6 +66,10 @@ type LdapConfig struct {
 	SearchFilter string `description:"LDAP search filter."`
 }
 
+// Config loader options
+
+const DefaultNamePrefix = "TINYAUTH_"
+
 // OAuth/OIDC config
 
 type Claims struct {

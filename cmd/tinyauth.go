@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 	"tinyauth/internal/config"
+	"tinyauth/internal/utils/loaders"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/traefik/paerser/cli"
-	tcli "github.com/traefik/traefik/v3/pkg/cli"
 )
 
 type TinyauthCmdConfiguration struct {
@@ -30,10 +30,8 @@ func main() {
 	tConfig := NewTinyauthCmdConfiguration()
 
 	loaders := []cli.ResourceLoader{
-		&tcli.EnvLoader{},
-		// This is only for traefik, i need to rewrite it and move off from the traefik dependency
-		// &tcli.FileLoader{},
-		&tcli.FlagLoader{},
+		&loaders.EnvLoader{},
+		&loaders.FlagLoader{},
 	}
 
 	cmdTinyauth := &cli.Command{
