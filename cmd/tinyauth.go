@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
+	"tinyauth/internal/bootstrap"
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils/loaders"
 
@@ -14,7 +16,7 @@ import (
 
 type TinyauthCmdConfiguration struct {
 	config.Config
-	ConfigFile string `description:"Path to config file."`
+	// ConfigFile string `description:"Path to config file."`
 }
 
 func NewTinyauthCmdConfiguration() *TinyauthCmdConfiguration {
@@ -22,7 +24,7 @@ func NewTinyauthCmdConfiguration() *TinyauthCmdConfiguration {
 		Config: config.Config{
 			LogLevel: "info",
 		},
-		ConfigFile: "",
+		// ConfigFile: "",
 	}
 }
 
@@ -93,6 +95,14 @@ func runCmd(cfg *config.Config) error {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger()
 
 	log.Info().Str("version", config.Version).Msg("Starting tinyauth")
+
+	app := bootstrap.NewBootstrapApp(*cfg)
+
+	err = app.Setup()
+
+	if err != nil {
+		return fmt.Errorf("failed to bootstrap app: %w", err)
+	}
 
 	return nil
 }
