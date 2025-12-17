@@ -12,7 +12,6 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 COPY ./cmd ./cmd
 COPY ./internal ./internal
-COPY ./main.go ./
 COPY ./air.toml ./
 
 EXPOSE 3000
