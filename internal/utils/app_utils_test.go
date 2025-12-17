@@ -1,7 +1,6 @@
 package utils_test
 
 import (
-	"os"
 	"testing"
 	"tinyauth/internal/config"
 	"tinyauth/internal/utils"
@@ -204,95 +203,5 @@ func TestIsRedirectSafe(t *testing.T) {
 	// Case with URL having different TLD
 	redirectURL = "http://example.org/page"
 	result = utils.IsRedirectSafe(redirectURL, domain)
-	assert.Equal(t, false, result)
-}
-
-func TestGetOAuthProvidersConfig(t *testing.T) {
-	env := []string{"PROVIDERS_CLIENT1_CLIENT_ID=client1-id", "PROVIDERS_CLIENT1_CLIENT_SECRET=client1-secret"}
-	args := []string{"/tinyauth/tinyauth", "--providers-client2-client-id=client2-id", "--providers-client2-client-secret=client2-secret"}
-
-	expected := map[string]config.OAuthServiceConfig{
-		"client1": {
-			ClientID:     "client1-id",
-			ClientSecret: "client1-secret",
-			Name:         "Client1",
-		},
-		"client2": {
-			ClientID:     "client2-id",
-			ClientSecret: "client2-secret",
-			Name:         "Client2",
-		},
-	}
-
-	result, err := utils.GetOAuthProvidersConfig(env, args, "")
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, result)
-
-	// Case with no providers
-	env = []string{}
-	args = []string{"/tinyauth/tinyauth"}
-	expected = map[string]config.OAuthServiceConfig{}
-
-	result, err = utils.GetOAuthProvidersConfig(env, args, "")
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, result)
-
-	// Case with secret from file
-	file, err := os.Create("/tmp/tinyauth_test_file")
-	assert.NilError(t, err)
-
-	_, err = file.WriteString("file content\n")
-	assert.NilError(t, err)
-
-	err = file.Close()
-	assert.NilError(t, err)
-	defer os.Remove("/tmp/tinyauth_test_file")
-
-	env = []string{"PROVIDERS_CLIENT1_CLIENT_ID=client1-id", "PROVIDERS_CLIENT1_CLIENT_SECRET_FILE=/tmp/tinyauth_test_file"}
-	args = []string{"/tinyauth/tinyauth"}
-	expected = map[string]config.OAuthServiceConfig{
-		"client1": {
-			ClientID:     "client1-id",
-			ClientSecret: "file content",
-			Name:         "Client1",
-		},
-	}
-
-	result, err = utils.GetOAuthProvidersConfig(env, args, "")
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, result)
-
-	// Case with google provider and no redirect URL
-	env = []string{"PROVIDERS_GOOGLE_CLIENT_ID=google-id", "PROVIDERS_GOOGLE_CLIENT_SECRET=google-secret"}
-	args = []string{"/tinyauth/tinyauth"}
-	expected = map[string]config.OAuthServiceConfig{
-		"google": {
-			ClientID:     "google-id",
-			ClientSecret: "google-secret",
-			RedirectURL:  "http://app.url/api/oauth/callback/google",
-			Name:         "Google",
-		},
-	}
-
-	result, err = utils.GetOAuthProvidersConfig(env, args, "http://app.url")
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, result)
-}
-
-func TestShoudLogJSON(t *testing.T) {
-	// Test with no env or args
-	result := utils.ShoudLogJSON([]string{"FOO=bar"}, []string{"tinyauth", "--foo-bar=baz"})
-	assert.Equal(t, false, result)
-
-	// Test with env variable set
-	result = utils.ShoudLogJSON([]string{"LOG_JSON=true"}, []string{"tinyauth", "--foo-bar=baz"})
-	assert.Equal(t, true, result)
-
-	// Test with flag set
-	result = utils.ShoudLogJSON([]string{"FOO=bar"}, []string{"tinyauth", "--log-json=true"})
-	assert.Equal(t, true, result)
-
-	// Test with both env and flag set to false
-	result = utils.ShoudLogJSON([]string{"LOG_JSON=false"}, []string{"tinyauth", "--log-json=false"})
 	assert.Equal(t, false, result)
 }

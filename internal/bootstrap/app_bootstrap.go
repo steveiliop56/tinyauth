@@ -51,14 +51,35 @@ func (app *BootstrapApp) Setup() error {
 
 	app.context.users = users
 
-	// Get OAuth configs
-	oauthProviders, err := utils.GetOAuthProvidersConfig(os.Environ(), os.Args, app.config.AppURL)
+	// Setup OAuth providers
+	app.context.oauthProviders = app.config.OAuth.Providers
 
-	if err != nil {
-		return err
+	for name, provider := range app.context.oauthProviders {
+		secret := utils.GetSecret(provider.ClientSecret, provider.ClientSecretFile)
+		provider.ClientSecret = secret
+		provider.ClientSecretFile = ""
+		app.context.oauthProviders[name] = provider
 	}
 
-	app.context.oauthProviders = oauthProviders
+	for id := range config.OverrideProviders {
+		if provider, exists := app.context.oauthProviders[id]; exists {
+			if provider.RedirectURL == "" {
+				provider.RedirectURL = app.config.AppURL + "/api/oauth/callback/" + id
+				app.context.oauthProviders[id] = provider
+			}
+		}
+	}
+
+	for id, provider := range app.context.oauthProviders {
+		if provider.Name == "" {
+			if name, ok := config.OverrideProviders[id]; ok {
+				provider.Name = name
+			} else {
+				provider.Name = utils.Capitalize(id)
+			}
+		}
+		app.context.oauthProviders[id] = provider
+	}
 
 	// Get cookie domain
 	cookieDomain, err := utils.GetCookieDomain(app.config.AppURL)
@@ -98,7 +119,7 @@ func (app *BootstrapApp) Setup() error {
 	// Configured providers
 	configuredProviders := make([]controller.Provider, 0)
 
-	for id, provider := range oauthProviders {
+	for id, provider := range app.context.oauthProviders {
 		configuredProviders = append(configuredProviders, controller.Provider{
 			Name:  provider.Name,
 			ID:    id,
