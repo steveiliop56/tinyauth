@@ -38,7 +38,7 @@ func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthServi
 				TokenURL: config.TokenURL,
 			},
 		},
-		insecureSkipVerify: config.InsecureSkipVerify,
+		insecureSkipVerify: config.Insecure,
 		userinfoUrl:        config.UserinfoURL,
 		name:               config.Name,
 	}

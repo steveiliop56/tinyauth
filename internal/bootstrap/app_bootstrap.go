@@ -43,7 +43,7 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 
 func (app *BootstrapApp) Setup() error {
 	// Parse users
-	users, err := utils.GetUsers(app.config.Users, app.config.UsersFile)
+	users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
 
 	if err != nil {
 		return err
@@ -144,17 +144,17 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// If we have an socket path, bind to it
-	if app.config.SocketPath != "" {
-		if _, err := os.Stat(app.config.SocketPath); err == nil {
-			log.Info().Msgf("Removing existing socket file %s", app.config.SocketPath)
-			err := os.Remove(app.config.SocketPath)
+	if app.config.Server.SocketPath != "" {
+		if _, err := os.Stat(app.config.Server.SocketPath); err == nil {
+			log.Info().Msgf("Removing existing socket file %s", app.config.Server.SocketPath)
+			err := os.Remove(app.config.Server.SocketPath)
 			if err != nil {
 				return fmt.Errorf("failed to remove existing socket file: %w", err)
 			}
 		}
 
-		log.Info().Msgf("Starting server on unix socket %s", app.config.SocketPath)
-		if err := router.RunUnix(app.config.SocketPath); err != nil {
+		log.Info().Msgf("Starting server on unix socket %s", app.config.Server.SocketPath)
+		if err := router.RunUnix(app.config.Server.SocketPath); err != nil {
 			log.Fatal().Err(err).Msg("Failed to start server")
 		}
 
@@ -162,7 +162,7 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Start server
-	address := fmt.Sprintf("%s:%d", app.config.Address, app.config.Port)
+	address := fmt.Sprintf("%s:%d", app.config.Server.Address, app.config.Server.Port)
 	log.Info().Msgf("Starting server on %s", address)
 	if err := router.Run(address); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")

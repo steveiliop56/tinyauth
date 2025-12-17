@@ -13,8 +13,8 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 
-	if len(app.config.TrustedProxies) > 0 {
-		err := engine.SetTrustedProxies(strings.Split(app.config.TrustedProxies, ","))
+	if len(app.config.Server.TrustedProxies) > 0 {
+		err := engine.SetTrustedProxies(strings.Split(app.config.Server.TrustedProxies, ","))
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to set trusted proxies: %w", err)
@@ -57,12 +57,12 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	contextController := controller.NewContextController(controller.ContextControllerConfig{
 		Providers:             app.context.configuredProviders,
-		Title:                 app.config.Title,
+		Title:                 app.config.UI.Title,
 		AppURL:                app.config.AppURL,
 		CookieDomain:          app.context.cookieDomain,
-		ForgotPasswordMessage: app.config.ForgotPasswordMessage,
-		BackgroundImage:       app.config.BackgroundImage,
-		OAuthAutoRedirect:     app.config.OAuthAutoRedirect,
+		ForgotPasswordMessage: app.config.UI.ForgotPasswordMessage,
+		BackgroundImage:       app.config.UI.BackgroundImage,
+		OAuthAutoRedirect:     app.config.OAuth.AutoRedirect,
 		DisableUIWarnings:     app.config.DisableUIWarnings,
 	}, apiRouter)
 
@@ -70,7 +70,7 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	oauthController := controller.NewOAuthController(controller.OAuthControllerConfig{
 		AppURL:             app.config.AppURL,
-		SecureCookie:       app.config.SecureCookie,
+		SecureCookie:       app.config.Auth.SecureCookie,
 		CSRFCookieName:     app.context.csrfCookieName,
 		RedirectCookieName: app.context.redirectCookieName,
 		CookieDomain:       app.context.cookieDomain,

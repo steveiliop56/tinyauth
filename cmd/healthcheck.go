@@ -1,15 +1,17 @@
-package cmd
+package main
 
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/traefik/paerser/cli"
 )
 
 type healthzResponse struct {
@@ -17,96 +19,65 @@ type healthzResponse struct {
 	Message string `json:"message"`
 }
 
-type healthcheckCmd struct {
-	root *cobra.Command
-	cmd  *cobra.Command
+func healthcheckCmd() *cli.Command {
+	return &cli.Command{
+		Name:          "healthcheck",
+		Description:   "Perform a health check",
+		Configuration: nil,
+		Resources:     nil,
+		AllowArg:      true,
+		Run: func(args []string) error {
+			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
 
-	viper *viper.Viper
-}
+			appUrl := os.Getenv("APPURL")
 
-func newHealthcheckCmd(root *cobra.Command) *healthcheckCmd {
-	return &healthcheckCmd{
-		root:  root,
-		viper: viper.New(),
+			if len(args) > 0 {
+				appUrl = args[0]
+			}
+
+			if appUrl == "" {
+				return errors.New("APPURL is not set and no argument was provided")
+			}
+
+			log.Info().Str("app_url", appUrl).Msg("Performing health check")
+
+			client := http.Client{}
+
+			req, err := http.NewRequest("GET", appUrl+"/api/healthz", nil)
+
+			if err != nil {
+				return fmt.Errorf("failed to create request: %w", err)
+			}
+
+			resp, err := client.Do(req)
+
+			if err != nil {
+				return fmt.Errorf("failed to perform request: %w", err)
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("service is not healthy, got: %s", resp.Status)
+			}
+
+			defer resp.Body.Close()
+
+			var healthResp healthzResponse
+
+			body, err := io.ReadAll(resp.Body)
+
+			if err != nil {
+				return fmt.Errorf("failed to read response: %w", err)
+			}
+
+			err = json.Unmarshal(body, &healthResp)
+
+			if err != nil {
+				return fmt.Errorf("failed to decode response: %w", err)
+			}
+
+			log.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
+
+			return nil
+		},
 	}
-}
-
-func (c *healthcheckCmd) Register() {
-	c.cmd = &cobra.Command{
-		Use:   "healthcheck [app-url]",
-		Short: "Perform a health check",
-		Long:  `Use the health check endpoint to verify that Tinyauth is running and it's healthy.`,
-		Run:   c.run,
-	}
-
-	c.viper.AutomaticEnv()
-
-	if c.root != nil {
-		c.root.AddCommand(c.cmd)
-	}
-}
-
-func (c *healthcheckCmd) GetCmd() *cobra.Command {
-	return c.cmd
-}
-
-func (c *healthcheckCmd) run(cmd *cobra.Command, args []string) {
-	log.Logger = log.Level(zerolog.InfoLevel)
-
-	var appUrl string
-
-	port := c.viper.GetString("PORT")
-	address := c.viper.GetString("ADDRESS")
-
-	if port == "" {
-		port = "3000"
-	}
-
-	if address == "" {
-		address = "127.0.0.1"
-	}
-
-	appUrl = "http://" + address + ":" + port
-
-	if len(args) > 0 {
-		appUrl = args[0]
-	}
-
-	log.Info().Str("app_url", appUrl).Msg("Performing health check")
-
-	client := http.Client{}
-
-	req, err := http.NewRequest("GET", appUrl+"/api/healthz", nil)
-
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create request")
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to perform request")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatal().Err(errors.New("service is not healthy")).Msgf("Service is not healthy. Status code: %d", resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-
-	var healthResp healthzResponse
-
-	body, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to read response")
-	}
-
-	err = json.Unmarshal(body, &healthResp)
-
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to decode response")
-	}
-
-	log.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
 }

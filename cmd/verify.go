@@ -1,118 +1,120 @@
-package cmd
+package main
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"time"
 	"tinyauth/internal/utils"
 
 	"github.com/charmbracelet/huh"
 	"github.com/pquerna/otp/totp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/cobra"
+	"github.com/traefik/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type verifyUserCmd struct {
-	root *cobra.Command
-	cmd  *cobra.Command
-
-	interactive bool
-	username    string
-	password    string
-	totp        string
-	user        string
+type VerifyUserConfig struct {
+	Interactive bool   `description:"Validate a user interactively."`
+	Username    string `description:"Username."`
+	Password    string `description:"Password."`
+	Totp        string `description:"TOTP code."`
+	User        string `description:"Hash (username:hash:totp)."`
 }
 
-func newVerifyUserCmd(root *cobra.Command) *verifyUserCmd {
-	return &verifyUserCmd{
-		root: root,
-	}
-}
-
-func (c *verifyUserCmd) Register() {
-	c.cmd = &cobra.Command{
-		Use:   "verify",
-		Short: "Verify a user is set up correctly",
-		Long:  `Verify a user is set up correctly meaning that it has a correct username, password and TOTP code.`,
-		Run:   c.run,
-	}
-
-	c.cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "Validate a user interactively")
-	c.cmd.Flags().StringVar(&c.username, "username", "", "Username")
-	c.cmd.Flags().StringVar(&c.password, "password", "", "Password")
-	c.cmd.Flags().StringVar(&c.totp, "totp", "", "TOTP code")
-	c.cmd.Flags().StringVar(&c.user, "user", "", "Hash (username:hash:totp)")
-
-	if c.root != nil {
-		c.root.AddCommand(c.cmd)
+func NewVerifyUserConfig() *VerifyUserConfig {
+	return &VerifyUserConfig{
+		Interactive: false,
+		Username:    "",
+		Password:    "",
+		Totp:        "",
+		User:        "",
 	}
 }
 
-func (c *verifyUserCmd) GetCmd() *cobra.Command {
-	return c.cmd
-}
+func verifyUserCmd() *cli.Command {
+	tCfg := NewVerifyUserConfig()
 
-func (c *verifyUserCmd) run(cmd *cobra.Command, args []string) {
-	log.Logger = log.Level(zerolog.InfoLevel)
-
-	if c.interactive {
-		form := huh.NewForm(
-			huh.NewGroup(
-				huh.NewInput().Title("User (username:hash:totp)").Value(&c.user).Validate((func(s string) error {
-					if s == "" {
-						return errors.New("user cannot be empty")
-					}
-					return nil
-				})),
-				huh.NewInput().Title("Username").Value(&c.username).Validate((func(s string) error {
-					if s == "" {
-						return errors.New("username cannot be empty")
-					}
-					return nil
-				})),
-				huh.NewInput().Title("Password").Value(&c.password).Validate((func(s string) error {
-					if s == "" {
-						return errors.New("password cannot be empty")
-					}
-					return nil
-				})),
-				huh.NewInput().Title("TOTP Code (optional)").Value(&c.totp),
-			),
-		)
-		var baseTheme *huh.Theme = huh.ThemeBase()
-		err := form.WithTheme(baseTheme).Run()
-		if err != nil {
-			log.Fatal().Err(err).Msg("Form failed")
-		}
+	loaders := []cli.ResourceLoader{
+		&cli.FlagLoader{},
 	}
 
-	user, err := utils.ParseUser(c.user)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to parse user")
+	return &cli.Command{
+		Name:          "verify",
+		Description:   "Verify a user is set up correctly.",
+		Configuration: tCfg,
+		Resources:     loaders,
+		Run: func(_ []string) error {
+			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
+
+			if tCfg.Interactive {
+				form := huh.NewForm(
+					huh.NewGroup(
+						huh.NewInput().Title("User (username:hash:totp)").Value(&tCfg.User).Validate((func(s string) error {
+							if s == "" {
+								return errors.New("user cannot be empty")
+							}
+							return nil
+						})),
+						huh.NewInput().Title("Username").Value(&tCfg.Username).Validate((func(s string) error {
+							if s == "" {
+								return errors.New("username cannot be empty")
+							}
+							return nil
+						})),
+						huh.NewInput().Title("Password").Value(&tCfg.Password).Validate((func(s string) error {
+							if s == "" {
+								return errors.New("password cannot be empty")
+							}
+							return nil
+						})),
+						huh.NewInput().Title("TOTP Code (optional)").Value(&tCfg.Totp),
+					),
+				)
+
+				var baseTheme *huh.Theme = huh.ThemeBase()
+
+				err := form.WithTheme(baseTheme).Run()
+
+				if err != nil {
+					return fmt.Errorf("failed to run interactive prompt: %w", err)
+				}
+			}
+
+			user, err := utils.ParseUser(tCfg.User)
+
+			if err != nil {
+				return fmt.Errorf("failed to parse user: %w", err)
+			}
+
+			if user.Username != tCfg.Username {
+				return fmt.Errorf("username is incorrect")
+			}
+
+			err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(tCfg.Password))
+
+			if err != nil {
+				return fmt.Errorf("password is incorrect: %w", err)
+			}
+
+			if user.TotpSecret == "" {
+				if tCfg.Totp != "" {
+					log.Warn().Msg("User does not have TOTP secret")
+				}
+				log.Info().Msg("User verified")
+				return nil
+			}
+
+			ok := totp.Validate(tCfg.Totp, user.TotpSecret)
+
+			if !ok {
+				return fmt.Errorf("TOTP code incorrect: %w", err)
+			}
+
+			log.Info().Msg("User verified")
+
+			return nil
+		},
 	}
-
-	if user.Username != c.username {
-		log.Fatal().Msg("Username is incorrect")
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(c.password))
-	if err != nil {
-		log.Fatal().Msg("Password is incorrect")
-	}
-
-	if user.TotpSecret == "" {
-		if c.totp != "" {
-			log.Warn().Msg("User does not have TOTP secret")
-		}
-		log.Info().Msg("User verified")
-		return
-	}
-
-	ok := totp.Validate(c.totp, user.TotpSecret)
-	if !ok {
-		log.Fatal().Msg("TOTP code incorrect")
-
-	}
-
-	log.Info().Msg("User verified")
 }

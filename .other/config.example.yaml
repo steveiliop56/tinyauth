@@ -45,7 +45,6 @@ ui:
   background_image: "/static/background.jpg"
 
 ldap:
-  enabled: false
   address: "ldap.example.com:389"
   base_dn: "dc=example,dc=com"
   bind_dn: "cn=admin,dc=example,dc=com"
