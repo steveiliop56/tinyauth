@@ -55,6 +55,15 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
+	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
+		log.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy authentication")
+		c.JSON(405, gin.H{
+			"status":  405,
+			"message": "Method Not Allowed",
+		})
+		return
+	}
+
 	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" && req.Proxy != "envoy" {
 		log.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
 		c.JSON(400, gin.H{

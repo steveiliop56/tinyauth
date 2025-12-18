@@ -80,9 +80,28 @@ func TestProxyHandler(t *testing.T) {
 
 	assert.Equal(t, 400, recorder.Code)
 
+	// Test invalid method
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("POST", "/api/auth/traefik", nil)
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 405, recorder.Code)
+
 	// Test logged out user (traefik/caddy)
 	recorder = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "example.com")
+	req.Header.Set("X-Forwarded-Uri", "/somepath")
+	req.Header.Set("Accept", "text/html")
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 307, recorder.Code)
+	assert.Equal(t, "http://localhost:8080/login?redirect_uri=https%3A%2F%2Fexample.com%2Fsomepath", recorder.Header().Get("Location"))
+
+	// Test logged out user (envoy)
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("POST", "/api/auth/envoy", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
 	req.Header.Set("X-Forwarded-Host", "example.com")
 	req.Header.Set("X-Forwarded-Uri", "/somepath")
