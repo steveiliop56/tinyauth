@@ -39,10 +39,7 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
-	proxyGroup.GET("/:proxy", controller.proxyHandler)
-	// envoy uses the original request method for ext_authz
-	// https://github.com/envoyproxy/envoy/issues/5357
-	proxyGroup.Any("/envoy", controller.proxyHandler)
+	proxyGroup.Any("/:proxy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
