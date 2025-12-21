@@ -48,9 +48,9 @@ type AuthConfig struct {
 }
 
 type OAuthConfig struct {
-	Whitelist    string `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
-	AutoRedirect string `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
-	Providers    map[string]OAuthServiceConfig
+	Whitelist    string                        `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
+	AutoRedirect string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
+	Providers    map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers"`
 }
 
 type UIConfig struct {

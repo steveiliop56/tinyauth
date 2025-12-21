@@ -214,7 +214,7 @@ func (app *BootstrapApp) heartbeat() {
 	}
 
 	client := &http.Client{
-		Timeout: time.Duration(10) * time.Second, // The server should never take more than 10 seconds to respond
+		Timeout: 30 * time.Second, // The server should never take more than 30 seconds to respond
 	}
 
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"

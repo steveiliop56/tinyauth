@@ -109,7 +109,7 @@ func verifyUserCmd() *cli.Command {
 			ok := totp.Validate(tCfg.Totp, user.TotpSecret)
 
 			if !ok {
-				return fmt.Errorf("TOTP code incorrect: %w", err)
+				return fmt.Errorf("TOTP code incorrect")
 			}
 
 			log.Info().Msg("User verified")

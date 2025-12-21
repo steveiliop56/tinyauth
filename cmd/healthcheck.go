@@ -41,7 +41,9 @@ func healthcheckCmd() *cli.Command {
 
 			log.Info().Str("app_url", appUrl).Msg("Performing health check")
 
-			client := http.Client{}
+			client := http.Client{
+				Timeout: 30 * time.Second,
+			}
 
 			req, err := http.NewRequest("GET", appUrl+"/api/healthz", nil)
 

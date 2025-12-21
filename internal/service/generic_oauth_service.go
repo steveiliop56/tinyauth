@@ -54,6 +54,7 @@ func (generic *GenericOAuthService) Init() error {
 
 	httpClient := &http.Client{
 		Transport: transport,
+		Timeout:   30 * time.Second,
 	}
 
 	ctx := context.Background()
