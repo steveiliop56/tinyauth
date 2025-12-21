@@ -13,7 +13,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/rs/zerolog v1.34.0
-	github.com/stoewer/go-strcase v1.3.1
 	github.com/traefik/paerser v0.2.2
 	github.com/weppos/publicsuffix-go v0.50.1
 	golang.org/x/crypto v0.46.0
