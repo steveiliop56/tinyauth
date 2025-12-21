@@ -27,3 +27,10 @@ internal/assets/version
 
 # data directory
 data
+
+# config file
+config.yml
+
+# binary out
+tinyauth.db
+resources

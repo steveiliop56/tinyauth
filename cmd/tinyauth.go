@@ -14,17 +14,28 @@ import (
 	"github.com/traefik/paerser/cli"
 )
 
-type TinyauthCmdConfiguration struct {
-	config.Config
-	// ConfigFile string `description:"Path to config file."`
-}
-
-func NewTinyauthCmdConfiguration() *TinyauthCmdConfiguration {
-	return &TinyauthCmdConfiguration{
-		Config: config.Config{
-			LogLevel: "info",
+func NewTinyauthCmdConfiguration() *config.Config {
+	return &config.Config{
+		LogLevel:     "info",
+		ResourcesDir: "./resources",
+		DatabasePath: "./tinyauth.db",
+		Server: config.ServerConfig{
+			Port:    3000,
+			Address: "0.0.0.0",
 		},
-		// ConfigFile: "",
+		Auth: config.AuthConfig{
+			SessionExpiry:   3600,
+			LoginTimeout:    300,
+			LoginMaxRetries: 3,
+		},
+		UI: config.UIConfig{
+			Title:                 "Tinyauth",
+			ForgotPasswordMessage: "You can change your password by changing the configuration.",
+			BackgroundImage:       "/background.jpg",
+		},
+		Experimental: config.ExperimentalConfig{
+			ConfigFile: "",
+		},
 	}
 }
 
@@ -32,8 +43,9 @@ func main() {
 	tConfig := NewTinyauthCmdConfiguration()
 
 	loaders := []cli.ResourceLoader{
-		&loaders.EnvLoader{},
+		&loaders.FileLoader{},
 		&loaders.FlagLoader{},
+		&loaders.EnvLoader{},
 	}
 
 	cmdTinyauth := &cli.Command{
@@ -42,7 +54,7 @@ func main() {
 		Configuration: tConfig,
 		Resources:     loaders,
 		Run: func(_ []string) error {
-			return runCmd(&tConfig.Config)
+			return runCmd(*tConfig)
 		},
 	}
 
@@ -83,7 +95,7 @@ func main() {
 	}
 }
 
-func runCmd(cfg *config.Config) error {
+func runCmd(cfg config.Config) error {
 	logLevel, err := zerolog.ParseLevel(strings.ToLower(cfg.LogLevel))
 
 	if err != nil {
@@ -92,11 +104,15 @@ func runCmd(cfg *config.Config) error {
 		zerolog.SetGlobalLevel(logLevel)
 	}
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger()
+	log.Logger = log.With().Caller().Logger()
+
+	if !cfg.LogJSON {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+	}
 
 	log.Info().Str("version", config.Version).Msg("Starting tinyauth")
 
-	app := bootstrap.NewBootstrapApp(*cfg)
+	app := bootstrap.NewBootstrapApp(cfg)
 
 	err = app.Setup()
 

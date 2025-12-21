@@ -15,55 +15,61 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	AppURL            string `description:"The base URL where the app is hosted."`
-	LogLevel          string `description:"Log level (trace, debug, info, warn, error)."`
-	ResourcesDir      string `description:"The directory where resources are stored."`
-	DatabasePath      string `description:"The path to the database file."`
-	DisableAnalytics  bool   `description:"Disable analytics."`
-	DisableResources  bool   `description:"Disable resources server."`
-	DisableUIWarnings bool   `description:"Disable UI warnings."`
-	Server            ServerConfig
-	Auth              AuthConfig
-	OAuth             OAuthConfig
-	UI                UIConfig
-	Ldap              LdapConfig
+	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
+	LogLevel          string             `description:"Log level (trace, debug, info, warn, error)." yaml:"logLevel"`
+	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
+	DatabasePath      string             `description:"The path to the database file." yaml:"databasePath"`
+	DisableAnalytics  bool               `description:"Disable analytics." yaml:"disableAnalytics"`
+	DisableResources  bool               `description:"Disable resources server." yaml:"disableResources"`
+	DisableUIWarnings bool               `description:"Disable UI warnings." yaml:"disableUIWarnings"`
+	LogJSON           bool               `description:"Enable JSON formatted logs." yaml:"logJSON"`
+	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
+	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	UI                UIConfig           `description:"UI customization." yaml:"ui"`
+	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
 }
 
 type ServerConfig struct {
-	Port           int    `description:"The port on which the server listens."`
-	Address        string `description:"The address on which the server listens."`
-	SocketPath     string `description:"The path to the Unix socket."`
-	TrustedProxies string `description:"Comma-separated list of trusted proxy addresses."`
+	Port           int    `description:"The port on which the server listens." yaml:"port"`
+	Address        string `description:"The address on which the server listens." yaml:"address"`
+	SocketPath     string `description:"The path to the Unix socket." yaml:"socketPath"`
+	TrustedProxies string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
 }
 
 type AuthConfig struct {
-	Users           string `description:"Comma-separated list of users (username:hashed_password)."`
-	UsersFile       string `description:"Path to the users file."`
-	SecureCookie    bool   `description:"Enable secure cookies."`
-	SessionExpiry   int    `description:"Session expiry time in seconds."`
-	LoginTimeout    int    `description:"Login timeout in seconds."`
-	LoginMaxRetries int    `description:"Maximum login retries."`
+	Users           string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
+	UsersFile       string `description:"Path to the users file." yaml:"usersFile"`
+	SecureCookie    bool   `description:"Enable secure cookies." yaml:"secureCookie"`
+	SessionExpiry   int    `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
+	LoginTimeout    int    `description:"Login timeout in seconds." yaml:"loginTimeout"`
+	LoginMaxRetries int    `description:"Maximum login retries." yaml:"loginMaxRetries"`
 }
 
 type OAuthConfig struct {
-	Whitelist    string `description:"Comma-separated list of allowed OAuth domains."`
-	AutoRedirect string `description:"The OAuth provider to use for automatic redirection."`
+	Whitelist    string `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
+	AutoRedirect string `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
 	Providers    map[string]OAuthServiceConfig
 }
 
 type UIConfig struct {
-	Title                 string `description:"The title of the UI."`
-	ForgotPasswordMessage string `description:"Message displayed on the forgot password page."`
-	BackgroundImage       string `description:"Path to the background image."`
+	Title                 string `description:"The title of the UI." yaml:"title"`
+	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage"`
+	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage"`
 }
 
 type LdapConfig struct {
-	Address      string `description:"LDAP server address."`
-	BindDN       string `description:"Bind DN for LDAP authentication."`
-	BindPassword string `description:"Bind password for LDAP authentication."`
-	BaseDN       string `description:"Base DN for LDAP searches."`
-	Insecure     bool   `description:"Allow insecure LDAP connections."`
-	SearchFilter string `description:"LDAP search filter."`
+	Address      string `description:"LDAP server address." yaml:"address"`
+	BindDN       string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
+	BindPassword string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
+	BaseDN       string `description:"Base DN for LDAP searches." yaml:"baseDn"`
+	Insecure     bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
+	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
+}
+
+type ExperimentalConfig struct {
+	ConfigFile string `description:"Path to config file." yaml:"-"`
 }
 
 // Config loader options

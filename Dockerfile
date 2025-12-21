@@ -52,6 +52,10 @@ EXPOSE 3000
 
 VOLUME ["/data"]
 
+ENV DATABASEPATH=/data/tinyauth.db
+
+ENV RESOURCESDIR=/data/resources
+
 ENV GIN_MODE=release
 
 ENV PATH=$PATH:/tinyauth
