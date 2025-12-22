@@ -38,7 +38,7 @@ func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthServi
 				TokenURL: config.TokenURL,
 			},
 		},
-		insecureSkipVerify: config.InsecureSkipVerify,
+		insecureSkipVerify: config.Insecure,
 		userinfoUrl:        config.UserinfoURL,
 		name:               config.Name,
 	}
@@ -54,6 +54,7 @@ func (generic *GenericOAuthService) Init() error {
 
 	httpClient := &http.Client{
 		Transport: transport,
+		Timeout:   30 * time.Second,
 	}
 
 	ctx := context.Background()

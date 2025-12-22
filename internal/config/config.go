@@ -15,35 +15,66 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	Port                  int    `mapstructure:"port" validate:"required"`
-	Address               string `validate:"required,ip4_addr" mapstructure:"address"`
-	AppURL                string `validate:"required,url" mapstructure:"app-url"`
-	Users                 string `mapstructure:"users"`
-	UsersFile             string `mapstructure:"users-file"`
-	SecureCookie          bool   `mapstructure:"secure-cookie"`
-	OAuthWhitelist        string `mapstructure:"oauth-whitelist"`
-	OAuthAutoRedirect     string `mapstructure:"oauth-auto-redirect"`
-	SessionExpiry         int    `mapstructure:"session-expiry"`
-	LogLevel              string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
-	Title                 string `mapstructure:"app-title"`
-	LoginTimeout          int    `mapstructure:"login-timeout"`
-	LoginMaxRetries       int    `mapstructure:"login-max-retries"`
-	ForgotPasswordMessage string `mapstructure:"forgot-password-message"`
-	BackgroundImage       string `mapstructure:"background-image" validate:"required"`
-	LdapAddress           string `mapstructure:"ldap-address"`
-	LdapBindDN            string `mapstructure:"ldap-bind-dn"`
-	LdapBindPassword      string `mapstructure:"ldap-bind-password"`
-	LdapBaseDN            string `mapstructure:"ldap-base-dn"`
-	LdapInsecure          bool   `mapstructure:"ldap-insecure"`
-	LdapSearchFilter      string `mapstructure:"ldap-search-filter"`
-	ResourcesDir          string `mapstructure:"resources-dir"`
-	DatabasePath          string `mapstructure:"database-path"`
-	TrustedProxies        string `mapstructure:"trusted-proxies"`
-	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
-	DisableResources      bool   `mapstructure:"disable-resources"`
-	DisableUIWarnings     bool   `mapstructure:"disable-ui-warnings"`
-	SocketPath            string `mapstructure:"socket-path"`
+	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
+	LogLevel          string             `description:"Log level (trace, debug, info, warn, error)." yaml:"logLevel"`
+	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
+	DatabasePath      string             `description:"The path to the database file." yaml:"databasePath"`
+	DisableAnalytics  bool               `description:"Disable analytics." yaml:"disableAnalytics"`
+	DisableResources  bool               `description:"Disable resources server." yaml:"disableResources"`
+	DisableUIWarnings bool               `description:"Disable UI warnings." yaml:"disableUIWarnings"`
+	LogJSON           bool               `description:"Enable JSON formatted logs." yaml:"logJSON"`
+	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
+	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	UI                UIConfig           `description:"UI customization." yaml:"ui"`
+	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
 }
+
+type ServerConfig struct {
+	Port           int    `description:"The port on which the server listens." yaml:"port"`
+	Address        string `description:"The address on which the server listens." yaml:"address"`
+	SocketPath     string `description:"The path to the Unix socket." yaml:"socketPath"`
+	TrustedProxies string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
+}
+
+type AuthConfig struct {
+	Users           string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
+	UsersFile       string `description:"Path to the users file." yaml:"usersFile"`
+	SecureCookie    bool   `description:"Enable secure cookies." yaml:"secureCookie"`
+	SessionExpiry   int    `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
+	LoginTimeout    int    `description:"Login timeout in seconds." yaml:"loginTimeout"`
+	LoginMaxRetries int    `description:"Maximum login retries." yaml:"loginMaxRetries"`
+}
+
+type OAuthConfig struct {
+	Whitelist    string                        `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
+	AutoRedirect string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
+	Providers    map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers"`
+}
+
+type UIConfig struct {
+	Title                 string `description:"The title of the UI." yaml:"title"`
+	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage"`
+	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage"`
+}
+
+type LdapConfig struct {
+	Address      string `description:"LDAP server address." yaml:"address"`
+	BindDN       string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
+	BindPassword string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
+	BaseDN       string `description:"Base DN for LDAP searches." yaml:"baseDn"`
+	Insecure     bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
+	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
+}
+
+type ExperimentalConfig struct {
+	ConfigFile string `description:"Path to config file." yaml:"-"`
+}
+
+// Config loader options
+
+const DefaultNamePrefix = "TINYAUTH_"
 
 // OAuth/OIDC config
 
@@ -55,16 +86,16 @@ type Claims struct {
 }
 
 type OAuthServiceConfig struct {
-	ClientID           string `field:"client-id"`
-	ClientSecret       string
-	ClientSecretFile   string
-	Scopes             []string
-	RedirectURL        string `field:"redirect-url"`
-	AuthURL            string `field:"auth-url"`
-	TokenURL           string `field:"token-url"`
-	UserinfoURL        string `field:"user-info-url"`
-	InsecureSkipVerify bool
-	Name               string
+	ClientID         string   `description:"OAuth client ID."`
+	ClientSecret     string   `description:"OAuth client secret."`
+	ClientSecretFile string   `description:"Path to the file containing the OAuth client secret."`
+	Scopes           []string `description:"OAuth scopes."`
+	RedirectURL      string   `description:"OAuth redirect URL."`
+	AuthURL          string   `description:"OAuth authorization URL."`
+	TokenURL         string   `description:"OAuth token URL."`
+	UserinfoURL      string   `description:"OAuth userinfo URL."`
+	Insecure         bool     `description:"Allow insecure OAuth connections."`
+	Name             string   `description:"Provider name in UI."`
 }
 
 var OverrideProviders = map[string]string{

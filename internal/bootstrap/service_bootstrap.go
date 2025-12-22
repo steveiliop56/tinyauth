@@ -31,12 +31,12 @@ func (app *BootstrapApp) initServices() (Services, error) {
 	services.databaseService = databaseService
 
 	ldapService := service.NewLdapService(service.LdapServiceConfig{
-		Address:      app.config.LdapAddress,
-		BindDN:       app.config.LdapBindDN,
-		BindPassword: app.config.LdapBindPassword,
-		BaseDN:       app.config.LdapBaseDN,
-		Insecure:     app.config.LdapInsecure,
-		SearchFilter: app.config.LdapSearchFilter,
+		Address:      app.config.Ldap.Address,
+		BindDN:       app.config.Ldap.BindDN,
+		BindPassword: app.config.Ldap.BindPassword,
+		BaseDN:       app.config.Ldap.BaseDN,
+		Insecure:     app.config.Ldap.Insecure,
+		SearchFilter: app.config.Ldap.SearchFilter,
 	})
 
 	err = ldapService.Init()
@@ -69,12 +69,12 @@ func (app *BootstrapApp) initServices() (Services, error) {
 
 	authService := service.NewAuthService(service.AuthServiceConfig{
 		Users:             app.context.users,
-		OauthWhitelist:    app.config.OAuthWhitelist,
-		SessionExpiry:     app.config.SessionExpiry,
-		SecureCookie:      app.config.SecureCookie,
+		OauthWhitelist:    app.config.OAuth.Whitelist,
+		SessionExpiry:     app.config.Auth.SessionExpiry,
+		SecureCookie:      app.config.Auth.SecureCookie,
 		CookieDomain:      app.context.cookieDomain,
-		LoginTimeout:      app.config.LoginTimeout,
-		LoginMaxRetries:   app.config.LoginMaxRetries,
+		LoginTimeout:      app.config.Auth.LoginTimeout,
+		LoginMaxRetries:   app.config.Auth.LoginMaxRetries,
 		SessionCookieName: app.context.sessionCookieName,
 	}, dockerService, ldapService, databaseService.GetDatabase())
 

@@ -82,7 +82,7 @@ func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 			return config.App{}, err
 		}
 
-		labels, err := decoders.DecodeLabels(inspect.Config.Labels)
+		labels, err := decoders.DecodeLabels[config.Apps](inspect.Config.Labels, "apps")
 		if err != nil {
 			return config.App{}, err
 		}

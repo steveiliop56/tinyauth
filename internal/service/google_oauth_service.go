@@ -45,7 +45,9 @@ func NewGoogleOAuthService(config config.OAuthServiceConfig) *GoogleOAuthService
 }
 
 func (google *GoogleOAuthService) Init() error {
-	httpClient := &http.Client{}
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 	google.context = ctx

@@ -33,12 +33,11 @@ COPY go.sum ./
 
 RUN go mod download
 
-COPY ./main.go ./
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
-RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" 
+RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" ./cmd/tinyauth
  
 # Runner
 FROM alpine:3.23 AS runner
@@ -52,6 +51,10 @@ RUN mkdir -p /data
 EXPOSE 3000
 
 VOLUME ["/data"]
+
+ENV DATABASEPATH=/data/tinyauth.db
+
+ENV RESOURCESDIR=/data/resources
 
 ENV GIN_MODE=release
 
