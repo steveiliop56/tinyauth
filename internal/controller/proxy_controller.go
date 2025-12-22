@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"tinyauth/internal/config"
 	"tinyauth/internal/service"
@@ -12,6 +13,8 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog/log"
 )
+
+var SupportedProxies = []string{"nginx", "traefik", "caddy", "envoy"}
 
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
@@ -55,7 +58,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" && req.Proxy != "envoy" {
+	if !slices.Contains(SupportedProxies, req.Proxy) {
 		log.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
 		c.JSON(400, gin.H{
 			"status":  400,
