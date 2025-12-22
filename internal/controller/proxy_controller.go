@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"tinyauth/internal/config"
 	"tinyauth/internal/service"
@@ -12,6 +13,8 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog/log"
 )
+
+var SupportedProxies = []string{"nginx", "traefik", "caddy", "envoy"}
 
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
@@ -39,7 +42,7 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
-	proxyGroup.GET("/:proxy", controller.proxyHandler)
+	proxyGroup.Any("/:proxy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
@@ -55,11 +58,20 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" {
+	if !slices.Contains(SupportedProxies, req.Proxy) {
 		log.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
+		})
+		return
+	}
+
+	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
+		log.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy")
+		c.JSON(405, gin.H{
+			"status":  405,
+			"message": "Method Not Allowed",
 		})
 		return
 	}
