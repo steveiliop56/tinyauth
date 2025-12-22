@@ -16,8 +16,8 @@ COPY ./air.toml ./
 
 EXPOSE 3000
 
-ENV DATABASEPATH=/data/tinyauth.db
+ENV TINYAUTH_DATABASEPATH=/data/tinyauth.db
 
-ENV RESOURCESDIR=/data/resources
+ENV TINYAUTH_RESOURCESDIR=/data/resources
 
 ENTRYPOINT ["air", "-c", "air.toml"]

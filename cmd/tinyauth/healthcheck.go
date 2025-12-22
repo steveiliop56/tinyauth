@@ -29,14 +29,14 @@ func healthcheckCmd() *cli.Command {
 		Run: func(args []string) error {
 			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
 
-			appUrl := os.Getenv("APPURL")
+			appUrl := os.Getenv("TINYAUTH_APPURL")
 
 			if len(args) > 0 {
 				appUrl = args[0]
 			}
 
 			if appUrl == "" {
-				return errors.New("APPURL is not set and no argument was provided")
+				return errors.New("TINYAUTH_APPURL is not set and no argument was provided")
 			}
 
 			log.Info().Str("app_url", appUrl).Msg("Performing health check")
