@@ -50,7 +50,9 @@ func NewGithubOAuthService(config config.OAuthServiceConfig) *GithubOAuthService
 }
 
 func (github *GithubOAuthService) Init() error {
-	httpClient := &http.Client{}
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 	github.context = ctx

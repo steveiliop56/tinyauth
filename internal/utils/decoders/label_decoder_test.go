@@ -62,7 +62,7 @@ func TestDecodeLabels(t *testing.T) {
 	}
 
 	// Test
-	result, err := decoders.DecodeLabels(test)
+	result, err := decoders.DecodeLabels[config.Apps](test, "apps")
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 }

@@ -12,9 +12,12 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 COPY ./cmd ./cmd
 COPY ./internal ./internal
-COPY ./main.go ./
 COPY ./air.toml ./
 
 EXPOSE 3000
+
+ENV TINYAUTH_DATABASEPATH=/data/tinyauth.db
+
+ENV TINYAUTH_RESOURCESDIR=/data/resources
 
 ENTRYPOINT ["air", "-c", "air.toml"]

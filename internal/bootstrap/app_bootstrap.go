@@ -43,7 +43,7 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 
 func (app *BootstrapApp) Setup() error {
 	// Parse users
-	users, err := utils.GetUsers(app.config.Users, app.config.UsersFile)
+	users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
 
 	if err != nil {
 		return err
@@ -51,14 +51,35 @@ func (app *BootstrapApp) Setup() error {
 
 	app.context.users = users
 
-	// Get OAuth configs
-	oauthProviders, err := utils.GetOAuthProvidersConfig(os.Environ(), os.Args, app.config.AppURL)
+	// Setup OAuth providers
+	app.context.oauthProviders = app.config.OAuth.Providers
 
-	if err != nil {
-		return err
+	for name, provider := range app.context.oauthProviders {
+		secret := utils.GetSecret(provider.ClientSecret, provider.ClientSecretFile)
+		provider.ClientSecret = secret
+		provider.ClientSecretFile = ""
+		app.context.oauthProviders[name] = provider
 	}
 
-	app.context.oauthProviders = oauthProviders
+	for id := range config.OverrideProviders {
+		if provider, exists := app.context.oauthProviders[id]; exists {
+			if provider.RedirectURL == "" {
+				provider.RedirectURL = app.config.AppURL + "/api/oauth/callback/" + id
+				app.context.oauthProviders[id] = provider
+			}
+		}
+	}
+
+	for id, provider := range app.context.oauthProviders {
+		if provider.Name == "" {
+			if name, ok := config.OverrideProviders[id]; ok {
+				provider.Name = name
+			} else {
+				provider.Name = utils.Capitalize(id)
+			}
+		}
+		app.context.oauthProviders[id] = provider
+	}
 
 	// Get cookie domain
 	cookieDomain, err := utils.GetCookieDomain(app.config.AppURL)
@@ -98,7 +119,7 @@ func (app *BootstrapApp) Setup() error {
 	// Configured providers
 	configuredProviders := make([]controller.Provider, 0)
 
-	for id, provider := range oauthProviders {
+	for id, provider := range app.context.oauthProviders {
 		configuredProviders = append(configuredProviders, controller.Provider{
 			Name:  provider.Name,
 			ID:    id,
@@ -144,17 +165,17 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// If we have an socket path, bind to it
-	if app.config.SocketPath != "" {
-		if _, err := os.Stat(app.config.SocketPath); err == nil {
-			log.Info().Msgf("Removing existing socket file %s", app.config.SocketPath)
-			err := os.Remove(app.config.SocketPath)
+	if app.config.Server.SocketPath != "" {
+		if _, err := os.Stat(app.config.Server.SocketPath); err == nil {
+			log.Info().Msgf("Removing existing socket file %s", app.config.Server.SocketPath)
+			err := os.Remove(app.config.Server.SocketPath)
 			if err != nil {
 				return fmt.Errorf("failed to remove existing socket file: %w", err)
 			}
 		}
 
-		log.Info().Msgf("Starting server on unix socket %s", app.config.SocketPath)
-		if err := router.RunUnix(app.config.SocketPath); err != nil {
+		log.Info().Msgf("Starting server on unix socket %s", app.config.Server.SocketPath)
+		if err := router.RunUnix(app.config.Server.SocketPath); err != nil {
 			log.Fatal().Err(err).Msg("Failed to start server")
 		}
 
@@ -162,7 +183,7 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Start server
-	address := fmt.Sprintf("%s:%d", app.config.Address, app.config.Port)
+	address := fmt.Sprintf("%s:%d", app.config.Server.Address, app.config.Server.Port)
 	log.Info().Msgf("Starting server on %s", address)
 	if err := router.Run(address); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")
@@ -193,7 +214,7 @@ func (app *BootstrapApp) heartbeat() {
 	}
 
 	client := &http.Client{
-		Timeout: time.Duration(10) * time.Second, // The server should never take more than 10 seconds to respond
+		Timeout: 30 * time.Second, // The server should never take more than 30 seconds to respond
 	}
 
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"
