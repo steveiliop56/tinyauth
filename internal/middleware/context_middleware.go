@@ -65,6 +65,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
+			m.auth.RefreshSessionCookie(c)
 			c.Set("context", &config.UserContext{
 				Username:   cookie.Username,
 				Name:       cookie.Name,
@@ -89,6 +90,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
+			m.auth.RefreshSessionCookie(c)
 			c.Set("context", &config.UserContext{
 				Username:    cookie.Username,
 				Name:        cookie.Name,
