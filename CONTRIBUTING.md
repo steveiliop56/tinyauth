@@ -23,7 +23,7 @@ cd tinyauth
 Although you will not need the requirements in your machine since the development will happen in docker, I still recommend to install them because this way you will not have import errors. To install the go requirements run:
 
 ```sh
-go mod tidy
+go mod download
 ```
 
 You also need to download the frontend dependencies, this can be done like so:
