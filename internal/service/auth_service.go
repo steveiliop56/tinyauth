@@ -244,7 +244,7 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		return nil
 	}
 
-	newExpiry := session.Expiry + int64(time.Hour.Seconds())
+	newExpiry := currentTime + int64(time.Hour.Seconds())
 
 	_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Updates(c, model.Session{
 		Expiry: newExpiry,
