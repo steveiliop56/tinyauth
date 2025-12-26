@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
@@ -27,6 +28,7 @@ type GithubEmailResponse []struct {
 type GithubUserInfoResponse struct {
 	Login string `json:"login"`
 	Name  string `json:"name"`
+	ID    int    `json:"id"`
 }
 
 type GithubOAuthService struct {
@@ -172,9 +174,7 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 
 	user.PreferredUsername = userInfo.Login
 	user.Name = userInfo.Name
-
-	// Github does not implement OIDC, so no sub is available
-	user.Sub = "not_available_dont_use_me"
+	user.Sub = strconv.Itoa(userInfo.ID)
 
 	return user, nil
 }

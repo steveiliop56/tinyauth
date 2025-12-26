@@ -17,13 +17,7 @@ import (
 	"golang.org/x/oauth2/endpoints"
 )
 
-var GoogleOAuthScopes = []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"}
-
-type GoogleUserInfoResponse struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
-	Id    string `json:"id"`
-}
+var GoogleOAuthScopes = []string{"openid", "email", "profile"}
 
 type GoogleOAuthService struct {
 	config   oauth2.Config
@@ -92,7 +86,7 @@ func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 
 	client := google.config.Client(google.context, google.token)
 
-	res, err := client.Get("https://www.googleapis.com/userinfo/v2/me")
+	res, err := client.Get("https://openidconnect.googleapis.com/v1/userinfo")
 	if err != nil {
 		return config.Claims{}, err
 	}
@@ -107,19 +101,12 @@ func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 		return config.Claims{}, err
 	}
 
-	var userInfo GoogleUserInfoResponse
-
-	err = json.Unmarshal(body, &userInfo)
+	err = json.Unmarshal(body, &user)
 	if err != nil {
 		return config.Claims{}, err
 	}
 
-	user.PreferredUsername = strings.Split(userInfo.Email, "@")[0]
-	user.Name = userInfo.Name
-	user.Email = userInfo.Email
-
-	// We can use the id as the sub
-	user.Sub = userInfo.Id
+	user.PreferredUsername = strings.SplitN(user.Email, "@", 2)[0]
 
 	return user, nil
 }
