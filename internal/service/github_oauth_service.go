@@ -10,7 +10,8 @@ import (
 	"io"
 	"net/http"
 	"time"
-	"tinyauth/internal/config"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"

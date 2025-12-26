@@ -6,7 +6,8 @@ import (
 	"os"
 	"strings"
 	"time"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/charmbracelet/huh"
 	"github.com/mdp/qrterminal/v3"

@@ -3,8 +3,9 @@ package bootstrap
 import (
 	"fmt"
 	"strings"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/middleware"
+
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )

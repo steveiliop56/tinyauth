@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"strings"
-	"tinyauth/internal/config"
-	"tinyauth/internal/utils/decoders"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils/decoders"
 
 	container "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"

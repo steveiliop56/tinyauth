@@ -3,9 +3,10 @@ package controller_test
 import (
 	"net/http/httptest"
 	"testing"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/service"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"

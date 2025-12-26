@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/charmbracelet/huh"
 	"github.com/pquerna/otp/totp"

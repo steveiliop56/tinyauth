@@ -8,9 +8,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/model"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/model"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

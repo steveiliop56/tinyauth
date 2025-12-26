@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"tinyauth/internal/config"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
 
 	"github.com/traefik/paerser/cli"
 )
