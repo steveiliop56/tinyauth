@@ -79,6 +79,7 @@ const DefaultNamePrefix = "TINYAUTH_"
 // OAuth/OIDC config
 
 type Claims struct {
+	Sub               string `json:"sub"`
 	Name              string `json:"name"`
 	Email             string `json:"email"`
 	PreferredUsername string `json:"preferred_username"`
@@ -125,6 +126,7 @@ type SessionCookie struct {
 	TotpPending bool
 	OAuthGroups string
 	OAuthName   string
+	OAuthSub    string
 }
 
 type UserContext struct {
@@ -138,6 +140,7 @@ type UserContext struct {
 	OAuthGroups string
 	TotpEnabled bool
 	OAuthName   string
+	OAuthSub    string
 }
 
 // API responses and queries

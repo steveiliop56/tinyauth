@@ -44,6 +44,7 @@ var userContext = config.UserContext{
 	TotpPending: false,
 	OAuthGroups: "",
 	TotpEnabled: false,
+	OAuthSub:    "",
 }
 
 func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
