@@ -173,6 +173,9 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 	user.PreferredUsername = userInfo.Login
 	user.Name = userInfo.Name
 
+	// Github does not implement OIDC, so no sub is available
+	user.Sub = "not_available_dont_use_me"
+
 	return user, nil
 }
 

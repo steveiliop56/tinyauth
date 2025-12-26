@@ -10,4 +10,5 @@ type Session struct {
 	OAuthGroups string `gorm:"column:oauth_groups"`
 	Expiry      int64  `gorm:"column:expiry"`
 	OAuthName   string `gorm:"column:oauth_name"`
+	OAuthSub    string `gorm:"column:oauth_sub"`
 }

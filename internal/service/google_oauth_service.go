@@ -22,6 +22,7 @@ var GoogleOAuthScopes = []string{"https://www.googleapis.com/auth/userinfo.email
 type GoogleUserInfoResponse struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`
+	Id    string `json:"id"`
 }
 
 type GoogleOAuthService struct {
@@ -116,6 +117,9 @@ func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 	user.PreferredUsername = strings.Split(userInfo.Email, "@")[0]
 	user.Name = userInfo.Name
 	user.Email = userInfo.Email
+
+	// We can use the id as the sub
+	user.Sub = userInfo.Id
 
 	return user, nil
 }

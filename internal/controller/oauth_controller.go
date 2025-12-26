@@ -197,6 +197,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
 		OAuthName:   service.GetName(),
+		OAuthSub:    user.Sub,
 	}
 
 	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
