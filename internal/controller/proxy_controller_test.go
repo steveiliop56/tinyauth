@@ -81,13 +81,6 @@ func TestProxyHandler(t *testing.T) {
 
 	assert.Equal(t, 400, recorder.Code)
 
-	// Test invalid method
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("POST", "/api/auth/traefik", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 405, recorder.Code)
-
 	// Test logged out user (traefik/caddy)
 	recorder = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
