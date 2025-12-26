@@ -3,7 +3,8 @@ package controller
 import (
 	"fmt"
 	"net/url"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"

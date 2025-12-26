@@ -1,7 +1,7 @@
 package service
 
 import (
-	"tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/config"
 )
 
 /*

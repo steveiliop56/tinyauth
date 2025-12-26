@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"tinyauth/internal/assets"
+
+	"github.com/steveiliop56/tinyauth/internal/assets"
 
 	"github.com/glebarez/sqlite"
 	"github.com/golang-migrate/migrate/v4"

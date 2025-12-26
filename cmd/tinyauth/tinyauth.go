@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 	"time"
-	"tinyauth/internal/bootstrap"
-	"tinyauth/internal/config"
-	"tinyauth/internal/utils/loaders"
+
+	"github.com/steveiliop56/tinyauth/internal/bootstrap"
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils/loaders"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/service"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"

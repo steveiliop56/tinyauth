@@ -3,7 +3,8 @@ package utils
 import (
 	"errors"
 	"strings"
-	"tinyauth/internal/config"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
 )
 
 func ParseUsers(users string) ([]config.User, error) {

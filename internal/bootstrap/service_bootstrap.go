@@ -1,7 +1,7 @@
 package bootstrap
 
 import (
-	"tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/rs/zerolog/log"
 )

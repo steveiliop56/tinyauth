@@ -7,7 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
-	"tinyauth/internal/assets"
+
+	"github.com/steveiliop56/tinyauth/internal/assets"
 
 	"github.com/gin-gonic/gin"
 )

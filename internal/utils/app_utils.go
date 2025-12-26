@@ -5,7 +5,8 @@ import (
 	"net"
 	"net/url"
 	"strings"
-	"tinyauth/internal/config"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/weppos/publicsuffix-go/publicsuffix"

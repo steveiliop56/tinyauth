@@ -11,10 +11,11 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/model"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/model"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
