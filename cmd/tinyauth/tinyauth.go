@@ -34,6 +34,10 @@ func NewTinyauthCmdConfiguration() *config.Config {
 			ForgotPasswordMessage: "You can change your password by changing the configuration.",
 			BackgroundImage:       "/background.jpg",
 		},
+		Ldap: config.LdapConfig{
+			Insecure:     false,
+			SearchFilter: "(uid=%s)",
+		},
 		Experimental: config.ExperimentalConfig{
 			ConfigFile: "",
 		},
