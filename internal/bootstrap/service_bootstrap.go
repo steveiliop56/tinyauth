@@ -57,7 +57,7 @@ func (app *BootstrapApp) initServices() (Services, error) {
 
 	services.dockerService = dockerService
 
-	accessControlsService := service.NewAccessControlsService(dockerService)
+	accessControlsService := service.NewAccessControlsService(dockerService, app.config.Apps)
 
 	err = accessControlsService.Init()
 
