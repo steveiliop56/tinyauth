@@ -239,6 +239,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
+		c.Header("Remote-Sub", utils.SanitizeHeader(userContext.OAuthSub))
 
 		controller.setHeaders(c, acls)
 

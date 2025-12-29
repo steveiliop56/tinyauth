@@ -213,6 +213,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		OAuthGroups: data.OAuthGroups,
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
 		OAuthName:   data.OAuthName,
+		OAuthSub:    data.OAuthSub,
 	}
 
 	err = gorm.G[model.Session](auth.database).Create(c, &session)
@@ -314,6 +315,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		TotpPending: session.TOTPPending,
 		OAuthGroups: session.OAuthGroups,
 		OAuthName:   session.OAuthName,
+		OAuthSub:    session.OAuthSub,
 	}, nil
 }
 
