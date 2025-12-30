@@ -12,7 +12,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.12
 	github.com/golang-migrate/migrate/v4 v4.19.1
-	github.com/google/go-querystring v1.1.0
+	github.com/google/go-querystring v1.2.0
 	github.com/google/uuid v1.6.0
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/pquerna/otp v1.5.0
