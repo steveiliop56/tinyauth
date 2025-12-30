@@ -4,7 +4,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"tinyauth/internal/controller"
+
+	"github.com/steveiliop56/tinyauth/internal/controller"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"

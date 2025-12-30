@@ -1,8 +1,8 @@
 package bootstrap
 
 import (
-	"tinyauth/internal/repository"
-	"tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/repository"
+	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/rs/zerolog/log"
 )
@@ -45,7 +45,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 
 	services.dockerService = dockerService
 
-	accessControlsService := service.NewAccessControlsService(dockerService)
+	accessControlsService := service.NewAccessControlsService(dockerService, app.config.Apps)
 
 	err = accessControlsService.Init()
 

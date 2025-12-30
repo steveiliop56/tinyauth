@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"tinyauth/internal/config"
-	"tinyauth/internal/service"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -42,7 +43,8 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
-	proxyGroup.Any("/:proxy", controller.proxyHandler)
+	proxyGroup.GET("/:proxy", controller.proxyHandler)
+	proxyGroup.POST("/:proxy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
@@ -63,15 +65,6 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
-		})
-		return
-	}
-
-	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
-		log.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy")
-		c.JSON(405, gin.H{
-			"status":  405,
-			"message": "Method Not Allowed",
 		})
 		return
 	}
@@ -246,6 +239,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
 		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
+		c.Header("Remote-Sub", utils.SanitizeHeader(userContext.OAuthSub))
 
 		controller.setHeaders(c, acls)
 

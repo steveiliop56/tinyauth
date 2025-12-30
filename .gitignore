@@ -34,3 +34,6 @@
 # binary out
 /tinyauth.db
 /resources
+
+# debug files
+__debug_*

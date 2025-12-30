@@ -3,7 +3,8 @@ package utils_test
 import (
 	"os"
 	"testing"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"gotest.tools/v3/assert"
 )

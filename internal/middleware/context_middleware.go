@@ -3,9 +3,10 @@ package middleware
 import (
 	"fmt"
 	"strings"
-	"tinyauth/internal/config"
-	"tinyauth/internal/service"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -65,6 +66,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
+			m.auth.RefreshSessionCookie(c)
 			c.Set("context", &config.UserContext{
 				Username:   cookie.Username,
 				Name:       cookie.Name,
@@ -89,6 +91,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
+			m.auth.RefreshSessionCookie(c)
 			c.Set("context", &config.UserContext{
 				Username:    cookie.Username,
 				Name:        cookie.Name,
@@ -96,6 +99,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Provider:    cookie.Provider,
 				OAuthGroups: cookie.OAuthGroups,
 				OAuthName:   cookie.OAuthName,
+				OAuthSub:    cookie.OAuthSub,
 				IsLoggedIn:  true,
 				OAuth:       true,
 			})

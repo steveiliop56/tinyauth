@@ -9,9 +9,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/repository"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/model"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -57,7 +58,6 @@ func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapS
 }
 
 func (auth *AuthService) Init() error {
-	auth.ctx = context.Background()
 	return nil
 }
 
@@ -215,6 +215,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		OAuthGroups: data.OAuthGroups,
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
 		OAuthName:   data.OAuthName,
+		OAuthSub:    data.OAuthSub,
 	}
 
 	_, err = auth.queries.CreateSession(c, session)
@@ -224,6 +225,40 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 	}
 
 	c.SetCookie(auth.config.SessionCookieName, session.UUID, expiry, "/", fmt.Sprintf(".%s", auth.config.CookieDomain), auth.config.SecureCookie, true)
+
+	return nil
+}
+
+func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
+	cookie, err := c.Cookie(auth.config.SessionCookieName)
+
+	if err != nil {
+		return err
+	}
+
+	session, err := gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).First(c)
+
+	if err != nil {
+		return err
+	}
+
+	currentTime := time.Now().Unix()
+
+	if session.Expiry-currentTime > int64(time.Hour.Seconds()) {
+		return nil
+	}
+
+	newExpiry := currentTime + int64(time.Hour.Seconds())
+
+	_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Updates(c, model.Session{
+		Expiry: newExpiry,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	c.SetCookie(auth.config.SessionCookieName, cookie, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", auth.config.CookieDomain), auth.config.SecureCookie, true)
 
 	return nil
 }
@@ -282,6 +317,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		TotpPending: session.TotpPending,
 		OAuthGroups: session.OAuthGroups,
 		OAuthName:   session.OAuthName,
+		OAuthSub:    session.OAuthSub,
 	}, nil
 }
 

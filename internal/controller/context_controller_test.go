@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"
@@ -43,6 +44,7 @@ var userContext = config.UserContext{
 	TotpPending: false,
 	OAuthGroups: "",
 	TotpEnabled: false,
+	OAuthSub:    "",
 }
 
 func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {

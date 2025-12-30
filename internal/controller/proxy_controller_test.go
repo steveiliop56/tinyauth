@@ -3,9 +3,10 @@ package controller_test
 import (
 	"net/http/httptest"
 	"testing"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/service"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"
@@ -40,7 +41,7 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	assert.NilError(t, dockerService.Init())
 
 	// Access controls
-	accessControlsService := service.NewAccessControlsService(dockerService)
+	accessControlsService := service.NewAccessControlsService(dockerService, map[string]config.App{})
 
 	assert.NilError(t, accessControlsService.Init())
 
@@ -79,13 +80,6 @@ func TestProxyHandler(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, 400, recorder.Code)
-
-	// Test invalid method
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("POST", "/api/auth/traefik", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 405, recorder.Code)
 
 	// Test logged out user (traefik/caddy)
 	recorder = httptest.NewRecorder()

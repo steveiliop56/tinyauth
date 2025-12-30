@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/service"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -196,6 +197,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		Provider:    req.Provider,
 		OAuthGroups: utils.CoalesceToString(user.Groups),
 		OAuthName:   service.GetName(),
+		OAuthSub:    user.Sub,
 	}
 
 	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")

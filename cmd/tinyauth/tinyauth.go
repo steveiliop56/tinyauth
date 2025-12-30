@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 	"time"
-	"tinyauth/internal/bootstrap"
-	"tinyauth/internal/config"
-	"tinyauth/internal/utils/loaders"
+
+	"github.com/steveiliop56/tinyauth/internal/bootstrap"
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils/loaders"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -32,6 +33,10 @@ func NewTinyauthCmdConfiguration() *config.Config {
 			Title:                 "Tinyauth",
 			ForgotPasswordMessage: "You can change your password by changing the configuration.",
 			BackgroundImage:       "/background.jpg",
+		},
+		Ldap: config.LdapConfig{
+			Insecure:     false,
+			SearchFilter: "(uid=%s)",
 		},
 		Experimental: config.ExperimentalConfig{
 			ConfigFile: "",

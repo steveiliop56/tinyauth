@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
-	"tinyauth/internal/config"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
@@ -26,6 +28,7 @@ type GithubEmailResponse []struct {
 type GithubUserInfoResponse struct {
 	Login string `json:"login"`
 	Name  string `json:"name"`
+	ID    int    `json:"id"`
 }
 
 type GithubOAuthService struct {
@@ -171,6 +174,7 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 
 	user.PreferredUsername = userInfo.Login
 	user.Name = userInfo.Name
+	user.Sub = strconv.Itoa(userInfo.ID)
 
 	return user, nil
 }

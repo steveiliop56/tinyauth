@@ -3,7 +3,8 @@ package loaders
 import (
 	"fmt"
 	"os"
-	"tinyauth/internal/config"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
 
 	"github.com/traefik/paerser/cli"
 	"github.com/traefik/paerser/env"
