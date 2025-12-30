@@ -323,22 +323,6 @@ func (oidc *OIDCService) ValidateScope(client *model.OIDCClient, requestedScopes
 		}
 	}
 
-	// Only include "openid" if it was requested AND it's in the client's allowed scopes
-	// This respects client scope restrictions and doesn't bypass allowedScopes
-	if contains(requestedScopesList, "openid") && contains(allowedScopes, "openid") {
-		// Check if "openid" is already in validScopes (added by the loop above)
-		hasOpenID := false
-		for _, scope := range validScopes {
-			if scope == "openid" {
-				hasOpenID = true
-				break
-			}
-		}
-		if !hasOpenID {
-			validScopes = append(validScopes, "openid")
-		}
-	}
-
 	return validScopes, nil
 }
 
