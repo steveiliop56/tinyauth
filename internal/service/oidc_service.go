@@ -44,16 +44,75 @@ func NewOIDCService(config OIDCServiceConfig) *OIDCService {
 }
 
 func (oidc *OIDCService) Init() error {
-	// Generate RSA key pair for signing tokens
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	// Try to load existing key from database
+	var keyRecord model.OIDCKey
+	err := oidc.config.Database.First(&keyRecord).Error
+	
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to query for existing RSA key: %w", err)
+	}
+
+	var privateKey *rsa.PrivateKey
+
+	if err == nil && keyRecord.PrivateKey != "" {
+		// Load existing key
+		block, _ := pem.Decode([]byte(keyRecord.PrivateKey))
+		if block == nil {
+			return fmt.Errorf("failed to decode PEM block from stored key")
+		}
+
+		parsedKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			// Try PKCS8 format as fallback
+			key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+			if err != nil {
+				return fmt.Errorf("failed to parse stored private key: %w", err)
+			}
+			var ok bool
+			privateKey, ok = key.(*rsa.PrivateKey)
+			if !ok {
+				return fmt.Errorf("stored key is not an RSA private key")
+			}
+		} else {
+			privateKey = parsedKey
+		}
+
+		oidc.privateKey = privateKey
+		oidc.publicKey = &privateKey.PublicKey
+
+		log.Info().Msg("OIDC service initialized with existing RSA key pair from database")
+		return nil
+	}
+
+	// No existing key found, generate new one
+	privateKey, err = rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return fmt.Errorf("failed to generate RSA key: %w", err)
+	}
+
+	// Encode private key to PEM format
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	})
+
+	// Save to database
+	now := time.Now().Unix()
+	keyRecord = model.OIDCKey{
+		PrivateKey: string(privateKeyPEM),
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+
+	if err := oidc.config.Database.Create(&keyRecord).Error; err != nil {
+		return fmt.Errorf("failed to save RSA key to database: %w", err)
 	}
 
 	oidc.privateKey = privateKey
 	oidc.publicKey = &privateKey.PublicKey
 
-	log.Info().Msg("OIDC service initialized with new RSA key pair")
+	log.Info().Msg("OIDC service initialized with new RSA key pair (saved to database)")
 	return nil
 }
 

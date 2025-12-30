@@ -117,7 +117,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")
                     self.end_headers()
-                    html = f"""
+                    html_content = f"""
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -182,14 +182,14 @@ class CallbackHandler(BaseHTTPRequestHandler):
                     </body>
                     </html>
                     """
-                    self.wfile.write(html.encode())
+                    self.wfile.write(html_content.encode())
                     return
             
             # Not logged in - show login page
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
-            html = f"""
+            html_content = f"""
             <!DOCTYPE html>
             <html>
             <head><title>OIDC Test Client</title></head>
@@ -202,7 +202,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
             </body>
             </html>
             """
-            self.wfile.write(html.encode())
+            self.wfile.write(html_content.encode())
             return
         
         # Handle logout
