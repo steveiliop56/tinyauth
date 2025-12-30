@@ -13,6 +13,7 @@ type Services struct {
 	dockerService        *service.DockerService
 	ldapService          *service.LdapService
 	oauthBrokerService   *service.OAuthBrokerService
+	oidcService          *service.OIDCService
 }
 
 func (app *BootstrapApp) initServices() (Services, error) {
@@ -95,6 +96,40 @@ func (app *BootstrapApp) initServices() (Services, error) {
 	}
 
 	services.oauthBrokerService = oauthBrokerService
+
+	// Initialize OIDC service if enabled
+	if app.config.OIDC.Enabled {
+		issuer := app.config.OIDC.Issuer
+		if issuer == "" {
+			issuer = app.config.AppURL
+		}
+
+		oidcService := service.NewOIDCService(service.OIDCServiceConfig{
+			AppURL:            app.config.AppURL,
+			Issuer:             issuer,
+			AccessTokenExpiry:  app.config.OIDC.AccessTokenExpiry,
+			IDTokenExpiry:     app.config.OIDC.IDTokenExpiry,
+			Database:           databaseService.GetDatabase(),
+		})
+
+		err = oidcService.Init()
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to initialize OIDC service, continuing without it")
+		} else {
+			services.oidcService = oidcService
+			log.Info().Msg("OIDC service initialized")
+
+			// Sync clients from config
+			if len(app.config.OIDC.Clients) > 0 {
+				err = oidcService.SyncClientsFromConfig(app.config.OIDC.Clients)
+				if err != nil {
+					log.Warn().Err(err).Msg("Failed to sync OIDC clients from config")
+				} else {
+					log.Info().Int("count", len(app.config.OIDC.Clients)).Msg("Synced OIDC clients from config")
+				}
+			}
+		}
+	}
 
 	return services, nil
 }

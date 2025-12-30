@@ -63,6 +63,42 @@ oauth:
       # Allow insecure connections (self-signed certificates)
       insecure: false
 
+# OIDC Provider Configuration
+oidc:
+  # Enable OIDC provider functionality
+  enabled: false
+  # OIDC issuer URL (defaults to appUrl if not set)
+  issuer: ""
+  # Access token expiry in seconds (3600 = 1 hour)
+  accessTokenExpiry: 3600
+  # ID token expiry in seconds (3600 = 1 hour)
+  idTokenExpiry: 3600
+  # OIDC Client Configuration
+  clients:
+    # Client ID (used as the key)
+    myapp:
+      # Client secret (or use clientSecretFile)
+      clientSecret: "your_client_secret_here"
+      # Path to file containing client secret (optional, alternative to clientSecret)
+      clientSecretFile: ""
+      # Client name for display purposes
+      clientName: "My Application"
+      # Allowed redirect URIs
+      redirectUris:
+        - "https://myapp.example.com/callback"
+        - "http://localhost:3000/callback"
+      # Allowed grant types (defaults to ["authorization_code"] if not specified)
+      grantTypes:
+        - "authorization_code"
+      # Allowed response types (defaults to ["code"] if not specified)
+      responseTypes:
+        - "code"
+      # Allowed scopes (defaults to ["openid", "profile", "email"] if not specified)
+      scopes:
+        - "openid"
+        - "profile"
+        - "email"
+
 # UI Customization
 ui:
   # Custom title for login page

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -22,13 +23,13 @@ func GetCookieDomain(u string) (string, error) {
 	host := parsed.Hostname()
 
 	if netIP := net.ParseIP(host); netIP != nil {
-		return "", errors.New("IP addresses not allowed")
+		return "", fmt.Errorf("IP addresses not allowed for app url '%s' (got IP: %s)", u, host)
 	}
 
 	parts := strings.Split(host, ".")
 
 	if len(parts) < 3 {
-		return "", errors.New("invalid app url, must be at least second level domain")
+		return "", fmt.Errorf("invalid app url '%s', must be at least second level domain (got %d parts, need 3+)", u, len(parts))
 	}
 
 	domain := strings.Join(parts[1:], ".")
@@ -36,7 +37,7 @@ func GetCookieDomain(u string) (string, error) {
 	_, err = publicsuffix.DomainFromListWithOptions(publicsuffix.DefaultList, domain, nil)
 
 	if err != nil {
-		return "", errors.New("domain in public suffix list, cannot set cookies")
+		return "", fmt.Errorf("domain '%s' (from app url '%s') is in public suffix list, cannot set cookies", domain, u)
 	}
 
 	return domain, nil

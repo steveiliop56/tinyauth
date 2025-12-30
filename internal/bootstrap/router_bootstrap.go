@@ -102,5 +102,15 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	healthController.SetupRoutes()
 
+	// Setup OIDC controller if OIDC is enabled
+	if app.config.OIDC.Enabled && app.services.oidcService != nil {
+		oidcController := controller.NewOIDCController(controller.OIDCControllerConfig{
+			AppURL:      app.config.AppURL,
+			CookieDomain: app.context.cookieDomain,
+		}, apiRouter, app.services.oidcService, app.services.authService)
+
+		oidcController.SetupRoutes()
+	}
+
 	return engine, nil
 }

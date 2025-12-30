@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  dns:
+    container_name: dns-server
+    image: strm/dnsmasq:latest
+    cap_add:
+      - NET_ADMIN
+    command:
+      - "--no-daemon"
+      - "--log-queries"
+      - "--no-resolv"
+      - "--server=8.8.8.8"
+      - "--server=8.8.4.4"
+      - "--address=/auth.example.com/172.28.0.2"
+      - "--address=/client.example.com/172.28.0.2"
+    # DNS port not exposed to host - only needed for container-to-container communication
+    # Chrome uses --host-resolver-rules instead
+    networks:
+      tinyauth-network:
+        ipv4_address: 172.28.0.10
+
+  nginx:
+    container_name: nginx-proxy
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - tinyauth-network
+    # Use Docker's built-in DNS (127.0.0.11) for service name resolution
+    # Our custom DNS (172.28.0.10) is only used via resolver directive in nginx.conf
+    depends_on:
+      - tinyauth
+      - dns
+      - oidc-whoami
+
+
+  tinyauth:
+    container_name: tinyauth-oidc-test
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["--experimental.configfile=/config/config.yaml"]
+    # Port not exposed to host - accessed via nginx
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/config/config.yaml:ro
+    networks:
+      tinyauth-network:
+        ipv4_address: 172.28.0.20
+    depends_on:
+      - dns
+    healthcheck:
+      test: ["CMD", "tinyauth", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  oidc-whoami:
+    container_name: oidc-whoami-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - OIDC_ISSUER=http://auth.example.com
+      - CLIENT_ID=testclient
+      - CLIENT_SECRET=test-secret-123
+    # Port not exposed to host - accessed via nginx
+    depends_on:
+      - tinyauth
+      - dns
+    # Use Docker's built-in DNS first, then our custom DNS for custom domains
+    dns:
+      - 127.0.0.11
+      - 172.28.0.10
+    networks:
+      tinyauth-network:
+        ipv4_address: 172.28.0.30
+    # Note: Using custom network with DNS server to resolve auth.example.test
+    # The redirect URI must match what's configured in tinyauth (http://localhost:8765/callback)
+    # Using auth.example.test domain to satisfy cookie domain validation requirements (needs 3+ parts, not in public suffix list)
+
+networks:
+  tinyauth-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+

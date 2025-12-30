@@ -26,6 +26,7 @@ type Config struct {
 	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
 	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
 	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	OIDC              OIDCConfig         `description:"OIDC provider configuration." yaml:"oidc"`
 	UI                UIConfig           `description:"UI customization." yaml:"ui"`
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
 	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
@@ -66,6 +67,24 @@ type LdapConfig struct {
 	BaseDN       string `description:"Base DN for LDAP searches." yaml:"baseDn"`
 	Insecure     bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
 	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
+}
+
+type OIDCConfig struct {
+	Enabled          bool                        `description:"Enable OIDC provider functionality." yaml:"enabled"`
+	Issuer           string                      `description:"OIDC issuer URL (defaults to appUrl)." yaml:"issuer"`
+	AccessTokenExpiry int                        `description:"Access token expiry time in seconds." yaml:"accessTokenExpiry"`
+	IDTokenExpiry     int                        `description:"ID token expiry time in seconds." yaml:"idTokenExpiry"`
+	Clients           map[string]OIDCClientConfig `description:"OIDC client configurations." yaml:"clients"`
+}
+
+type OIDCClientConfig struct {
+	ClientSecret     string   `description:"OIDC client secret." yaml:"clientSecret"`
+	ClientSecretFile string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile"`
+	ClientName       string   `description:"Client name for display purposes." yaml:"clientName"`
+	RedirectURIs     []string `description:"Allowed redirect URIs." yaml:"redirectUris"`
+	GrantTypes       []string `description:"Allowed grant types (defaults to ['authorization_code'])." yaml:"grantTypes"`
+	ResponseTypes    []string `description:"Allowed response types (defaults to ['code'])." yaml:"responseTypes"`
+	Scopes           []string `description:"Allowed scopes (defaults to ['openid', 'profile', 'email'])." yaml:"scopes"`
 }
 
 type ExperimentalConfig struct {
