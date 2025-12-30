@@ -82,21 +82,33 @@ func (controller *OIDCController) authorizeHandler(c *gin.Context) {
 	codeChallengeMethod := c.Query("code_challenge_method")
 
 	// Validate required parameters
+	// Return JSON error instead of redirecting since redirect_uri is not yet validated
 	if clientID == "" || redirectURI == "" || responseType == "" {
-		controller.redirectError(c, redirectURI, state, "invalid_request", "Missing required parameters")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":             "invalid_request",
+			"error_description": "Missing required parameters",
+		})
 		return
 	}
 
 	// Get client
+	// Return JSON error instead of redirecting since redirect_uri is not yet validated
 	client, err := controller.oidc.GetClient(clientID)
 	if err != nil {
-		controller.redirectError(c, redirectURI, state, "invalid_client", "Client not found")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":             "invalid_client",
+			"error_description": "Client not found",
+		})
 		return
 	}
 
 	// Validate redirect URI
+	// After this point, redirect_uri is validated and we can safely redirect
 	if !controller.oidc.ValidateRedirectURI(client, redirectURI) {
-		controller.redirectError(c, redirectURI, state, "invalid_request", "Invalid redirect_uri")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":             "invalid_request",
+			"error_description": "Invalid redirect_uri",
+		})
 		return
 	}
 
