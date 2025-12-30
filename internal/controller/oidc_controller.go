@@ -401,48 +401,7 @@ func (controller *OIDCController) getAccessToken(c *gin.Context) string {
 
 func (controller *OIDCController) validateAccessToken(accessToken string) (*config.UserContext, error) {
 	// Validate the JWT token using the OIDC service's public key
-	// This is a simplified validation - in production, you'd want to store
-	// access tokens and validate them properly, check token revocation, etc.
-	
-	// For now, we'll use a helper method in the OIDC service to validate tokens
-	// Since we don't have a direct method, we'll parse and validate manually
-	// In a production system, you'd want to add a ValidateAccessToken method to the service
-	
-	// Parse the JWT token
-	parts := strings.Split(accessToken, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid token format")
-	}
-
-	// Decode payload
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode token payload: %w", err)
-	}
-
-	var claims map[string]interface{}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal claims: %w", err)
-	}
-
-	// Extract user info from claims
-	username, _ := claims["sub"].(string)
-	if username == "" {
-		return nil, fmt.Errorf("missing sub claim")
-	}
-
-	// Extract email and name if available
-	email, _ := claims["email"].(string)
-	name, _ := claims["name"].(string)
-
-	// Create user context
-	userContext := &config.UserContext{
-		Username:   username,
-		Email:      email,
-		Name:       name,
-		IsLoggedIn: true,
-	}
-
-	return userContext, nil
+	// This properly verifies the signature, issuer, and expiration
+	return controller.oidc.ValidateAccessToken(accessToken)
 }
 

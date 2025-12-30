@@ -281,6 +281,60 @@ func (oidc *OIDCService) GenerateAccessToken(userContext *config.UserContext, cl
 	return accessToken, nil
 }
 
+func (oidc *OIDCService) ValidateAccessToken(accessToken string) (*config.UserContext, error) {
+	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return oidc.publicKey, nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse access token: %w", err)
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid access token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	// Verify issuer
+	iss, ok := claims["iss"].(string)
+	if !ok || iss != oidc.config.Issuer {
+		return nil, errors.New("invalid issuer")
+	}
+
+	// Check expiration
+	exp, ok := claims["exp"].(float64)
+	if !ok || time.Now().Unix() > int64(exp) {
+		return nil, errors.New("access token expired")
+	}
+
+	// Extract user info from claims
+	username, ok := claims["sub"].(string)
+	if !ok || username == "" {
+		return nil, errors.New("missing sub claim")
+	}
+
+	// Extract email and name if available
+	email, _ := claims["email"].(string)
+	name, _ := claims["name"].(string)
+
+	// Create user context
+	userContext := &config.UserContext{
+		Username:   username,
+		Email:      email,
+		Name:       name,
+		IsLoggedIn: true,
+	}
+
+	return userContext, nil
+}
+
 func (oidc *OIDCService) GenerateIDToken(userContext *config.UserContext, clientID string, nonce string) (string, error) {
 	expiry := oidc.config.IDTokenExpiry
 	if expiry <= 0 {
