@@ -5,7 +5,7 @@ Contributing is relatively easy, you just need to follow the steps below and you
 ## Requirements
 
 - Bun
-- Golang v1.24.0+
+- Golang 1.24.0+
 - Git
 - Docker
 
