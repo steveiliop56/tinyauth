@@ -15,7 +15,6 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	Apps
 	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
 	LogLevel          string             `description:"Log level (trace, debug, info, warn, error)." yaml:"logLevel"`
 	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
@@ -26,6 +25,7 @@ type Config struct {
 	LogJSON           bool               `description:"Enable JSON formatted logs." yaml:"logJSON"`
 	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
 	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
 	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
 	UI                UIConfig           `description:"UI customization." yaml:"ui"`
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`

@@ -4,6 +4,8 @@ go 1.24.0
 
 toolchain go1.24.3
 
+replace github.com/traefik/paerser v0.2.2 => ./paerser
+
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/charmbracelet/huh v0.8.0

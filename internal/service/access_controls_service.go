@@ -10,13 +10,13 @@ import (
 
 type AccessControlsService struct {
 	docker *DockerService
-	config config.Apps
+	static map[string]config.App
 }
 
-func NewAccessControlsService(docker *DockerService, config config.Apps) *AccessControlsService {
+func NewAccessControlsService(docker *DockerService, static map[string]config.App) *AccessControlsService {
 	return &AccessControlsService{
 		docker: docker,
-		config: config,
+		static: static,
 	}
 }
 
@@ -24,8 +24,8 @@ func (acls *AccessControlsService) Init() error {
 	return nil // No initialization needed
 }
 
-func (acls *AccessControlsService) lookupConfigACLs(domain string) (config.App, error) {
-	for app, config := range acls.config.Apps {
+func (acls *AccessControlsService) lookupStaticACLs(domain string) (config.App, error) {
+	for app, config := range acls.static {
 		if config.Config.Domain == domain {
 			log.Debug().Str("name", app).Msg("Found matching container by domain")
 			return config, nil
@@ -41,7 +41,7 @@ func (acls *AccessControlsService) lookupConfigACLs(domain string) (config.App, 
 
 func (acls *AccessControlsService) GetAccessControls(domain string) (config.App, error) {
 	// First check in the static config
-	app, err := acls.lookupConfigACLs(domain)
+	app, err := acls.lookupStaticACLs(domain)
 
 	if err == nil {
 		log.Debug().Msg("Using ACls from static configuration")
