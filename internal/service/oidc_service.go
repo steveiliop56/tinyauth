@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"strings"
 	"time"
@@ -538,6 +539,13 @@ func (oidc *OIDCService) GenerateAccessToken(userContext *config.UserContext, cl
 }
 
 func (oidc *OIDCService) ValidateAccessToken(accessToken string) (*config.UserContext, error) {
+	return oidc.ValidateAccessTokenForClient(accessToken, "")
+}
+
+// ValidateAccessTokenForClient validates an access token and optionally checks the audience claim.
+// If expectedClientID is provided, validates that the token's audience matches the expected client ID.
+// This prevents tokens issued for one client from being used by another client.
+func (oidc *OIDCService) ValidateAccessTokenForClient(accessToken string, expectedClientID string) (*config.UserContext, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -562,6 +570,14 @@ func (oidc *OIDCService) ValidateAccessToken(accessToken string) (*config.UserCo
 	iss, ok := claims["iss"].(string)
 	if !ok || iss != oidc.config.Issuer {
 		return nil, errors.New("invalid issuer")
+	}
+
+	// Verify audience if expected client ID is provided
+	if expectedClientID != "" {
+		aud, ok := claims["aud"].(string)
+		if !ok || aud != expectedClientID {
+			return nil, errors.New("invalid audience")
+		}
 	}
 
 	// Check expiration
@@ -629,11 +645,8 @@ func (oidc *OIDCService) GetJWKS() (map[string]interface{}, error) {
 	e := oidc.publicKey.E
 
 	nBytes := n.Bytes()
-	eBytes := make([]byte, 4)
-	eBytes[0] = byte(e >> 24)
-	eBytes[1] = byte(e >> 16)
-	eBytes[2] = byte(e >> 8)
-	eBytes[3] = byte(e)
+	// Use minimal-octet encoding for exponent per RFC 7517
+	eBytes := big.NewInt(int64(e)).Bytes()
 
 	jwk := map[string]interface{}{
 		"kty": "RSA",
