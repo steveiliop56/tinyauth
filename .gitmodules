@@ -1,3 +1,4 @@
 [submodule "paerser"]
 	path = paerser
 	url = https://github.com/traefik/paerser
+	ignore = all

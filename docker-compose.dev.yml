@@ -42,7 +42,6 @@ services:
     volumes:
       - ./internal:/tinyauth/internal
       - ./cmd:/tinyauth/cmd
-      - ./main.go:/tinyauth/main.go
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
     ports:
