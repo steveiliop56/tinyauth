@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -143,8 +142,8 @@ func (controller *OIDCController) authorizeHandler(c *gin.Context) {
 		return
 	}
 
-	// Generate authorization code
-	authCode, err := controller.oidc.GenerateAuthorizationCode(&userContext, clientID, redirectURI, scopes, nonce)
+	// Generate authorization code (including PKCE challenge if provided)
+	authCode, err := controller.oidc.GenerateAuthorizationCode(&userContext, clientID, redirectURI, scopes, nonce, codeChallenge, codeChallengeMethod)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate authorization code")
 		controller.redirectError(c, redirectURI, state, "server_error", "Internal server error")
@@ -223,12 +222,27 @@ func (controller *OIDCController) tokenHandler(c *gin.Context) {
 		return
 	}
 
+	// Get code_verifier for PKCE validation
+	codeVerifier := c.PostForm("code_verifier")
+	if codeVerifier == "" {
+		codeVerifier = c.Query("code_verifier")
+	}
+
 	// Validate authorization code
-	userContext, scopes, nonce, err := controller.oidc.ValidateAuthorizationCode(code, clientID, redirectURI)
+	userContext, scopes, nonce, codeChallenge, codeChallengeMethod, err := controller.oidc.ValidateAuthorizationCode(code, clientID, redirectURI)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to validate authorization code")
 		controller.tokenError(c, "invalid_grant", "Invalid or expired authorization code")
 		return
+	}
+
+	// Validate PKCE if code challenge was provided
+	if codeChallenge != "" {
+		if err := controller.oidc.ValidatePKCE(codeChallenge, codeChallengeMethod, codeVerifier); err != nil {
+			log.Error().Err(err).Msg("PKCE validation failed")
+			controller.tokenError(c, "invalid_grant", "Invalid code_verifier")
+			return
+		}
 	}
 
 	// Generate tokens
