@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import html
 import webbrowser
 import secrets
 import time
@@ -169,13 +170,13 @@ class CallbackHandler(BaseHTTPRequestHandler):
                             <h1>✅ Welcome back!</h1>
                             <div class="user-info">
                                 <h2>User Information</h2>
-                                <p><strong>Username:</strong> {claims.get('preferred_username', claims.get('sub', 'N/A'))}</p>
-                                <p><strong>Name:</strong> {claims.get('name', 'N/A')}</p>
-                                <p><strong>Email:</strong> {claims.get('email', 'N/A')}</p>
+                                <p><strong>Username:</strong> {html.escape(str(claims.get('preferred_username', claims.get('sub', 'N/A'))))}</p>
+                                <p><strong>Name:</strong> {html.escape(str(claims.get('name', 'N/A')))}</p>
+                                <p><strong>Email:</strong> {html.escape(str(claims.get('email', 'N/A')))}</p>
                             </div>
                             <hr>
                             <h2>ID Token Claims:</h2>
-                            <pre>{json.dumps(claims, indent=2)}</pre>
+                            <pre>{html.escape(json.dumps(claims, indent=2))}</pre>
                             <a href="/logout" class="logout-btn">Logout</a>
                         </div>
                     </body>
