@@ -19,11 +19,12 @@ INSERT INTO sessions (
     "totp_pending",
     "oauth_groups",
     "expiry",
-    "oauth_name"
+    "oauth_name",
+    "oauth_sub"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING uuid, username, email, name, provider, totp_pending, oauth_groups, expiry, oauth_name
+RETURNING uuid, username, email, name, provider, totp_pending, oauth_groups, expiry, oauth_name, oauth_sub
 `
 
 type CreateSessionParams struct {
@@ -36,6 +37,7 @@ type CreateSessionParams struct {
 	OAuthGroups string
 	Expiry      int64
 	OAuthName   string
+	OAuthSub    string
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
@@ -49,6 +51,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		arg.OAuthGroups,
 		arg.Expiry,
 		arg.OAuthName,
+		arg.OAuthSub,
 	)
 	var i Session
 	err := row.Scan(
@@ -61,6 +64,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		&i.OAuthGroups,
 		&i.Expiry,
 		&i.OAuthName,
+		&i.OAuthSub,
 	)
 	return i, err
 }
@@ -86,7 +90,7 @@ func (q *Queries) DeleteSession(ctx context.Context, uuid string) error {
 }
 
 const getSession = `-- name: GetSession :one
-SELECT uuid, username, email, name, provider, totp_pending, oauth_groups, expiry, oauth_name FROM "sessions"
+SELECT uuid, username, email, name, provider, totp_pending, oauth_groups, expiry, oauth_name, oauth_sub FROM "sessions"
 WHERE "uuid" = ?
 `
 
@@ -103,6 +107,7 @@ func (q *Queries) GetSession(ctx context.Context, uuid string) (Session, error) 
 		&i.OAuthGroups,
 		&i.Expiry,
 		&i.OAuthName,
+		&i.OAuthSub,
 	)
 	return i, err
 }
@@ -116,9 +121,10 @@ UPDATE "sessions" SET
     "totp_pending" = ?,
     "oauth_groups" = ?,
     "expiry" = ?,
-    "oauth_name" = ?
+    "oauth_name" = ?,
+    "oauth_sub" = ?
 WHERE "uuid" = ?
-RETURNING uuid, username, email, name, provider, totp_pending, oauth_groups, expiry, oauth_name
+RETURNING uuid, username, email, name, provider, totp_pending, oauth_groups, expiry, oauth_name, oauth_sub
 `
 
 type UpdateSessionParams struct {
@@ -130,6 +136,7 @@ type UpdateSessionParams struct {
 	OAuthGroups string
 	Expiry      int64
 	OAuthName   string
+	OAuthSub    string
 	UUID        string
 }
 
@@ -143,6 +150,7 @@ func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (S
 		arg.OAuthGroups,
 		arg.Expiry,
 		arg.OAuthName,
+		arg.OAuthSub,
 		arg.UUID,
 	)
 	var i Session
@@ -156,6 +164,7 @@ func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (S
 		&i.OAuthGroups,
 		&i.Expiry,
 		&i.OAuthName,
+		&i.OAuthSub,
 	)
 	return i, err
 }

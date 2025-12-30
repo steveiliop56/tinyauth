@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/model"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -236,7 +236,7 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	session, err := gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).First(c)
+	session, err := auth.queries.GetSession(auth.ctx, cookie)
 
 	if err != nil {
 		return err
@@ -250,8 +250,17 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 
 	newExpiry := currentTime + int64(time.Hour.Seconds())
 
-	_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Updates(c, model.Session{
-		Expiry: newExpiry,
+	_, err = auth.queries.UpdateSession(c, repository.UpdateSessionParams{
+		Username:    session.Username,
+		Email:       session.Email,
+		Name:        session.Name,
+		Provider:    session.Provider,
+		TotpPending: session.TotpPending,
+		OAuthGroups: session.OAuthGroups,
+		Expiry:      newExpiry,
+		OAuthName:   session.OAuthName,
+		OAuthSub:    session.OAuthSub,
+		UUID:        session.UUID,
 	})
 
 	if err != nil {

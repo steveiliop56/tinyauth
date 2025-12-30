@@ -11,8 +11,11 @@ sql:
           uuid: "UUID"
           oauth_groups: "OAuthGroups"
           oauth_name: "OAuthName"
+          oauth_sub: "OAuthSub"
         overrides:
           - column: "sessions.oauth_groups"
             go_type: "string"
           - column: "sessions.oauth_name"
+            go_type: "string"
+          - column: "sessions.oauth_sub"
             go_type: "string"

@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"tinyauth/internal/assets"
+
+	"github.com/steveiliop56/tinyauth/internal/assets"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -16,7 +17,7 @@ import (
 func (app *BootstrapApp) setupDatabase(databasePath string) (*sql.DB, error) {
 	dir := filepath.Dir(databasePath)
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create database directory %s: %w", dir, err)
 	}
 

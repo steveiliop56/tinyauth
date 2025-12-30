@@ -14,4 +14,5 @@ type Session struct {
 	OAuthGroups string
 	Expiry      int64
 	OAuthName   string
+	OAuthSub    string
 }

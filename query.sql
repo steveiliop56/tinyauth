@@ -8,9 +8,10 @@ INSERT INTO sessions (
     "totp_pending",
     "oauth_groups",
     "expiry",
-    "oauth_name"
+    "oauth_name",
+    "oauth_sub"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
@@ -31,7 +32,8 @@ UPDATE "sessions" SET
     "totp_pending" = ?,
     "oauth_groups" = ?,
     "expiry" = ?,
-    "oauth_name" = ?
+    "oauth_name" = ?,
+    "oauth_sub" = ?
 WHERE "uuid" = ?
 RETURNING *;
 
