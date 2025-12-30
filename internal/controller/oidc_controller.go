@@ -384,7 +384,7 @@ func (controller *OIDCController) tokenError(c *gin.Context, errorCode string, e
 }
 
 func (controller *OIDCController) getClientCredentials(c *gin.Context) (string, string, error) {
-	// Try Basic Auth first
+	// Try Basic Auth first (client_secret_basic)
 	authHeader := c.GetHeader("Authorization")
 	if strings.HasPrefix(authHeader, "Basic ") {
 		encoded := strings.TrimPrefix(authHeader, "Basic ")
@@ -397,20 +397,15 @@ func (controller *OIDCController) getClientCredentials(c *gin.Context) (string, 
 		}
 	}
 
-	// Try POST form parameters
+	// Try POST form parameters (client_secret_post)
 	clientID := c.PostForm("client_id")
 	clientSecret := c.PostForm("client_secret")
 	if clientID != "" && clientSecret != "" {
 		return clientID, clientSecret, nil
 	}
 
-	// Try query parameters
-	clientID = c.Query("client_id")
-	clientSecret = c.Query("client_secret")
-	if clientID != "" && clientSecret != "" {
-		return clientID, clientSecret, nil
-	}
-
+	// Do not accept credentials via query parameters as they are logged
+	// in access logs, browser history, and referrer headers
 	return "", "", fmt.Errorf("client credentials not found")
 }
 
