@@ -1,0 +1,95 @@
+diff --git a/env/env_test.go b/env/env_test.go
+index 7045569..365dc00 100644
+--- a/env/env_test.go
++++ b/env/env_test.go
+@@ -166,6 +166,38 @@ func TestDecode(t *testing.T) {
+ 				Foo: &struct{ Field string }{},
+ 			},
+ 		},
++		{
++			desc:    "map under the root key",
++			environ: []string{"TRAEFIK_FOO_BAR_FOOBAR_BARFOO=foo"},
++			element: &struct {
++				Foo map[string]struct {
++					Foobar struct {
++						Barfoo string
++					}
++				}
++			}{},
++			expected: &struct {
++				Foo map[string]struct {
++					Foobar struct {
++						Barfoo string
++					}
++				}
++			}{
++				Foo: map[string]struct {
++					Foobar struct {
++						Barfoo string
++					}
++				}{
++					"bar": {
++						Foobar: struct {
++							Barfoo string
++						}{
++							Barfoo: "foo",
++						},
++					},
++				},
++			},
++		},
+ 	}
+ 
+ 	for _, test := range testCases {
+diff --git a/parser/nodes_metadata.go b/parser/nodes_metadata.go
+index 36946c1..0279705 100644
+--- a/parser/nodes_metadata.go
++++ b/parser/nodes_metadata.go
+@@ -75,8 +75,13 @@ func (m metadata) add(rootType reflect.Type, node *Node) error {
+ 	node.Kind = fType.Kind()
+ 	node.Tag = field.Tag
+ 
+-	if fType.Kind() == reflect.Struct || fType.Kind() == reflect.Pointer && fType.Elem().Kind() == reflect.Struct ||
+-		fType.Kind() == reflect.Map {
++	if node.Kind == reflect.String && len(node.Children) > 0 {
++		fType = reflect.TypeOf(struct{}{})
++		node.Kind = reflect.Struct
++	}
++
++	if node.Kind == reflect.Struct || node.Kind == reflect.Pointer && fType.Elem().Kind() == reflect.Struct ||
++		node.Kind == reflect.Map {
+ 		if len(node.Children) == 0 && !(field.Tag.Get(m.TagName) == TagLabelAllowEmpty || field.Tag.Get(m.TagName) == "-") {
+ 			return fmt.Errorf("%s cannot be a standalone element (type %s)", node.Name, fType)
+ 		}
+@@ -90,11 +95,11 @@ func (m metadata) add(rootType reflect.Type, node *Node) error {
+ 		return nil
+ 	}
+ 
+-	if fType.Kind() == reflect.Struct || fType.Kind() == reflect.Pointer && fType.Elem().Kind() == reflect.Struct {
++	if node.Kind == reflect.Struct || node.Kind == reflect.Pointer && fType.Elem().Kind() == reflect.Struct {
+ 		return m.browseChildren(fType, node)
+ 	}
+ 
+-	if fType.Kind() == reflect.Map {
++	if node.Kind == reflect.Map {
+ 		if fType.Elem().Kind() == reflect.Interface {
+ 			addRawValue(node)
+ 			return nil
+@@ -115,7 +120,7 @@ func (m metadata) add(rootType reflect.Type, node *Node) error {
+ 		return nil
+ 	}
+ 
+-	if fType.Kind() == reflect.Slice {
++	if node.Kind == reflect.Slice {
+ 		if m.AllowSliceAsStruct && field.Tag.Get(TagLabelSliceAsStruct) != "" {
+ 			return m.browseChildren(fType.Elem(), node)
+ 		}
+@@ -129,7 +134,7 @@ func (m metadata) add(rootType reflect.Type, node *Node) error {
+ 		return nil
+ 	}
+ 
+-	return fmt.Errorf("invalid node %s: %v", node.Name, fType.Kind())
++	return fmt.Errorf("invalid node %s: %v", node.Name, node.Kind)
+ }
+ 
+ func (m metadata) findTypedField(rType reflect.Type, node *Node) (reflect.StructField, error) {

@@ -41,7 +41,7 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	assert.NilError(t, dockerService.Init())
 
 	// Access controls
-	accessControlsService := service.NewAccessControlsService(dockerService)
+	accessControlsService := service.NewAccessControlsService(dockerService, map[string]config.App{})
 
 	assert.NilError(t, accessControlsService.Init())
 

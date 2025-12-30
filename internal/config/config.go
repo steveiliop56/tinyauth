@@ -25,6 +25,7 @@ type Config struct {
 	LogJSON           bool               `description:"Enable JSON formatted logs." yaml:"logJSON"`
 	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
 	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
 	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
 	UI                UIConfig           `description:"UI customization." yaml:"ui"`
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
@@ -156,61 +157,55 @@ type RedirectQuery struct {
 	RedirectURI string `url:"redirect_uri"`
 }
 
-// Labels
+// ACLs
 
 type Apps struct {
-	Apps map[string]App
+	Apps map[string]App `description:"App ACLs configuration." yaml:"apps"`
 }
 
 type App struct {
-	Config   AppConfig
-	Users    AppUsers
-	OAuth    AppOAuth
-	IP       AppIP
-	Response AppResponse
-	Path     AppPath
+	Config   AppConfig   `description:"App configuration." yaml:"config"`
+	Users    AppUsers    `description:"User access configuration." yaml:"users"`
+	OAuth    AppOAuth    `description:"OAuth access configuration." yaml:"oauth"`
+	IP       AppIP       `description:"IP access configuration." yaml:"ip"`
+	Response AppResponse `description:"Response customization." yaml:"response"`
+	Path     AppPath     `description:"Path access configuration." yaml:"path"`
 }
 
 type AppConfig struct {
-	Domain string
+	Domain string `description:"The domain of the app." yaml:"domain"`
 }
 
 type AppUsers struct {
-	Allow string
-	Block string
+	Allow string `description:"Comma-separated list of allowed users." yaml:"allow"`
+	Block string `description:"Comma-separated list of blocked users." yaml:"block"`
 }
 
 type AppOAuth struct {
-	Whitelist string
-	Groups    string
+	Whitelist string `description:"Comma-separated list of allowed OAuth groups." yaml:"whitelist"`
+	Groups    string `description:"Comma-separated list of required OAuth groups." yaml:"groups"`
 }
 
 type AppIP struct {
-	Allow  []string
-	Block  []string
-	Bypass []string
+	Allow  []string `description:"List of allowed IPs or CIDR ranges." yaml:"allow"`
+	Block  []string `description:"List of blocked IPs or CIDR ranges." yaml:"block"`
+	Bypass []string `description:"List of IPs or CIDR ranges that bypass authentication." yaml:"bypass"`
 }
 
 type AppResponse struct {
-	Headers   []string
-	BasicAuth AppBasicAuth
+	Headers   []string     `description:"Custom headers to add to the response." yaml:"headers"`
+	BasicAuth AppBasicAuth `description:"Basic authentication for the app." yaml:"basicAuth"`
 }
 
 type AppBasicAuth struct {
-	Username     string
-	Password     string
-	PasswordFile string
+	Username     string `description:"Basic auth username." yaml:"username"`
+	Password     string `description:"Basic auth password." yaml:"password"`
+	PasswordFile string `description:"Path to the file containing the basic auth password." yaml:"passwordFile"`
 }
 
 type AppPath struct {
-	Allow string
-	Block string
-}
-
-// Flags
-
-type Providers struct {
-	Providers map[string]OAuthServiceConfig
+	Allow string `description:"Comma-separated list of allowed paths." yaml:"allow"`
+	Block string `description:"Comma-separated list of blocked paths." yaml:"block"`
 }
 
 // API server
