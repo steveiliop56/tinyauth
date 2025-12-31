@@ -298,11 +298,10 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return config.SessionCookie{}, fmt.Errorf("session not found")
+		}
 		return config.SessionCookie{}, err
-	}
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return config.SessionCookie{}, fmt.Errorf("session not found")
 	}
 
 	currentTime := time.Now().Unix()
