@@ -74,6 +74,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	// so we allow Any standard HTTP method for /api/auth/envoy
 	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
 		log.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy")
+		c.Header("Allow", "GET")
 		c.JSON(405, gin.H{
 			"status":  405,
 			"message": "Method Not Allowed",

@@ -87,6 +87,7 @@ func TestProxyHandler(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, 405, recorder.Code)
+	assert.Equal(t, "GET", recorder.Header().Get("Allow"))
 
 	// Test logged out user (traefik/caddy)
 	recorder = httptest.NewRecorder()
