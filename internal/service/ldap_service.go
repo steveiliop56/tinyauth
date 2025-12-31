@@ -45,6 +45,17 @@ func (ldap *LdapService) Init() error {
 		}
 		ldap.cert = &cert
 		log.Info().Msg("Using LDAP with mTLS authentication")
+
+		// TODO: Add optional extra CA certificates, instead of `InsecureSkipVerify`
+		/*
+			caCert, _ := ioutil.ReadFile(*caFile)
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(caCert)
+			tlsConfig := &tls.Config{
+						...
+			RootCAs:      caCertPool,
+			}
+		*/
 	}
 	_, err := ldap.connect()
 	if err != nil {
