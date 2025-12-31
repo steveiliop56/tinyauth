@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -143,6 +144,36 @@ func (ldap *LdapService) Search(username string) (string, error) {
 
 	userDN := searchResult.Entries[0].DN
 	return userDN, nil
+}
+
+func (ldap *LdapService) GetUserGroups(username string) ([]string, error) {
+	searchRequest := ldapgo.NewSearchRequest(
+		ldap.config.BaseDN,
+		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
+		"(objectclass=groupOfUniqueNames)",
+		[]string{"uniquemember"},
+		nil,
+	)
+
+	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
+
+	searchResult, err := ldap.conn.Search(searchRequest)
+	if err != nil {
+		return []string{}, err
+	}
+
+	groups := []string{}
+
+	for _, entry := range searchResult.Entries {
+		memberAttributes := entry.GetAttributeValues("uniquemember")
+		// no need to escape username here, if it's malicious it won't match anything
+		if slices.Contains(memberAttributes, fmt.Sprintf(ldap.config.SearchFilter, username)) {
+			groups = append(groups, entry.DN)
+		}
+	}
+
+	return groups, nil
 }
 
 func (ldap *LdapService) BindService(rebind bool) error {
