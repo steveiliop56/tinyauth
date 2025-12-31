@@ -43,8 +43,8 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
-	proxyGroup.GET("/:proxy", controller.proxyHandler)
-	proxyGroup.POST("/:proxy", controller.proxyHandler)
+	// There is a later check to control allowed methods per proxy
+	proxyGroup.Any("/:proxy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
@@ -65,6 +65,18 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
+		})
+		return
+	}
+
+	// Only allow GET for non-envoy proxies.
+	// Envoy uses the original client method for the external auth request
+	// so we allow Any standard HTTP method for /api/auth/envoy
+	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
+		log.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy")
+		c.JSON(405, gin.H{
+			"status":  405,
+			"message": "Method Not Allowed",
 		})
 		return
 	}
