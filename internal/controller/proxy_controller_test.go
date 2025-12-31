@@ -4,8 +4,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -26,14 +28,16 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	group := router.Group("/api")
 	recorder := httptest.NewRecorder()
 
+	// Mock app
+	app := bootstrap.NewBootstrapApp(config.Config{})
+
 	// Database
-	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
-		DatabasePath: "/tmp/tinyauth_test.db",
-	})
+	db, err := app.SetupDatabase(":memory:")
 
-	assert.NilError(t, databaseService.Init())
+	assert.NilError(t, err)
 
-	database := databaseService.GetDatabase()
+	// Queries
+	queries := repository.New(db)
 
 	// Docker
 	dockerService := service.NewDockerService()
@@ -60,7 +64,7 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 		LoginTimeout:      300,
 		LoginMaxRetries:   3,
 		SessionCookieName: "tinyauth-session",
-	}, dockerService, nil, database)
+	}, dockerService, nil, queries)
 
 	// Controller
 	ctrl := controller.NewProxyController(controller.ProxyControllerConfig{

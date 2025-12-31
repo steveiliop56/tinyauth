@@ -108,7 +108,7 @@ func (app *BootstrapApp) Setup() error {
 	log.Trace().Str("redirectCookieName", app.context.redirectCookieName).Msg("Redirect cookie name")
 
 	// Database
-	db, err := app.setupDatabase(app.config.DatabasePath)
+	db, err := app.SetupDatabase(app.config.DatabasePath)
 
 	if err != nil {
 		return fmt.Errorf("failed to setup database: %w", err)

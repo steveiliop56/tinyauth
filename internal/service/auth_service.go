@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -44,7 +43,6 @@ type AuthService struct {
 	loginMutex    sync.RWMutex
 	ldap          *LdapService
 	queries       *repository.Queries
-	ctx           context.Context
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
@@ -236,7 +234,7 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	session, err := auth.queries.GetSession(auth.ctx, cookie)
+	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
 		return err
@@ -279,7 +277,7 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	err = auth.queries.DeleteSession(auth.ctx, cookie)
+	err = auth.queries.DeleteSession(c, cookie)
 
 	if err != nil {
 		return err
@@ -297,7 +295,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		return config.SessionCookie{}, err
 	}
 
-	session, err := auth.queries.GetSession(auth.ctx, cookie)
+	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
 		return config.SessionCookie{}, err
@@ -310,7 +308,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	currentTime := time.Now().Unix()
 
 	if currentTime > session.Expiry {
-		err = auth.queries.DeleteSession(auth.ctx, cookie)
+		err = auth.queries.DeleteSession(c, cookie)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to delete expired session")
 		}
