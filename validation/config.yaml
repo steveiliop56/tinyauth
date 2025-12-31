@@ -1,0 +1,36 @@
+appUrl: "http://auth.example.com"
+logLevel: "info"
+databasePath: "/data/tinyauth.db"
+
+auth:
+  users: "user:$2b$12$mWEdxub8KTTBLK/f7dloKOS4t3kIeLOpme5pMXci5.lXNPANjCT5u"  # user:pass
+  secureCookie: false
+  sessionExpiry: 3600
+  loginTimeout: 300
+  loginMaxRetries: 3
+
+oidc:
+  enabled: true
+  issuer: "http://auth.example.com"
+  accessTokenExpiry: 3600
+  idTokenExpiry: 3600
+  clients:
+    testclient:
+      clientSecret: "test-secret-123"
+      clientName: "OIDC Test Client"
+      redirectUris:
+        - "http://client.example.com/callback"
+        - "http://localhost:8765/callback"
+        - "http://127.0.0.1:8765/callback"
+      grantTypes:
+        - "authorization_code"
+      responseTypes:
+        - "code"
+      scopes:
+        - "openid"
+        - "profile"
+        - "email"
+
+ui:
+  title: "Tinyauth OIDC Test"
+

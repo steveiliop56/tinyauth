@@ -16,18 +16,25 @@ func (f *FileLoader) Load(args []string, cmd *cli.Command) (bool, error) {
 		return false, err
 	}
 
-	// I guess we are using traefik as the root name
-	configFileFlag := "traefik.experimental.configFile"
+	// Check for experimental config file flag (supports both traefik.* and direct format)
+	// Note: paerser converts flags to lowercase, so we check lowercase versions
+	configFilePath := ""
+	if val, ok := flags["traefik.experimental.configfile"]; ok {
+		configFilePath = val
+	} else if val, ok := flags["experimental.configfile"]; ok {
+		configFilePath = val
+	}
 
-	if _, ok := flags[configFileFlag]; !ok {
+	if configFilePath == "" {
 		return false, nil
 	}
 
-	log.Warn().Msg("Using experimental file config loader, this feature is experimental and may change or be removed in future releases")
+	log.Warn().Str("configFile", configFilePath).Msg("Using experimental file config loader, this feature is experimental and may change or be removed in future releases")
 
-	err = file.Decode(flags[configFileFlag], cmd.Configuration)
+	err = file.Decode(configFilePath, cmd.Configuration)
 
 	if err != nil {
+		log.Error().Err(err).Str("configFile", configFilePath).Msg("Failed to decode config file")
 		return false, err
 	}
 
