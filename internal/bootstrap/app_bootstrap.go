@@ -14,11 +14,10 @@ import (
 
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
-	"github.com/steveiliop56/tinyauth/internal/model"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 )
 
 type BootstrapApp struct {
@@ -108,8 +107,18 @@ func (app *BootstrapApp) Setup() error {
 	log.Trace().Str("csrfCookieName", app.context.csrfCookieName).Msg("CSRF cookie name")
 	log.Trace().Str("redirectCookieName", app.context.redirectCookieName).Msg("Redirect cookie name")
 
+	// Database
+	db, err := app.SetupDatabase(app.config.DatabasePath)
+
+	if err != nil {
+		return fmt.Errorf("failed to setup database: %w", err)
+	}
+
+	// Queries
+	queries := repository.New(db)
+
 	// Services
-	services, err := app.initServices()
+	services, err := app.initServices(queries)
 
 	if err != nil {
 		return fmt.Errorf("failed to initialize services: %w", err)
@@ -155,9 +164,9 @@ func (app *BootstrapApp) Setup() error {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}
 
-	// Start DB cleanup routine
+	// Start db cleanup routine
 	log.Debug().Msg("Starting database cleanup routine")
-	go app.dbCleanup(services.databaseService.GetDatabase())
+	go app.dbCleanup(queries)
 
 	// If analytics are not disabled, start heartbeat
 	if !app.config.DisableAnalytics {
@@ -247,16 +256,16 @@ func (app *BootstrapApp) heartbeat() {
 	}
 }
 
-func (app *BootstrapApp) dbCleanup(db *gorm.DB) {
+func (app *BootstrapApp) dbCleanup(queries *repository.Queries) {
 	ticker := time.NewTicker(time.Duration(30) * time.Minute)
 	defer ticker.Stop()
 	ctx := context.Background()
 
 	for ; true; <-ticker.C {
 		log.Debug().Msg("Cleaning up old database sessions")
-		_, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().Unix()).Delete(ctx)
+		err := queries.DeleteExpiredSessions(ctx, time.Now().Unix())
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to cleanup old sessions")
+			log.Error().Err(err).Msg("Failed to clean up old database sessions")
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/rs/zerolog/log"
@@ -9,26 +10,13 @@ import (
 type Services struct {
 	accessControlService *service.AccessControlsService
 	authService          *service.AuthService
-	databaseService      *service.DatabaseService
 	dockerService        *service.DockerService
 	ldapService          *service.LdapService
 	oauthBrokerService   *service.OAuthBrokerService
 }
 
-func (app *BootstrapApp) initServices() (Services, error) {
+func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, error) {
 	services := Services{}
-
-	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
-		DatabasePath: app.config.DatabasePath,
-	})
-
-	err := databaseService.Init()
-
-	if err != nil {
-		return Services{}, err
-	}
-
-	services.databaseService = databaseService
 
 	ldapService := service.NewLdapService(service.LdapServiceConfig{
 		Address:      app.config.Ldap.Address,
@@ -39,7 +27,7 @@ func (app *BootstrapApp) initServices() (Services, error) {
 		SearchFilter: app.config.Ldap.SearchFilter,
 	})
 
-	err = ldapService.Init()
+	err := ldapService.Init()
 
 	if err == nil {
 		services.ldapService = ldapService
@@ -76,7 +64,7 @@ func (app *BootstrapApp) initServices() (Services, error) {
 		LoginTimeout:      app.config.Auth.LoginTimeout,
 		LoginMaxRetries:   app.config.Auth.LoginMaxRetries,
 		SessionCookieName: app.context.sessionCookieName,
-	}, dockerService, ldapService, databaseService.GetDatabase())
+	}, dockerService, ldapService, queries)
 
 	err = authService.Init()
 

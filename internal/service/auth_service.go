@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"regexp"
@@ -9,14 +10,13 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/model"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type LoginAttempt struct {
@@ -42,16 +42,16 @@ type AuthService struct {
 	loginAttempts map[string]*LoginAttempt
 	loginMutex    sync.RWMutex
 	ldap          *LdapService
-	database      *gorm.DB
+	queries       *repository.Queries
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, database *gorm.DB) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
 	return &AuthService{
 		config:        config,
 		docker:        docker,
 		loginAttempts: make(map[string]*LoginAttempt),
 		ldap:          ldap,
-		database:      database,
+		queries:       queries,
 	}
 }
 
@@ -203,20 +203,20 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		expiry = auth.config.SessionExpiry
 	}
 
-	session := model.Session{
+	session := repository.CreateSessionParams{
 		UUID:        uuid.String(),
 		Username:    data.Username,
 		Email:       data.Email,
 		Name:        data.Name,
 		Provider:    data.Provider,
-		TOTPPending: data.TotpPending,
+		TotpPending: data.TotpPending,
 		OAuthGroups: data.OAuthGroups,
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
 		OAuthName:   data.OAuthName,
 		OAuthSub:    data.OAuthSub,
 	}
 
-	err = gorm.G[model.Session](auth.database).Create(c, &session)
+	_, err = auth.queries.CreateSession(c, session)
 
 	if err != nil {
 		return err
@@ -234,7 +234,7 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	session, err := gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).First(c)
+	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
 		return err
@@ -248,8 +248,17 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 
 	newExpiry := currentTime + int64(time.Hour.Seconds())
 
-	_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Updates(c, model.Session{
-		Expiry: newExpiry,
+	_, err = auth.queries.UpdateSession(c, repository.UpdateSessionParams{
+		Username:    session.Username,
+		Email:       session.Email,
+		Name:        session.Name,
+		Provider:    session.Provider,
+		TotpPending: session.TotpPending,
+		OAuthGroups: session.OAuthGroups,
+		Expiry:      newExpiry,
+		OAuthName:   session.OAuthName,
+		OAuthSub:    session.OAuthSub,
+		UUID:        session.UUID,
 	})
 
 	if err != nil {
@@ -268,7 +277,7 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Delete(c)
+	err = auth.queries.DeleteSession(c, cookie)
 
 	if err != nil {
 		return err
@@ -286,20 +295,19 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		return config.SessionCookie{}, err
 	}
 
-	session, err := gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).First(c)
+	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return config.SessionCookie{}, fmt.Errorf("session not found")
+		}
 		return config.SessionCookie{}, err
-	}
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return config.SessionCookie{}, fmt.Errorf("session not found")
 	}
 
 	currentTime := time.Now().Unix()
 
 	if currentTime > session.Expiry {
-		_, err = gorm.G[model.Session](auth.database).Where("uuid = ?", cookie).Delete(c)
+		err = auth.queries.DeleteSession(c, cookie)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to delete expired session")
 		}
@@ -312,7 +320,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		Email:       session.Email,
 		Name:        session.Name,
 		Provider:    session.Provider,
-		TotpPending: session.TOTPPending,
+		TotpPending: session.TotpPending,
 		OAuthGroups: session.OAuthGroups,
 		OAuthName:   session.OAuthName,
 		OAuthSub:    session.OAuthSub,
