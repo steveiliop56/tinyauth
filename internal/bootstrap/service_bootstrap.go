@@ -25,6 +25,8 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		BaseDN:       app.config.Ldap.BaseDN,
 		Insecure:     app.config.Ldap.Insecure,
 		SearchFilter: app.config.Ldap.SearchFilter,
+		AuthCert:     app.config.Ldap.AuthCert,
+		AuthKey:      app.config.Ldap.AuthKey,
 	})
 
 	err := ldapService.Init()
