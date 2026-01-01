@@ -14,7 +14,7 @@
     "loginOauthFailSubtitle": "Nepodařilo se získat OAuth URL",
     "loginOauthSuccessTitle": "Přesměrování",
     "loginOauthSuccessSubtitle": "Přesměrování k poskytovateli OAuth",
-    "loginOauthAutoRedirectTitle": "OAuth Auto Redirect",
+    "loginOauthAutoRedirectTitle": "Automatické přesměrování OAuth",
     "loginOauthAutoRedirectSubtitle": "You will be automatically redirected to your OAuth provider to authenticate.",
     "loginOauthAutoRedirectButton": "Redirect now",
     "continueTitle": "Pokračovat",
