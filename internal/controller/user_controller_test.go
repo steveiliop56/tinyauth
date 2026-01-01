@@ -8,8 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -34,14 +36,16 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 	group := router.Group("/api")
 	recorder := httptest.NewRecorder()
 
+	// Mock app
+	app := bootstrap.NewBootstrapApp(config.Config{})
+
 	// Database
-	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
-		DatabasePath: "/tmp/tinyauth_test.db",
-	})
+	db, err := app.SetupDatabase(":memory:")
 
-	assert.NilError(t, databaseService.Init())
+	assert.NilError(t, err)
 
-	database := databaseService.GetDatabase()
+	// Queries
+	queries := repository.New(db)
 
 	// Auth service
 	authService := service.NewAuthService(service.AuthServiceConfig{
@@ -63,7 +67,7 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 		LoginTimeout:      300,
 		LoginMaxRetries:   3,
 		SessionCookieName: "tinyauth-session",
-	}, nil, nil, database)
+	}, nil, nil, queries)
 
 	// Controller
 	ctrl := controller.NewUserController(controller.UserControllerConfig{
