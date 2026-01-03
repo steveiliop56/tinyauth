@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS "sessions" (
     "totp_pending" BOOLEAN NOT NULL,
     "oauth_groups" TEXT NULL,
     "expiry" INTEGER NOT NULL,
+    "created_at" INTEGER NOT NULL,
     "oauth_name" TEXT NULL,
     "oauth_sub" TEXT NULL
 );

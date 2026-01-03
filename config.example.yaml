@@ -38,6 +38,8 @@ auth:
   secureCookie: false
   # Session expiry in seconds (3600 = 1 hour)
   sessionExpiry: 3600
+  # Session maximum lifetime in seconds (0 = unlimited)
+  sessionMaxLifetime: 0
   # Login timeout in seconds (300 = 5 minutes)
   loginTimeout: 300
   # Maximum login retries before lockout

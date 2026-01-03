@@ -42,6 +42,10 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 }
 
 func (app *BootstrapApp) Setup() error {
+	// validate session config
+	if app.config.Auth.SessionMaxLifetime != 0 && app.config.Auth.SessionMaxLifetime < app.config.Auth.SessionExpiry {
+		return fmt.Errorf("session max lifetime cannot be less than session expiry")
+	}
 	// Parse users
 	users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
 

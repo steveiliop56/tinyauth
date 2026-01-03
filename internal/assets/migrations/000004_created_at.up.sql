@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "created_at" INTEGER NOT NULL DEFAULT 0;
