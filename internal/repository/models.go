@@ -13,6 +13,7 @@ type Session struct {
 	TotpPending bool
 	OAuthGroups string
 	Expiry      int64
+	CreatedAt   int64
 	OAuthName   string
 	OAuthSub    string
 }

@@ -25,9 +25,10 @@ func NewTinyauthCmdConfiguration() *config.Config {
 			Address: "0.0.0.0",
 		},
 		Auth: config.AuthConfig{
-			SessionExpiry:   3600,
-			LoginTimeout:    300,
-			LoginMaxRetries: 3,
+			SessionExpiry:      3600,
+			SessionMaxLifetime: 0,
+			LoginTimeout:       300,
+			LoginMaxRetries:    3,
 		},
 		UI: config.UIConfig{
 			Title:                 "Tinyauth",

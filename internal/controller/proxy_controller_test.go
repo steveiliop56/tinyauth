@@ -57,13 +57,14 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 				Password: "$2a$10$ne6z693sTgzT3ePoQ05PgOecUHnBjM7sSNj6M.l5CLUP.f6NyCnt.", // test
 			},
 		},
-		OauthWhitelist:    "",
-		SessionExpiry:     3600,
-		SecureCookie:      false,
-		CookieDomain:      "localhost",
-		LoginTimeout:      300,
-		LoginMaxRetries:   3,
-		SessionCookieName: "tinyauth-session",
+		OauthWhitelist:     "",
+		SessionExpiry:      3600,
+		SessionMaxLifetime: 0,
+		SecureCookie:       false,
+		CookieDomain:       "localhost",
+		LoginTimeout:       300,
+		LoginMaxRetries:    3,
+		SessionCookieName:  "tinyauth-session",
 	}, dockerService, nil, queries)
 
 	// Controller
