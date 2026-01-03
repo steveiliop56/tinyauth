@@ -317,12 +317,14 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 
 	currentTime := time.Now().Unix()
 
-	if auth.config.SessionMaxLifetime != 0 && currentTime-session.CreatedAt > int64(auth.config.SessionMaxLifetime) {
-		err = auth.queries.DeleteSession(c, cookie)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
+	if auth.config.SessionMaxLifetime != 0 && session.CreatedAt != 0 {
+		if currentTime-session.CreatedAt > int64(auth.config.SessionMaxLifetime) {
+			err = auth.queries.DeleteSession(c, cookie)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
+			}
+			return config.SessionCookie{}, fmt.Errorf("session expired due to max lifetime exceeded")
 		}
-		return config.SessionCookie{}, fmt.Errorf("session expired due to max lifetime exceeded")
 	}
 
 	if currentTime > session.Expiry {
