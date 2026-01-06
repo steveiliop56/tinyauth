@@ -1,7 +1,7 @@
 services:
   traefik:
     container_name: traefik
-    image: traefik:v3.3
+    image: traefik:v3
     command: --api.insecure=true --providers.docker
     ports:
       - 80:80
@@ -18,7 +18,7 @@ services:
 
   tinyauth:
     container_name: tinyauth
-    image: ghcr.io/steveiliop56/tinyauth:v3
+    image: ghcr.io/steveiliop56/tinyauth:v4
     environment:
       - TINYAUTH_APPURL=https://tinyauth.example.com
       - TINYAUTH_AUTH_USERS=user:$$2a$$10$$UdLYoJ5lgPsC0RKqYH/jMua7zIn0g9kPqWmhYayJYLaZQ/FTmH2/u # user:password
