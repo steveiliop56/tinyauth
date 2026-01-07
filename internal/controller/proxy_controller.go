@@ -179,9 +179,9 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.auth.IsResourceAllowed(c, userContext, acls)
+		userAllowed := controller.auth.IsUserAllowed(c, userContext, acls)
 
-		if !appAllowed {
+		if !userAllowed {
 			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
 
 			if req.Proxy == "nginx" || !isBrowser {

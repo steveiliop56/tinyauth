@@ -40,13 +40,19 @@ type ServerConfig struct {
 }
 
 type AuthConfig struct {
-	Users              string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
-	UsersFile          string `description:"Path to the users file." yaml:"usersFile"`
-	SecureCookie       bool   `description:"Enable secure cookies." yaml:"secureCookie"`
-	SessionExpiry      int    `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
-	SessionMaxLifetime int    `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
-	LoginTimeout       int    `description:"Login timeout in seconds." yaml:"loginTimeout"`
-	LoginMaxRetries    int    `description:"Maximum login retries." yaml:"loginMaxRetries"`
+	IP                 IPConfig `description:"IP whitelisting config options." yaml:"ip"`
+	Users              string   `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
+	UsersFile          string   `description:"Path to the users file." yaml:"usersFile"`
+	SecureCookie       bool     `description:"Enable secure cookies." yaml:"secureCookie"`
+	SessionExpiry      int      `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
+	SessionMaxLifetime int      `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
+	LoginTimeout       int      `description:"Login timeout in seconds." yaml:"loginTimeout"`
+	LoginMaxRetries    int      `description:"Maximum login retries." yaml:"loginMaxRetries"`
+}
+
+type IPConfig struct {
+	Allow []string `description:"List of allowed IPs or CIDR ranges." yaml:"allow"`
+	Block []string `description:"List of blocked IPs or CIDR ranges." yaml:"block"`
 }
 
 type OAuthConfig struct {
