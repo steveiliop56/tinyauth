@@ -8,10 +8,11 @@ INSERT INTO sessions (
     "totp_pending",
     "oauth_groups",
     "expiry",
+    "created_at",
     "oauth_name",
     "oauth_sub"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
