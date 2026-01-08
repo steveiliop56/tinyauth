@@ -68,7 +68,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		LoginMaxRetries:    app.config.Auth.LoginMaxRetries,
 		SessionCookieName:  app.context.sessionCookieName,
 		IP:                 app.config.Auth.IP,
-	}, dockerService, ldapService, queries)
+	}, dockerService, services.ldapService, queries)
 
 	err = authService.Init()
 
