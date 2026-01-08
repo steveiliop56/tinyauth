@@ -35,6 +35,7 @@ type AuthServiceConfig struct {
 	LoginTimeout       int
 	LoginMaxRetries    int
 	SessionCookieName  string
+	IP                 config.IPConfig
 }
 
 type AuthService struct {
@@ -352,7 +353,7 @@ func (auth *AuthService) UserAuthConfigured() bool {
 	return len(auth.config.Users) > 0 || auth.ldap != nil
 }
 
-func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
+func (auth *AuthService) IsUserAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(acls.OAuth.Whitelist, context.Email)
@@ -435,7 +436,11 @@ func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 }
 
 func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
-	for _, blocked := range acls.Block {
+	// Merge the global and app IP filter
+	blockedIps := append(auth.config.IP.Block, acls.Block...)
+	allowedIPs := append(auth.config.IP.Allow, acls.Allow...)
+
+	for _, blocked := range blockedIps {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
@@ -447,7 +452,7 @@ func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
 		}
 	}
 
-	for _, allowed := range acls.Allow {
+	for _, allowed := range allowedIPs {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
@@ -459,7 +464,7 @@ func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
 		}
 	}
 
-	if len(acls.Allow) > 0 {
+	if len(allowedIPs) > 0 {
 		log.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
 	}
