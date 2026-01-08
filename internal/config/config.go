@@ -33,15 +33,15 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port           int    `description:"The port on which the server listens." yaml:"port"`
-	Address        string `description:"The address on which the server listens." yaml:"address"`
-	SocketPath     string `description:"The path to the Unix socket." yaml:"socketPath"`
-	TrustedProxies string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
+	Port           int      `description:"The port on which the server listens." yaml:"port"`
+	Address        string   `description:"The address on which the server listens." yaml:"address"`
+	SocketPath     string   `description:"The path to the Unix socket." yaml:"socketPath"`
+	TrustedProxies []string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
 }
 
 type AuthConfig struct {
 	IP                 IPConfig `description:"IP whitelisting config options." yaml:"ip"`
-	Users              string   `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
+	Users              []string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
 	UsersFile          string   `description:"Path to the users file." yaml:"usersFile"`
 	SecureCookie       bool     `description:"Enable secure cookies." yaml:"secureCookie"`
 	SessionExpiry      int      `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
@@ -56,7 +56,7 @@ type IPConfig struct {
 }
 
 type OAuthConfig struct {
-	Whitelist    string                        `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
+	Whitelist    []string                      `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
 	AutoRedirect string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
 	Providers    map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers"`
 }

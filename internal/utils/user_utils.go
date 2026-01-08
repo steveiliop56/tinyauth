@@ -7,22 +7,14 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 )
 
-func ParseUsers(users string) ([]config.User, error) {
-	var usersParsed []config.User
+func ParseUsers(usersStr []string) ([]config.User, error) {
+	var users []config.User
 
-	users = strings.TrimSpace(users)
-
-	if users == "" {
+	if len(usersStr) == 0 {
 		return []config.User{}, nil
 	}
 
-	userList := strings.Split(users, ",")
-
-	if len(userList) == 0 {
-		return []config.User{}, errors.New("invalid user format")
-	}
-
-	for _, user := range userList {
+	for _, user := range usersStr {
 		if strings.TrimSpace(user) == "" {
 			continue
 		}
@@ -30,64 +22,71 @@ func ParseUsers(users string) ([]config.User, error) {
 		if err != nil {
 			return []config.User{}, err
 		}
-		usersParsed = append(usersParsed, parsed)
+		users = append(users, parsed)
 	}
 
-	return usersParsed, nil
+	return users, nil
 }
 
-func GetUsers(conf string, file string) ([]config.User, error) {
-	var users string
+func GetUsers(usersCfg []string, usersPath string) ([]config.User, error) {
+	var usersStr []string
 
-	if conf == "" && file == "" {
+	if len(usersCfg) == 0 && usersPath == "" {
 		return []config.User{}, nil
 	}
 
-	if conf != "" {
-		users += conf
+	if len(usersCfg) > 0 {
+		usersStr = append(usersStr, usersCfg...)
 	}
 
-	if file != "" {
-		contents, err := ReadFile(file)
+	if usersPath != "" {
+		contents, err := ReadFile(usersPath)
+
 		if err != nil {
 			return []config.User{}, err
 		}
-		if users != "" {
-			users += ","
+
+		lines := strings.SplitSeq(contents, "\n")
+
+		for line := range lines {
+			lineTrimmed := strings.TrimSpace(line)
+			if lineTrimmed == "" {
+				continue
+			}
+			usersStr = append(usersStr, lineTrimmed)
 		}
-		users += ParseFileToLine(contents)
 	}
 
-	return ParseUsers(users)
+	return ParseUsers(usersStr)
 }
 
-func ParseUser(user string) (config.User, error) {
-	if strings.Contains(user, "$$") {
-		user = strings.ReplaceAll(user, "$$", "$")
+func ParseUser(userStr string) (config.User, error) {
+	if strings.Contains(userStr, "$$") {
+		userStr = strings.ReplaceAll(userStr, "$$", "$")
 	}
 
-	userSplit := strings.Split(user, ":")
+	parts := strings.SplitN(userStr, ":", 4)
 
-	if len(userSplit) < 2 || len(userSplit) > 3 {
+	if len(parts) < 2 || len(parts) > 3 {
 		return config.User{}, errors.New("invalid user format")
 	}
 
-	for _, userPart := range userSplit {
-		if strings.TrimSpace(userPart) == "" {
+	for i, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
 			return config.User{}, errors.New("invalid user format")
 		}
+		parts[i] = trimmed
 	}
 
-	if len(userSplit) == 2 {
-		return config.User{
-			Username: strings.TrimSpace(userSplit[0]),
-			Password: strings.TrimSpace(userSplit[1]),
-		}, nil
+	user := config.User{
+		Username: parts[0],
+		Password: parts[1],
 	}
 
-	return config.User{
-		Username:   strings.TrimSpace(userSplit[0]),
-		Password:   strings.TrimSpace(userSplit[1]),
-		TotpSecret: strings.TrimSpace(userSplit[2]),
-	}, nil
+	if len(parts) == 3 {
+		user.TotpSecret = parts[2]
+	}
+
+	return user, nil
 }
