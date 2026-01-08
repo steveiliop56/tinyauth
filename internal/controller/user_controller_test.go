@@ -60,7 +60,7 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 				TotpSecret: totpSecret,
 			},
 		},
-		OauthWhitelist:     "",
+		OauthWhitelist:     []string{},
 		SessionExpiry:      3600,
 		SessionMaxLifetime: 0,
 		SecureCookie:       false,

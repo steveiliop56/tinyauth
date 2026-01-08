@@ -27,7 +27,7 @@ type LoginAttempt struct {
 
 type AuthServiceConfig struct {
 	Users              []config.User
-	OauthWhitelist     string
+	OauthWhitelist     []string
 	SessionExpiry      int
 	SessionMaxLifetime int
 	SecureCookie       bool
@@ -187,7 +187,7 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 }
 
 func (auth *AuthService) IsEmailWhitelisted(email string) bool {
-	return utils.CheckFilter(auth.config.OauthWhitelist, email)
+	return utils.CheckFilter(strings.Join(auth.config.OauthWhitelist, ","), email)
 }
 
 func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
