@@ -16,4 +16,5 @@ type Session struct {
 	CreatedAt   int64
 	OAuthName   string
 	OAuthSub    string
+	LdapGroups  string
 }

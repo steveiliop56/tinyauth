@@ -70,7 +70,7 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 	}
 
 	if auth.ldap != nil {
-		userDN, err := auth.ldap.Search(username)
+		userDN, err := auth.ldap.GetUserDN(username)
 
 		if err != nil {
 			log.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
@@ -129,6 +129,19 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 
 	log.Warn().Str("username", username).Msg("Local user not found")
 	return config.User{}
+}
+
+func (auth *AuthService) GetLdapUser(userDN string) (config.LdapUser, error) {
+	groups, err := auth.ldap.GetUserGroups(userDN)
+
+	if err != nil {
+		return config.LdapUser{}, err
+	}
+
+	return config.LdapUser{
+		DN:     userDN,
+		Groups: groups,
+	}, nil
 }
 
 func (auth *AuthService) CheckPassword(user config.User, password string) bool {
@@ -217,6 +230,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *repository.Se
 		CreatedAt:   time.Now().Unix(),
 		OAuthName:   data.OAuthName,
 		OAuthSub:    data.OAuthSub,
+		LdapGroups:  data.LdapGroups,
 	}
 
 	_, err = auth.queries.CreateSession(c, session)
@@ -270,6 +284,7 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		OAuthName:   session.OAuthName,
 		OAuthSub:    session.OAuthSub,
 		UUID:        session.UUID,
+		LdapGroups:  session.LdapGroups,
 	})
 
 	if err != nil {
@@ -346,6 +361,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, e
 		OAuthGroups: session.OAuthGroups,
 		OAuthName:   session.OAuthName,
 		OAuthSub:    session.OAuthSub,
+		LdapGroups:  session.LdapGroups,
 	}, nil
 }
 

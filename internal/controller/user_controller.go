@@ -141,6 +141,21 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		Provider: "username",
 	}
 
+	if userSearch.Type == "ldap" {
+		ldapUser, err := controller.auth.GetLdapUser(userSearch.Username)
+
+		if err != nil {
+			log.Error().Err(err).Str("username", req.Username).Msg("Failed to get LDAP user details")
+			c.JSON(500, gin.H{
+				"status":  500,
+				"message": "Internal Server Error",
+			})
+			return
+		}
+
+		sessionCookie.LdapGroups = strings.Join(ldapUser.Groups, ",")
+	}
+
 	log.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
 
 	err = controller.auth.CreateSessionCookie(c, &sessionCookie)

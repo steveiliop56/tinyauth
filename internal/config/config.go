@@ -122,6 +122,11 @@ type User struct {
 	TotpSecret string
 }
 
+type LdapUser struct {
+	DN     string
+	Groups []string
+}
+
 type UserSearch struct {
 	Username string
 	Type     string // local, ldap or unknown

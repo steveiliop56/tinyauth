@@ -74,6 +74,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Email:      cookie.Email,
 				Provider:   "username",
 				IsLoggedIn: true,
+				LdapGroups: cookie.LdapGroups,
 			})
 			c.Next()
 			return
@@ -155,7 +156,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.config.CookieDomain),
-				Provider:    "basic",
+				Provider:    "username",
 				IsLoggedIn:  true,
 				TotpEnabled: user.TotpSecret != "",
 			})
@@ -163,12 +164,22 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			return
 		case "ldap":
 			log.Debug().Msg("Basic auth user is LDAP")
+
+			ldapUser, err := m.auth.GetLdapUser(basic.Username)
+
+			if err != nil {
+				log.Debug().Err(err).Msg("Error retrieving LDAP user details")
+				c.Next()
+				return
+			}
+
 			c.Set("context", &config.UserContext{
 				Username:   basic.Username,
 				Name:       utils.Capitalize(basic.Username),
 				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.config.CookieDomain),
-				Provider:   "basic",
+				Provider:   "ldap",
 				IsLoggedIn: true,
+				LdapGroups: strings.Join(ldapUser.Groups, ","),
 			})
 			c.Next()
 			return

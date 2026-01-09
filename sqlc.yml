@@ -19,3 +19,5 @@ sql:
             go_type: "string"
           - column: "sessions.oauth_sub"
             go_type: "string"
+          - column: "sessions.ldap_groups"
+            go_type: "string"
