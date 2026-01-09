@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/middleware"
@@ -15,7 +14,7 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	engine.Use(gin.Recovery())
 
 	if len(app.config.Server.TrustedProxies) > 0 {
-		err := engine.SetTrustedProxies(strings.Split(app.config.Server.TrustedProxies, ","))
+		err := engine.SetTrustedProxies(app.config.Server.TrustedProxies)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to set trusted proxies: %w", err)

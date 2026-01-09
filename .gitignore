@@ -3,6 +3,8 @@
 
 # binaries
 /tinyauth
+/tinyauth-arm64
+/tinyauth-amd64
 
 # test docker compose
 /docker-compose.test*
@@ -21,9 +23,6 @@
 
 # tmp directory
 /tmp
-
-# version files
-/internal/assets/version
 
 # data directory
 /data

@@ -26,14 +26,16 @@ type LoginAttempt struct {
 }
 
 type AuthServiceConfig struct {
-	Users             []config.User
-	OauthWhitelist    string
-	SessionExpiry     int
-	SecureCookie      bool
-	CookieDomain      string
-	LoginTimeout      int
-	LoginMaxRetries   int
-	SessionCookieName string
+	Users              []config.User
+	OauthWhitelist     []string
+	SessionExpiry      int
+	SessionMaxLifetime int
+	SecureCookie       bool
+	CookieDomain       string
+	LoginTimeout       int
+	LoginMaxRetries    int
+	SessionCookieName  string
+	IP                 config.IPConfig
 }
 
 type AuthService struct {
@@ -185,7 +187,7 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 }
 
 func (auth *AuthService) IsEmailWhitelisted(email string) bool {
-	return utils.CheckFilter(auth.config.OauthWhitelist, email)
+	return utils.CheckFilter(strings.Join(auth.config.OauthWhitelist, ","), email)
 }
 
 func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
@@ -212,6 +214,7 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.Sessio
 		TotpPending: data.TotpPending,
 		OAuthGroups: data.OAuthGroups,
 		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
+		CreatedAt:   time.Now().Unix(),
 		OAuthName:   data.OAuthName,
 		OAuthSub:    data.OAuthSub,
 	}
@@ -242,11 +245,19 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 
 	currentTime := time.Now().Unix()
 
-	if session.Expiry-currentTime > int64(time.Hour.Seconds()) {
+	var refreshThreshold int64
+
+	if auth.config.SessionExpiry <= int(time.Hour.Seconds()) {
+		refreshThreshold = int64(auth.config.SessionExpiry / 2)
+	} else {
+		refreshThreshold = int64(time.Hour.Seconds())
+	}
+
+	if session.Expiry-currentTime > refreshThreshold {
 		return nil
 	}
 
-	newExpiry := currentTime + int64(time.Hour.Seconds())
+	newExpiry := session.Expiry + refreshThreshold
 
 	_, err = auth.queries.UpdateSession(c, repository.UpdateSessionParams{
 		Username:    session.Username,
@@ -265,7 +276,8 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		return err
 	}
 
-	c.SetCookie(auth.config.SessionCookieName, cookie, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", auth.config.CookieDomain), auth.config.SecureCookie, true)
+	c.SetCookie(auth.config.SessionCookieName, cookie, int(newExpiry-currentTime), "/", fmt.Sprintf(".%s", auth.config.CookieDomain), auth.config.SecureCookie, true)
+	log.Trace().Str("username", session.Username).Msg("Session cookie refreshed")
 
 	return nil
 }
@@ -306,6 +318,16 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 
 	currentTime := time.Now().Unix()
 
+	if auth.config.SessionMaxLifetime != 0 && session.CreatedAt != 0 {
+		if currentTime-session.CreatedAt > int64(auth.config.SessionMaxLifetime) {
+			err = auth.queries.DeleteSession(c, cookie)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
+			}
+			return config.SessionCookie{}, fmt.Errorf("session expired due to max lifetime exceeded")
+		}
+	}
+
 	if currentTime > session.Expiry {
 		err = auth.queries.DeleteSession(c, cookie)
 		if err != nil {
@@ -331,7 +353,7 @@ func (auth *AuthService) UserAuthConfigured() bool {
 	return len(auth.config.Users) > 0 || auth.ldap != nil
 }
 
-func (auth *AuthService) IsResourceAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
+func (auth *AuthService) IsUserAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
 	if context.OAuth {
 		log.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(acls.OAuth.Whitelist, context.Email)
@@ -414,7 +436,11 @@ func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 }
 
 func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
-	for _, blocked := range acls.Block {
+	// Merge the global and app IP filter
+	blockedIps := append(auth.config.IP.Block, acls.Block...)
+	allowedIPs := append(auth.config.IP.Allow, acls.Allow...)
+
+	for _, blocked := range blockedIps {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
@@ -426,7 +452,7 @@ func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
 		}
 	}
 
-	for _, allowed := range acls.Allow {
+	for _, allowed := range allowedIPs {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
 			log.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
@@ -438,7 +464,7 @@ func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
 		}
 	}
 
-	if len(acls.Allow) > 0 {
+	if len(allowedIPs) > 0 {
 		log.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
 	}

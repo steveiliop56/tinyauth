@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/service"
@@ -60,23 +61,17 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
-	clientIP := c.ClientIP()
+	log.Debug().Str("username", req.Username).Msg("Login attempt")
 
-	rateIdentifier := req.Username
-
-	if rateIdentifier == "" {
-		rateIdentifier = clientIP
-	}
-
-	log.Debug().Str("username", req.Username).Str("ip", clientIP).Msg("Login attempt")
-
-	isLocked, remainingTime := controller.auth.IsAccountLocked(rateIdentifier)
+	isLocked, remaining := controller.auth.IsAccountLocked(req.Username)
 
 	if isLocked {
-		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed login attempts")
+		log.Warn().Str("username", req.Username).Msg("Account is locked due to too many failed login attempts")
+		c.Writer.Header().Add("x-tinyauth-lock-locked", "true")
+		c.Writer.Header().Add("x-tinyauth-lock-reset", time.Now().Add(time.Duration(remaining)*time.Second).Format(time.RFC3339))
 		c.JSON(429, gin.H{
 			"status":  429,
-			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remainingTime),
+			"message": fmt.Sprintf("Too many failed login attempts. Try again in %d seconds", remaining),
 		})
 		return
 	}
@@ -84,8 +79,8 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	userSearch := controller.auth.SearchUser(req.Username)
 
 	if userSearch.Type == "unknown" {
-		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("User not found")
-		controller.auth.RecordLoginAttempt(rateIdentifier, false)
+		log.Warn().Str("username", req.Username).Msg("User not found")
+		controller.auth.RecordLoginAttempt(req.Username, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -94,8 +89,8 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.VerifyUser(userSearch, req.Password) {
-		log.Warn().Str("username", req.Username).Str("ip", clientIP).Msg("Invalid password")
-		controller.auth.RecordLoginAttempt(rateIdentifier, false)
+		log.Warn().Str("username", req.Username).Msg("Invalid password")
+		controller.auth.RecordLoginAttempt(req.Username, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -103,9 +98,9 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().Str("username", req.Username).Str("ip", clientIP).Msg("Login successful")
+	log.Info().Str("username", req.Username).Msg("Login successful")
 
-	controller.auth.RecordLoginAttempt(rateIdentifier, true)
+	controller.auth.RecordLoginAttempt(req.Username, true)
 
 	if userSearch.Type == "local" {
 		user := controller.auth.GetLocalUser(userSearch.Username)
@@ -209,23 +204,17 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		return
 	}
 
-	clientIP := c.ClientIP()
+	log.Debug().Str("username", context.Username).Msg("TOTP verification attempt")
 
-	rateIdentifier := context.Username
-
-	if rateIdentifier == "" {
-		rateIdentifier = clientIP
-	}
-
-	log.Debug().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification attempt")
-
-	isLocked, remainingTime := controller.auth.IsAccountLocked(rateIdentifier)
+	isLocked, remaining := controller.auth.IsAccountLocked(context.Username)
 
 	if isLocked {
-		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Account is locked due to too many failed TOTP attempts")
+		log.Warn().Str("username", context.Username).Msg("Account is locked due to too many failed TOTP attempts")
+		c.Writer.Header().Add("x-tinyauth-lock-locked", "true")
+		c.Writer.Header().Add("x-tinyauth-lock-reset", time.Now().Add(time.Duration(remaining)*time.Second).Format(time.RFC3339))
 		c.JSON(429, gin.H{
 			"status":  429,
-			"message": fmt.Sprintf("Too many failed TOTP attempts. Try again in %d seconds", remainingTime),
+			"message": fmt.Sprintf("Too many failed TOTP attempts. Try again in %d seconds", remaining),
 		})
 		return
 	}
@@ -235,8 +224,8 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	ok := totp.Validate(req.Code, user.TotpSecret)
 
 	if !ok {
-		log.Warn().Str("username", context.Username).Str("ip", clientIP).Msg("Invalid TOTP code")
-		controller.auth.RecordLoginAttempt(rateIdentifier, false)
+		log.Warn().Str("username", context.Username).Msg("Invalid TOTP code")
+		controller.auth.RecordLoginAttempt(context.Username, false)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -244,9 +233,9 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		return
 	}
 
-	log.Info().Str("username", context.Username).Str("ip", clientIP).Msg("TOTP verification successful")
+	log.Info().Str("username", context.Username).Msg("TOTP verification successful")
 
-	controller.auth.RecordLoginAttempt(rateIdentifier, true)
+	controller.auth.RecordLoginAttempt(context.Username, true)
 
 	sessionCookie := config.SessionCookie{
 		Username: user.Username,

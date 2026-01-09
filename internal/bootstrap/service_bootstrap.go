@@ -58,15 +58,17 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 	services.accessControlService = accessControlsService
 
 	authService := service.NewAuthService(service.AuthServiceConfig{
-		Users:             app.context.users,
-		OauthWhitelist:    app.config.OAuth.Whitelist,
-		SessionExpiry:     app.config.Auth.SessionExpiry,
-		SecureCookie:      app.config.Auth.SecureCookie,
-		CookieDomain:      app.context.cookieDomain,
-		LoginTimeout:      app.config.Auth.LoginTimeout,
-		LoginMaxRetries:   app.config.Auth.LoginMaxRetries,
-		SessionCookieName: app.context.sessionCookieName,
-	}, dockerService, ldapService, queries)
+		Users:              app.context.users,
+		OauthWhitelist:     app.config.OAuth.Whitelist,
+		SessionExpiry:      app.config.Auth.SessionExpiry,
+		SessionMaxLifetime: app.config.Auth.SessionMaxLifetime,
+		SecureCookie:       app.config.Auth.SecureCookie,
+		CookieDomain:       app.context.cookieDomain,
+		LoginTimeout:       app.config.Auth.LoginTimeout,
+		LoginMaxRetries:    app.config.Auth.LoginMaxRetries,
+		SessionCookieName:  app.context.sessionCookieName,
+		IP:                 app.config.Auth.IP,
+	}, dockerService, services.ldapService, queries)
 
 	err = authService.Init()
 

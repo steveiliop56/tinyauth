@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/service"
@@ -116,19 +117,33 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
+		locked, remaining := m.auth.IsAccountLocked(basic.Username)
+
+		if locked {
+			log.Debug().Msgf("Account for user %s is locked for %d seconds, denying auth", basic.Username, remaining)
+			c.Writer.Header().Add("x-tinyauth-lock-locked", "true")
+			c.Writer.Header().Add("x-tinyauth-lock-reset", time.Now().Add(time.Duration(remaining)*time.Second).Format(time.RFC3339))
+			c.Next()
+			return
+		}
+
 		userSearch := m.auth.SearchUser(basic.Username)
 
 		if userSearch.Type == "unknown" || userSearch.Type == "error" {
+			m.auth.RecordLoginAttempt(basic.Username, false)
 			log.Debug().Msg("User from basic auth not found")
 			c.Next()
 			return
 		}
 
 		if !m.auth.VerifyUser(userSearch, basic.Password) {
+			m.auth.RecordLoginAttempt(basic.Username, false)
 			log.Debug().Msg("Invalid password for basic auth user")
 			c.Next()
 			return
 		}
+
+		m.auth.RecordLoginAttempt(basic.Username, true)
 
 		switch userSearch.Type {
 		case "local":

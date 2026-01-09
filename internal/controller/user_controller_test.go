@@ -60,13 +60,14 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 				TotpSecret: totpSecret,
 			},
 		},
-		OauthWhitelist:    "",
-		SessionExpiry:     3600,
-		SecureCookie:      false,
-		CookieDomain:      "localhost",
-		LoginTimeout:      300,
-		LoginMaxRetries:   3,
-		SessionCookieName: "tinyauth-session",
+		OauthWhitelist:     []string{},
+		SessionExpiry:      3600,
+		SessionMaxLifetime: 0,
+		SecureCookie:       false,
+		CookieDomain:       "localhost",
+		LoginTimeout:       300,
+		LoginMaxRetries:    3,
+		SessionCookieName:  "tinyauth-session",
 	}, nil, nil, queries)
 
 	// Controller
