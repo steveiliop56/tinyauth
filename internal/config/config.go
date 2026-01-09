@@ -127,18 +127,6 @@ type UserSearch struct {
 	Type     string // local, ldap or unknown
 }
 
-type SessionCookie struct {
-	UUID        string
-	Username    string
-	Name        string
-	Email       string
-	Provider    string
-	TotpPending bool
-	OAuthGroups string
-	OAuthName   string
-	OAuthSub    string
-}
-
 type UserContext struct {
 	Username    string
 	Name        string
@@ -151,6 +139,7 @@ type UserContext struct {
 	TotpEnabled bool
 	OAuthName   string
 	OAuthSub    string
+	LdapGroups  string
 }
 
 // API responses and queries

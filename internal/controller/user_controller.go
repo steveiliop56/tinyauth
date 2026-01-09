@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 
@@ -108,7 +108,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		if user.TotpSecret != "" {
 			log.Debug().Str("username", req.Username).Msg("User has TOTP enabled, requiring TOTP verification")
 
-			err := controller.auth.CreateSessionCookie(c, &config.SessionCookie{
+			err := controller.auth.CreateSessionCookie(c, &repository.Session{
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
@@ -134,7 +134,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		}
 	}
 
-	sessionCookie := config.SessionCookie{
+	sessionCookie := repository.Session{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
@@ -237,7 +237,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	controller.auth.RecordLoginAttempt(context.Username, true)
 
-	sessionCookie := config.SessionCookie{
+	sessionCookie := repository.Session{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.config.CookieDomain),

@@ -140,7 +140,7 @@ func TestProxyHandler(t *testing.T) {
 	// Test logged in user
 	c := gin.CreateTestContextOnly(recorder, router)
 
-	err := authService.CreateSessionCookie(c, &config.SessionCookie{
+	err := authService.CreateSessionCookie(c, &repository.Session{
 		Username:    "testuser",
 		Name:        "testuser",
 		Email:       "testuser@example.com",

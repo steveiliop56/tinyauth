@@ -190,7 +190,7 @@ func (auth *AuthService) IsEmailWhitelisted(email string) bool {
 	return utils.CheckFilter(strings.Join(auth.config.OauthWhitelist, ","), email)
 }
 
-func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
+func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *repository.Session) error {
 	uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -300,20 +300,20 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 	return nil
 }
 
-func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie, error) {
+func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, error) {
 	cookie, err := c.Cookie(auth.config.SessionCookieName)
 
 	if err != nil {
-		return config.SessionCookie{}, err
+		return repository.Session{}, err
 	}
 
 	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return config.SessionCookie{}, fmt.Errorf("session not found")
+			return repository.Session{}, fmt.Errorf("session not found")
 		}
-		return config.SessionCookie{}, err
+		return repository.Session{}, err
 	}
 
 	currentTime := time.Now().Unix()
@@ -324,7 +324,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
 			}
-			return config.SessionCookie{}, fmt.Errorf("session expired due to max lifetime exceeded")
+			return repository.Session{}, fmt.Errorf("session expired due to max lifetime exceeded")
 		}
 	}
 
@@ -333,10 +333,10 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to delete expired session")
 		}
-		return config.SessionCookie{}, fmt.Errorf("session expired")
+		return repository.Session{}, fmt.Errorf("session expired")
 	}
 
-	return config.SessionCookie{
+	return repository.Session{
 		UUID:        session.UUID,
 		Username:    session.Username,
 		Email:       session.Email,
