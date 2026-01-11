@@ -2,22 +2,18 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/loaders"
 
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/traefik/paerser/cli"
 )
 
 func NewTinyauthCmdConfiguration() *config.Config {
 	return &config.Config{
-		LogLevel:     "info",
 		ResourcesDir: "./resources",
 		DatabasePath: "./tinyauth.db",
 		Server: config.ServerConfig{
@@ -38,6 +34,10 @@ func NewTinyauthCmdConfiguration() *config.Config {
 		Ldap: config.LdapConfig{
 			Insecure:     false,
 			SearchFilter: "(uid=%s)",
+		},
+		Log: config.LogConfig{
+			Level: "info",
+			Json:  false,
 		},
 		Experimental: config.ExperimentalConfig{
 			ConfigFile: "",
@@ -102,21 +102,24 @@ func main() {
 }
 
 func runCmd(cfg config.Config) error {
-	logLevel, err := zerolog.ParseLevel(strings.ToLower(cfg.LogLevel))
+	outputs := make(map[string]utils.LoggerOutputConfig)
+	for name, out := range cfg.Log.Outputs {
+		outputs[name] = utils.LoggerOutputConfig{
+			Enabled: out.Enabled,
+			Level:   out.Level,
+		}
+	}
 
+	err := utils.InitLogger(&utils.LoggerConfig{
+		Level:   cfg.Log.Level,
+		Json:    cfg.Log.Json,
+		Outputs: outputs,
+	})
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid or missing log level, defaulting to info")
-	} else {
-		zerolog.SetGlobalLevel(logLevel)
+		log.Error().Err(err).Msg("Failed to initialize logger")
 	}
 
-	log.Logger = log.With().Caller().Logger()
-
-	if !cfg.LogJSON {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
-	}
-
-	log.Info().Str("version", config.Version).Msg("Starting tinyauth")
+	utils.Log.App.Info().Str("version", config.Version).Msg("Starting tinyauth")
 
 	app := bootstrap.NewBootstrapApp(cfg)
 

@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/decoders"
 
 	container "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/rs/zerolog/log"
 )
 
 type DockerService struct {
@@ -37,7 +37,7 @@ func (docker *DockerService) Init() error {
 	_, err = docker.client.Ping(docker.context)
 
 	if err != nil {
-		log.Debug().Err(err).Msg("Docker not connected")
+		utils.Log.App.Debug().Err(err).Msg("Docker not connected")
 		docker.isConnected = false
 		docker.client = nil
 		docker.context = nil
@@ -45,7 +45,7 @@ func (docker *DockerService) Init() error {
 	}
 
 	docker.isConnected = true
-	log.Debug().Msg("Docker connected")
+	utils.Log.App.Debug().Msg("Docker connected")
 
 	return nil
 }
@@ -68,7 +68,7 @@ func (docker *DockerService) inspectContainer(containerId string) (container.Ins
 
 func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 	if !docker.isConnected {
-		log.Debug().Msg("Docker not connected, returning empty labels")
+		utils.Log.App.Debug().Msg("Docker not connected, returning empty labels")
 		return config.App{}, nil
 	}
 
@@ -90,17 +90,17 @@ func (docker *DockerService) GetLabels(appDomain string) (config.App, error) {
 
 		for appName, appLabels := range labels.Apps {
 			if appLabels.Config.Domain == appDomain {
-				log.Debug().Str("id", inspect.ID).Str("name", inspect.Name).Msg("Found matching container by domain")
+				utils.Log.App.Debug().Str("id", inspect.ID).Str("name", inspect.Name).Msg("Found matching container by domain")
 				return appLabels, nil
 			}
 
 			if strings.SplitN(appDomain, ".", 2)[0] == appName {
-				log.Debug().Str("id", inspect.ID).Str("name", inspect.Name).Msg("Found matching container by app name")
+				utils.Log.App.Debug().Str("id", inspect.ID).Str("name", inspect.Name).Msg("Found matching container by app name")
 				return appLabels, nil
 			}
 		}
 	}
 
-	log.Debug().Msg("No matching container found, returning empty labels")
+	utils.Log.App.Debug().Msg("No matching container found, returning empty labels")
 	return config.App{}, nil
 }

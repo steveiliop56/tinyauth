@@ -16,8 +16,6 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
-
-	"github.com/rs/zerolog/log"
 )
 
 type BootstrapApp struct {
@@ -103,13 +101,13 @@ func (app *BootstrapApp) Setup() error {
 	app.context.redirectCookieName = fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
 
 	// Dumps
-	log.Trace().Interface("config", app.config).Msg("Config dump")
-	log.Trace().Interface("users", app.context.users).Msg("Users dump")
-	log.Trace().Interface("oauthProviders", app.context.oauthProviders).Msg("OAuth providers dump")
-	log.Trace().Str("cookieDomain", app.context.cookieDomain).Msg("Cookie domain")
-	log.Trace().Str("sessionCookieName", app.context.sessionCookieName).Msg("Session cookie name")
-	log.Trace().Str("csrfCookieName", app.context.csrfCookieName).Msg("CSRF cookie name")
-	log.Trace().Str("redirectCookieName", app.context.redirectCookieName).Msg("Redirect cookie name")
+	utils.Log.App.Trace().Interface("config", app.config).Msg("Config dump")
+	utils.Log.App.Trace().Interface("users", app.context.users).Msg("Users dump")
+	utils.Log.App.Trace().Interface("oauthProviders", app.context.oauthProviders).Msg("OAuth providers dump")
+	utils.Log.App.Trace().Str("cookieDomain", app.context.cookieDomain).Msg("Cookie domain")
+	utils.Log.App.Trace().Str("sessionCookieName", app.context.sessionCookieName).Msg("Session cookie name")
+	utils.Log.App.Trace().Str("csrfCookieName", app.context.csrfCookieName).Msg("CSRF cookie name")
+	utils.Log.App.Trace().Str("redirectCookieName", app.context.redirectCookieName).Msg("Redirect cookie name")
 
 	// Database
 	db, err := app.SetupDatabase(app.config.DatabasePath)
@@ -153,7 +151,7 @@ func (app *BootstrapApp) Setup() error {
 		})
 	}
 
-	log.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
+	utils.Log.App.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
 
 	if len(configuredProviders) == 0 {
 		return fmt.Errorf("no authentication providers configured")
@@ -169,28 +167,28 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Start db cleanup routine
-	log.Debug().Msg("Starting database cleanup routine")
+	utils.Log.App.Debug().Msg("Starting database cleanup routine")
 	go app.dbCleanup(queries)
 
 	// If analytics are not disabled, start heartbeat
 	if !app.config.DisableAnalytics {
-		log.Debug().Msg("Starting heartbeat routine")
+		utils.Log.App.Debug().Msg("Starting heartbeat routine")
 		go app.heartbeat()
 	}
 
 	// If we have an socket path, bind to it
 	if app.config.Server.SocketPath != "" {
 		if _, err := os.Stat(app.config.Server.SocketPath); err == nil {
-			log.Info().Msgf("Removing existing socket file %s", app.config.Server.SocketPath)
+			utils.Log.App.Info().Msgf("Removing existing socket file %s", app.config.Server.SocketPath)
 			err := os.Remove(app.config.Server.SocketPath)
 			if err != nil {
 				return fmt.Errorf("failed to remove existing socket file: %w", err)
 			}
 		}
 
-		log.Info().Msgf("Starting server on unix socket %s", app.config.Server.SocketPath)
+		utils.Log.App.Info().Msgf("Starting server on unix socket %s", app.config.Server.SocketPath)
 		if err := router.RunUnix(app.config.Server.SocketPath); err != nil {
-			log.Fatal().Err(err).Msg("Failed to start server")
+			utils.Log.App.Fatal().Err(err).Msg("Failed to start server")
 		}
 
 		return nil
@@ -198,9 +196,9 @@ func (app *BootstrapApp) Setup() error {
 
 	// Start server
 	address := fmt.Sprintf("%s:%d", app.config.Server.Address, app.config.Server.Port)
-	log.Info().Msgf("Starting server on %s", address)
+	utils.Log.App.Info().Msgf("Starting server on %s", address)
 	if err := router.Run(address); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
+		utils.Log.App.Fatal().Err(err).Msg("Failed to start server")
 	}
 
 	return nil
@@ -223,7 +221,7 @@ func (app *BootstrapApp) heartbeat() {
 	bodyJson, err := json.Marshal(body)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal heartbeat body")
+		utils.Log.App.Error().Err(err).Msg("Failed to marshal heartbeat body")
 		return
 	}
 
@@ -234,12 +232,12 @@ func (app *BootstrapApp) heartbeat() {
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"
 
 	for ; true; <-ticker.C {
-		log.Debug().Msg("Sending heartbeat")
+		utils.Log.App.Debug().Msg("Sending heartbeat")
 
 		req, err := http.NewRequest(http.MethodPost, heartbeatURL, bytes.NewReader(bodyJson))
 
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to create heartbeat request")
+			utils.Log.App.Error().Err(err).Msg("Failed to create heartbeat request")
 			continue
 		}
 
@@ -248,14 +246,14 @@ func (app *BootstrapApp) heartbeat() {
 		res, err := client.Do(req)
 
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to send heartbeat")
+			utils.Log.App.Error().Err(err).Msg("Failed to send heartbeat")
 			continue
 		}
 
 		res.Body.Close()
 
 		if res.StatusCode != 200 && res.StatusCode != 201 {
-			log.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
+			utils.Log.App.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
 		}
 	}
 }
@@ -266,10 +264,10 @@ func (app *BootstrapApp) dbCleanup(queries *repository.Queries) {
 	ctx := context.Background()
 
 	for ; true; <-ticker.C {
-		log.Debug().Msg("Cleaning up old database sessions")
+		utils.Log.App.Debug().Msg("Cleaning up old database sessions")
 		err := queries.DeleteExpiredSessions(ctx, time.Now().Unix())
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to clean up old database sessions")
+			utils.Log.App.Error().Err(err).Msg("Failed to clean up old database sessions")
 		}
 	}
 }

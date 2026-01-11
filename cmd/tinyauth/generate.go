@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/charmbracelet/huh"
 	"github.com/mdp/qrterminal/v3"
 	"github.com/pquerna/otp/totp"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/traefik/paerser/cli"
 )
 
@@ -42,7 +39,10 @@ func generateTotpCmd() *cli.Command {
 		Configuration: tCfg,
 		Resources:     loaders,
 		Run: func(_ []string) error {
-			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
+			utils.InitLogger(&utils.LoggerConfig{
+				Level: "info",
+				Json:  false,
+			})
 
 			if tCfg.Interactive {
 				form := huh.NewForm(
@@ -91,9 +91,9 @@ func generateTotpCmd() *cli.Command {
 
 			secret := key.Secret()
 
-			log.Info().Str("secret", secret).Msg("Generated TOTP secret")
+			utils.Log.App.Info().Str("secret", secret).Msg("Generated TOTP secret")
 
-			log.Info().Msg("Generated QR code")
+			utils.Log.App.Info().Msg("Generated QR code")
 
 			config := qrterminal.Config{
 				Level:     qrterminal.L,
@@ -112,7 +112,7 @@ func generateTotpCmd() *cli.Command {
 				user.Password = strings.ReplaceAll(user.Password, "$", "$$")
 			}
 
-			log.Info().Str("user", fmt.Sprintf("%s:%s:%s", user.Username, user.Password, user.TotpSecret)).Msg("Add the totp secret to your authenticator app then use the verify command to ensure everything is working correctly.")
+			utils.Log.App.Info().Str("user", fmt.Sprintf("%s:%s:%s", user.Username, user.Password, user.TotpSecret)).Msg("Add the totp secret to your authenticator app then use the verify command to ensure everything is working correctly.")
 
 			return nil
 		},

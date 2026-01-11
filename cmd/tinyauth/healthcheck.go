@@ -9,8 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/traefik/paerser/cli"
 )
 
@@ -27,7 +26,10 @@ func healthcheckCmd() *cli.Command {
 		Resources:     nil,
 		AllowArg:      true,
 		Run: func(args []string) error {
-			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
+			utils.InitLogger(&utils.LoggerConfig{
+				Level: "info",
+				Json:  false,
+			})
 
 			appUrl := os.Getenv("TINYAUTH_APPURL")
 
@@ -39,7 +41,7 @@ func healthcheckCmd() *cli.Command {
 				return errors.New("TINYAUTH_APPURL is not set and no argument was provided")
 			}
 
-			log.Info().Str("app_url", appUrl).Msg("Performing health check")
+			utils.Log.App.Info().Str("app_url", appUrl).Msg("Performing health check")
 
 			client := http.Client{
 				Timeout: 30 * time.Second,
@@ -77,7 +79,7 @@ func healthcheckCmd() *cli.Command {
 				return fmt.Errorf("failed to decode response: %w", err)
 			}
 
-			log.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
+			utils.Log.App.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
 
 			return nil
 		},

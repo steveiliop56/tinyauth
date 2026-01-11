@@ -3,13 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/huh"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/traefik/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,7 +40,10 @@ func createUserCmd() *cli.Command {
 		Configuration: tCfg,
 		Resources:     loaders,
 		Run: func(_ []string) error {
-			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
+			utils.InitLogger(&utils.LoggerConfig{
+				Level: "info",
+				Json:  false,
+			})
 
 			if tCfg.Interactive {
 				form := huh.NewForm(
@@ -77,7 +77,7 @@ func createUserCmd() *cli.Command {
 				return errors.New("username and password cannot be empty")
 			}
 
-			log.Info().Str("username", tCfg.Username).Msg("Creating user")
+			utils.Log.App.Info().Str("username", tCfg.Username).Msg("Creating user")
 
 			passwd, err := bcrypt.GenerateFromPassword([]byte(tCfg.Password), bcrypt.DefaultCost)
 			if err != nil {
@@ -90,7 +90,7 @@ func createUserCmd() *cli.Command {
 				passwdStr = strings.ReplaceAll(passwdStr, "$", "$$")
 			}
 
-			log.Info().Str("user", fmt.Sprintf("%s:%s", tCfg.Username, passwdStr)).Msg("User created")
+			utils.Log.App.Info().Str("user", fmt.Sprintf("%s:%s", tCfg.Username, passwdStr)).Msg("User created")
 
 			return nil
 		},

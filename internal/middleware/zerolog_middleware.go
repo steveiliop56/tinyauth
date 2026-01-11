@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 )
 
 var (
@@ -49,7 +49,7 @@ func (m *ZerologMiddleware) Middleware() gin.HandlerFunc {
 
 		latency := time.Since(tStart).String()
 
-		subLogger := log.With().Str("method", method).
+		subLogger := utils.Log.HTTP.With().Str("method", method).
 			Str("path", path).
 			Str("address", address).
 			Str("client_ip", clientIP).

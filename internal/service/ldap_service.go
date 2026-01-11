@@ -9,7 +9,7 @@ import (
 
 	"github.com/cenkalti/backoff/v5"
 	ldapgo "github.com/go-ldap/ldap/v3"
-	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 )
 
 type LdapServiceConfig struct {
@@ -44,7 +44,7 @@ func (ldap *LdapService) Init() error {
 			return fmt.Errorf("failed to initialize LDAP with mTLS authentication: %w", err)
 		}
 		ldap.cert = &cert
-		log.Info().Msg("Using LDAP with mTLS authentication")
+		utils.Log.App.Info().Msg("Using LDAP with mTLS authentication")
 
 		// TODO: Add optional extra CA certificates, instead of `InsecureSkipVerify`
 		/*
@@ -66,12 +66,12 @@ func (ldap *LdapService) Init() error {
 		for range time.Tick(time.Duration(5) * time.Minute) {
 			err := ldap.heartbeat()
 			if err != nil {
-				log.Error().Err(err).Msg("LDAP connection heartbeat failed")
+				utils.Log.App.Error().Err(err).Msg("LDAP connection heartbeat failed")
 				if reconnectErr := ldap.reconnect(); reconnectErr != nil {
-					log.Error().Err(reconnectErr).Msg("Failed to reconnect to LDAP server")
+					utils.Log.App.Error().Err(reconnectErr).Msg("Failed to reconnect to LDAP server")
 					continue
 				}
-				log.Info().Msg("Successfully reconnected to LDAP server")
+				utils.Log.App.Info().Msg("Successfully reconnected to LDAP server")
 			}
 		}
 	}()
@@ -169,7 +169,7 @@ func (ldap *LdapService) Bind(userDN string, password string) error {
 }
 
 func (ldap *LdapService) heartbeat() error {
-	log.Debug().Msg("Performing LDAP connection heartbeat")
+	utils.Log.App.Debug().Msg("Performing LDAP connection heartbeat")
 
 	searchRequest := ldapgo.NewSearchRequest(
 		"",
@@ -191,7 +191,7 @@ func (ldap *LdapService) heartbeat() error {
 }
 
 func (ldap *LdapService) reconnect() error {
-	log.Info().Msg("Reconnecting to LDAP server")
+	utils.Log.App.Info().Msg("Reconnecting to LDAP server")
 
 	exp := backoff.NewExponentialBackOff()
 	exp.InitialInterval = 500 * time.Millisecond

@@ -7,7 +7,6 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
 type UserContextResponse struct {
@@ -61,7 +60,7 @@ type ContextController struct {
 
 func NewContextController(config ContextControllerConfig, router *gin.RouterGroup) *ContextController {
 	if config.DisableUIWarnings {
-		log.Warn().Msg("UI warnings are disabled. This may expose users to security risks. Proceed with caution.")
+		utils.Log.App.Warn().Msg("UI warnings are disabled. This may expose users to security risks. Proceed with caution.")
 	}
 
 	return &ContextController{
@@ -94,7 +93,7 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 	}
 
 	if err != nil {
-		log.Debug().Err(err).Msg("No user context found in request")
+		utils.Log.App.Debug().Err(err).Msg("No user context found in request")
 		userContext.Status = 401
 		userContext.Message = "Unauthorized"
 		userContext.IsLoggedIn = false
@@ -108,7 +107,7 @@ func (controller *ContextController) userContextHandler(c *gin.Context) {
 func (controller *ContextController) appContextHandler(c *gin.Context) {
 	appUrl, err := url.Parse(controller.config.AppURL)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to parse app URL")
+		utils.Log.App.Error().Err(err).Msg("Failed to parse app URL")
 		c.JSON(500, gin.H{
 			"status":  500,
 			"message": "Internal Server Error",
