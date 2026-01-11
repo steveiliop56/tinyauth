@@ -26,10 +26,7 @@ func healthcheckCmd() *cli.Command {
 		Resources:     nil,
 		AllowArg:      true,
 		Run: func(args []string) error {
-			utils.InitLogger(&utils.LoggerConfig{
-				Level: "info",
-				Json:  false,
-			})
+			utils.NewSimpleLogger().Init()
 
 			appUrl := os.Getenv("TINYAUTH_APPURL")
 

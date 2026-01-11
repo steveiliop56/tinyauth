@@ -78,14 +78,20 @@ type LdapConfig struct {
 }
 
 type LogConfig struct {
-	Level   string                     `description:"Log level (trace, debug, info, warn, error)." yaml:"level"`
-	Json    bool                       `description:"Enable JSON formatted logs." yaml:"json"`
-	Outputs map[string]LogOutputConfig `description:"Configuration for specific log outputs." yaml:"outputs"`
+	Level   string     `description:"Log level (trace, debug, info, warn, error)." yaml:"level"`
+	Json    bool       `description:"Enable JSON formatted logs." yaml:"json"`
+	Streams LogStreams `description:"Configuration for specific log streams." yaml:"streams"`
 }
 
-type LogOutputConfig struct {
-	Enabled bool   `description:"Enable this log output." yaml:"enabled"`
-	Level   string `description:"Log level for this output (trace, debug, info, warn, error)." yaml:"level"`
+type LogStreams struct {
+	HTTP  LogStreamConfig `description:"HTTP request logging." yaml:"http"`
+	App   LogStreamConfig `description:"Application logging." yaml:"app"`
+	Audit LogStreamConfig `description:"Audit logging." yaml:"audit"`
+}
+
+type LogStreamConfig struct {
+	Enabled bool   `description:"Enable this log stream." yaml:"enabled"`
+	Level   string `description:"Log level for this stream. Use global if empty." yaml:"level"`
 }
 
 type ExperimentalConfig struct {

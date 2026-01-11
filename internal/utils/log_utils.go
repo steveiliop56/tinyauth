@@ -1,46 +1,29 @@
 package utils
 
 import (
-	"fmt"
 	"os"
-	"slices"
 	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/config"
 )
 
-type Loggers struct {
+type Logger struct {
 	Audit zerolog.Logger
 	HTTP  zerolog.Logger
 	App   zerolog.Logger
 }
 
-// utils.Log.Access, utils.log.HTTP...
-var Log *Loggers
+var Log *Logger
 
-type LoggerConfig struct {
-	Level   string
-	Json    bool
-	Outputs map[string]LoggerOutputConfig
-}
-
-type LoggerOutputConfig struct {
-	Enabled bool
-	Level   string
-}
-
-// InitLogger initializes all loggers with the provided configuration
-func InitLogger(cfg *LoggerConfig) error {
-	if cfg == nil {
-		return fmt.Errorf("logger config cannot be nil")
-	}
-
-	zerolog.SetGlobalLevel(parseLogLevel(cfg.Level))
-	zerolog.TimeFieldFormat = time.RFC3339
-
-	baseLogger := log.With().Timestamp().Caller().Logger()
+func NewLogger(cfg config.LogConfig) *Logger {
+	baseLogger := log.With().
+		Timestamp().
+		Caller().
+		Logger().
+		Level(parseLogLevel(cfg.Level))
 
 	if !cfg.Json {
 		baseLogger = baseLogger.Output(zerolog.ConsoleWriter{
@@ -49,40 +32,41 @@ func InitLogger(cfg *LoggerConfig) error {
 		})
 	}
 
-	// set as global logger
-	log.Logger = baseLogger
-
-	// create sub-loggers
-	Log = &Loggers{
-		Audit: createLogger("audit", cfg, baseLogger),
-		HTTP:  createLogger("http", cfg, baseLogger),
-		App:   createLogger("app", cfg, baseLogger),
+	return &Logger{
+		Audit: createLogger("audit", cfg.Streams.Audit, baseLogger),
+		HTTP:  createLogger("http", cfg.Streams.HTTP, baseLogger),
+		App:   createLogger("app", cfg.Streams.App, baseLogger),
 	}
-
-	return nil
 }
 
-func createLogger(loggerType string, cfg *LoggerConfig, baseLogger zerolog.Logger) zerolog.Logger {
-	logCfg, exists := cfg.Outputs[loggerType]
-	if !exists {
-		logCfg = LoggerOutputConfig{
-			Enabled: slices.Contains([]string{"http", "app"}, loggerType),
-			Level:   "",
-		}
-	}
+func NewSimpleLogger() *Logger {
+	return NewLogger(config.LogConfig{
+		Level: "info",
+		Json:  false,
+		Streams: config.LogStreams{
+			HTTP:  config.LogStreamConfig{Enabled: true},
+			App:   config.LogStreamConfig{Enabled: true},
+			Audit: config.LogStreamConfig{Enabled: false},
+		},
+	})
+}
 
-	if !logCfg.Enabled {
+func (l *Logger) Init() {
+	Log = l
+}
+
+func createLogger(component string, streamCfg config.LogStreamConfig, baseLogger zerolog.Logger) zerolog.Logger {
+	if !streamCfg.Enabled {
 		return zerolog.Nop()
 	}
-
-	logger := baseLogger.With().Str("component", loggerType).Logger()
-	if logCfg.Level != "" { // if log level is overriden
-		logger = logger.Level(parseLogLevel(logCfg.Level))
+	logger := baseLogger.With().Str("log_stream", component).Logger()
+	// override level if specified, otherwise use base level
+	if streamCfg.Level != "" {
+		logger = logger.Level(parseLogLevel(streamCfg.Level))
 	}
 	return logger
 }
 
-// parseLogLevel parses a log level string
 func parseLogLevel(level string) zerolog.Level {
 	if level == "" {
 		return zerolog.InfoLevel

@@ -38,6 +38,20 @@ func NewTinyauthCmdConfiguration() *config.Config {
 		Log: config.LogConfig{
 			Level: "info",
 			Json:  false,
+			Streams: config.LogStreams{
+				HTTP: config.LogStreamConfig{
+					Enabled: true,
+					Level:   "",
+				},
+				App: config.LogStreamConfig{
+					Enabled: true,
+					Level:   "",
+				},
+				Audit: config.LogStreamConfig{
+					Enabled: false,
+					Level:   "",
+				},
+			},
 		},
 		Experimental: config.ExperimentalConfig{
 			ConfigFile: "",
@@ -102,28 +116,14 @@ func main() {
 }
 
 func runCmd(cfg config.Config) error {
-	outputs := make(map[string]utils.LoggerOutputConfig)
-	for name, out := range cfg.Log.Outputs {
-		outputs[name] = utils.LoggerOutputConfig{
-			Enabled: out.Enabled,
-			Level:   out.Level,
-		}
-	}
-
-	err := utils.InitLogger(&utils.LoggerConfig{
-		Level:   cfg.Log.Level,
-		Json:    cfg.Log.Json,
-		Outputs: outputs,
-	})
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to initialize logger")
-	}
+	logger := utils.NewLogger(cfg.Log)
+	logger.Init()
 
 	utils.Log.App.Info().Str("version", config.Version).Msg("Starting tinyauth")
 
 	app := bootstrap.NewBootstrapApp(cfg)
 
-	err = app.Setup()
+	err := app.Setup()
 
 	if err != nil {
 		return fmt.Errorf("failed to bootstrap app: %w", err)

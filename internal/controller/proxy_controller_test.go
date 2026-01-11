@@ -9,12 +9,15 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"
 )
 
 func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder, *service.AuthService) {
+	utils.NewSimpleLogger().Init()
+
 	// Setup
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()

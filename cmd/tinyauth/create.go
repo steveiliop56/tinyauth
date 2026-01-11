@@ -40,10 +40,7 @@ func createUserCmd() *cli.Command {
 		Configuration: tCfg,
 		Resources:     loaders,
 		Run: func(_ []string) error {
-			utils.InitLogger(&utils.LoggerConfig{
-				Level: "info",
-				Json:  false,
-			})
+			utils.NewSimpleLogger().Init()
 
 			if tCfg.Interactive {
 				form := huh.NewForm(
