@@ -23,6 +23,7 @@ func AuditLoginFailure(c *gin.Context, username, provider string, reason string)
 		Str("username", username).
 		Str("provider", provider).
 		Str("ip", c.ClientIP()).
+		Str("reason", reason).
 		Send()
 }
 
