@@ -12,6 +12,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -72,7 +73,7 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 		userDN, err := auth.ldap.Search(username)
 
 		if err != nil {
-			utils.Log.App.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
+			tlog.App.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
 			return config.UserSearch{
 				Type: "error",
 			}
@@ -98,24 +99,24 @@ func (auth *AuthService) VerifyUser(search config.UserSearch, password string) b
 		if auth.ldap != nil {
 			err := auth.ldap.Bind(search.Username, password)
 			if err != nil {
-				utils.Log.App.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
+				tlog.App.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
 				return false
 			}
 
 			err = auth.ldap.BindService(true)
 			if err != nil {
-				utils.Log.App.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
+				tlog.App.Error().Err(err).Msg("Failed to rebind with service account after user authentication")
 				return false
 			}
 
 			return true
 		}
 	default:
-		utils.Log.App.Debug().Str("type", search.Type).Msg("Unknown user type for authentication")
+		tlog.App.Debug().Str("type", search.Type).Msg("Unknown user type for authentication")
 		return false
 	}
 
-	utils.Log.App.Warn().Str("username", search.Username).Msg("User authentication failed")
+	tlog.App.Warn().Str("username", search.Username).Msg("User authentication failed")
 	return false
 }
 
@@ -126,7 +127,7 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 		}
 	}
 
-	utils.Log.App.Warn().Str("username", username).Msg("Local user not found")
+	tlog.App.Warn().Str("username", username).Msg("Local user not found")
 	return config.User{}
 }
 
@@ -181,7 +182,7 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 
 	if attempt.FailedAttempts >= auth.config.LoginMaxRetries {
 		attempt.LockedUntil = time.Now().Add(time.Duration(auth.config.LoginTimeout) * time.Second)
-		utils.Log.App.Warn().Str("identifier", identifier).Int("timeout", auth.config.LoginTimeout).Msg("Account locked due to too many failed login attempts")
+		tlog.App.Warn().Str("identifier", identifier).Int("timeout", auth.config.LoginTimeout).Msg("Account locked due to too many failed login attempts")
 	}
 }
 
@@ -276,7 +277,7 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 	}
 
 	c.SetCookie(auth.config.SessionCookieName, cookie, int(newExpiry-currentTime), "/", fmt.Sprintf(".%s", auth.config.CookieDomain), auth.config.SecureCookie, true)
-	utils.Log.App.Trace().Str("username", session.Username).Msg("Session cookie refreshed")
+	tlog.App.Trace().Str("username", session.Username).Msg("Session cookie refreshed")
 
 	return nil
 }
@@ -321,7 +322,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		if currentTime-session.CreatedAt > int64(auth.config.SessionMaxLifetime) {
 			err = auth.queries.DeleteSession(c, cookie)
 			if err != nil {
-				utils.Log.App.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
+				tlog.App.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
 			}
 			return config.SessionCookie{}, fmt.Errorf("session expired due to max lifetime exceeded")
 		}
@@ -330,7 +331,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	if currentTime > session.Expiry {
 		err = auth.queries.DeleteSession(c, cookie)
 		if err != nil {
-			utils.Log.App.Error().Err(err).Msg("Failed to delete expired session")
+			tlog.App.Error().Err(err).Msg("Failed to delete expired session")
 		}
 		return config.SessionCookie{}, fmt.Errorf("session expired")
 	}
@@ -354,18 +355,18 @@ func (auth *AuthService) UserAuthConfigured() bool {
 
 func (auth *AuthService) IsUserAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
 	if context.OAuth {
-		utils.Log.App.Debug().Msg("Checking OAuth whitelist")
+		tlog.App.Debug().Msg("Checking OAuth whitelist")
 		return utils.CheckFilter(acls.OAuth.Whitelist, context.Email)
 	}
 
 	if acls.Users.Block != "" {
-		utils.Log.App.Debug().Msg("Checking blocked users")
+		tlog.App.Debug().Msg("Checking blocked users")
 		if utils.CheckFilter(acls.Users.Block, context.Username) {
 			return false
 		}
 	}
 
-	utils.Log.App.Debug().Msg("Checking users")
+	tlog.App.Debug().Msg("Checking users")
 	return utils.CheckFilter(acls.Users.Allow, context.Username)
 }
 
@@ -376,19 +377,19 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 
 	for id := range config.OverrideProviders {
 		if context.Provider == id {
-			utils.Log.App.Info().Str("provider", id).Msg("OAuth groups not supported for this provider")
+			tlog.App.Info().Str("provider", id).Msg("OAuth groups not supported for this provider")
 			return true
 		}
 	}
 
 	for userGroup := range strings.SplitSeq(context.OAuthGroups, ",") {
 		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
-			utils.Log.App.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
+			tlog.App.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
 			return true
 		}
 	}
 
-	utils.Log.App.Debug().Msg("No groups matched")
+	tlog.App.Debug().Msg("No groups matched")
 	return false
 }
 
@@ -425,7 +426,7 @@ func (auth *AuthService) IsAuthEnabled(uri string, path config.AppPath) (bool, e
 func (auth *AuthService) GetBasicAuth(c *gin.Context) *config.User {
 	username, password, ok := c.Request.BasicAuth()
 	if !ok {
-		utils.Log.App.Debug().Msg("No basic auth provided")
+		tlog.App.Debug().Msg("No basic auth provided")
 		return nil
 	}
 	return &config.User{
@@ -442,11 +443,11 @@ func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
 	for _, blocked := range blockedIps {
 		res, err := utils.FilterIP(blocked, ip)
 		if err != nil {
-			utils.Log.App.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
+			tlog.App.Warn().Err(err).Str("item", blocked).Msg("Invalid IP/CIDR in block list")
 			continue
 		}
 		if res {
-			utils.Log.App.Debug().Str("ip", ip).Str("item", blocked).Msg("IP is in blocked list, denying access")
+			tlog.App.Debug().Str("ip", ip).Str("item", blocked).Msg("IP is in blocked list, denying access")
 			return false
 		}
 	}
@@ -454,21 +455,21 @@ func (auth *AuthService) CheckIP(acls config.AppIP, ip string) bool {
 	for _, allowed := range allowedIPs {
 		res, err := utils.FilterIP(allowed, ip)
 		if err != nil {
-			utils.Log.App.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
+			tlog.App.Warn().Err(err).Str("item", allowed).Msg("Invalid IP/CIDR in allow list")
 			continue
 		}
 		if res {
-			utils.Log.App.Debug().Str("ip", ip).Str("item", allowed).Msg("IP is in allowed list, allowing access")
+			tlog.App.Debug().Str("ip", ip).Str("item", allowed).Msg("IP is in allowed list, allowing access")
 			return true
 		}
 	}
 
 	if len(allowedIPs) > 0 {
-		utils.Log.App.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
+		tlog.App.Debug().Str("ip", ip).Msg("IP not in allow list, denying access")
 		return false
 	}
 
-	utils.Log.App.Debug().Str("ip", ip).Msg("IP not in allow or block list, allowing by default")
+	tlog.App.Debug().Str("ip", ip).Msg("IP not in allow or block list, allowing by default")
 	return true
 }
 
@@ -476,15 +477,15 @@ func (auth *AuthService) IsBypassedIP(acls config.AppIP, ip string) bool {
 	for _, bypassed := range acls.Bypass {
 		res, err := utils.FilterIP(bypassed, ip)
 		if err != nil {
-			utils.Log.App.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
+			tlog.App.Warn().Err(err).Str("item", bypassed).Msg("Invalid IP/CIDR in bypass list")
 			continue
 		}
 		if res {
-			utils.Log.App.Debug().Str("ip", ip).Str("item", bypassed).Msg("IP is in bypass list, allowing access")
+			tlog.App.Debug().Str("ip", ip).Str("item", bypassed).Msg("IP is in bypass list, allowing access")
 			return true
 		}
 	}
 
-	utils.Log.App.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
+	tlog.App.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
 	return false
 }

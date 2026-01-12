@@ -13,7 +13,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
@@ -24,7 +24,7 @@ var cookieValue string
 var totpSecret = "6WFZXPEZRK5MZHHYAFW4DAOUYQMCASBJ"
 
 func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
-	utils.NewSimpleLogger().Init()
+	tlog.NewSimpleLogger().Init()
 
 	// Setup
 	gin.SetMode(gin.TestMode)

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"golang.org/x/oauth2"
 )
@@ -117,7 +117,7 @@ func (generic *GenericOAuthService) Userinfo() (config.Claims, error) {
 		return user, err
 	}
 
-	utils.Log.App.Trace().Str("body", string(body)).Msg("Userinfo response body")
+	tlog.App.Trace().Str("body", string(body)).Msg("Userinfo response body")
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {

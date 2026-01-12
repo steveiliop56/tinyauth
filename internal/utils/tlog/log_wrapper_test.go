@@ -1,4 +1,4 @@
-package utils_test
+package tlog_test
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/rs/zerolog"
 	"gotest.tools/v3/assert"
@@ -23,18 +23,16 @@ func TestNewLogger(t *testing.T) {
 		},
 	}
 
-	logger := utils.NewLogger(cfg)
+	logger := tlog.NewLogger(cfg)
 
 	assert.Assert(t, logger != nil)
-	assert.Assert(t, utils.Log == nil)
 	assert.Assert(t, logger.HTTP.GetLevel() == zerolog.InfoLevel)
 	assert.Assert(t, logger.App.GetLevel() == zerolog.DebugLevel)
 	assert.Assert(t, logger.Audit.GetLevel() == zerolog.Disabled)
 }
 
 func TestNewSimpleLogger(t *testing.T) {
-	logger := utils.NewSimpleLogger()
-
+	logger := tlog.NewSimpleLogger()
 	assert.Assert(t, logger != nil)
 	assert.Assert(t, logger.HTTP.GetLevel() == zerolog.InfoLevel)
 	assert.Assert(t, logger.App.GetLevel() == zerolog.InfoLevel)
@@ -42,11 +40,10 @@ func TestNewSimpleLogger(t *testing.T) {
 }
 
 func TestLoggerInit(t *testing.T) {
-	logger := utils.NewSimpleLogger()
+	logger := tlog.NewSimpleLogger()
 	logger.Init()
 
-	assert.Assert(t, utils.Log != nil)
-	assert.Assert(t, utils.Log.App.GetLevel() != zerolog.Disabled)
+	assert.Assert(t, tlog.App.GetLevel() != zerolog.Disabled)
 }
 
 func TestLoggerWithDisabledStreams(t *testing.T) {
@@ -60,7 +57,7 @@ func TestLoggerWithDisabledStreams(t *testing.T) {
 		},
 	}
 
-	logger := utils.NewLogger(cfg)
+	logger := tlog.NewLogger(cfg)
 
 	assert.Assert(t, logger.HTTP.GetLevel() == zerolog.Disabled)
 	assert.Assert(t, logger.App.GetLevel() == zerolog.Disabled)
@@ -80,7 +77,7 @@ func TestLogStreamField(t *testing.T) {
 		},
 	}
 
-	logger := utils.NewLogger(cfg)
+	logger := tlog.NewLogger(cfg)
 
 	// Override output for HTTP logger to capture output
 	logger.HTTP = logger.HTTP.Output(&buf)

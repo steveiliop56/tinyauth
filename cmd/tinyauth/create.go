@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/traefik/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -40,7 +40,7 @@ func createUserCmd() *cli.Command {
 		Configuration: tCfg,
 		Resources:     loaders,
 		Run: func(_ []string) error {
-			utils.NewSimpleLogger().Init()
+			tlog.NewSimpleLogger().Init()
 
 			if tCfg.Interactive {
 				form := huh.NewForm(
@@ -74,7 +74,7 @@ func createUserCmd() *cli.Command {
 				return errors.New("username and password cannot be empty")
 			}
 
-			utils.Log.App.Info().Str("username", tCfg.Username).Msg("Creating user")
+			tlog.App.Info().Str("username", tCfg.Username).Msg("Creating user")
 
 			passwd, err := bcrypt.GenerateFromPassword([]byte(tCfg.Password), bcrypt.DefaultCost)
 			if err != nil {
@@ -87,7 +87,7 @@ func createUserCmd() *cli.Command {
 				passwdStr = strings.ReplaceAll(passwdStr, "$", "$$")
 			}
 
-			utils.Log.App.Info().Str("user", fmt.Sprintf("%s:%s", tCfg.Username, passwdStr)).Msg("User created")
+			tlog.App.Info().Str("user", fmt.Sprintf("%s:%s", tCfg.Username, passwdStr)).Msg("User created")
 
 			return nil
 		},

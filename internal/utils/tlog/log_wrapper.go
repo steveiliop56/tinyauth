@@ -1,4 +1,4 @@
-package utils
+package tlog
 
 import (
 	"os"
@@ -16,7 +16,11 @@ type Logger struct {
 	App   zerolog.Logger
 }
 
-var Log *Logger
+var (
+	Audit zerolog.Logger
+	HTTP  zerolog.Logger
+	App   zerolog.Logger
+)
 
 func NewLogger(cfg config.LogConfig) *Logger {
 	baseLogger := log.With().
@@ -52,19 +56,21 @@ func NewSimpleLogger() *Logger {
 }
 
 func (l *Logger) Init() {
-	Log = l
+	Audit = l.Audit
+	HTTP = l.HTTP
+	App = l.App
 }
 
 func createLogger(component string, streamCfg config.LogStreamConfig, baseLogger zerolog.Logger) zerolog.Logger {
 	if !streamCfg.Enabled {
 		return zerolog.Nop()
 	}
-	logger := baseLogger.With().Str("log_stream", component).Logger()
+	subLogger := baseLogger.With().Str("log_stream", component).Logger()
 	// override level if specified, otherwise use base level
 	if streamCfg.Level != "" {
-		logger = logger.Level(parseLogLevel(streamCfg.Level))
+		subLogger = subLogger.Level(parseLogLevel(streamCfg.Level))
 	}
-	return logger
+	return subLogger
 }
 
 func parseLogLevel(level string) zerolog.Level {

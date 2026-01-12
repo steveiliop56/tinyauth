@@ -7,7 +7,7 @@ import (
 
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"
@@ -49,7 +49,7 @@ var userContext = config.UserContext{
 }
 
 func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
-	utils.NewSimpleLogger().Init()
+	tlog.NewSimpleLogger().Init()
 
 	// Setup
 	gin.SetMode(gin.TestMode)

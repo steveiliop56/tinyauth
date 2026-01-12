@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"golang.org/x/exp/slices"
 )
@@ -49,10 +49,10 @@ func (broker *OAuthBrokerService) Init() error {
 	for name, service := range broker.services {
 		err := service.Init()
 		if err != nil {
-			utils.Log.App.Error().Err(err).Msgf("Failed to initialize OAuth service: %T", name)
+			tlog.App.Error().Err(err).Msgf("Failed to initialize OAuth service: %T", name)
 			return err
 		}
-		utils.Log.App.Info().Str("service", name).Msg("Initialized OAuth service")
+		tlog.App.Info().Str("service", name).Msg("Initialized OAuth service")
 	}
 
 	return nil

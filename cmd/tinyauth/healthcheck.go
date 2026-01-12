@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/traefik/paerser/cli"
 )
 
@@ -26,7 +26,7 @@ func healthcheckCmd() *cli.Command {
 		Resources:     nil,
 		AllowArg:      true,
 		Run: func(args []string) error {
-			utils.NewSimpleLogger().Init()
+			tlog.NewSimpleLogger().Init()
 
 			appUrl := os.Getenv("TINYAUTH_APPURL")
 
@@ -38,7 +38,7 @@ func healthcheckCmd() *cli.Command {
 				return errors.New("TINYAUTH_APPURL is not set and no argument was provided")
 			}
 
-			utils.Log.App.Info().Str("app_url", appUrl).Msg("Performing health check")
+			tlog.App.Info().Str("app_url", appUrl).Msg("Performing health check")
 
 			client := http.Client{
 				Timeout: 30 * time.Second,
@@ -76,7 +76,7 @@ func healthcheckCmd() *cli.Command {
 				return fmt.Errorf("failed to decode response: %w", err)
 			}
 
-			utils.Log.App.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
+			tlog.App.Info().Interface("response", healthResp).Msg("Tinyauth is healthy")
 
 			return nil
 		},

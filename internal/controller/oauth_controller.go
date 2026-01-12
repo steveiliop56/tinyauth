@@ -9,6 +9,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
@@ -53,7 +54,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 
 	err := c.BindUri(&req)
 	if err != nil {
-		utils.Log.App.Error().Err(err).Msg("Failed to bind URI")
+		tlog.App.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -64,7 +65,7 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 	service, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
-		utils.Log.App.Warn().Msgf("OAuth provider not found: %s", req.Provider)
+		tlog.App.Warn().Msgf("OAuth provider not found: %s", req.Provider)
 		c.JSON(404, gin.H{
 			"status":  404,
 			"message": "Not Found",
@@ -81,12 +82,12 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 	isRedirectSafe := utils.IsRedirectSafe(redirectURI, controller.config.CookieDomain)
 
 	if !isRedirectSafe {
-		utils.Log.App.Warn().Str("redirect_uri", redirectURI).Msg("Unsafe redirect URI detected, ignoring")
+		tlog.App.Warn().Str("redirect_uri", redirectURI).Msg("Unsafe redirect URI detected, ignoring")
 		redirectURI = ""
 	}
 
 	if redirectURI != "" && isRedirectSafe {
-		utils.Log.App.Debug().Msg("Setting redirect URI cookie")
+		tlog.App.Debug().Msg("Setting redirect URI cookie")
 		c.SetCookie(controller.config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 	}
 
@@ -102,7 +103,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	err := c.BindUri(&req)
 	if err != nil {
-		utils.Log.App.Error().Err(err).Msg("Failed to bind URI")
+		tlog.App.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -114,7 +115,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	csrfCookie, err := c.Cookie(controller.config.CSRFCookieName)
 
 	if err != nil || state != csrfCookie {
-		utils.Log.App.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
+		tlog.App.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
 		c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
@@ -126,14 +127,14 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	service, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
-		utils.Log.App.Warn().Msgf("OAuth provider not found: %s", req.Provider)
+		tlog.App.Warn().Msgf("OAuth provider not found: %s", req.Provider)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
 	err = service.VerifyCode(code)
 	if err != nil {
-		utils.Log.App.Error().Err(err).Msg("Failed to verify OAuth code")
+		tlog.App.Error().Err(err).Msg("Failed to verify OAuth code")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
@@ -141,26 +142,26 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	user, err := controller.broker.GetUser(req.Provider)
 
 	if err != nil {
-		utils.Log.App.Error().Err(err).Msg("Failed to get user from OAuth provider")
+		tlog.App.Error().Err(err).Msg("Failed to get user from OAuth provider")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
 	if user.Email == "" {
-		utils.Log.App.Error().Msg("OAuth provider did not return an email")
+		tlog.App.Error().Msg("OAuth provider did not return an email")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
 	if !controller.auth.IsEmailWhitelisted(user.Email) {
-		utils.Log.App.Warn().Str("email", user.Email).Msg("Email not whitelisted")
+		tlog.App.Warn().Str("email", user.Email).Msg("Email not whitelisted")
 
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
 		})
 
 		if err != nil {
-			utils.Log.App.Error().Err(err).Msg("Failed to encode unauthorized query")
+			tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 			return
 		}
@@ -172,20 +173,20 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	var name string
 
 	if strings.TrimSpace(user.Name) != "" {
-		utils.Log.App.Debug().Msg("Using name from OAuth provider")
+		tlog.App.Debug().Msg("Using name from OAuth provider")
 		name = user.Name
 	} else {
-		utils.Log.App.Debug().Msg("No name from OAuth provider, using pseudo name")
+		tlog.App.Debug().Msg("No name from OAuth provider, using pseudo name")
 		name = fmt.Sprintf("%s (%s)", utils.Capitalize(strings.Split(user.Email, "@")[0]), strings.Split(user.Email, "@")[1])
 	}
 
 	var username string
 
 	if strings.TrimSpace(user.PreferredUsername) != "" {
-		utils.Log.App.Debug().Msg("Using preferred username from OAuth provider")
+		tlog.App.Debug().Msg("Using preferred username from OAuth provider")
 		username = user.PreferredUsername
 	} else {
-		utils.Log.App.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
+		tlog.App.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
 		username = strings.Replace(user.Email, "@", "_", -1)
 	}
 
@@ -199,20 +200,22 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		OAuthSub:    user.Sub,
 	}
 
-	utils.Log.App.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
+	tlog.App.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
 
 	err = controller.auth.CreateSessionCookie(c, &sessionCookie)
 
 	if err != nil {
-		utils.Log.App.Error().Err(err).Msg("Failed to create session cookie")
+		tlog.App.Error().Err(err).Msg("Failed to create session cookie")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
+	tlog.AuditLoginSuccess(c, sessionCookie.Username, sessionCookie.Provider)
+
 	redirectURI, err := c.Cookie(controller.config.RedirectCookieName)
 
 	if err != nil || !utils.IsRedirectSafe(redirectURI, controller.config.CookieDomain) {
-		utils.Log.App.Debug().Msg("No redirect URI cookie found, redirecting to app root")
+		tlog.App.Debug().Msg("No redirect URI cookie found, redirecting to app root")
 		c.Redirect(http.StatusTemporaryRedirect, controller.config.AppURL)
 		return
 	}
@@ -222,7 +225,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	})
 
 	if err != nil {
-		utils.Log.App.Error().Err(err).Msg("Failed to encode redirect URI query")
+		tlog.App.Error().Err(err).Msg("Failed to encode redirect URI query")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}

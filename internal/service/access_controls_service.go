@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 )
 
 type AccessControlsService struct {
@@ -27,12 +27,12 @@ func (acls *AccessControlsService) Init() error {
 func (acls *AccessControlsService) lookupStaticACLs(domain string) (config.App, error) {
 	for app, config := range acls.static {
 		if config.Config.Domain == domain {
-			utils.Log.App.Debug().Str("name", app).Msg("Found matching container by domain")
+			tlog.App.Debug().Str("name", app).Msg("Found matching container by domain")
 			return config, nil
 		}
 
 		if strings.SplitN(domain, ".", 2)[0] == app {
-			utils.Log.App.Debug().Str("name", app).Msg("Found matching container by app name")
+			tlog.App.Debug().Str("name", app).Msg("Found matching container by app name")
 			return config, nil
 		}
 	}
@@ -44,11 +44,11 @@ func (acls *AccessControlsService) GetAccessControls(domain string) (config.App,
 	app, err := acls.lookupStaticACLs(domain)
 
 	if err == nil {
-		utils.Log.App.Debug().Msg("Using ACls from static configuration")
+		tlog.App.Debug().Msg("Using ACls from static configuration")
 		return app, nil
 	}
 
 	// Fallback to Docker labels
-	utils.Log.App.Debug().Msg("Falling back to Docker labels for ACLs")
+	tlog.App.Debug().Msg("Falling back to Docker labels for ACLs")
 	return acls.docker.GetLabels(domain)
 }

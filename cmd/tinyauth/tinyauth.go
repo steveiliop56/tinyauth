@@ -5,8 +5,8 @@ import (
 
 	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/loaders"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/rs/zerolog/log"
 	"github.com/traefik/paerser/cli"
@@ -116,10 +116,10 @@ func main() {
 }
 
 func runCmd(cfg config.Config) error {
-	logger := utils.NewLogger(cfg.Log)
+	logger := tlog.NewLogger(cfg.Log)
 	logger.Init()
 
-	utils.Log.App.Info().Str("version", config.Version).Msg("Starting tinyauth")
+	tlog.App.Info().Str("version", config.Version).Msg("Starting tinyauth")
 
 	app := bootstrap.NewBootstrapApp(cfg)
 
