@@ -20,11 +20,14 @@ log:
   json: false
   streams:
     app:
+      enabled: true
       level: "warn"
     http:
+      enabled: true
       level: "debug"
     audit:
       enabled: false
+      level: "info"
 
 # Server Configuration
 server:

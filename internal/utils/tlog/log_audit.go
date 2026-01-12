@@ -12,7 +12,7 @@ func AuditLoginSuccess(c *gin.Context, username, provider string) {
 		Send()
 }
 
-func AuditLoginFailure(c *gin.Context, username, provider string) {
+func AuditLoginFailure(c *gin.Context, username, provider string, reason string) {
 	Audit.Warn().
 		Str("event", "login").
 		Str("result", "failure").

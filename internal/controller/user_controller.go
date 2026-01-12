@@ -67,7 +67,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	if isLocked {
 		tlog.App.Warn().Str("username", req.Username).Msg("Account is locked due to too many failed login attempts")
-		tlog.AuditLoginFailure(c, req.Username, "username")
+		tlog.AuditLoginFailure(c, req.Username, "username", "account locked")
 		c.Writer.Header().Add("x-tinyauth-lock-locked", "true")
 		c.Writer.Header().Add("x-tinyauth-lock-reset", time.Now().Add(time.Duration(remaining)*time.Second).Format(time.RFC3339))
 		c.JSON(429, gin.H{
@@ -82,7 +82,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	if userSearch.Type == "unknown" {
 		tlog.App.Warn().Str("username", req.Username).Msg("User not found")
 		controller.auth.RecordLoginAttempt(req.Username, false)
-		tlog.AuditLoginFailure(c, req.Username, "username")
+		tlog.AuditLoginFailure(c, req.Username, "username", "user not found")
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -93,7 +93,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	if !controller.auth.VerifyUser(userSearch, req.Password) {
 		tlog.App.Warn().Str("username", req.Username).Msg("Invalid password")
 		controller.auth.RecordLoginAttempt(req.Username, false)
-		tlog.AuditLoginFailure(c, req.Username, "username")
+		tlog.AuditLoginFailure(c, req.Username, "username", "invalid password")
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -235,7 +235,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	if !ok {
 		tlog.App.Warn().Str("username", context.Username).Msg("Invalid TOTP code")
 		controller.auth.RecordLoginAttempt(context.Username, false)
-		tlog.AuditLoginFailure(c, context.Username, "totp")
+		tlog.AuditLoginFailure(c, context.Username, "totp", "invalid totp code")
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",

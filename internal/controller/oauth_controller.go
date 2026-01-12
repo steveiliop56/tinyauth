@@ -155,6 +155,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	if !controller.auth.IsEmailWhitelisted(user.Email) {
 		tlog.App.Warn().Str("email", user.Email).Msg("Email not whitelisted")
+		tlog.AuditLoginFailure(c, user.Email, req.Provider, "email not whitelisted")
 
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Username: user.Email,
