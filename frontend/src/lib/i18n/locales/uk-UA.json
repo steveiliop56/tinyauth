@@ -41,7 +41,7 @@
     "totpSuccessSubtitle": "Перенаправлення до вашого додатку",
     "totpTitle": "Введіть ваш TOTP код",
     "totpSubtitle": "Будь ласка, введіть код з вашого додатку для автентифікації.",
-    "unauthorizedTitle": "Не авторизовано",
+    "unauthorizedTitle": "Доступ обмежено",
     "unauthorizedResourceSubtitle": "Користувач з ім'ям користувача <code>{{username}}</code> не має права доступу до ресурсу <code>{{resource}}</code>.",
     "unauthorizedLoginSubtitle": "Користувач з іменем <code>{{username}}</code> не авторизований для входу.",
     "unauthorizedGroupsSubtitle": "Користувач з іменем <code>{{username}}</code> не входить до груп, що необхідні для ресурсу <code>{{resource}}</code>.",
@@ -58,5 +58,5 @@
     "domainWarningTitle": "Невірний домен",
     "domainWarningSubtitle": "Даний ресурс налаштований для доступу з <code>{{appUrl}}</code>, але використовується <code>{{currentUrl}}</code>. Якщо ви продовжите, можуть виникнути проблеми з автентифікацією.",
     "ignoreTitle": "Ігнорувати",
-    "goToCorrectDomainTitle": "Перейти на правильний домен"
+    "goToCorrectDomainTitle": "Перейти за коректним доменом"
 }
