@@ -3,15 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/charmbracelet/huh"
 	"github.com/pquerna/otp/totp"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/traefik/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -47,7 +44,7 @@ func verifyUserCmd() *cli.Command {
 		Configuration: tCfg,
 		Resources:     loaders,
 		Run: func(_ []string) error {
-			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Caller().Logger().Level(zerolog.InfoLevel)
+			tlog.NewSimpleLogger().Init()
 
 			if tCfg.Interactive {
 				form := huh.NewForm(
@@ -101,9 +98,9 @@ func verifyUserCmd() *cli.Command {
 
 			if user.TotpSecret == "" {
 				if tCfg.Totp != "" {
-					log.Warn().Msg("User does not have TOTP secret")
+					tlog.App.Warn().Msg("User does not have TOTP secret")
 				}
-				log.Info().Msg("User verified")
+				tlog.App.Info().Msg("User verified")
 				return nil
 			}
 
@@ -113,7 +110,7 @@ func verifyUserCmd() *cli.Command {
 				return fmt.Errorf("TOTP code incorrect")
 			}
 
-			log.Info().Msg("User verified")
+			tlog.App.Info().Msg("User verified")
 
 			return nil
 		},
