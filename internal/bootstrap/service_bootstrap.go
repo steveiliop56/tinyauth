@@ -3,8 +3,7 @@ package bootstrap
 import (
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
-
-	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 )
 
 type Services struct {
@@ -34,7 +33,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 	if err == nil {
 		services.ldapService = ldapService
 	} else {
-		log.Warn().Err(err).Msg("Failed to initialize LDAP service, continuing without it")
+		tlog.App.Warn().Err(err).Msg("Failed to initialize LDAP service, continuing without it")
 	}
 
 	dockerService := service.NewDockerService()

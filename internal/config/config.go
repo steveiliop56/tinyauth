@@ -16,13 +16,11 @@ var RedirectCookieName = "tinyauth-redirect"
 
 type Config struct {
 	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
-	LogLevel          string             `description:"Log level (trace, debug, info, warn, error)." yaml:"logLevel"`
 	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
 	DatabasePath      string             `description:"The path to the database file." yaml:"databasePath"`
 	DisableAnalytics  bool               `description:"Disable analytics." yaml:"disableAnalytics"`
 	DisableResources  bool               `description:"Disable resources server." yaml:"disableResources"`
 	DisableUIWarnings bool               `description:"Disable UI warnings." yaml:"disableUIWarnings"`
-	LogJSON           bool               `description:"Enable JSON formatted logs." yaml:"logJSON"`
 	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
 	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
 	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
@@ -30,6 +28,7 @@ type Config struct {
 	UI                UIConfig           `description:"UI customization." yaml:"ui"`
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
 	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
+	Log               LogConfig          `description:"Logging configuration." yaml:"log"`
 }
 
 type ServerConfig struct {
@@ -76,6 +75,23 @@ type LdapConfig struct {
 	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
 	AuthCert     string `description:"Certificate for mTLS authentication." yaml:"authCert"`
 	AuthKey      string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
+}
+
+type LogConfig struct {
+	Level   string     `description:"Log level (trace, debug, info, warn, error)." yaml:"level"`
+	Json    bool       `description:"Enable JSON formatted logs." yaml:"json"`
+	Streams LogStreams `description:"Configuration for specific log streams." yaml:"streams"`
+}
+
+type LogStreams struct {
+	HTTP  LogStreamConfig `description:"HTTP request logging." yaml:"http"`
+	App   LogStreamConfig `description:"Application logging." yaml:"app"`
+	Audit LogStreamConfig `description:"Audit logging." yaml:"audit"`
+}
+
+type LogStreamConfig struct {
+	Enabled bool   `description:"Enable this log stream." yaml:"enabled"`
+	Level   string `description:"Log level for this stream. Use global if empty." yaml:"level"`
 }
 
 type ExperimentalConfig struct {

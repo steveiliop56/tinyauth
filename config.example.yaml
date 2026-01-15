@@ -2,8 +2,6 @@
 
 # The base URL where Tinyauth is accessible
 appUrl: "https://auth.example.com"
-# Log level: trace, debug, info, warn, error
-logLevel: "info"
 # Directory for static resources
 resourcesDir: "./resources"
 # Path to SQLite database file
@@ -14,8 +12,22 @@ disableAnalytics: false
 disableResources: false
 # Disable UI warning messages
 disableUIWarnings: false
-# Enable JSON formatted logs
-logJSON: false
+
+# Logging Configuration
+log:
+  # Log level: trace, debug, info, warn, error
+  level: "info"
+  json: false
+  streams:
+    app:
+      enabled: true
+      level: "warn"
+    http:
+      enabled: true
+      level: "debug"
+    audit:
+      enabled: false
+      level: "info"
 
 # Server Configuration
 server:
