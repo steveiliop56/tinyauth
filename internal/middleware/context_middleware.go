@@ -163,12 +163,12 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		case "ldap":
-			log.Debug().Msg("Basic auth user is LDAP")
+			tlog.App.Debug().Msg("Basic auth user is LDAP")
 
 			ldapUser, err := m.auth.GetLdapUser(basic.Username)
 
 			if err != nil {
-				log.Debug().Err(err).Msg("Error retrieving LDAP user details")
+				tlog.App.Debug().Err(err).Msg("Error retrieving LDAP user details")
 				c.Next()
 				return
 			}
