@@ -19,6 +19,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type LdapGroupsCache struct {
+	Groups  []string
+	Expires time.Time
+}
+
 type LoginAttempt struct {
 	FailedAttempts int
 	LastAttempt    time.Time
@@ -36,24 +41,28 @@ type AuthServiceConfig struct {
 	LoginMaxRetries    int
 	SessionCookieName  string
 	IP                 config.IPConfig
+	LDAPGroupsCacheTTL int
 }
 
 type AuthService struct {
-	config        AuthServiceConfig
-	docker        *DockerService
-	loginAttempts map[string]*LoginAttempt
-	loginMutex    sync.RWMutex
-	ldap          *LdapService
-	queries       *repository.Queries
+	config          AuthServiceConfig
+	docker          *DockerService
+	loginAttempts   map[string]*LoginAttempt
+	ldapGroupsCache map[string]*LdapGroupsCache
+	loginMutex      sync.RWMutex
+	ldapGroupsMutex sync.RWMutex
+	ldap            *LdapService
+	queries         *repository.Queries
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
 	return &AuthService{
-		config:        config,
-		docker:        docker,
-		loginAttempts: make(map[string]*LoginAttempt),
-		ldap:          ldap,
-		queries:       queries,
+		config:          config,
+		docker:          docker,
+		loginAttempts:   make(map[string]*LoginAttempt),
+		ldapGroupsCache: make(map[string]*LdapGroupsCache),
+		ldap:            ldap,
+		queries:         queries,
 	}
 }
 
@@ -132,11 +141,29 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 }
 
 func (auth *AuthService) GetLdapUser(userDN string) (config.LdapUser, error) {
+	auth.ldapGroupsMutex.Lock()
+	entry, exists := auth.ldapGroupsCache[userDN]
+	auth.ldapGroupsMutex.Unlock()
+
+	if exists && time.Now().Before(entry.Expires) {
+		return config.LdapUser{
+			DN:     userDN,
+			Groups: entry.Groups,
+		}, nil
+	}
+
 	groups, err := auth.ldap.GetUserGroups(userDN)
 
 	if err != nil {
 		return config.LdapUser{}, err
 	}
+
+	auth.ldapGroupsMutex.Lock()
+	auth.ldapGroupsCache[userDN] = &LdapGroupsCache{
+		Groups:  groups,
+		Expires: time.Now().Add(time.Duration(auth.config.LDAPGroupsCacheTTL) * time.Second),
+	}
+	auth.ldapGroupsMutex.Unlock()
 
 	return config.LdapUser{
 		DN:     userDN,

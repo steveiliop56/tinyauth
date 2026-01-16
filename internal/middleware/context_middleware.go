@@ -67,9 +67,16 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				goto basic
 			}
 
+			if userSearch.Type != cookie.Provider {
+				tlog.App.Warn().Msg("User type from session cookie does not match user search type")
+				m.auth.DeleteSessionCookie(c)
+				c.Next()
+				return
+			}
+
 			var ldapGroups []string
 
-			if userSearch.Type == "ldap" {
+			if cookie.Provider == "ldap" {
 				ldapUser, err := m.auth.GetLdapUser(userSearch.Username)
 
 				if err != nil {
@@ -86,7 +93,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Username:   cookie.Username,
 				Name:       cookie.Name,
 				Email:      cookie.Email,
-				Provider:   userSearch.Type,
+				Provider:   cookie.Provider,
 				IsLoggedIn: true,
 				LdapGroups: strings.Join(ldapGroups, ","),
 			})

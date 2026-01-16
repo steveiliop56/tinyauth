@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -148,11 +146,13 @@ func (ldap *LdapService) GetUserDN(username string) (string, error) {
 }
 
 func (ldap *LdapService) GetUserGroups(userDN string) ([]string, error) {
+	escapedUserDN := ldapgo.EscapeFilter(userDN)
+
 	searchRequest := ldapgo.NewSearchRequest(
 		ldap.config.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
-		"(objectclass=groupOfUniqueNames)",
-		[]string{"uniquemember"},
+		fmt.Sprintf("(&(objectclass=groupOfUniqueNames)(uniquemember=%s))", escapedUserDN),
+		[]string{"dn"},
 		nil,
 	)
 
@@ -167,22 +167,21 @@ func (ldap *LdapService) GetUserGroups(userDN string) ([]string, error) {
 	groupDNs := []string{}
 
 	for _, entry := range searchResult.Entries {
-		memberAttributes := entry.GetAttributeValues("uniquemember")
-		// no need to escape username here, if it's malicious it won't match anything
-		if slices.Contains(memberAttributes, userDN) {
-			groupDNs = append(groupDNs, entry.DN)
-		}
+		groupDNs = append(groupDNs, entry.DN)
 	}
 
-	// Should work for most ldap providers?
 	groups := []string{}
 
-	for _, groupDN := range groupDNs {
-		groupDN = strings.TrimPrefix(groupDN, "cn=")
-		parts := strings.SplitN(groupDN, ",", 2)
-		if len(parts) > 0 {
-			groups = append(groups, parts[0])
+	// I guess it should work for most ldap providers
+	for _, dn := range groupDNs {
+		rdnParts, err := ldapgo.ParseDN(dn)
+		if err != nil {
+			return []string{}, err
 		}
+		if len(rdnParts.RDNs) == 0 || len(rdnParts.RDNs[0].Attributes) == 0 {
+			return []string{}, fmt.Errorf("invalid DN format: %s", dn)
+		}
+		groups = append(groups, rdnParts.RDNs[0].Attributes[0].Value)
 	}
 
 	return groups, nil

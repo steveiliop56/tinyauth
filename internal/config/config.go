@@ -67,14 +67,15 @@ type UIConfig struct {
 }
 
 type LdapConfig struct {
-	Address      string `description:"LDAP server address." yaml:"address"`
-	BindDN       string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
-	BindPassword string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
-	BaseDN       string `description:"Base DN for LDAP searches." yaml:"baseDn"`
-	Insecure     bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
-	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
-	AuthCert     string `description:"Certificate for mTLS authentication." yaml:"authCert"`
-	AuthKey      string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
+	Address       string `description:"LDAP server address." yaml:"address"`
+	BindDN        string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
+	BindPassword  string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
+	BaseDN        string `description:"Base DN for LDAP searches." yaml:"baseDn"`
+	Insecure      bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
+	SearchFilter  string `description:"LDAP search filter." yaml:"searchFilter"`
+	AuthCert      string `description:"Certificate for mTLS authentication." yaml:"authCert"`
+	AuthKey       string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
+	GroupCacheTTL int    `description:"Cache duration for LDAP group membership in seconds." yaml:"groupCacheTTL"`
 }
 
 type LogConfig struct {
