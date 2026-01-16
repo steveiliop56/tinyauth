@@ -42,7 +42,7 @@ var userContext = config.UserContext{
 	IsLoggedIn:  true,
 	IsBasicAuth: false,
 	OAuth:       false,
-	Provider:    "username",
+	Provider:    "local",
 	TotpPending: false,
 	OAuthGroups: "",
 	TotpEnabled: false,

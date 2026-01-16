@@ -50,7 +50,7 @@ export const LoginPage = () => {
   const redirectUri = searchParams.get("redirect_uri");
 
   const oauthProviders = providers.filter(
-    (provider) => provider.id !== "local" && provider.id != "ldap",
+    (provider) => provider.id !== "local" && provider.id !== "ldap",
   );
   const userAuthConfigured =
     providers.find(
