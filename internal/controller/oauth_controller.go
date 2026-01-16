@@ -189,7 +189,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		username = user.PreferredUsername
 	} else {
 		tlog.App.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
-		username = strings.Replace(user.Email, "@", "_", -1)
+		username = strings.Replace(user.Email, "@", "_", 1)
 	}
 
 	sessionCookie := repository.Session{

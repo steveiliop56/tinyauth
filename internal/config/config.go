@@ -153,6 +153,7 @@ type UserContext struct {
 	Name        string
 	Email       string
 	IsLoggedIn  bool
+	IsBasicAuth bool
 	OAuth       bool
 	Provider    string
 	TotpPending bool
@@ -189,6 +190,7 @@ type App struct {
 	IP       AppIP       `description:"IP access configuration." yaml:"ip"`
 	Response AppResponse `description:"Response customization." yaml:"response"`
 	Path     AppPath     `description:"Path access configuration." yaml:"path"`
+	LDAP     AppLDAP     `description:"LDAP access configuration." yaml:"ldap"`
 }
 
 type AppConfig struct {
@@ -203,6 +205,10 @@ type AppUsers struct {
 type AppOAuth struct {
 	Whitelist string `description:"Comma-separated list of allowed OAuth groups." yaml:"whitelist"`
 	Groups    string `description:"Comma-separated list of required OAuth groups." yaml:"groups"`
+}
+
+type AppLDAP struct {
+	Groups string `description:"Comma-separated list of required LDAP groups." yaml:"groups"`
 }
 
 type AppIP struct {

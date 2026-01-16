@@ -75,7 +75,7 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 		if err != nil {
 			tlog.App.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
 			return config.UserSearch{
-				Type: "error",
+				Type: "unknown",
 			}
 		}
 
@@ -230,7 +230,6 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *repository.Se
 		CreatedAt:   time.Now().Unix(),
 		OAuthName:   data.OAuthName,
 		OAuthSub:    data.OAuthSub,
-		LdapGroups:  data.LdapGroups,
 	}
 
 	_, err = auth.queries.CreateSession(c, session)
@@ -284,7 +283,6 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 		OAuthName:   session.OAuthName,
 		OAuthSub:    session.OAuthSub,
 		UUID:        session.UUID,
-		LdapGroups:  session.LdapGroups,
 	})
 
 	if err != nil {
@@ -361,12 +359,15 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, e
 		OAuthGroups: session.OAuthGroups,
 		OAuthName:   session.OAuthName,
 		OAuthSub:    session.OAuthSub,
-		LdapGroups:  session.LdapGroups,
 	}, nil
 }
 
-func (auth *AuthService) UserAuthConfigured() bool {
-	return len(auth.config.Users) > 0 || auth.ldap != nil
+func (auth *AuthService) LocalAuthConfigured() bool {
+	return len(auth.config.Users) > 0
+}
+
+func (auth *AuthService) LdapAuthConfigured() bool {
+	return auth.ldap != nil
 }
 
 func (auth *AuthService) IsUserAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
@@ -399,6 +400,22 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 	}
 
 	for userGroup := range strings.SplitSeq(context.OAuthGroups, ",") {
+		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
+			tlog.App.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
+			return true
+		}
+	}
+
+	tlog.App.Debug().Msg("No groups matched")
+	return false
+}
+
+func (auth *AuthService) IsInLdapGroup(c *gin.Context, context config.UserContext, requiredGroups string) bool {
+	if requiredGroups == "" {
+		return true
+	}
+
+	for userGroup := range strings.SplitSeq(context.LdapGroups, ",") {
 		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
 			tlog.App.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
 			return true

@@ -192,6 +192,7 @@ func TestProxyHandler(t *testing.T) {
 				Name:        "testuser",
 				Email:       "testuser@example.com",
 				IsLoggedIn:  true,
+				IsBasicAuth: true,
 				OAuth:       false,
 				Provider:    "basic",
 				TotpPending: false,

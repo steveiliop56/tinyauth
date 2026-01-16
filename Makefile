@@ -62,3 +62,8 @@ develop:
 # Production
 prod:
 	docker compose -f $(PROD_COMPOSE) up --force-recreate --pull=always --remove-orphans
+
+# SQL
+.PHONY: sql
+sql:
+	sqlc generate

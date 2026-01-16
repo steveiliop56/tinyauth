@@ -116,7 +116,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 				Username:    user.Username,
 				Name:        utils.Capitalize(req.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: true,
 			})
 
@@ -142,22 +142,11 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
-		Provider: "username",
+		Provider: "local",
 	}
 
 	if userSearch.Type == "ldap" {
-		ldapUser, err := controller.auth.GetLdapUser(userSearch.Username)
-
-		if err != nil {
-			tlog.App.Error().Err(err).Str("username", req.Username).Msg("Failed to get LDAP user details")
-			c.JSON(500, gin.H{
-				"status":  500,
-				"message": "Internal Server Error",
-			})
-			return
-		}
-
-		sessionCookie.LdapGroups = strings.Join(ldapUser.Groups, ",")
+		sessionCookie.Provider = "ldap"
 	}
 
 	tlog.App.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")
@@ -267,7 +256,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
 		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.config.CookieDomain),
-		Provider: "username",
+		Provider: "local",
 	}
 
 	tlog.App.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")

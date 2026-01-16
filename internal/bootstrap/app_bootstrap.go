@@ -144,10 +144,18 @@ func (app *BootstrapApp) Setup() error {
 		return configuredProviders[i].Name < configuredProviders[j].Name
 	})
 
-	if services.authService.UserAuthConfigured() {
+	if services.authService.LocalAuthConfigured() {
 		configuredProviders = append(configuredProviders, controller.Provider{
-			Name:  "Username",
-			ID:    "username",
+			Name:  "Local",
+			ID:    "local",
+			OAuth: false,
+		})
+	}
+
+	if services.authService.LdapAuthConfigured() {
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  "LDAP",
+			ID:    "ldap",
 			OAuth: false,
 		})
 	}
