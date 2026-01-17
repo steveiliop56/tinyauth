@@ -2,14 +2,22 @@ package bootstrap
 
 import (
 	"fmt"
+	"slices"
 
+	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
+var DEV_MODES = []string{"main", "test", "development"}
+
 func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
+	if !slices.Contains(DEV_MODES, config.Version) {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 

@@ -41,7 +41,10 @@ COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
 RUN mkdir -p data
 
-RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" ./cmd/tinyauth
+RUN CGO_ENABLED=0 go build -ldflags "-s -w \
+    -X github.com/steveiliop56/tinyauth/internal/config.Version=${VERSION} \
+    -X github.com/steveiliop56/tinyauth/internal/config.CommitHash=${COMMIT_HASH} \
+    -X github.com/steveiliop56/tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" ./cmd/tinyauth
 
 # Runner
 FROM gcr.io/distroless/static-debian12:latest AS runner
@@ -60,8 +63,6 @@ VOLUME ["/data"]
 ENV TINYAUTH_DATABASEPATH=/data/tinyauth.db
 
 ENV TINYAUTH_RESOURCESDIR=/data/resources
-
-ENV GIN_MODE=release
 
 ENV PATH=$PATH:/tinyauth
 

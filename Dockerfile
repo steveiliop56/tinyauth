@@ -39,7 +39,10 @@ COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
-RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" ./cmd/tinyauth
+RUN CGO_ENABLED=0 go build -ldflags "-s -w \
+    -X github.com/steveiliop56/tinyauth/internal/config.Version=${VERSION} \
+    -X github.com/steveiliop56/tinyauth/internal/config.CommitHash=${COMMIT_HASH} \
+    -X github.com/steveiliop56/tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" ./cmd/tinyauth
 
 # Runner
 FROM alpine:3.23 AS runner
@@ -54,11 +57,9 @@ EXPOSE 3000
 
 VOLUME ["/data"]
 
-ENV DATABASEPATH=/data/tinyauth.db
+ENV TINYAUTH_DATABASEPATH=/data/tinyauth.db
 
-ENV RESOURCESDIR=/data/resources
-
-ENV GIN_MODE=release
+ENV TINYAUTH_RESOURCESDIR=/data/resources
 
 ENV PATH=$PATH:/tinyauth
 
