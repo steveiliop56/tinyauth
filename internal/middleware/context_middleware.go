@@ -49,7 +49,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Username:    cookie.Username,
 				Name:        cookie.Name,
 				Email:       cookie.Email,
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: true,
 				TotpEnabled: true,
 			})
@@ -58,13 +58,34 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		}
 
 		switch cookie.Provider {
-		case "username":
+		case "local", "ldap":
 			userSearch := m.auth.SearchUser(cookie.Username)
 
-			if userSearch.Type == "unknown" || userSearch.Type == "error" {
+			if userSearch.Type == "unknown" {
 				tlog.App.Debug().Msg("User from session cookie not found")
 				m.auth.DeleteSessionCookie(c)
 				goto basic
+			}
+
+			if userSearch.Type != cookie.Provider {
+				tlog.App.Warn().Msg("User type from session cookie does not match user search type")
+				m.auth.DeleteSessionCookie(c)
+				c.Next()
+				return
+			}
+
+			var ldapGroups []string
+
+			if cookie.Provider == "ldap" {
+				ldapUser, err := m.auth.GetLdapUser(userSearch.Username)
+
+				if err != nil {
+					tlog.App.Error().Err(err).Msg("Error retrieving LDAP user details")
+					c.Next()
+					return
+				}
+
+				ldapGroups = ldapUser.Groups
 			}
 
 			m.auth.RefreshSessionCookie(c)
@@ -72,8 +93,9 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Username:   cookie.Username,
 				Name:       cookie.Name,
 				Email:      cookie.Email,
-				Provider:   "username",
+				Provider:   cookie.Provider,
 				IsLoggedIn: true,
+				LdapGroups: strings.Join(ldapGroups, ","),
 			})
 			c.Next()
 			return
@@ -155,20 +177,32 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
 				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.config.CookieDomain),
-				Provider:    "basic",
+				Provider:    "local",
 				IsLoggedIn:  true,
 				TotpEnabled: user.TotpSecret != "",
+				IsBasicAuth: true,
 			})
 			c.Next()
 			return
 		case "ldap":
 			tlog.App.Debug().Msg("Basic auth user is LDAP")
+
+			ldapUser, err := m.auth.GetLdapUser(basic.Username)
+
+			if err != nil {
+				tlog.App.Debug().Err(err).Msg("Error retrieving LDAP user details")
+				c.Next()
+				return
+			}
+
 			c.Set("context", &config.UserContext{
-				Username:   basic.Username,
-				Name:       utils.Capitalize(basic.Username),
-				Email:      fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.config.CookieDomain),
-				Provider:   "basic",
-				IsLoggedIn: true,
+				Username:    basic.Username,
+				Name:        utils.Capitalize(basic.Username),
+				Email:       fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.config.CookieDomain),
+				Provider:    "ldap",
+				IsLoggedIn:  true,
+				LdapGroups:  strings.Join(ldapUser.Groups, ","),
+				IsBasicAuth: true,
 			})
 			c.Next()
 			return

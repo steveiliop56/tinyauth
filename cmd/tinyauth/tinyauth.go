@@ -21,9 +21,9 @@ func NewTinyauthCmdConfiguration() *config.Config {
 			Address: "0.0.0.0",
 		},
 		Auth: config.AuthConfig{
-			SessionExpiry:      3600,
-			SessionMaxLifetime: 0,
-			LoginTimeout:       300,
+			SessionExpiry:      86400, // 1 day
+			SessionMaxLifetime: 0,     // disabled
+			LoginTimeout:       300,   // 5 minutes
 			LoginMaxRetries:    3,
 		},
 		UI: config.UIConfig{
@@ -32,8 +32,9 @@ func NewTinyauthCmdConfiguration() *config.Config {
 			BackgroundImage:       "/background.jpg",
 		},
 		Ldap: config.LdapConfig{
-			Insecure:     false,
-			SearchFilter: "(uid=%s)",
+			Insecure:      false,
+			SearchFilter:  "(uid=%s)",
+			GroupCacheTTL: 900, // 15 minutes
 		},
 		Log: config.LogConfig{
 			Level: "info",

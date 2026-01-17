@@ -50,10 +50,12 @@ export const LoginPage = () => {
   const redirectUri = searchParams.get("redirect_uri");
 
   const oauthProviders = providers.filter(
-    (provider) => provider.id !== "username",
+    (provider) => provider.id !== "local" && provider.id !== "ldap",
   );
   const userAuthConfigured =
-    providers.find((provider) => provider.id === "username") !== undefined;
+    providers.find(
+      (provider) => provider.id === "local" || provider.id === "ldap",
+    ) !== undefined;
 
   const oauthMutation = useMutation({
     mutationFn: (provider: string) =>

@@ -143,11 +143,11 @@ func TestProxyHandler(t *testing.T) {
 	// Test logged in user
 	c := gin.CreateTestContextOnly(recorder, router)
 
-	err := authService.CreateSessionCookie(c, &config.SessionCookie{
+	err := authService.CreateSessionCookie(c, &repository.Session{
 		Username:    "testuser",
 		Name:        "testuser",
 		Email:       "testuser@example.com",
-		Provider:    "username",
+		Provider:    "local",
 		TotpPending: false,
 		OAuthGroups: "",
 	})
@@ -164,7 +164,7 @@ func TestProxyHandler(t *testing.T) {
 				Email:       "testuser@example.com",
 				IsLoggedIn:  true,
 				OAuth:       false,
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: false,
 				OAuthGroups: "",
 				TotpEnabled: false,
@@ -192,8 +192,9 @@ func TestProxyHandler(t *testing.T) {
 				Name:        "testuser",
 				Email:       "testuser@example.com",
 				IsLoggedIn:  true,
+				IsBasicAuth: true,
 				OAuth:       false,
-				Provider:    "basic",
+				Provider:    "local",
 				TotpPending: false,
 				OAuthGroups: "",
 				TotpEnabled: true,

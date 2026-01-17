@@ -67,14 +67,15 @@ type UIConfig struct {
 }
 
 type LdapConfig struct {
-	Address      string `description:"LDAP server address." yaml:"address"`
-	BindDN       string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
-	BindPassword string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
-	BaseDN       string `description:"Base DN for LDAP searches." yaml:"baseDn"`
-	Insecure     bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
-	SearchFilter string `description:"LDAP search filter." yaml:"searchFilter"`
-	AuthCert     string `description:"Certificate for mTLS authentication." yaml:"authCert"`
-	AuthKey      string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
+	Address       string `description:"LDAP server address." yaml:"address"`
+	BindDN        string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
+	BindPassword  string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
+	BaseDN        string `description:"Base DN for LDAP searches." yaml:"baseDn"`
+	Insecure      bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
+	SearchFilter  string `description:"LDAP search filter." yaml:"searchFilter"`
+	AuthCert      string `description:"Certificate for mTLS authentication." yaml:"authCert"`
+	AuthKey       string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
+	GroupCacheTTL int    `description:"Cache duration for LDAP group membership in seconds." yaml:"groupCacheTTL"`
 }
 
 type LogConfig struct {
@@ -138,21 +139,14 @@ type User struct {
 	TotpSecret string
 }
 
+type LdapUser struct {
+	DN     string
+	Groups []string
+}
+
 type UserSearch struct {
 	Username string
 	Type     string // local, ldap or unknown
-}
-
-type SessionCookie struct {
-	UUID        string
-	Username    string
-	Name        string
-	Email       string
-	Provider    string
-	TotpPending bool
-	OAuthGroups string
-	OAuthName   string
-	OAuthSub    string
 }
 
 type UserContext struct {
@@ -160,6 +154,7 @@ type UserContext struct {
 	Name        string
 	Email       string
 	IsLoggedIn  bool
+	IsBasicAuth bool
 	OAuth       bool
 	Provider    string
 	TotpPending bool
@@ -167,6 +162,7 @@ type UserContext struct {
 	TotpEnabled bool
 	OAuthName   string
 	OAuthSub    string
+	LdapGroups  string
 }
 
 // API responses and queries
@@ -195,6 +191,7 @@ type App struct {
 	IP       AppIP       `description:"IP access configuration." yaml:"ip"`
 	Response AppResponse `description:"Response customization." yaml:"response"`
 	Path     AppPath     `description:"Path access configuration." yaml:"path"`
+	LDAP     AppLDAP     `description:"LDAP access configuration." yaml:"ldap"`
 }
 
 type AppConfig struct {
@@ -209,6 +206,10 @@ type AppUsers struct {
 type AppOAuth struct {
 	Whitelist string `description:"Comma-separated list of allowed OAuth groups." yaml:"whitelist"`
 	Groups    string `description:"Comma-separated list of required OAuth groups." yaml:"groups"`
+}
+
+type AppLDAP struct {
+	Groups string `description:"Comma-separated list of required LDAP groups." yaml:"groups"`
 }
 
 type AppIP struct {

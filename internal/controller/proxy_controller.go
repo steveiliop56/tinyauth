@@ -173,7 +173,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	tlog.App.Trace().Interface("context", userContext).Msg("User context from request")
 
-	if userContext.Provider == "basic" && userContext.TotpEnabled {
+	if userContext.IsBasicAuth && userContext.TotpEnabled {
 		tlog.App.Debug().Msg("User has TOTP enabled, denying basic auth access")
 		userContext.IsLoggedIn = false
 	}
@@ -212,11 +212,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			return
 		}
 
-		if userContext.OAuth {
-			groupOK := controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
+		if userContext.OAuth || userContext.Provider == "ldap" {
+			var groupOK bool
+
+			if userContext.OAuth {
+				groupOK = controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
+			} else {
+				groupOK = controller.auth.IsInLdapGroup(c, userContext, acls.LDAP.Groups)
+			}
 
 			if !groupOK {
-				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
+				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User groups do not match resource requirements")
 
 				if req.Proxy == "nginx" || !isBrowser {
 					c.JSON(403, gin.H{
@@ -251,7 +257,13 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
-		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
+
+		if userContext.Provider == "ldap" {
+			c.Header("Remote-Groups", utils.SanitizeHeader(userContext.LdapGroups))
+		} else if userContext.Provider != "local" {
+			c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
+		}
+
 		c.Header("Remote-Sub", utils.SanitizeHeader(userContext.OAuthSub))
 
 		controller.setHeaders(c, acls)

@@ -19,6 +19,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type LdapGroupsCache struct {
+	Groups  []string
+	Expires time.Time
+}
+
 type LoginAttempt struct {
 	FailedAttempts int
 	LastAttempt    time.Time
@@ -36,24 +41,28 @@ type AuthServiceConfig struct {
 	LoginMaxRetries    int
 	SessionCookieName  string
 	IP                 config.IPConfig
+	LDAPGroupsCacheTTL int
 }
 
 type AuthService struct {
-	config        AuthServiceConfig
-	docker        *DockerService
-	loginAttempts map[string]*LoginAttempt
-	loginMutex    sync.RWMutex
-	ldap          *LdapService
-	queries       *repository.Queries
+	config          AuthServiceConfig
+	docker          *DockerService
+	loginAttempts   map[string]*LoginAttempt
+	ldapGroupsCache map[string]*LdapGroupsCache
+	loginMutex      sync.RWMutex
+	ldapGroupsMutex sync.RWMutex
+	ldap            *LdapService
+	queries         *repository.Queries
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
 	return &AuthService{
-		config:        config,
-		docker:        docker,
-		loginAttempts: make(map[string]*LoginAttempt),
-		ldap:          ldap,
-		queries:       queries,
+		config:          config,
+		docker:          docker,
+		loginAttempts:   make(map[string]*LoginAttempt),
+		ldapGroupsCache: make(map[string]*LdapGroupsCache),
+		ldap:            ldap,
+		queries:         queries,
 	}
 }
 
@@ -70,12 +79,12 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 	}
 
 	if auth.ldap != nil {
-		userDN, err := auth.ldap.Search(username)
+		userDN, err := auth.ldap.GetUserDN(username)
 
 		if err != nil {
 			tlog.App.Warn().Err(err).Str("username", username).Msg("Failed to search for user in LDAP")
 			return config.UserSearch{
-				Type: "error",
+				Type: "unknown",
 			}
 		}
 
@@ -129,6 +138,41 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 
 	tlog.App.Warn().Str("username", username).Msg("Local user not found")
 	return config.User{}
+}
+
+func (auth *AuthService) GetLdapUser(userDN string) (config.LdapUser, error) {
+	if auth.ldap == nil {
+		return config.LdapUser{}, errors.New("LDAP service not initialized")
+	}
+
+	auth.ldapGroupsMutex.RLock()
+	entry, exists := auth.ldapGroupsCache[userDN]
+	auth.ldapGroupsMutex.RUnlock()
+
+	if exists && time.Now().Before(entry.Expires) {
+		return config.LdapUser{
+			DN:     userDN,
+			Groups: entry.Groups,
+		}, nil
+	}
+
+	groups, err := auth.ldap.GetUserGroups(userDN)
+
+	if err != nil {
+		return config.LdapUser{}, err
+	}
+
+	auth.ldapGroupsMutex.Lock()
+	auth.ldapGroupsCache[userDN] = &LdapGroupsCache{
+		Groups:  groups,
+		Expires: time.Now().Add(time.Duration(auth.config.LDAPGroupsCacheTTL) * time.Second),
+	}
+	auth.ldapGroupsMutex.Unlock()
+
+	return config.LdapUser{
+		DN:     userDN,
+		Groups: groups,
+	}, nil
 }
 
 func (auth *AuthService) CheckPassword(user config.User, password string) bool {
@@ -190,7 +234,7 @@ func (auth *AuthService) IsEmailWhitelisted(email string) bool {
 	return utils.CheckFilter(strings.Join(auth.config.OauthWhitelist, ","), email)
 }
 
-func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *config.SessionCookie) error {
+func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *repository.Session) error {
 	uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -300,20 +344,20 @@ func (auth *AuthService) DeleteSessionCookie(c *gin.Context) error {
 	return nil
 }
 
-func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie, error) {
+func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, error) {
 	cookie, err := c.Cookie(auth.config.SessionCookieName)
 
 	if err != nil {
-		return config.SessionCookie{}, err
+		return repository.Session{}, err
 	}
 
 	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return config.SessionCookie{}, fmt.Errorf("session not found")
+			return repository.Session{}, fmt.Errorf("session not found")
 		}
-		return config.SessionCookie{}, err
+		return repository.Session{}, err
 	}
 
 	currentTime := time.Now().Unix()
@@ -324,7 +368,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 			if err != nil {
 				tlog.App.Error().Err(err).Msg("Failed to delete session exceeding max lifetime")
 			}
-			return config.SessionCookie{}, fmt.Errorf("session expired due to max lifetime exceeded")
+			return repository.Session{}, fmt.Errorf("session expired due to max lifetime exceeded")
 		}
 	}
 
@@ -333,10 +377,10 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 		if err != nil {
 			tlog.App.Error().Err(err).Msg("Failed to delete expired session")
 		}
-		return config.SessionCookie{}, fmt.Errorf("session expired")
+		return repository.Session{}, fmt.Errorf("session expired")
 	}
 
-	return config.SessionCookie{
+	return repository.Session{
 		UUID:        session.UUID,
 		Username:    session.Username,
 		Email:       session.Email,
@@ -349,8 +393,12 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (config.SessionCookie,
 	}, nil
 }
 
-func (auth *AuthService) UserAuthConfigured() bool {
-	return len(auth.config.Users) > 0 || auth.ldap != nil
+func (auth *AuthService) LocalAuthConfigured() bool {
+	return len(auth.config.Users) > 0
+}
+
+func (auth *AuthService) LdapAuthConfigured() bool {
+	return auth.ldap != nil
 }
 
 func (auth *AuthService) IsUserAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
@@ -383,6 +431,22 @@ func (auth *AuthService) IsInOAuthGroup(c *gin.Context, context config.UserConte
 	}
 
 	for userGroup := range strings.SplitSeq(context.OAuthGroups, ",") {
+		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
+			tlog.App.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
+			return true
+		}
+	}
+
+	tlog.App.Debug().Msg("No groups matched")
+	return false
+}
+
+func (auth *AuthService) IsInLdapGroup(c *gin.Context, context config.UserContext, requiredGroups string) bool {
+	if requiredGroups == "" {
+		return true
+	}
+
+	for userGroup := range strings.SplitSeq(context.LdapGroups, ",") {
 		if utils.CheckFilter(requiredGroups, strings.TrimSpace(userGroup)) {
 			tlog.App.Trace().Str("group", userGroup).Str("required", requiredGroups).Msg("User group matched")
 			return true

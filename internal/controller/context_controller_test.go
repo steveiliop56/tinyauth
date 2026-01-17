@@ -16,8 +16,8 @@ import (
 var controllerCfg = controller.ContextControllerConfig{
 	Providers: []controller.Provider{
 		{
-			Name:  "Username",
-			ID:    "username",
+			Name:  "Local",
+			ID:    "local",
 			OAuth: false,
 		},
 		{
@@ -40,8 +40,9 @@ var userContext = config.UserContext{
 	Name:        "testuser",
 	Email:       "test@example.com",
 	IsLoggedIn:  true,
+	IsBasicAuth: false,
 	OAuth:       false,
-	Provider:    "username",
+	Provider:    "local",
 	TotpPending: false,
 	OAuthGroups: "",
 	TotpEnabled: false,

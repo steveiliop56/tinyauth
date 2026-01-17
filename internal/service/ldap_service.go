@@ -116,7 +116,7 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	return ldap.conn, nil
 }
 
-func (ldap *LdapService) Search(username string) (string, error) {
+func (ldap *LdapService) GetUserDN(username string) (string, error) {
 	// Escape the username to prevent LDAP injection
 	escapedUsername := ldapgo.EscapeFilter(username)
 	filter := fmt.Sprintf(ldap.config.SearchFilter, escapedUsername)
@@ -143,6 +143,48 @@ func (ldap *LdapService) Search(username string) (string, error) {
 
 	userDN := searchResult.Entries[0].DN
 	return userDN, nil
+}
+
+func (ldap *LdapService) GetUserGroups(userDN string) ([]string, error) {
+	escapedUserDN := ldapgo.EscapeFilter(userDN)
+
+	searchRequest := ldapgo.NewSearchRequest(
+		ldap.config.BaseDN,
+		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(&(objectclass=groupOfUniqueNames)(uniquemember=%s))", escapedUserDN),
+		[]string{"dn"},
+		nil,
+	)
+
+	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
+
+	searchResult, err := ldap.conn.Search(searchRequest)
+	if err != nil {
+		return []string{}, err
+	}
+
+	groupDNs := []string{}
+
+	for _, entry := range searchResult.Entries {
+		groupDNs = append(groupDNs, entry.DN)
+	}
+
+	groups := []string{}
+
+	// I guess it should work for most ldap providers
+	for _, dn := range groupDNs {
+		rdnParts, err := ldapgo.ParseDN(dn)
+		if err != nil {
+			return []string{}, err
+		}
+		if len(rdnParts.RDNs) == 0 || len(rdnParts.RDNs[0].Attributes) == 0 {
+			return []string{}, fmt.Errorf("invalid DN format: %s", dn)
+		}
+		groups = append(groups, rdnParts.RDNs[0].Attributes[0].Value)
+	}
+
+	return groups, nil
 }
 
 func (ldap *LdapService) BindService(rebind bool) error {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
@@ -188,10 +189,10 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		username = user.PreferredUsername
 	} else {
 		tlog.App.Debug().Msg("No preferred username from OAuth provider, using pseudo username")
-		username = strings.Replace(user.Email, "@", "_", -1)
+		username = strings.Replace(user.Email, "@", "_", 1)
 	}
 
-	sessionCookie := config.SessionCookie{
+	sessionCookie := repository.Session{
 		Username:    username,
 		Name:        name,
 		Email:       user.Email,
