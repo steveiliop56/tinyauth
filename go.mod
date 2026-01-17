@@ -24,7 +24,7 @@ require (
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	golang.org/x/oauth2 v0.34.0
 	gotest.tools/v3 v3.5.2
-	modernc.org/sqlite v1.44.0
+	modernc.org/sqlite v1.44.1
 )
 
 require (
@@ -119,7 +119,7 @@ require (
 	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.67.4 // indirect
+	modernc.org/libc v1.67.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	rsc.io/qr v0.2.0 // indirect
