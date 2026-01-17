@@ -141,9 +141,13 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 }
 
 func (auth *AuthService) GetLdapUser(userDN string) (config.LdapUser, error) {
-	auth.ldapGroupsMutex.Lock()
+	if auth.ldap == nil {
+		return config.LdapUser{}, errors.New("LDAP service not initialized")
+	}
+
+	auth.ldapGroupsMutex.RLock()
 	entry, exists := auth.ldapGroupsCache[userDN]
-	auth.ldapGroupsMutex.Unlock()
+	auth.ldapGroupsMutex.RUnlock()
 
 	if exists && time.Now().Before(entry.Expires) {
 		return config.LdapUser{
