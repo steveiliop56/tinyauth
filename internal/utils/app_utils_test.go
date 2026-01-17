@@ -205,4 +205,9 @@ func TestIsRedirectSafe(t *testing.T) {
 	redirectURL = "http://example.org/page"
 	result = utils.IsRedirectSafe(redirectURL, domain)
 	assert.Equal(t, false, result)
+
+	// Case with malicious domain
+	redirectURL = "https://malicious-example.com/yoyo"
+	result = utils.IsRedirectSafe(redirectURL, domain)
+	assert.Equal(t, false, result)
 }

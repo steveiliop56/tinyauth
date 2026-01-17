@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -95,7 +96,7 @@ func IsRedirectSafe(redirectURL string, domain string) bool {
 
 	hostname := parsed.Hostname()
 
-	if strings.HasSuffix(hostname, domain) {
+	if strings.HasSuffix(hostname, fmt.Sprintf(".%s", domain)) {
 		return true
 	}
 
