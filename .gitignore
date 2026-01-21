@@ -36,3 +36,6 @@
 
 # debug files
 __debug_*
+
+# infisical
+/.infisical.json
