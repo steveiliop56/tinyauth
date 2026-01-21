@@ -30,6 +30,7 @@ type BootstrapApp struct {
 		users               []config.User
 		oauthProviders      map[string]config.OAuthServiceConfig
 		configuredProviders []controller.Provider
+		oidcClients         []config.OIDCClientConfig
 	}
 	services Services
 }
@@ -82,6 +83,12 @@ func (app *BootstrapApp) Setup() error {
 			}
 		}
 		app.context.oauthProviders[id] = provider
+	}
+
+	// Setup OIDC clients
+	for id, client := range app.config.OIDC.Clients {
+		client.ID = id
+		app.context.oidcClients = append(app.context.oidcClients, client)
 	}
 
 	// Get cookie domain

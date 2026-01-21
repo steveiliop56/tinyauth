@@ -132,6 +132,7 @@ type OAuthServiceConfig struct {
 }
 
 type OIDCClientConfig struct {
+	ID                  string   `description:"OIDC client ID." yaml:"-"`
 	ClientID            string   `description:"OIDC client ID." yaml:"clientId"`
 	ClientSecret        string   `description:"OIDC client secret." yaml:"clientSecret"`
 	ClientSecretFile    string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile"`

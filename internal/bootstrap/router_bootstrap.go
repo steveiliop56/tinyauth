@@ -86,6 +86,12 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	oauthController.SetupRoutes()
 
+	oidcController := controller.NewOIDCController(controller.OIDCControllerConfig{
+		Clients: app.context.oidcClients,
+	}, apiRouter)
+
+	oidcController.SetupRoutes()
+
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
 		AppURL: app.config.AppURL,
 	}, apiRouter, app.services.accessControlService, app.services.authService)
