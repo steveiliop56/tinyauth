@@ -25,6 +25,7 @@ type Config struct {
 	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
 	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
 	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	OIDC              OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
 	UI                UIConfig           `description:"UI customization." yaml:"ui"`
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
 	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
@@ -58,6 +59,10 @@ type OAuthConfig struct {
 	Whitelist    []string                      `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
 	AutoRedirect string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
 	Providers    map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers"`
+}
+
+type OIDCConfig struct {
+	Clients map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients"`
 }
 
 type UIConfig struct {
@@ -114,16 +119,24 @@ type Claims struct {
 }
 
 type OAuthServiceConfig struct {
-	ClientID         string   `description:"OAuth client ID."`
-	ClientSecret     string   `description:"OAuth client secret."`
-	ClientSecretFile string   `description:"Path to the file containing the OAuth client secret."`
-	Scopes           []string `description:"OAuth scopes."`
-	RedirectURL      string   `description:"OAuth redirect URL."`
-	AuthURL          string   `description:"OAuth authorization URL."`
-	TokenURL         string   `description:"OAuth token URL."`
-	UserinfoURL      string   `description:"OAuth userinfo URL."`
-	Insecure         bool     `description:"Allow insecure OAuth connections."`
-	Name             string   `description:"Provider name in UI."`
+	ClientID         string   `description:"OAuth client ID." yaml:"clientId"`
+	ClientSecret     string   `description:"OAuth client secret." yaml:"clientSecret"`
+	ClientSecretFile string   `description:"Path to the file containing the OAuth client secret." yaml:"clientSecretFile"`
+	Scopes           []string `description:"OAuth scopes." yaml:"scopes"`
+	RedirectURL      string   `description:"OAuth redirect URL." yaml:"redirectUrl"`
+	AuthURL          string   `description:"OAuth authorization URL." yaml:"authUrl"`
+	TokenURL         string   `description:"OAuth token URL." yaml:"tokenUrl"`
+	UserinfoURL      string   `description:"OAuth userinfo URL." yaml:"userinfoUrl"`
+	Insecure         bool     `description:"Allow insecure OAuth connections." yaml:"insecure"`
+	Name             string   `description:"Provider name in UI." yaml:"name"`
+}
+
+type OIDCClientConfig struct {
+	ClientID            string   `description:"OIDC client ID." yaml:"clientId"`
+	ClientSecret        string   `description:"OIDC client secret." yaml:"clientSecret"`
+	ClientSecretFile    string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile"`
+	TrustedRedirectURLs []string `description:"List of trusted redirect URLs." yaml:"trustedRedirectUrls"`
+	Name                string   `description:"Client name in UI." yaml:"name"`
 }
 
 var OverrideProviders = map[string]string{
