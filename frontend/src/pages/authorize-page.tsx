@@ -1,6 +1,6 @@
 import { useUserContext } from "@/context/user-context";
-import { useQuery } from "@tanstack/react-query";
-import { Navigate } from "react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Navigate, useNavigate } from "react-router";
 import { useLocation } from "react-router";
 import {
   Card,
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { getOidcClientInfoScehma } from "@/schemas/oidc-schemas";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { toast } from "sonner";
 
 type AuthorizePageProps = {
   scope: string;
@@ -25,6 +27,7 @@ const optionalAuthorizeProps = ["state"];
 export const AuthorizePage = () => {
   const { isLoggedIn } = useUserContext();
   const { search } = useLocation();
+  const navigate = useNavigate();
 
   const searchParams = new URLSearchParams(search);
 
@@ -46,12 +49,38 @@ export const AuthorizePage = () => {
     },
   });
 
+  const authorizeMutation = useMutation({
+    mutationFn: () => {
+      return axios.post("/api/oidc/authorize", {
+        scope: props.scope,
+        response_type: props.responseType,
+        client_id: props.clientId,
+        redirect_uri: props.redirectUri,
+        state: props.state,
+      });
+    },
+    mutationKey: ["authorize", props.clientId],
+    onSuccess: (data) => {
+      toast.info("Authorized", {
+        description: "You will be soon redirected to your application",
+      });
+      window.location.replace(
+        `${data.data.redirect_uri}?code=${encodeURIComponent(data.data.code)}&state=${encodeURIComponent(data.data.state)}`,
+      );
+    },
+    onError: (error) => {
+      window.location.replace(
+        `/error?error=${encodeURIComponent(error.message)}`,
+      );
+    },
+  });
+
   if (!isLoggedIn) {
     // TODO: Pass the params to the login page, so user can login -> authorize
     return <Navigate to="/login" replace />;
   }
 
-  for (const key in Object.keys(props)) {
+  Object.keys(props).forEach((key) => {
     if (
       !props[key as keyof AuthorizePageProps] &&
       !optionalAuthorizeProps.includes(key)
@@ -59,7 +88,7 @@ export const AuthorizePage = () => {
       // TODO: Add reason for error
       return <Navigate to="/error" replace />;
     }
-  }
+  });
 
   if (getClientInfo.isLoading) {
     return (
@@ -91,8 +120,19 @@ export const AuthorizePage = () => {
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch gap-2">
-        <Button>Authorize</Button>
-        <Button variant="outline">Cancel</Button>
+        <Button
+          onClick={() => authorizeMutation.mutate()}
+          loading={authorizeMutation.isPending}
+        >
+          Authorize
+        </Button>
+        <Button
+          onClick={() => navigate("/")}
+          disabled={authorizeMutation.isPending}
+          variant="outline"
+        >
+          Cancel
+        </Button>
       </CardFooter>
     </Card>
   );

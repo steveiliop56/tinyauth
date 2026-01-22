@@ -7,13 +7,14 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/middleware"
+	"github.com/steveiliop56/tinyauth/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
 var DEV_MODES = []string{"main", "test", "development"}
 
-func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
+func (app *BootstrapApp) setupRouter(queries *repository.Queries) (*gin.Engine, error) {
 	if !slices.Contains(DEV_MODES, config.Version) {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -88,7 +89,8 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	oidcController := controller.NewOIDCController(controller.OIDCControllerConfig{
 		Clients: app.context.oidcClients,
-	}, apiRouter)
+		AppURL:  app.config.AppURL,
+	}, apiRouter, queries)
 
 	oidcController.SetupRoutes()
 

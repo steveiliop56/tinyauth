@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+var OIDCIgnorePaths = []string{"/api/oidc/token", "/api/oidc/userinfo"}
 
 type ContextMiddlewareConfig struct {
 	CookieDomain string
@@ -37,6 +40,13 @@ func (m *ContextMiddleware) Init() error {
 
 func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// There is no point in trying to get credentials if it's an OIDC endpoint
+		path := c.Request.URL.Path
+		if slices.Contains(OIDCIgnorePaths, path) {
+			c.Next()
+			return
+		}
+
 		cookie, err := m.auth.GetSessionCookie(c)
 
 		if err != nil {

@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/steveiliop56/tinyauth/internal/utils"
@@ -146,4 +147,26 @@ func TestGenerateUUID(t *testing.T) {
 	// Different output for different input
 	id3 := utils.GenerateUUID("differentstring")
 	assert.Assert(t, id1 != id3)
+}
+
+func TestGetRandomString(t *testing.T) {
+	// Test with normal length
+	state, err := utils.GetRandomString(16)
+	assert.NilError(t, err)
+	assert.Equal(t, 16, len(state))
+
+	// Test with zero length
+	state, err = utils.GetRandomString(0)
+	assert.Error(t, err, "length must be greater than 0")
+}
+
+func TestGetRandomInt(t *testing.T) {
+	// Test with normal length
+	state, err := utils.GetRandomInt(16)
+	assert.NilError(t, err)
+	assert.Equal(t, 16, len(strconv.Itoa(int(state))))
+
+	// Test with zero length
+	state, err = utils.GetRandomInt(0)
+	assert.Error(t, err, "length must be greater than 0")
 }

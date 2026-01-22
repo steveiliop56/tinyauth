@@ -176,7 +176,7 @@ func (app *BootstrapApp) Setup() error {
 	app.context.configuredProviders = configuredProviders
 
 	// Setup router
-	router, err := app.setupRouter()
+	router, err := app.setupRouter(queries)
 
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)

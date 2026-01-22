@@ -4,6 +4,32 @@
 
 package repository
 
+type OidcCode struct {
+	Sub         string
+	Code        string
+	Scope       string
+	RedirectURI string
+	ClientID    string
+	ExpiresAt   int64
+}
+
+type OidcToken struct {
+	Sub         string
+	AccessToken string
+	Scope       string
+	ClientID    string
+	ExpiresAt   int64
+}
+
+type OidcUserinfo struct {
+	Sub               string
+	Name              string
+	PreferredUsername string
+	Email             string
+	Groups            string
+	UpdatedAt         int64
+}
+
 type Session struct {
 	UUID        string
 	Username    string

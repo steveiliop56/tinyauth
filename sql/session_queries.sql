@@ -1,5 +1,5 @@
 -- name: CreateSession :one
-INSERT INTO sessions (
+INSERT INTO "sessions" (
     "uuid",
     "username",
     "email",

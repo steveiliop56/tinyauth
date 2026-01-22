@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"math"
+	"math/big"
 	"net"
 	"regexp"
 	"strings"
@@ -104,4 +107,29 @@ func CheckFilter(filter string, str string) bool {
 func GenerateUUID(str string) string {
 	uuid := uuid.NewSHA1(uuid.NameSpaceURL, []byte(str))
 	return uuid.String()
+}
+
+// These could definitely be improved A LOT but at least they are cryptographically secure
+func GetRandomString(length int) (string, error) {
+	if length < 1 {
+		return "", errors.New("length must be greater than 0")
+	}
+	b := make([]byte, length)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	state := base64.RawURLEncoding.EncodeToString(b)
+	return state[:length], nil
+}
+
+func GetRandomInt(length int) (int64, error) {
+	if length < 1 {
+		return 0, errors.New("length must be greater than 0")
+	}
+	a, err := rand.Int(rand.Reader, big.NewInt(int64(math.Pow(10, float64(length)))))
+	if err != nil {
+		return 0, err
+	}
+	return a.Int64(), nil
 }
