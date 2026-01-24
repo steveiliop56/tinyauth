@@ -134,6 +134,13 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 	sub := utils.GenerateUUID(userContext.Username)
 	code := rand.Text()
 
+	// Before storing the code, clean up old sessions
+	err = controller.oidc.CleanupOldSessions(c, sub)
+	if err != nil {
+		controller.authorizeError(c, err, "Failed to clean up old sessions", "Failed to clean up old sessions", req.RedirectURI, "server_error", req.State)
+		return
+	}
+
 	err = controller.oidc.StoreCode(c, sub, code, req)
 
 	if err != nil {
@@ -215,7 +222,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		return
 	}
 
-	entry, err := controller.oidc.GetCodeEntry(c, req.Code)
+	entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code))
 	if err != nil {
 		if errors.Is(err, service.ErrCodeExpired) {
 			tlog.App.Warn().Str("code", req.Code).Msg("Code expired")
@@ -256,7 +263,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		return
 	}
 
-	err = controller.oidc.DeleteCodeEntry(c, entry.Code)
+	err = controller.oidc.DeleteCodeEntry(c, entry.CodeHash)
 
 	if err != nil {
 		tlog.App.Error().Err(err).Msg("Failed to delete code in database")
@@ -290,7 +297,7 @@ func (controller *OIDCController) Userinfo(c *gin.Context) {
 		return
 	}
 
-	entry, err := controller.oidc.GetAccessToken(c, token)
+	entry, err := controller.oidc.GetAccessToken(c, controller.oidc.Hash(token))
 
 	if err != nil {
 		if err == service.ErrTokenNotFound {

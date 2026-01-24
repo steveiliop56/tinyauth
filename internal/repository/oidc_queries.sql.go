@@ -12,7 +12,7 @@ import (
 const createOidcCode = `-- name: CreateOidcCode :one
 INSERT INTO "oidc_codes" (
     "sub",
-    "code",
+    "code_hash",
     "scope",
     "redirect_uri",
     "client_id",
@@ -20,12 +20,12 @@ INSERT INTO "oidc_codes" (
 ) VALUES (
     ?, ?, ?, ?, ?, ?
 )
-RETURNING sub, code, scope, redirect_uri, client_id, expires_at
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at
 `
 
 type CreateOidcCodeParams struct {
 	Sub         string
-	Code        string
+	CodeHash    string
 	Scope       string
 	RedirectURI string
 	ClientID    string
@@ -35,7 +35,7 @@ type CreateOidcCodeParams struct {
 func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) (OidcCode, error) {
 	row := q.db.QueryRowContext(ctx, createOidcCode,
 		arg.Sub,
-		arg.Code,
+		arg.CodeHash,
 		arg.Scope,
 		arg.RedirectURI,
 		arg.ClientID,
@@ -44,7 +44,7 @@ func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) 
 	var i OidcCode
 	err := row.Scan(
 		&i.Sub,
-		&i.Code,
+		&i.CodeHash,
 		&i.Scope,
 		&i.RedirectURI,
 		&i.ClientID,
@@ -56,28 +56,28 @@ func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) 
 const createOidcToken = `-- name: CreateOidcToken :one
 INSERT INTO "oidc_tokens" (
     "sub",
-    "access_token",
+    "access_token_hash",
     "scope",
     "client_id",
     "expires_at"
 ) VALUES (
     ?, ?, ?, ?, ?
 )
-RETURNING sub, access_token, scope, client_id, expires_at
+RETURNING sub, access_token_hash, scope, client_id, expires_at
 `
 
 type CreateOidcTokenParams struct {
-	Sub         string
-	AccessToken string
-	Scope       string
-	ClientID    string
-	ExpiresAt   int64
+	Sub             string
+	AccessTokenHash string
+	Scope           string
+	ClientID        string
+	ExpiresAt       int64
 }
 
 func (q *Queries) CreateOidcToken(ctx context.Context, arg CreateOidcTokenParams) (OidcToken, error) {
 	row := q.db.QueryRowContext(ctx, createOidcToken,
 		arg.Sub,
-		arg.AccessToken,
+		arg.AccessTokenHash,
 		arg.Scope,
 		arg.ClientID,
 		arg.ExpiresAt,
@@ -85,7 +85,7 @@ func (q *Queries) CreateOidcToken(ctx context.Context, arg CreateOidcTokenParams
 	var i OidcToken
 	err := row.Scan(
 		&i.Sub,
-		&i.AccessToken,
+		&i.AccessTokenHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.ExpiresAt,
@@ -139,21 +139,41 @@ func (q *Queries) CreateOidcUserInfo(ctx context.Context, arg CreateOidcUserInfo
 
 const deleteOidcCode = `-- name: DeleteOidcCode :exec
 DELETE FROM "oidc_codes"
-WHERE "code" = ?
+WHERE "code_hash" = ?
 `
 
-func (q *Queries) DeleteOidcCode(ctx context.Context, code string) error {
-	_, err := q.db.ExecContext(ctx, deleteOidcCode, code)
+func (q *Queries) DeleteOidcCode(ctx context.Context, codeHash string) error {
+	_, err := q.db.ExecContext(ctx, deleteOidcCode, codeHash)
+	return err
+}
+
+const deleteOidcCodeBySub = `-- name: DeleteOidcCodeBySub :exec
+DELETE FROM "oidc_codes"
+WHERE "sub" = ?
+`
+
+func (q *Queries) DeleteOidcCodeBySub(ctx context.Context, sub string) error {
+	_, err := q.db.ExecContext(ctx, deleteOidcCodeBySub, sub)
 	return err
 }
 
 const deleteOidcToken = `-- name: DeleteOidcToken :exec
 DELETE FROM "oidc_tokens"
-WHERE "access_token" = ?
+WHERE "access_token_hash" = ?
 `
 
-func (q *Queries) DeleteOidcToken(ctx context.Context, accessToken string) error {
-	_, err := q.db.ExecContext(ctx, deleteOidcToken, accessToken)
+func (q *Queries) DeleteOidcToken(ctx context.Context, accessTokenHash string) error {
+	_, err := q.db.ExecContext(ctx, deleteOidcToken, accessTokenHash)
+	return err
+}
+
+const deleteOidcTokenBySub = `-- name: DeleteOidcTokenBySub :exec
+DELETE FROM "oidc_tokens"
+WHERE "sub" = ?
+`
+
+func (q *Queries) DeleteOidcTokenBySub(ctx context.Context, sub string) error {
+	_, err := q.db.ExecContext(ctx, deleteOidcTokenBySub, sub)
 	return err
 }
 
@@ -168,16 +188,16 @@ func (q *Queries) DeleteOidcUserInfo(ctx context.Context, sub string) error {
 }
 
 const getOidcCode = `-- name: GetOidcCode :one
-SELECT sub, code, scope, redirect_uri, client_id, expires_at FROM "oidc_codes"
-WHERE "code" = ?
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at FROM "oidc_codes"
+WHERE "code_hash" = ?
 `
 
-func (q *Queries) GetOidcCode(ctx context.Context, code string) (OidcCode, error) {
-	row := q.db.QueryRowContext(ctx, getOidcCode, code)
+func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, error) {
+	row := q.db.QueryRowContext(ctx, getOidcCode, codeHash)
 	var i OidcCode
 	err := row.Scan(
 		&i.Sub,
-		&i.Code,
+		&i.CodeHash,
 		&i.Scope,
 		&i.RedirectURI,
 		&i.ClientID,
@@ -187,16 +207,16 @@ func (q *Queries) GetOidcCode(ctx context.Context, code string) (OidcCode, error
 }
 
 const getOidcToken = `-- name: GetOidcToken :one
-SELECT sub, access_token, scope, client_id, expires_at FROM "oidc_tokens"
-WHERE "access_token" = ?
+SELECT sub, access_token_hash, scope, client_id, expires_at FROM "oidc_tokens"
+WHERE "access_token_hash" = ?
 `
 
-func (q *Queries) GetOidcToken(ctx context.Context, accessToken string) (OidcToken, error) {
-	row := q.db.QueryRowContext(ctx, getOidcToken, accessToken)
+func (q *Queries) GetOidcToken(ctx context.Context, accessTokenHash string) (OidcToken, error) {
+	row := q.db.QueryRowContext(ctx, getOidcToken, accessTokenHash)
 	var i OidcToken
 	err := row.Scan(
 		&i.Sub,
-		&i.AccessToken,
+		&i.AccessTokenHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.ExpiresAt,

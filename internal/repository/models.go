@@ -6,7 +6,7 @@ package repository
 
 type OidcCode struct {
 	Sub         string
-	Code        string
+	CodeHash    string
 	Scope       string
 	RedirectURI string
 	ClientID    string
@@ -14,11 +14,11 @@ type OidcCode struct {
 }
 
 type OidcToken struct {
-	Sub         string
-	AccessToken string
-	Scope       string
-	ClientID    string
-	ExpiresAt   int64
+	Sub             string
+	AccessTokenHash string
+	Scope           string
+	ClientID        string
+	ExpiresAt       int64
 }
 
 type OidcUserinfo struct {

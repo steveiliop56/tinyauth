@@ -1,7 +1,7 @@
 -- name: CreateOidcCode :one
 INSERT INTO "oidc_codes" (
     "sub",
-    "code",
+    "code_hash",
     "scope",
     "redirect_uri",
     "client_id",
@@ -13,16 +13,20 @@ RETURNING *;
 
 -- name: DeleteOidcCode :exec
 DELETE FROM "oidc_codes"
-WHERE "code" = ?;
+WHERE "code_hash" = ?;
+
+-- name: DeleteOidcCodeBySub :exec
+DELETE FROM "oidc_codes"
+WHERE "sub" = ?;
 
 -- name: GetOidcCode :one
 SELECT * FROM "oidc_codes"
-WHERE "code" = ?;
+WHERE "code_hash" = ?;
 
 -- name: CreateOidcToken :one
 INSERT INTO "oidc_tokens" (
     "sub",
-    "access_token",
+    "access_token_hash",
     "scope",
     "client_id",
     "expires_at"
@@ -33,11 +37,15 @@ RETURNING *;
 
 -- name: DeleteOidcToken :exec
 DELETE FROM "oidc_tokens"
-WHERE "access_token" = ?;
+WHERE "access_token_hash" = ?;
+
+-- name: DeleteOidcTokenBySub :exec
+DELETE FROM "oidc_tokens"
+WHERE "sub" = ?;
 
 -- name: GetOidcToken :one
 SELECT * FROM "oidc_tokens"
-WHERE "access_token" = ?;
+WHERE "access_token_hash" = ?;
 
 -- name: CreateOidcUserInfo :one
 INSERT INTO "oidc_userinfo" (

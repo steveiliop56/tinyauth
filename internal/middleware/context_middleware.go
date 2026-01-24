@@ -42,7 +42,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// There is no point in trying to get credentials if it's an OIDC endpoint
 		path := c.Request.URL.Path
-		if slices.Contains(OIDCIgnorePaths, path) {
+		if slices.Contains(OIDCIgnorePaths, strings.TrimSuffix(path, "/")) {
 			c.Next()
 			return
 		}

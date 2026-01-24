@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "oidc_codes" (
     "sub" TEXT NOT NULL UNIQUE,
-    "code" TEXT NOT NULL PRIMARY KEY UNIQUE,
+    "code_hash" TEXT NOT NULL PRIMARY KEY UNIQUE,
     "scope" TEXT NOT NULL,
     "redirect_uri" TEXT NOT NULL,
     "client_id" TEXT NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS "oidc_codes" (
 
 CREATE TABLE IF NOT EXISTS "oidc_tokens" (
     "sub" TEXT NOT NULL UNIQUE,
-    "access_token" TEXT NOT NULL PRIMARY KEY UNIQUE,
+    "access_token_hash" TEXT NOT NULL PRIMARY KEY UNIQUE,
     "scope" TEXT NOT NULL,
     "client_id" TEXT NOT NULL,
     "expires_at" INTEGER NOT NULL
