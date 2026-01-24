@@ -18,6 +18,7 @@ import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
+import { useOIDCParams } from "@/lib/hooks/oidc";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -47,7 +48,11 @@ export const LoginPage = () => {
   const redirectButtonTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
-  const redirectUri = searchParams.get("redirect_uri");
+  const {
+    values: props,
+    isOidc,
+    compiled: compiledOIDCParams,
+  } = useOIDCParams(searchParams);
 
   const oauthProviders = providers.filter(
     (provider) => provider.id !== "local" && provider.id !== "ldap",
@@ -60,7 +65,7 @@ export const LoginPage = () => {
   const oauthMutation = useMutation({
     mutationFn: (provider: string) =>
       axios.get(
-        `/api/oauth/url/${provider}?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        `/api/oauth/url/${provider}?redirect_uri=${encodeURIComponent(props.redirect_uri)}`,
       ),
     mutationKey: ["oauth"],
     onSuccess: (data) => {
@@ -85,9 +90,7 @@ export const LoginPage = () => {
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {
-        window.location.replace(
-          `/totp?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
-        );
+        window.location.replace(`/totp?${compiledOIDCParams}`);
         return;
       }
 
@@ -96,8 +99,12 @@ export const LoginPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
+        if (isOidc) {
+          window.location.replace(`/authorize?${compiledOIDCParams}`);
+          return;
+        }
         window.location.replace(
-          `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+          `/continue?redirect_uri=${encodeURIComponent(props.redirect_uri)}`,
         );
       }, 500);
     },
@@ -115,7 +122,7 @@ export const LoginPage = () => {
     if (
       providers.find((provider) => provider.id === oauthAutoRedirect) &&
       !isLoggedIn &&
-      redirectUri
+      props.redirect_uri !== ""
     ) {
       // Not sure of a better way to do this
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -125,7 +132,13 @@ export const LoginPage = () => {
         setShowRedirectButton(true);
       }, 5000);
     }
-  }, []);
+  }, [
+    providers,
+    isLoggedIn,
+    props.redirect_uri,
+    oauthAutoRedirect,
+    oauthMutation,
+  ]);
 
   useEffect(
     () => () => {
@@ -136,10 +149,10 @@ export const LoginPage = () => {
     [],
   );
 
-  if (isLoggedIn && redirectUri) {
+  if (isLoggedIn && props.redirect_uri !== "") {
     return (
       <Navigate
-        to={`/continue?redirect_uri=${encodeURIComponent(redirectUri)}`}
+        to={`/continue?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}
         replace
       />
     );

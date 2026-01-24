@@ -13,16 +13,7 @@ import { getOidcClientInfoScehma } from "@/schemas/oidc-schemas";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { toast } from "sonner";
-
-type AuthorizePageProps = {
-  scope: string;
-  responseType: string;
-  clientId: string;
-  redirectUri: string;
-  state: string;
-};
-
-const optionalAuthorizeProps = ["state"];
+import { useOIDCParams } from "@/lib/hooks/oidc";
 
 export const AuthorizePage = () => {
   const { isLoggedIn } = useUserContext();
@@ -30,20 +21,16 @@ export const AuthorizePage = () => {
   const navigate = useNavigate();
 
   const searchParams = new URLSearchParams(search);
-
-  // If there is a better way to do this, please do let me know
-  const props: AuthorizePageProps = {
-    scope: searchParams.get("scope") || "",
-    responseType: searchParams.get("response_type") || "",
-    clientId: searchParams.get("client_id") || "",
-    redirectUri: searchParams.get("redirect_uri") || "",
-    state: searchParams.get("state") || "",
-  };
+  const {
+    values: props,
+    missingParams,
+    compiled: compiledOIDCParams,
+  } = useOIDCParams(searchParams);
 
   const getClientInfo = useQuery({
-    queryKey: ["client", props.clientId],
+    queryKey: ["client", props.client_id],
     queryFn: async () => {
-      const res = await fetch(`/api/oidc/clients/${props.clientId}`);
+      const res = await fetch(`/api/oidc/clients/${props.client_id}`);
       const data = await getOidcClientInfoScehma.parseAsync(await res.json());
       return data;
     },
@@ -53,13 +40,13 @@ export const AuthorizePage = () => {
     mutationFn: () => {
       return axios.post("/api/oidc/authorize", {
         scope: props.scope,
-        response_type: props.responseType,
-        client_id: props.clientId,
-        redirect_uri: props.redirectUri,
+        response_type: props.response_type,
+        client_id: props.client_id,
+        redirect_uri: props.redirect_uri,
         state: props.state,
       });
     },
-    mutationKey: ["authorize", props.clientId],
+    mutationKey: ["authorize", props.client_id],
     onSuccess: (data) => {
       toast.info("Authorized", {
         description: "You will be soon redirected to your application",
@@ -74,19 +61,17 @@ export const AuthorizePage = () => {
   });
 
   if (!isLoggedIn) {
-    // TODO: Pass the params to the login page, so user can login -> authorize
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login?${compiledOIDCParams}`} replace />;
   }
 
-  Object.keys(props).forEach((key) => {
-    if (
-      !props[key as keyof AuthorizePageProps] &&
-      !optionalAuthorizeProps.includes(key)
-    ) {
-      // TODO: Add reason for error
-      return <Navigate to="/error" replace />;
-    }
-  });
+  if (missingParams.length > 0) {
+    return (
+      <Navigate
+        to={`/error?error=${encodeURIComponent(`Missing parameters: ${missingParams.join(", ")}`)}`}
+        replace
+      />
+    );
+  }
 
   if (getClientInfo.isLoading) {
     return (
@@ -102,8 +87,12 @@ export const AuthorizePage = () => {
   }
 
   if (getClientInfo.isError) {
-    // TODO: Add reason for error
-    return <Navigate to="/error" replace />;
+    return (
+      <Navigate
+        to={`/error?error=${encodeURIComponent(`Failed to load client information`)}`}
+        replace
+      />
+    );
   }
 
   return (
