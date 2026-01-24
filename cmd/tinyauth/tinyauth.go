@@ -54,6 +54,10 @@ func NewTinyauthCmdConfiguration() *config.Config {
 				},
 			},
 		},
+		OIDC: config.OIDCConfig{
+			PrivateKeyPath: "./tinyauth_oidc_key",
+			PublicKeyPath:  "./tinyauth_oidc_key.pub",
+		},
 		Experimental: config.ExperimentalConfig{
 			ConfigFile: "",
 		},

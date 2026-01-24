@@ -12,6 +12,7 @@ type Services struct {
 	dockerService        *service.DockerService
 	ldapService          *service.LdapService
 	oauthBrokerService   *service.OAuthBrokerService
+	oidcService          *service.OIDCService
 }
 
 func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, error) {
@@ -87,6 +88,21 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 	}
 
 	services.oauthBrokerService = oauthBrokerService
+
+	oidcService := service.NewOIDCService(service.OIDCServiceConfig{
+		Clients:        app.config.OIDC.Clients,
+		PrivateKeyPath: app.config.OIDC.PrivateKeyPath,
+		PublicKeyPath:  app.config.OIDC.PublicKeyPath,
+		Issuer:         app.config.AppURL,
+	}, queries)
+
+	err = oidcService.Init()
+
+	if err != nil {
+		return Services{}, err
+	}
+
+	services.oidcService = oidcService
 
 	return services, nil
 }

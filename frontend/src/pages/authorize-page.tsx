@@ -64,9 +64,7 @@ export const AuthorizePage = () => {
       toast.info("Authorized", {
         description: "You will be soon redirected to your application",
       });
-      window.location.replace(
-        `${data.data.redirect_uri}?code=${encodeURIComponent(data.data.code)}&state=${encodeURIComponent(data.data.state)}`,
-      );
+      window.location.replace(data.data.redirect_uri);
     },
     onError: (error) => {
       window.location.replace(

@@ -62,7 +62,9 @@ type OAuthConfig struct {
 }
 
 type OIDCConfig struct {
-	Clients map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients"`
+	PrivateKeyPath string                      `description:"Path to the private key file." yaml:"privateKeyPath"`
+	PublicKeyPath  string                      `description:"Path to the public key file." yaml:"publicKeyPath"`
+	Clients        map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients"`
 }
 
 type UIConfig struct {
@@ -136,7 +138,7 @@ type OIDCClientConfig struct {
 	ClientID            string   `description:"OIDC client ID." yaml:"clientId"`
 	ClientSecret        string   `description:"OIDC client secret." yaml:"clientSecret"`
 	ClientSecretFile    string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile"`
-	TrustedRedirectURLs []string `description:"List of trusted redirect URLs." yaml:"trustedRedirectUrls"`
+	TrustedRedirectURIs []string `description:"List of trusted redirect URLs." yaml:"trustedRedirectUrls"`
 	Name                string   `description:"Client name in UI." yaml:"name"`
 }
 
