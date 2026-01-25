@@ -20,7 +20,7 @@ export const ErrorPage = () => {
         <CardDescription className="flex flex-col gap-1.5">
           {error ? (
             <>
-              <p>The following error occured while processing your request:</p>
+              <p>{t("errorSubtitleInfo")}</p>
               <pre>{error}</pre>
             </>
           ) : (
