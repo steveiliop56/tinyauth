@@ -10,9 +10,11 @@ CREATE TABLE IF NOT EXISTS "oidc_codes" (
 CREATE TABLE IF NOT EXISTS "oidc_tokens" (
     "sub" TEXT NOT NULL UNIQUE,
     "access_token_hash" TEXT NOT NULL PRIMARY KEY UNIQUE,
+    "refresh_token_hash" TEXT NOT NULL,
     "scope" TEXT NOT NULL,
     "client_id" TEXT NOT NULL,
-    "expires_at" INTEGER NOT NULL
+    "token_expires_at" INTEGER NOT NULL,
+    "refresh_token_expires_at" INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "oidc_userinfo" (

@@ -14,11 +14,13 @@ type OidcCode struct {
 }
 
 type OidcToken struct {
-	Sub             string
-	AccessTokenHash string
-	Scope           string
-	ClientID        string
-	ExpiresAt       int64
+	Sub                   string
+	AccessTokenHash       string
+	RefreshTokenHash      string
+	Scope                 string
+	ClientID              string
+	TokenExpiresAt        int64
+	RefreshTokenExpiresAt int64
 }
 
 type OidcUserinfo struct {

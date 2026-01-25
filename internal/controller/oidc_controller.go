@@ -29,9 +29,12 @@ type AuthorizeCallback struct {
 }
 
 type TokenRequest struct {
-	GrantType   string `form:"grant_type" binding:"required"`
-	Code        string `form:"code" binding:"required"`
-	RedirectURI string `form:"redirect_uri" binding:"required"`
+	GrantType    string `form:"grant_type" binding:"required"`
+	Code         string `form:"code"`
+	RedirectURI  string `form:"redirect_uri"`
+	RefreshToken string `form:"refresh_token"`
+	ClientID     string `form:"client_id"`
+	ClientSecret string `form:"client_secret"`
 }
 
 type CallbackError struct {
@@ -176,34 +179,6 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 }
 
 func (controller *OIDCController) Token(c *gin.Context) {
-	rclientId, rclientSecret, ok := c.Request.BasicAuth()
-
-	if !ok {
-		tlog.App.Error().Msg("Missing authorization header")
-		c.JSON(400, gin.H{
-			"error": "invalid_request",
-		})
-		return
-	}
-
-	client, ok := controller.oidc.GetClient(rclientId)
-
-	if !ok {
-		tlog.App.Warn().Str("client_id", rclientId).Msg("Client not found")
-		c.JSON(400, gin.H{
-			"error": "access_denied",
-		})
-		return
-	}
-
-	if client.ClientSecret != rclientSecret {
-		tlog.App.Warn().Str("client_id", rclientId).Msg("Invalid client secret")
-		c.JSON(400, gin.H{
-			"error": "access_denied",
-		})
-		return
-	}
-
 	var req TokenRequest
 
 	err := c.Bind(&req)
@@ -224,58 +199,131 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		return
 	}
 
-	entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code))
-	if err != nil {
-		if errors.Is(err, service.ErrCodeExpired) {
-			tlog.App.Warn().Str("code", req.Code).Msg("Code expired")
+	var tokenResponse service.TokenResponse
+
+	switch req.GrantType {
+	case "authorization_code":
+		rclientId, rclientSecret, ok := c.Request.BasicAuth()
+
+		if !ok {
+			tlog.App.Error().Msg("Missing authorization header")
+			c.JSON(400, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
+
+		client, ok := controller.oidc.GetClient(rclientId)
+
+		if !ok {
+			tlog.App.Warn().Str("client_id", rclientId).Msg("Client not found")
 			c.JSON(400, gin.H{
 				"error": "access_denied",
 			})
 			return
 		}
-		if errors.Is(err, service.ErrCodeNotFound) {
-			tlog.App.Warn().Str("code", req.Code).Msg("Code not found")
+
+		if client.ClientSecret != rclientSecret {
+			tlog.App.Warn().Str("client_id", rclientId).Msg("Invalid client secret")
 			c.JSON(400, gin.H{
 				"error": "access_denied",
 			})
 			return
 		}
-		tlog.App.Warn().Err(err).Msg("Failed to get OIDC code entry")
-		c.JSON(400, gin.H{
-			"error": "server_error",
-		})
-		return
+
+		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code))
+		if err != nil {
+			if errors.Is(err, service.ErrCodeNotFound) {
+				tlog.App.Warn().Str("code", req.Code).Msg("Code not found")
+				c.JSON(400, gin.H{
+					"error": "access_denied",
+				})
+				return
+			}
+			if errors.Is(err, service.ErrCodeExpired) {
+				tlog.App.Warn().Str("code", req.Code).Msg("Code expired")
+				c.JSON(400, gin.H{
+					"error": "access_denied",
+				})
+				return
+			}
+			tlog.App.Warn().Err(err).Msg("Failed to get OIDC code entry")
+			c.JSON(400, gin.H{
+				"error": "server_error",
+			})
+			return
+		}
+
+		if entry.RedirectURI != req.RedirectURI {
+			tlog.App.Warn().Str("redirect_uri", req.RedirectURI).Msg("Redirect URI mismatch")
+			c.JSON(400, gin.H{
+				"error": "invalid_request_uri",
+			})
+			return
+		}
+
+		tokenRes, err := controller.oidc.GenerateAccessToken(c, client, entry.Sub, entry.Scope)
+
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to generate access token")
+			c.JSON(400, gin.H{
+				"error": "server_error",
+			})
+			return
+		}
+
+		err = controller.oidc.DeleteCodeEntry(c, entry.CodeHash)
+
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to delete code in database")
+			c.JSON(400, gin.H{
+				"error": "server_error",
+			})
+			return
+		}
+
+		tokenResponse = tokenRes
+	case "refresh_token":
+		client, ok := controller.oidc.GetClient(req.ClientID)
+
+		if !ok {
+			tlog.App.Error().Msg("OIDC refresh token request with invalid client ID")
+			c.JSON(400, gin.H{
+				"error": "invalid_client",
+			})
+			return
+		}
+
+		if client.ClientSecret != req.ClientSecret {
+			tlog.App.Error().Msg("OIDC refresh token request with invalid client secret")
+			c.JSON(400, gin.H{
+				"error": "invalid_client",
+			})
+			return
+		}
+
+		tokenRes, err := controller.oidc.RefreshAccessToken(c, req.RefreshToken)
+
+		if err != nil {
+			if errors.Is(err, service.ErrTokenExpired) {
+				tlog.App.Error().Err(err).Msg("Failed to refresh access token")
+				c.JSON(401, gin.H{
+					"error": "access_denied",
+				})
+				return
+			}
+
+			tlog.App.Error().Err(err).Msg("Failed to refresh access token")
+			c.JSON(400, gin.H{
+				"error": "server_error",
+			})
+			return
+		}
+
+		tokenResponse = tokenRes
 	}
 
-	if entry.RedirectURI != req.RedirectURI {
-		tlog.App.Warn().Str("redirect_uri", req.RedirectURI).Msg("Redirect URI mismatch")
-		c.JSON(400, gin.H{
-			"error": "invalid_request_uri",
-		})
-		return
-	}
-
-	accessToken, err := controller.oidc.GenerateAccessToken(c, client, entry.Sub, entry.Scope)
-
-	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to generate access token")
-		c.JSON(400, gin.H{
-			"error": "server_error",
-		})
-		return
-	}
-
-	err = controller.oidc.DeleteCodeEntry(c, entry.CodeHash)
-
-	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to delete code in database")
-		c.JSON(400, gin.H{
-			"error": "server_error",
-		})
-		return
-	}
-
-	c.JSON(200, accessToken)
+	c.JSON(200, tokenResponse)
 }
 
 func (controller *OIDCController) Userinfo(c *gin.Context) {
@@ -305,7 +353,7 @@ func (controller *OIDCController) Userinfo(c *gin.Context) {
 		if err == service.ErrTokenNotFound {
 			tlog.App.Warn().Msg("OIDC userinfo accessed with invalid token")
 			c.JSON(401, gin.H{
-				"error": "invalid_request",
+				"error": "access_denied",
 			})
 			return
 		}

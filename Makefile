@@ -18,6 +18,10 @@ deps:
 	bun install --cwd frontend
 	go mod download
 
+# Clean data
+clean-data:
+	rm -rf data/
+
 # Clean web UI build
 clean-webui:
 	rm -rf internal/assets/dist

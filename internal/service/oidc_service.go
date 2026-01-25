@@ -29,7 +29,7 @@ import (
 var (
 	SupportedScopes        = []string{"openid", "profile", "email", "groups"}
 	SupportedResponseTypes = []string{"code"}
-	SupportedGrantTypes    = []string{"authorization_code"}
+	SupportedGrantTypes    = []string{"authorization_code", "refresh_token"}
 )
 
 var (
@@ -49,11 +49,12 @@ type UserinfoResponse struct {
 }
 
 type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int64  `json:"expires_in"`
-	IDToken     string `json:"id_token"`
-	Scope       string `json:"scope"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	IDToken      string `json:"id_token"`
+	Scope        string `json:"scope"`
 }
 
 type AuthorizeRequest struct {
@@ -361,21 +362,81 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 	}
 
 	accessToken := rand.Text()
-	expiresAt := time.Now().Add(time.Duration(1) * time.Hour).Unix()
+	refreshToken := rand.Text()
+
+	tokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
+
+	// Refresh token lives double the time of an access token but can't be used to access userinfo
+	refrshTokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry*2) * time.Second).Unix()
 
 	tokenResponse := TokenResponse{
-		AccessToken: accessToken,
-		TokenType:   "Bearer",
-		ExpiresIn:   int64(time.Hour.Seconds()),
-		IDToken:     idToken,
-		Scope:       strings.ReplaceAll(scope, ",", " "),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(service.config.SessionExpiry),
+		IDToken:      idToken,
+		Scope:        strings.ReplaceAll(scope, ",", " "),
 	}
 
 	_, err = service.queries.CreateOidcToken(c, repository.CreateOidcTokenParams{
-		Sub:             sub,
-		AccessTokenHash: service.Hash(accessToken),
-		Scope:           scope,
-		ExpiresAt:       expiresAt,
+		Sub:                   sub,
+		AccessTokenHash:       service.Hash(accessToken),
+		RefreshTokenHash:      service.Hash(refreshToken),
+		Scope:                 scope,
+		TokenExpiresAt:        tokenExpiresAt,
+		RefreshTokenExpiresAt: refrshTokenExpiresAt,
+	})
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	return tokenResponse, nil
+}
+
+func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken string) (TokenResponse, error) {
+	entry, err := service.queries.GetOidcTokenByRefreshToken(c, service.Hash(refreshToken))
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return TokenResponse{}, ErrTokenNotFound
+		}
+		return TokenResponse{}, err
+	}
+
+	if entry.RefreshTokenExpiresAt < time.Now().Unix() {
+		return TokenResponse{}, ErrTokenExpired
+	}
+
+	idToken, err := service.generateIDToken(config.OIDCClientConfig{
+		ClientID: entry.ClientID,
+	}, entry.Sub)
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	accessToken := rand.Text()
+	newRefreshToken := rand.Text()
+
+	tokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
+	refrshTokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry*2) * time.Second).Unix()
+
+	tokenResponse := TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(service.config.SessionExpiry),
+		IDToken:      idToken,
+		Scope:        strings.ReplaceAll(entry.Scope, ",", " "),
+	}
+
+	_, err = service.queries.UpdateOidcTokenByRefreshToken(c, repository.UpdateOidcTokenByRefreshTokenParams{
+		AccessTokenHash:       service.Hash(accessToken),
+		RefreshTokenHash:      service.Hash(newRefreshToken),
+		TokenExpiresAt:        tokenExpiresAt,
+		RefreshTokenExpiresAt: refrshTokenExpiresAt,
+		RefreshTokenHash_2:    service.Hash(refreshToken), // that's the selector, it's not stored in the db
 	})
 
 	if err != nil {
@@ -407,14 +468,17 @@ func (service *OIDCService) GetAccessToken(c *gin.Context, tokenHash string) (re
 		return repository.OidcToken{}, err
 	}
 
-	if entry.ExpiresAt < time.Now().Unix() {
-		err := service.DeleteToken(c, tokenHash)
-		if err != nil {
-			return repository.OidcToken{}, err
-		}
-		err = service.DeleteUserinfo(c, entry.Sub)
-		if err != nil {
-			return repository.OidcToken{}, err
+	if entry.TokenExpiresAt < time.Now().Unix() {
+		// If refresh token is expired, delete the token and userinfo since there is no way for the client to access anything anymore
+		if entry.RefreshTokenExpiresAt < time.Now().Unix() {
+			err := service.DeleteToken(c, tokenHash)
+			if err != nil {
+				return repository.OidcToken{}, err
+			}
+			err = service.DeleteUserinfo(c, entry.Sub)
+			if err != nil {
+				return repository.OidcToken{}, err
+			}
 		}
 		return repository.OidcToken{}, ErrTokenExpired
 	}

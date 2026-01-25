@@ -57,38 +57,46 @@ const createOidcToken = `-- name: CreateOidcToken :one
 INSERT INTO "oidc_tokens" (
     "sub",
     "access_token_hash",
+    "refresh_token_hash",
     "scope",
     "client_id",
-    "expires_at"
+    "token_expires_at",
+    "refresh_token_expires_at"
 ) VALUES (
-    ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING sub, access_token_hash, scope, client_id, expires_at
+RETURNING sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at
 `
 
 type CreateOidcTokenParams struct {
-	Sub             string
-	AccessTokenHash string
-	Scope           string
-	ClientID        string
-	ExpiresAt       int64
+	Sub                   string
+	AccessTokenHash       string
+	RefreshTokenHash      string
+	Scope                 string
+	ClientID              string
+	TokenExpiresAt        int64
+	RefreshTokenExpiresAt int64
 }
 
 func (q *Queries) CreateOidcToken(ctx context.Context, arg CreateOidcTokenParams) (OidcToken, error) {
 	row := q.db.QueryRowContext(ctx, createOidcToken,
 		arg.Sub,
 		arg.AccessTokenHash,
+		arg.RefreshTokenHash,
 		arg.Scope,
 		arg.ClientID,
-		arg.ExpiresAt,
+		arg.TokenExpiresAt,
+		arg.RefreshTokenExpiresAt,
 	)
 	var i OidcToken
 	err := row.Scan(
 		&i.Sub,
 		&i.AccessTokenHash,
+		&i.RefreshTokenHash,
 		&i.Scope,
 		&i.ClientID,
-		&i.ExpiresAt,
+		&i.TokenExpiresAt,
+		&i.RefreshTokenExpiresAt,
 	)
 	return i, err
 }
@@ -207,7 +215,7 @@ func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, e
 }
 
 const getOidcToken = `-- name: GetOidcToken :one
-SELECT sub, access_token_hash, scope, client_id, expires_at FROM "oidc_tokens"
+SELECT sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at FROM "oidc_tokens"
 WHERE "access_token_hash" = ?
 `
 
@@ -217,9 +225,31 @@ func (q *Queries) GetOidcToken(ctx context.Context, accessTokenHash string) (Oid
 	err := row.Scan(
 		&i.Sub,
 		&i.AccessTokenHash,
+		&i.RefreshTokenHash,
 		&i.Scope,
 		&i.ClientID,
-		&i.ExpiresAt,
+		&i.TokenExpiresAt,
+		&i.RefreshTokenExpiresAt,
+	)
+	return i, err
+}
+
+const getOidcTokenByRefreshToken = `-- name: GetOidcTokenByRefreshToken :one
+SELECT sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at FROM "oidc_tokens"
+WHERE "refresh_token_hash" = ?
+`
+
+func (q *Queries) GetOidcTokenByRefreshToken(ctx context.Context, refreshTokenHash string) (OidcToken, error) {
+	row := q.db.QueryRowContext(ctx, getOidcTokenByRefreshToken, refreshTokenHash)
+	var i OidcToken
+	err := row.Scan(
+		&i.Sub,
+		&i.AccessTokenHash,
+		&i.RefreshTokenHash,
+		&i.Scope,
+		&i.ClientID,
+		&i.TokenExpiresAt,
+		&i.RefreshTokenExpiresAt,
 	)
 	return i, err
 }
@@ -239,6 +269,45 @@ func (q *Queries) GetOidcUserInfo(ctx context.Context, sub string) (OidcUserinfo
 		&i.Email,
 		&i.Groups,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateOidcTokenByRefreshToken = `-- name: UpdateOidcTokenByRefreshToken :one
+UPDATE "oidc_tokens" SET
+    "access_token_hash" = ?,
+    "refresh_token_hash" = ?,
+    "token_expires_at" = ?,
+    "refresh_token_expires_at" = ?
+WHERE "refresh_token_hash" = ?
+RETURNING sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at
+`
+
+type UpdateOidcTokenByRefreshTokenParams struct {
+	AccessTokenHash       string
+	RefreshTokenHash      string
+	TokenExpiresAt        int64
+	RefreshTokenExpiresAt int64
+	RefreshTokenHash_2    string
+}
+
+func (q *Queries) UpdateOidcTokenByRefreshToken(ctx context.Context, arg UpdateOidcTokenByRefreshTokenParams) (OidcToken, error) {
+	row := q.db.QueryRowContext(ctx, updateOidcTokenByRefreshToken,
+		arg.AccessTokenHash,
+		arg.RefreshTokenHash,
+		arg.TokenExpiresAt,
+		arg.RefreshTokenExpiresAt,
+		arg.RefreshTokenHash_2,
+	)
+	var i OidcToken
+	err := row.Scan(
+		&i.Sub,
+		&i.AccessTokenHash,
+		&i.RefreshTokenHash,
+		&i.Scope,
+		&i.ClientID,
+		&i.TokenExpiresAt,
+		&i.RefreshTokenExpiresAt,
 	)
 	return i, err
 }

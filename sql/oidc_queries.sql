@@ -27,12 +27,23 @@ WHERE "code_hash" = ?;
 INSERT INTO "oidc_tokens" (
     "sub",
     "access_token_hash",
+    "refresh_token_hash",
     "scope",
     "client_id",
-    "expires_at"
+    "token_expires_at",
+    "refresh_token_expires_at"
 ) VALUES (
-    ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?
 )
+RETURNING *;
+
+-- name: UpdateOidcTokenByRefreshToken :one
+UPDATE "oidc_tokens" SET
+    "access_token_hash" = ?,
+    "refresh_token_hash" = ?,
+    "token_expires_at" = ?,
+    "refresh_token_expires_at" = ?
+WHERE "refresh_token_hash" = ?
 RETURNING *;
 
 -- name: DeleteOidcToken :exec
@@ -46,6 +57,10 @@ WHERE "sub" = ?;
 -- name: GetOidcToken :one
 SELECT * FROM "oidc_tokens"
 WHERE "access_token_hash" = ?;
+
+-- name: GetOidcTokenByRefreshToken :one
+SELECT * FROM "oidc_tokens"
+WHERE "refresh_token_hash" = ?;
 
 -- name: CreateOidcUserInfo :one
 INSERT INTO "oidc_userinfo" (
