@@ -11,6 +11,14 @@ INSERT INTO "oidc_codes" (
 )
 RETURNING *;
 
+-- name: GetOidcCode :one
+SELECT * FROM "oidc_codes"
+WHERE "code_hash" = ?;
+
+-- name: GetOidcCodeBySub :one
+SELECT * FROM "oidc_codes"
+WHERE "sub" = ?;
+
 -- name: DeleteOidcCode :exec
 DELETE FROM "oidc_codes"
 WHERE "code_hash" = ?;
@@ -18,10 +26,6 @@ WHERE "code_hash" = ?;
 -- name: DeleteOidcCodeBySub :exec
 DELETE FROM "oidc_codes"
 WHERE "sub" = ?;
-
--- name: GetOidcCode :one
-SELECT * FROM "oidc_codes"
-WHERE "code_hash" = ?;
 
 -- name: CreateOidcToken :one
 INSERT INTO "oidc_tokens" (
@@ -46,14 +50,6 @@ UPDATE "oidc_tokens" SET
 WHERE "refresh_token_hash" = ?
 RETURNING *;
 
--- name: DeleteOidcToken :exec
-DELETE FROM "oidc_tokens"
-WHERE "access_token_hash" = ?;
-
--- name: DeleteOidcTokenBySub :exec
-DELETE FROM "oidc_tokens"
-WHERE "sub" = ?;
-
 -- name: GetOidcToken :one
 SELECT * FROM "oidc_tokens"
 WHERE "access_token_hash" = ?;
@@ -61,6 +57,19 @@ WHERE "access_token_hash" = ?;
 -- name: GetOidcTokenByRefreshToken :one
 SELECT * FROM "oidc_tokens"
 WHERE "refresh_token_hash" = ?;
+
+-- name: GetOidcTokenBySub :one
+SELECT * FROM "oidc_tokens"
+WHERE "sub" = ?;
+
+
+-- name: DeleteOidcToken :exec
+DELETE FROM "oidc_tokens"
+WHERE "access_token_hash" = ?;
+
+-- name: DeleteOidcTokenBySub :exec
+DELETE FROM "oidc_tokens"
+WHERE "sub" = ?;
 
 -- name: CreateOidcUserInfo :one
 INSERT INTO "oidc_userinfo" (
@@ -75,10 +84,20 @@ INSERT INTO "oidc_userinfo" (
 )
 RETURNING *;
 
+-- name: GetOidcUserInfo :one
+SELECT * FROM "oidc_userinfo"
+WHERE "sub" = ?;
+
 -- name: DeleteOidcUserInfo :exec
 DELETE FROM "oidc_userinfo"
 WHERE "sub" = ?;
 
--- name: GetOidcUserInfo :one
-SELECT * FROM "oidc_userinfo"
-WHERE "sub" = ?;
+-- name: DeleteExpiredOidcCodes :many
+DELETE FROM "oidc_codes"
+WHERE "expires_at" < ?
+RETURNING *;
+
+-- name: DeleteExpiredOidcTokens :many
+DELETE FROM "oidc_tokens"
+WHERE "token_expires_at" < ? AND "refresh_token_expires_at" < ?
+RETURNING *;

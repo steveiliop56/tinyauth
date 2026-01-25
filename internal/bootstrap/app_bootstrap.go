@@ -247,7 +247,7 @@ func (app *BootstrapApp) heartbeat() {
 
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"
 
-	for ; true; <-ticker.C {
+	for range ticker.C {
 		tlog.App.Debug().Msg("Sending heartbeat")
 
 		req, err := http.NewRequest(http.MethodPost, heartbeatURL, bytes.NewReader(bodyJson))
@@ -279,7 +279,7 @@ func (app *BootstrapApp) dbCleanup(queries *repository.Queries) {
 	defer ticker.Stop()
 	ctx := context.Background()
 
-	for ; true; <-ticker.C {
+	for range ticker.C {
 		tlog.App.Debug().Msg("Cleaning up old database sessions")
 		err := queries.DeleteExpiredSessions(ctx, time.Now().Unix())
 		if err != nil {

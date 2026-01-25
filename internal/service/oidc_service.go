@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -523,18 +524,73 @@ func (service *OIDCService) Hash(token string) string {
 	return fmt.Sprintf("%x", hasher.Sum(nil))
 }
 
-func (service *OIDCService) CleanupOldSessions(c *gin.Context, sub string) error {
-	err := service.queries.DeleteOidcCodeBySub(c, sub)
+func (service *OIDCService) DeleteOldSession(ctx context.Context, sub string) error {
+	err := service.queries.DeleteOidcCodeBySub(ctx, sub)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
-	err = service.queries.DeleteOidcTokenBySub(c, sub)
+	err = service.queries.DeleteOidcTokenBySub(ctx, sub)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
-	err = service.queries.DeleteOidcUserInfo(c, sub)
+	err = service.queries.DeleteOidcUserInfo(ctx, sub)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 	return nil
+}
+
+// Cleanup routine - Resource heavy due to the linked tables
+func (service *OIDCService) Cleanup() {
+	// We need a context for the routine
+	ctx := context.Background()
+
+	ticker := time.NewTicker(time.Duration(30) * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		currentTime := time.Now().Unix()
+
+		// For the OIDC tokens, if they are expired we delete the userinfo and codes
+		expiredTokens, err := service.queries.DeleteExpiredOidcTokens(ctx, repository.DeleteExpiredOidcTokensParams{
+			TokenExpiresAt:        currentTime,
+			RefreshTokenExpiresAt: currentTime,
+		})
+
+		if err != nil {
+			tlog.App.Warn().Err(err).Msg("Failed to delete expired tokens")
+		}
+
+		for _, expiredToken := range expiredTokens {
+			err := service.DeleteOldSession(ctx, expiredToken.Sub)
+			if err != nil {
+				tlog.App.Warn().Err(err).Msg("Failed to delete old session")
+			}
+		}
+
+		// For expired codes, we need to get the sub, check if tokens are expired and if they are remove everything
+		expiredCodes, err := service.queries.DeleteExpiredOidcCodes(ctx, currentTime)
+
+		if err != nil {
+			tlog.App.Warn().Err(err).Msg("Failed to delete expired codes")
+		}
+
+		for _, expiredCode := range expiredCodes {
+			token, err := service.queries.GetOidcTokenBySub(ctx, expiredCode.Sub)
+
+			if err != nil {
+				if err == sql.ErrNoRows {
+					continue
+				}
+				tlog.App.Warn().Err(err).Msg("Failed to get OIDC token by sub")
+			}
+
+			if token.TokenExpiresAt < currentTime && token.RefreshTokenExpiresAt < currentTime {
+				err := service.queries.DeleteSession(ctx, expiredCode.Sub)
+				if err != nil {
+					tlog.App.Warn().Err(err).Msg("Failed to delete session")
+				}
+			}
+		}
+	}
 }

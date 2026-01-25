@@ -137,10 +137,10 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 	sub := utils.GenerateUUID(userContext.Username)
 	code := rand.Text()
 
-	// Before storing the code, clean up old sessions
-	err = controller.oidc.CleanupOldSessions(c, sub)
+	// Before storing the code, delete old session
+	err = controller.oidc.DeleteOldSession(c, sub)
 	if err != nil {
-		controller.authorizeError(c, err, "Failed to clean up old sessions", "Failed to clean up old sessions", req.RedirectURI, "server_error", req.State)
+		controller.authorizeError(c, err, "Failed to delete old sessions", "Failed to delete old sessions", req.RedirectURI, "server_error", req.State)
 		return
 	}
 
