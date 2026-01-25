@@ -14,16 +14,19 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { toast } from "sonner";
 import { useOIDCParams } from "@/lib/hooks/oidc";
+import { useTranslation } from "react-i18next";
 
 export const AuthorizePage = () => {
   const { isLoggedIn } = useUserContext();
   const { search } = useLocation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const searchParams = new URLSearchParams(search);
   const {
     values: props,
     missingParams,
+    isOidc,
     compiled: compiledOIDCParams,
   } = useOIDCParams(searchParams);
 
@@ -34,6 +37,7 @@ export const AuthorizePage = () => {
       const data = await getOidcClientInfoScehma.parseAsync(await res.json());
       return data;
     },
+    enabled: isOidc,
   });
 
   const authorizeMutation = useMutation({
@@ -48,8 +52,8 @@ export const AuthorizePage = () => {
     },
     mutationKey: ["authorize", props.client_id],
     onSuccess: (data) => {
-      toast.info("Authorized", {
-        description: "You will be soon redirected to your application",
+      toast.info(t("authorizeSuccessTitle"), {
+        description: t("authorizeSuccessSubtitle"),
       });
       window.location.replace(data.data.redirect_uri);
     },
@@ -77,10 +81,10 @@ export const AuthorizePage = () => {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
-          <CardTitle className="text-3xl">Loading...</CardTitle>
-          <CardDescription>
-            Please wait while we load the client information.
-          </CardDescription>
+          <CardTitle className="text-3xl">
+            {t("authorizeLoadingTitle")}
+          </CardTitle>
+          <CardDescription>{t("authorizeLoadingSubtitle")}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -99,26 +103,25 @@ export const AuthorizePage = () => {
     <Card className="min-w-xs sm:min-w-sm">
       <CardHeader>
         <CardTitle className="text-3xl">
-          Continue to {getClientInfo.data?.name || "Unknown"}?
+          {t("authorizeCardTitle", {
+            app: getClientInfo.data?.name || "Unknown",
+          })}
         </CardTitle>
-        <CardDescription>
-          Would you like to continue to this app? Please keep in mind that this
-          app will have access to your email and other information.
-        </CardDescription>
+        <CardDescription>{t("authorizeSubtitle")}</CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch gap-2">
         <Button
           onClick={() => authorizeMutation.mutate()}
           loading={authorizeMutation.isPending}
         >
-          Authorize
+          {t("authorizeTitle")}
         </Button>
         <Button
           onClick={() => navigate("/")}
           disabled={authorizeMutation.isPending}
           variant="outline"
         >
-          Cancel
+          {t("cancelTitle")}
         </Button>
       </CardFooter>
     </Card>
