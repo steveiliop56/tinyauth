@@ -29,12 +29,12 @@ type AuthorizeCallback struct {
 }
 
 type TokenRequest struct {
-	GrantType    string `form:"grant_type" binding:"required"`
-	Code         string `form:"code"`
-	RedirectURI  string `form:"redirect_uri"`
-	RefreshToken string `form:"refresh_token"`
-	ClientID     string `form:"client_id"`
-	ClientSecret string `form:"client_secret"`
+	GrantType    string `form:"grant_type" binding:"required" url:"grant_type"`
+	Code         string `form:"code" url:"code"`
+	RedirectURI  string `form:"redirect_uri" url:"redirect_uri"`
+	RefreshToken string `form:"refresh_token" url:"refresh_token"`
+	ClientID     string `form:"client_id" url:"client_id"`
+	ClientSecret string `form:"client_secret" url:"client_secret"`
 }
 
 type CallbackError struct {
