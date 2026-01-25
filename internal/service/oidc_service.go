@@ -69,6 +69,7 @@ type OIDCServiceConfig struct {
 	PrivateKeyPath string
 	PublicKeyPath  string
 	Issuer         string
+	SessionExpiry  int
 }
 
 type OIDCService struct {
@@ -123,6 +124,9 @@ func (service *OIDCService) Init() error {
 			return err
 		}
 		der := x509.MarshalPKCS1PrivateKey(privateKey)
+		if der == nil {
+			return errors.New("failed to marshal private key")
+		}
 		encoded := pem.EncodeToMemory(&pem.Block{
 			Type:  "RSA PRIVATE KEY",
 			Bytes: der,
@@ -134,6 +138,9 @@ func (service *OIDCService) Init() error {
 		service.privateKey = privateKey
 	} else {
 		block, _ := pem.Decode(fprivateKey)
+		if block == nil {
+			return errors.New("failed to decode private key")
+		}
 		privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
 			return err
@@ -150,6 +157,9 @@ func (service *OIDCService) Init() error {
 	if errors.Is(err, os.ErrNotExist) {
 		publicKey := service.privateKey.Public()
 		der := x509.MarshalPKCS1PublicKey(publicKey.(*rsa.PublicKey))
+		if der == nil {
+			return errors.New("failed to marshal public key")
+		}
 		encoded := pem.EncodeToMemory(&pem.Block{
 			Type:  "RSA PUBLIC KEY",
 			Bytes: der,
@@ -161,6 +171,9 @@ func (service *OIDCService) Init() error {
 		service.publicKey = publicKey
 	} else {
 		block, _ := pem.Decode(fpublicKey)
+		if block == nil {
+			return errors.New("failed to decode public key")
+		}
 		publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
 		if err != nil {
 			return err
@@ -316,9 +329,7 @@ func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string) (repos
 
 func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub string) (string, error) {
 	createdAt := time.Now().Unix()
-
-	// TODO: This should probably be user-configured if refresh logic does not exist
-	expiresAt := time.Now().Add(time.Duration(1) * time.Hour).Unix()
+	expiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
 
 	claims := jws.ClaimSet{
 		Iss: service.issuer,
@@ -432,7 +443,11 @@ func (service *OIDCService) CompileUserinfo(user repository.OidcUserinfo, scope 
 	}
 
 	if slices.Contains(scopes, "groups") {
-		userInfo.Groups = strings.Split(user.Groups, ",")
+		if user.Groups != "" {
+			userInfo.Groups = strings.Split(user.Groups, ",")
+		} else {
+			userInfo.Groups = []string{}
+		}
 	}
 
 	return userInfo

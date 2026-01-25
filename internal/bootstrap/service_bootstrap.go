@@ -94,6 +94,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		PrivateKeyPath: app.config.OIDC.PrivateKeyPath,
 		PublicKeyPath:  app.config.OIDC.PublicKeyPath,
 		Issuer:         app.config.AppURL,
+		SessionExpiry:  app.config.Auth.SessionExpiry,
 	}, queries)
 
 	err = oidcService.Init()

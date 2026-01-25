@@ -148,13 +148,15 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 		return
 	}
 
-	// We also need a snapshot of the user that authorized this
-	err = controller.oidc.StoreUserinfo(c, sub, userContext, req)
+	// We also need a snapshot of the user that authorized this (skip if no openid scope)
+	if slices.Contains(strings.Split(req.Scope, " "), "openid") {
+		err = controller.oidc.StoreUserinfo(c, sub, userContext, req)
 
-	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to insert user info into database")
-		controller.authorizeError(c, err, "Failed to store user info", "Failed to store user info", req.RedirectURI, "server_error", req.State)
-		return
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to insert user info into database")
+			controller.authorizeError(c, err, "Failed to store user info", "Failed to store user info", req.RedirectURI, "server_error", req.State)
+			return
+		}
 	}
 
 	queries, err := query.Values(AuthorizeCallback{
@@ -315,21 +317,21 @@ func (controller *OIDCController) Userinfo(c *gin.Context) {
 		return
 	}
 
+	// If we don't have the openid scope, return an error
+	if !slices.Contains(strings.Split(entry.Scope, ","), "openid") {
+		tlog.App.Warn().Msg("OIDC userinfo accessed without openid scope")
+		c.JSON(401, gin.H{
+			"error": "invalid_request",
+		})
+		return
+	}
+
 	user, err := controller.oidc.GetUserinfo(c, entry.Sub)
 
 	if err != nil {
 		tlog.App.Err(err).Msg("Failed to get user entry")
 		c.JSON(401, gin.H{
 			"error": "server_error",
-		})
-		return
-	}
-
-	// If we don't have the openid scope, return an error
-	if !slices.Contains(strings.Split(entry.Scope, ","), "openid") {
-		tlog.App.Warn().Msg("OIDC userinfo accessed without openid scope")
-		c.JSON(401, gin.H{
-			"error": "invalid_request",
 		})
 		return
 	}
@@ -362,7 +364,7 @@ func (controller *OIDCController) authorizeError(c *gin.Context, err error, reas
 
 		c.JSON(200, gin.H{
 			"status":       200,
-			"redirect_uri": fmt.Sprintf("%s/?%s", callback, queries.Encode()),
+			"redirect_uri": fmt.Sprintf("%s?%s", callback, queries.Encode()),
 		})
 		return
 	}
