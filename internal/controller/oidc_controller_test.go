@@ -231,19 +231,16 @@ func TestOIDCController(t *testing.T) {
 	params, err = query.Values(controller.TokenRequest{
 		GrantType:    "refresh_token",
 		RefreshToken: refreshToken,
-		ClientID:     "some-client-id",
-		ClientSecret: "some-client-secret",
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NilError(t, err)
 
 	req, err = http.NewRequest("POST", "/api/oidc/token", strings.NewReader(params.Encode()))
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	assert.NilError(t, err)
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth("some-client-id", "some-client-secret")
 
 	router.ServeHTTP(recorder, req)
 	assert.Equal(t, http.StatusOK, recorder.Code)
@@ -251,9 +248,8 @@ func TestOIDCController(t *testing.T) {
 	resJson = map[string]any{}
 
 	err = json.Unmarshal(recorder.Body.Bytes(), &resJson)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	assert.NilError(t, err)
 
 	newToken, ok := resJson["access_token"].(string)
 	assert.Assert(t, ok)
@@ -262,9 +258,9 @@ func TestOIDCController(t *testing.T) {
 	// Ensure old token is invalid
 	recorder = httptest.NewRecorder()
 	req, err = http.NewRequest("GET", "/api/oidc/userinfo", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	assert.NilError(t, err)
+
 	req.Header.Set("authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	router.ServeHTTP(recorder, req)
@@ -273,9 +269,9 @@ func TestOIDCController(t *testing.T) {
 	// Test new token
 	recorder = httptest.NewRecorder()
 	req, err = http.NewRequest("GET", "/api/oidc/userinfo", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	assert.NilError(t, err)
+
 	req.Header.Set("authorization", fmt.Sprintf("Bearer %s", newToken))
 
 	router.ServeHTTP(recorder, req)

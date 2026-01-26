@@ -298,7 +298,7 @@ func (service *OIDCService) StoreUserinfo(c *gin.Context, sub string, userContex
 
 func (service *OIDCService) ValidateGrantType(grantType string) error {
 	if !slices.Contains(SupportedGrantTypes, grantType) {
-		return errors.New("unsupported_response_type")
+		return errors.New("unsupported_grant_type")
 	}
 
 	return nil
