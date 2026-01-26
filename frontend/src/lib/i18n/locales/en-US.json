@@ -62,9 +62,18 @@
     "goToCorrectDomainTitle": "Go to correct domain",
     "authorizeTitle": "Authorize",
     "authorizeCardTitle": "Continue to {{app}}?",
-    "authorizeSubtitle": "Would you like to continue to this app? Please keep in mind that this app will have access to your email and other information.",
+    "authorizeSubtitle": "Would you like to continue to this app? Please carefully review the permissions requested by the app.",
+    "authorizeSubtitleOAuth": "Would you like to continue to this app?",
     "authorizeLoadingTitle": "Loading...",
     "authorizeLoadingSubtitle": "Please wait while we load the client information.",
     "authorizeSuccessTitle": "Authorized",
-    "authorizeSuccessSubtitle": "You will be redirected to the app in a few seconds."
+    "authorizeSuccessSubtitle": "You will be redirected to the app in a few seconds.",
+    "openidScopeName": "OpenID Connect",
+    "openidScopeDescription": "Allows the app to access your OpenID Connect information.",
+    "emailScopeName": "Email",
+    "emailScopeDescription": "Allows the app to access your email address.",
+    "profileScopeName": "Profile",
+    "profileScopeDescription": "Allows the app to access your profile information.",
+    "groupsScopeName": "Groups",
+    "groupsScopeDescription": "Allows the app to access the groups in which you are a member."
 }

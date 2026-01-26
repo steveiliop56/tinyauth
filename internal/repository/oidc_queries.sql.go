@@ -274,8 +274,9 @@ func (q *Queries) DeleteOidcUserInfo(ctx context.Context, sub string) error {
 }
 
 const getOidcCode = `-- name: GetOidcCode :one
-SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at FROM "oidc_codes"
+DELETE FROM "oidc_codes"
 WHERE "code_hash" = ?
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at
 `
 
 func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, error) {
@@ -293,12 +294,51 @@ func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, e
 }
 
 const getOidcCodeBySub = `-- name: GetOidcCodeBySub :one
-SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at FROM "oidc_codes"
+DELETE FROM "oidc_codes"
 WHERE "sub" = ?
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at
 `
 
 func (q *Queries) GetOidcCodeBySub(ctx context.Context, sub string) (OidcCode, error) {
 	row := q.db.QueryRowContext(ctx, getOidcCodeBySub, sub)
+	var i OidcCode
+	err := row.Scan(
+		&i.Sub,
+		&i.CodeHash,
+		&i.Scope,
+		&i.RedirectURI,
+		&i.ClientID,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getOidcCodeBySubUnsafe = `-- name: GetOidcCodeBySubUnsafe :one
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at FROM "oidc_codes"
+WHERE "sub" = ?
+`
+
+func (q *Queries) GetOidcCodeBySubUnsafe(ctx context.Context, sub string) (OidcCode, error) {
+	row := q.db.QueryRowContext(ctx, getOidcCodeBySubUnsafe, sub)
+	var i OidcCode
+	err := row.Scan(
+		&i.Sub,
+		&i.CodeHash,
+		&i.Scope,
+		&i.RedirectURI,
+		&i.ClientID,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getOidcCodeUnsafe = `-- name: GetOidcCodeUnsafe :one
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at FROM "oidc_codes"
+WHERE "code_hash" = ?
+`
+
+func (q *Queries) GetOidcCodeUnsafe(ctx context.Context, codeHash string) (OidcCode, error) {
+	row := q.db.QueryRowContext(ctx, getOidcCodeUnsafe, codeHash)
 	var i OidcCode
 	err := row.Scan(
 		&i.Sub,

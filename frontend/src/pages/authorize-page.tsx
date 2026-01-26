@@ -8,6 +8,7 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
+  CardContent,
 } from "@/components/ui/card";
 import { getOidcClientInfoScehma } from "@/schemas/oidc-schemas";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,55 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useOIDCParams } from "@/lib/hooks/oidc";
 import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
+import { Mail, Shield, User, Users } from "lucide-react";
+
+type Scope = {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+};
+
+const scopeMapIconProps = {
+  className: "stroke-card stroke-2.5",
+};
+
+const createScopeMap = (t: TFunction<"translation", undefined>): Scope[] => {
+  return [
+    {
+      id: "openid",
+      name: t("openidScopeName"),
+      description: t("openidScopeDescription"),
+      icon: <Shield {...scopeMapIconProps} />,
+    },
+    {
+      id: "email",
+      name: t("emailScopeName"),
+      description: t("emailScopeDescription"),
+      icon: <Mail {...scopeMapIconProps} />,
+    },
+    {
+      id: "profile",
+      name: t("profileScopeName"),
+      description: t("profileScopeDescription"),
+      icon: <User {...scopeMapIconProps} />,
+    },
+    {
+      id: "groups",
+      name: t("groupsScopeName"),
+      description: t("groupsScopeDescription"),
+      icon: <Users {...scopeMapIconProps} />,
+    },
+  ];
+};
 
 export const AuthorizePage = () => {
   const { isLoggedIn } = useUserContext();
   const { search } = useLocation();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const scopeMap = createScopeMap(t);
 
   const searchParams = new URLSearchParams(search);
   const {
@@ -29,6 +73,7 @@ export const AuthorizePage = () => {
     isOidc,
     compiled: compiledOIDCParams,
   } = useOIDCParams(searchParams);
+  const scopes = props.scope.split(" ");
 
   const getClientInfo = useQuery({
     queryKey: ["client", props.client_id],
@@ -100,15 +145,40 @@ export const AuthorizePage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
+    <Card className="min-w-xs sm:min-w-sm mx-4">
       <CardHeader>
         <CardTitle className="text-3xl">
           {t("authorizeCardTitle", {
             app: getClientInfo.data?.name || "Unknown",
           })}
         </CardTitle>
-        <CardDescription>{t("authorizeSubtitle")}</CardDescription>
+        <CardDescription>
+          {scopes.includes("openid")
+            ? t("authorizeSubtitle")
+            : t("authorizeSubtitleOAuth")}
+        </CardDescription>
       </CardHeader>
+      {scopes.includes("openid") && (
+        <CardContent className="flex flex-col gap-4">
+          {scopes.map((id) => {
+            const scope = scopeMap.find((s) => s.id === id);
+            if (!scope) return null;
+            return (
+              <div key={scope.id} className="flex flex-row items-center gap-3">
+                <div className="p-2 flex flex-col items-center justify-center bg-card-foreground rounded-md">
+                  {scope.icon}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-md">{scope.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {scope.description}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      )}
       <CardFooter className="flex flex-col items-stretch gap-2">
         <Button
           onClick={() => authorizeMutation.mutate()}

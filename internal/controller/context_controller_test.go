@@ -13,7 +13,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-var controllerCfg = controller.ContextControllerConfig{
+var contextControllerCfg = controller.ContextControllerConfig{
 	Providers: []controller.Provider{
 		{
 			Name:  "Local",
@@ -35,7 +35,7 @@ var controllerCfg = controller.ContextControllerConfig{
 	DisableUIWarnings:     false,
 }
 
-var userContext = config.UserContext{
+var contextCtrlTestContext = config.UserContext{
 	Username:    "testuser",
 	Name:        "testuser",
 	Email:       "test@example.com",
@@ -65,7 +65,7 @@ func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httpt
 
 	group := router.Group("/api")
 
-	ctrl := controller.NewContextController(controllerCfg, group)
+	ctrl := controller.NewContextController(contextControllerCfg, group)
 	ctrl.SetupRoutes()
 
 	return router, recorder
@@ -75,14 +75,14 @@ func TestAppContextHandler(t *testing.T) {
 	expectedRes := controller.AppContextResponse{
 		Status:                200,
 		Message:               "Success",
-		Providers:             controllerCfg.Providers,
-		Title:                 controllerCfg.Title,
-		AppURL:                controllerCfg.AppURL,
-		CookieDomain:          controllerCfg.CookieDomain,
-		ForgotPasswordMessage: controllerCfg.ForgotPasswordMessage,
-		BackgroundImage:       controllerCfg.BackgroundImage,
-		OAuthAutoRedirect:     controllerCfg.OAuthAutoRedirect,
-		DisableUIWarnings:     controllerCfg.DisableUIWarnings,
+		Providers:             contextControllerCfg.Providers,
+		Title:                 contextControllerCfg.Title,
+		AppURL:                contextControllerCfg.AppURL,
+		CookieDomain:          contextControllerCfg.CookieDomain,
+		ForgotPasswordMessage: contextControllerCfg.ForgotPasswordMessage,
+		BackgroundImage:       contextControllerCfg.BackgroundImage,
+		OAuthAutoRedirect:     contextControllerCfg.OAuthAutoRedirect,
+		DisableUIWarnings:     contextControllerCfg.DisableUIWarnings,
 	}
 
 	router, recorder := setupContextController(nil)
@@ -103,20 +103,20 @@ func TestUserContextHandler(t *testing.T) {
 	expectedRes := controller.UserContextResponse{
 		Status:      200,
 		Message:     "Success",
-		IsLoggedIn:  userContext.IsLoggedIn,
-		Username:    userContext.Username,
-		Name:        userContext.Name,
-		Email:       userContext.Email,
-		Provider:    userContext.Provider,
-		OAuth:       userContext.OAuth,
-		TotpPending: userContext.TotpPending,
-		OAuthName:   userContext.OAuthName,
+		IsLoggedIn:  contextCtrlTestContext.IsLoggedIn,
+		Username:    contextCtrlTestContext.Username,
+		Name:        contextCtrlTestContext.Name,
+		Email:       contextCtrlTestContext.Email,
+		Provider:    contextCtrlTestContext.Provider,
+		OAuth:       contextCtrlTestContext.OAuth,
+		TotpPending: contextCtrlTestContext.TotpPending,
+		OAuthName:   contextCtrlTestContext.OAuthName,
 	}
 
 	// Test with context
 	router, recorder := setupContextController(&[]gin.HandlerFunc{
 		func(c *gin.Context) {
-			c.Set("context", &userContext)
+			c.Set("context", &contextCtrlTestContext)
 			c.Next()
 		},
 	})

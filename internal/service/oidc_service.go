@@ -383,6 +383,7 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 		Sub:                   sub,
 		AccessTokenHash:       service.Hash(accessToken),
 		RefreshTokenHash:      service.Hash(refreshToken),
+		ClientID:              client.ClientID,
 		Scope:                 scope,
 		TokenExpiresAt:        tokenExpiresAt,
 		RefreshTokenExpiresAt: refrshTokenExpiresAt,
@@ -425,7 +426,7 @@ func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken stri
 
 	tokenResponse := TokenResponse{
 		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		RefreshToken: newRefreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(service.config.SessionExpiry),
 		IDToken:      idToken,
@@ -586,7 +587,7 @@ func (service *OIDCService) Cleanup() {
 			}
 
 			if token.TokenExpiresAt < currentTime && token.RefreshTokenExpiresAt < currentTime {
-				err := service.queries.DeleteSession(ctx, expiredCode.Sub)
+				err := service.DeleteOldSession(ctx, expiredCode.Sub)
 				if err != nil {
 					tlog.App.Warn().Err(err).Msg("Failed to delete session")
 				}

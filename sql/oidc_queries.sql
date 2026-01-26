@@ -11,13 +11,23 @@ INSERT INTO "oidc_codes" (
 )
 RETURNING *;
 
--- name: GetOidcCode :one
+-- name: GetOidcCodeUnsafe :one
 SELECT * FROM "oidc_codes"
 WHERE "code_hash" = ?;
 
--- name: GetOidcCodeBySub :one
+-- name: GetOidcCode :one
+DELETE FROM "oidc_codes"
+WHERE "code_hash" = ?
+RETURNING *;
+
+-- name: GetOidcCodeBySubUnsafe :one
 SELECT * FROM "oidc_codes"
 WHERE "sub" = ?;
+
+-- name: GetOidcCodeBySub :one
+DELETE FROM "oidc_codes"
+WHERE "sub" = ?
+RETURNING *;
 
 -- name: DeleteOidcCode :exec
 DELETE FROM "oidc_codes"

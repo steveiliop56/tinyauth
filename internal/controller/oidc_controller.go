@@ -114,7 +114,7 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 		return
 	}
 
-	_, ok := controller.oidc.GetClient(req.ClientID)
+	client, ok := controller.oidc.GetClient(req.ClientID)
 
 	if !ok {
 		controller.authorizeError(c, err, "Client not found", "The client ID is invalid", "", "", "")
@@ -133,8 +133,8 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 		return
 	}
 
-	// WARNING: Since Tinyauth is stateless, we cannot have a sub that never changes. We will just create a uuid out of the username which remains stable, but if username changes then sub changes too.
-	sub := utils.GenerateUUID(userContext.Username)
+	// WARNING: Since Tinyauth is stateless, we cannot have a sub that never changes. We will just create a uuid out of the username and client name which remains stable, but if username or client name changes then sub changes too.
+	sub := utils.GenerateUUID(fmt.Sprintf("%s:%s", userContext.Username, client.ID))
 	code := rand.Text()
 
 	// Before storing the code, delete old session
@@ -266,16 +266,6 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		if err != nil {
 			tlog.App.Error().Err(err).Msg("Failed to generate access token")
-			c.JSON(400, gin.H{
-				"error": "server_error",
-			})
-			return
-		}
-
-		err = controller.oidc.DeleteCodeEntry(c, entry.CodeHash)
-
-		if err != nil {
-			tlog.App.Error().Err(err).Msg("Failed to delete code in database")
 			c.JSON(400, gin.H{
 				"error": "server_error",
 			})

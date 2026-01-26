@@ -20,7 +20,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-var serviceConfig = service.OIDCServiceConfig{
+var oidcServiceConfig = service.OIDCServiceConfig{
 	Clients: map[string]config.OIDCClientConfig{
 		"client1": {
 			ClientID:         "some-client-id",
@@ -38,7 +38,7 @@ var serviceConfig = service.OIDCServiceConfig{
 	SessionExpiry:  3600,
 }
 
-var oidcTestContext = config.UserContext{
+var oidcCtrlTestContext = config.UserContext{
 	Username:    "test",
 	Name:        "Test",
 	Email:       "test@example.com",
@@ -69,7 +69,7 @@ func TestOIDCController(t *testing.T) {
 	queries := repository.New(db)
 
 	// Create a new OIDC Servicee
-	oidcService := service.NewOIDCService(serviceConfig, queries)
+	oidcService := service.NewOIDCService(oidcServiceConfig, queries)
 	err = oidcService.Init()
 	assert.NilError(t, err)
 
@@ -78,7 +78,7 @@ func TestOIDCController(t *testing.T) {
 	router := gin.Default()
 
 	router.Use(func(c *gin.Context) {
-		c.Set("context", &oidcTestContext)
+		c.Set("context", &oidcCtrlTestContext)
 		c.Next()
 	})
 
@@ -137,6 +137,8 @@ func TestOIDCController(t *testing.T) {
 
 	req, err = http.NewRequest("POST", "/api/oidc/token", strings.NewReader(params.Encode()))
 
+	assert.NilError(t, err)
+
 	req.Header.Set("content-type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("some-client-id", "some-client-secret")
 
@@ -154,12 +156,31 @@ func TestOIDCController(t *testing.T) {
 	_, ok = resJson["id_token"].(string)
 	assert.Assert(t, ok)
 
-	_, ok = resJson["refresh_token"].(string)
+	refreshToken, ok := resJson["refresh_token"].(string)
 	assert.Assert(t, ok)
 
 	expires_in, ok := resJson["expires_in"].(float64)
 	assert.Assert(t, ok)
-	assert.Equal(t, expires_in, float64(serviceConfig.SessionExpiry))
+	assert.Equal(t, expires_in, float64(oidcServiceConfig.SessionExpiry))
+
+	// Ensure code is expired
+	recorder = httptest.NewRecorder()
+
+	params, err = query.Values(controller.TokenRequest{
+		GrantType:   "authorization_code",
+		Code:        code,
+		RedirectURI: "https://example.com/oauth/callback",
+	})
+
+	assert.NilError(t, err)
+
+	req, err = http.NewRequest("POST", "/api/oidc/token", strings.NewReader(params.Encode()))
+
+	req.Header.Set("content-type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth("some-client-id", "some-client-secret")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
 
 	// Test userinfo
 	recorder = httptest.NewRecorder()
@@ -182,18 +203,81 @@ func TestOIDCController(t *testing.T) {
 
 	name, ok := resJson["name"].(string)
 	assert.Assert(t, ok)
-	assert.Equal(t, name, oidcTestContext.Name)
+	assert.Equal(t, name, oidcCtrlTestContext.Name)
 
 	email, ok := resJson["email"].(string)
 	assert.Assert(t, ok)
-	assert.Equal(t, email, oidcTestContext.Email)
+	assert.Equal(t, email, oidcCtrlTestContext.Email)
 
 	preferred_username, ok := resJson["preferred_username"].(string)
 	assert.Assert(t, ok)
-	assert.Equal(t, preferred_username, oidcTestContext.Username)
+	assert.Equal(t, preferred_username, oidcCtrlTestContext.Username)
 
 	// Not sure why this is failing, will look into it later
-	// groups, ok := resJson["groups"].([]string)
-	// assert.Assert(t, ok)
-	// assert.Equal(t, strings.Split(oidcTestContext.LdapGroups, ","), groups)
+	igroups, ok := resJson["groups"].([]any)
+	assert.Assert(t, ok)
+
+	groups := make([]string, len(igroups))
+	for i, group := range igroups {
+		groups[i], ok = group.(string)
+		assert.Assert(t, ok)
+	}
+
+	assert.DeepEqual(t, strings.Split(oidcCtrlTestContext.LdapGroups, ","), groups)
+
+	// Test refresh token
+	recorder = httptest.NewRecorder()
+
+	params, err = query.Values(controller.TokenRequest{
+		GrantType:    "refresh_token",
+		RefreshToken: refreshToken,
+		ClientID:     "some-client-id",
+		ClientSecret: "some-client-secret",
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err = http.NewRequest("POST", "/api/oidc/token", strings.NewReader(params.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	resJson = map[string]any{}
+
+	err = json.Unmarshal(recorder.Body.Bytes(), &resJson)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newToken, ok := resJson["access_token"].(string)
+	assert.Assert(t, ok)
+	assert.Assert(t, newToken != accessToken)
+
+	// Ensure old token is invalid
+	recorder = httptest.NewRecorder()
+	req, err = http.NewRequest("GET", "/api/oidc/userinfo", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("authorization", fmt.Sprintf("Bearer %s", accessToken))
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+
+	// Test new token
+	recorder = httptest.NewRecorder()
+	req, err = http.NewRequest("GET", "/api/oidc/userinfo", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("authorization", fmt.Sprintf("Bearer %s", newToken))
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, http.StatusOK, recorder.Code)
 }
