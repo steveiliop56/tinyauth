@@ -1,8 +1,8 @@
 version: "2"
 sql:
   - engine: "sqlite"
-    queries: "sql/queries.sql"
-    schema: "sql/schema.sql"
+    queries: "sql/*_queries.sql"
+    schema: "sql/*_schemas.sql"
     gen:
       go:
         package: "repository"
@@ -12,6 +12,7 @@ sql:
           oauth_groups: "OAuthGroups"
           oauth_name: "OAuthName"
           oauth_sub: "OAuthSub"
+          redirect_uri: "RedirectURI"
         overrides:
           - column: "sessions.oauth_groups"
             go_type: "string"

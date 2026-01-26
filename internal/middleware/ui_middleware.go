@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/assets"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,11 +40,10 @@ func (m *UIMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := strings.TrimPrefix(c.Request.URL.Path, "/")
 
+		tlog.App.Debug().Str("path", path).Msg("path")
+
 		switch strings.SplitN(path, "/", 2)[0] {
-		case "api":
-			c.Next()
-			return
-		case "resources":
+		case "api", "resources", ".well-known":
 			c.Next()
 			return
 		default:

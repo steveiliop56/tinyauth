@@ -30,6 +30,7 @@ type BootstrapApp struct {
 		users               []config.User
 		oauthProviders      map[string]config.OAuthServiceConfig
 		configuredProviders []controller.Provider
+		oidcClients         []config.OIDCClientConfig
 	}
 	services Services
 }
@@ -82,6 +83,12 @@ func (app *BootstrapApp) Setup() error {
 			}
 		}
 		app.context.oauthProviders[id] = provider
+	}
+
+	// Setup OIDC clients
+	for id, client := range app.config.OIDC.Clients {
+		client.ID = id
+		app.context.oidcClients = append(app.context.oidcClients, client)
 	}
 
 	// Get cookie domain
@@ -240,7 +247,7 @@ func (app *BootstrapApp) heartbeat() {
 
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"
 
-	for ; true; <-ticker.C {
+	for range ticker.C {
 		tlog.App.Debug().Msg("Sending heartbeat")
 
 		req, err := http.NewRequest(http.MethodPost, heartbeatURL, bytes.NewReader(bodyJson))
@@ -272,7 +279,7 @@ func (app *BootstrapApp) dbCleanup(queries *repository.Queries) {
 	defer ticker.Stop()
 	ctx := context.Background()
 
-	for ; true; <-ticker.C {
+	for range ticker.C {
 		tlog.App.Debug().Msg("Cleaning up old database sessions")
 		err := queries.DeleteExpiredSessions(ctx, time.Now().Unix())
 		if err != nil {
