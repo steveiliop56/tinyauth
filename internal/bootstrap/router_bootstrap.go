@@ -113,5 +113,11 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	healthController.SetupRoutes()
 
+	wellknownController := controller.NewWellKnownController(controller.WellKnownControllerConfig{
+		OpenIDConnectIssuer: app.services.oidcService.GetIssuer(),
+	}, engine)
+
+	wellknownController.SetupRoutes()
+
 	return engine, nil
 }
