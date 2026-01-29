@@ -79,13 +79,23 @@ func main() {
 		},
 	}
 
+	cmdUser := &cli.Command{
+		Name:        "user",
+		Description: "Utilities for creating and verifying Tinyauth users.",
+	}
+
+	cmdTotp := &cli.Command{
+		Name:        "totp",
+		Description: "Utilities for creating Tinyauth TOTP users.",
+	}
+
 	err := cmdTinyauth.AddCommand(versionCmd())
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to add version command")
 	}
 
-	err = cmdTinyauth.AddCommand(verifyUserCmd())
+	err = cmdUser.AddCommand(verifyUserCmd())
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to add verify command")
@@ -97,16 +107,28 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to add healthcheck command")
 	}
 
-	err = cmdTinyauth.AddCommand(generateTotpCmd())
+	err = cmdTotp.AddCommand(generateTotpCmd())
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to add generate command")
 	}
 
-	err = cmdTinyauth.AddCommand(createUserCmd())
+	err = cmdUser.AddCommand(createUserCmd())
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to add create command")
+	}
+
+	err = cmdTinyauth.AddCommand(cmdUser)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to add user command")
+	}
+
+	err = cmdTinyauth.AddCommand(cmdTotp)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to add totp command")
 	}
 
 	err = cli.Execute(cmdTinyauth)
