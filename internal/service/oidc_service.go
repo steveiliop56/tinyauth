@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"database/sql"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -17,14 +18,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-jose/go-jose/v4"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"golang.org/x/exp/slices"
-
-	// Should probably switch to another package but for now this works
-	"golang.org/x/oauth2/jws"
 )
 
 var (
@@ -39,6 +38,14 @@ var (
 	ErrTokenNotFound = errors.New("token_not_found")
 	ErrTokenExpired  = errors.New("token_expired")
 )
+
+type ClaimSet struct {
+	Iss string `json:"iss"`
+	Aud string `json:"aud"`
+	Sub string `json:"sub"`
+	Iat int64  `json:"iat"`
+	Exp int64  `json:"exp"`
+}
 
 type UserinfoResponse struct {
 	Sub               string   `json:"sub"`
@@ -333,7 +340,21 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 	createdAt := time.Now().Unix()
 	expiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
 
-	claims := jws.ClaimSet{
+	signer, err := jose.NewSigner(jose.SigningKey{
+		Algorithm: jose.RS256,
+		Key:       service.privateKey,
+	}, &jose.SignerOptions{
+		ExtraHeaders: map[jose.HeaderKey]any{
+			"typ": "jwt",
+			"jku": fmt.Sprintf("%s/.well-known/jwks.json", service.issuer),
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	claims := ClaimSet{
 		Iss: service.issuer,
 		Aud: client.ClientID,
 		Sub: sub,
@@ -341,12 +362,19 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 		Exp: expiresAt,
 	}
 
-	header := jws.Header{
-		Algorithm: "RS256",
-		Typ:       "JWT",
+	payload, err := json.Marshal(claims)
+
+	if err != nil {
+		return "", err
 	}
 
-	token, err := jws.Encode(&header, &claims, service.privateKey)
+	object, err := signer.Sign(payload)
+
+	if err != nil {
+		return "", err
+	}
+
+	token, err := object.CompactSerialize()
 
 	if err != nil {
 		return "", err
@@ -594,4 +622,14 @@ func (service *OIDCService) Cleanup() {
 			}
 		}
 	}
+}
+
+func (service *OIDCService) GetJWK() ([]byte, error) {
+	jwk := jose.JSONWebKey{
+		Key:       service.privateKey,
+		Algorithm: string(jose.RS256),
+		Use:       "sig",
+	}
+
+	return jwk.Public().MarshalJSON()
 }

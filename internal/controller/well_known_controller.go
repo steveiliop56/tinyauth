@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/steveiliop56/tinyauth/internal/service"
@@ -23,33 +24,35 @@ type OpenIDConnectConfiguration struct {
 	ServiceDocumentation              string   `json:"service_documentation"`
 }
 
-type WellKnownControllerConfig struct {
-	OpenIDConnectIssuer string
-}
+type WellKnownControllerConfig struct{}
 
 type WellKnownController struct {
 	config WellKnownControllerConfig
 	engine *gin.Engine
+	oidc   *service.OIDCService
 }
 
-func NewWellKnownController(config WellKnownControllerConfig, engine *gin.Engine) *WellKnownController {
+func NewWellKnownController(config WellKnownControllerConfig, oidc *service.OIDCService, engine *gin.Engine) *WellKnownController {
 	return &WellKnownController{
 		config: config,
+		oidc:   oidc,
 		engine: engine,
 	}
 }
 
 func (controller *WellKnownController) SetupRoutes() {
 	controller.engine.GET("/.well-known/openid-configuration", controller.OpenIDConnectConfiguration)
+	controller.engine.GET("/.well-known/jwks.json", controller.JWKS)
 }
 
 func (controller *WellKnownController) OpenIDConnectConfiguration(c *gin.Context) {
+	issuer := controller.oidc.GetIssuer()
 	c.JSON(200, OpenIDConnectConfiguration{
-		Issuer:                            controller.config.OpenIDConnectIssuer,
-		AuthorizationEndpoint:             fmt.Sprintf("%s/authorize", controller.config.OpenIDConnectIssuer),
-		TokenEndpoint:                     fmt.Sprintf("%s/api/oidc/token", controller.config.OpenIDConnectIssuer),
-		UserinfoEndpoint:                  fmt.Sprintf("%s/api/oidc/userinfo", controller.config.OpenIDConnectIssuer),
-		JwksUri:                           fmt.Sprintf("%s/api/oidc/jwks", controller.config.OpenIDConnectIssuer),
+		Issuer:                            issuer,
+		AuthorizationEndpoint:             fmt.Sprintf("%s/authorize", issuer),
+		TokenEndpoint:                     fmt.Sprintf("%s/api/oidc/token", issuer),
+		UserinfoEndpoint:                  fmt.Sprintf("%s/api/oidc/userinfo", issuer),
+		JwksUri:                           fmt.Sprintf("%s/.well-known/jwks.json", issuer),
 		ScopesSupported:                   service.SupportedScopes,
 		ResponseTypesSupported:            service.SupportedResponseTypes,
 		GrantTypesSupported:               service.SupportedGrantTypes,
@@ -59,4 +62,24 @@ func (controller *WellKnownController) OpenIDConnectConfiguration(c *gin.Context
 		ClaimsSupported:                   []string{"sub", "updated_at", "name", "preferred_username", "email", "groups"},
 		ServiceDocumentation:              "https://tinyauth.app/docs/reference/openid",
 	})
+}
+
+func (controller *WellKnownController) JWKS(c *gin.Context) {
+	jwks, err := controller.oidc.GetJWK()
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status":  "500",
+			"message": "failed to get JWK",
+		})
+		return
+	}
+
+	c.Header("content-type", "application/json")
+
+	c.Writer.WriteString(`{"keys":[`)
+	c.Writer.Write(jwks)
+	c.Writer.WriteString(`]}`)
+
+	c.Status(http.StatusOK)
 }

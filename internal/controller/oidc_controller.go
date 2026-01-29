@@ -150,7 +150,7 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 	}
 
 	// We also need a snapshot of the user that authorized this (skip if no openid scope)
-	if slices.Contains(strings.Split(req.Scope, " "), "openid") {
+	if slices.Contains(strings.Fields(req.Scope), "openid") {
 		err = controller.oidc.StoreUserinfo(c, sub, userContext, req)
 
 		if err != nil {

@@ -27,7 +27,7 @@ export default defineConfig({
       "/.well-known": {
         target: "http://tinyauth-backend:3000/.well-known",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/.well-known/, ""),
+        rewrite: (path) => path.replace(/^\/\.well-known/, ""),
       },
     },
     allowedHosts: true,
