@@ -70,7 +70,6 @@ export const TotpPage = () => {
         <TotpForm
           formId={formId}
           onSubmit={(values) => totpMutation.mutate(values)}
-          loading={totpMutation.isPending}
         />
       </CardContent>
       <CardFooter className="flex flex-col items-stretch">
