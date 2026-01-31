@@ -55,7 +55,7 @@ export const LogoutPage = () => {
       <CardHeader>
         <CardTitle className="text-3xl">{t("logoutTitle")}</CardTitle>
         <CardDescription>
-          {provider !== "username" ? (
+          {provider !== "local" && provider !== "ldap" ? (
             <Trans
               i18nKey="logoutOauthSubtitle"
               t={t}

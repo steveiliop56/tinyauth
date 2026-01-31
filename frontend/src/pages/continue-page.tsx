@@ -80,7 +80,7 @@ export const ContinuePage = () => {
       clearTimeout(auto);
       clearTimeout(reveal);
     };
-  }, []);
+  });
 
   if (!isLoggedIn) {
     return (
