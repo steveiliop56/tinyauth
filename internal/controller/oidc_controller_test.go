@@ -176,6 +176,8 @@ func TestOIDCController(t *testing.T) {
 
 	req, err = http.NewRequest("POST", "/api/oidc/token", strings.NewReader(params.Encode()))
 
+	assert.NilError(t, err)
+
 	req.Header.Set("content-type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("some-client-id", "some-client-secret")
 

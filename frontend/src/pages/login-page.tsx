@@ -149,6 +149,10 @@ export const LoginPage = () => {
     [],
   );
 
+  if (isLoggedIn && isOidc) {
+    return <Navigate to={`/authorize?${compiledOIDCParams}`} replace />;
+  }
+
   if (isLoggedIn && props.redirect_uri !== "") {
     return (
       <Navigate

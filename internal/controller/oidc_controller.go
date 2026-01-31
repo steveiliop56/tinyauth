@@ -273,11 +273,19 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		tokenResponse = tokenRes
 	case "refresh_token":
-		tokenRes, err := controller.oidc.RefreshAccessToken(c, req.RefreshToken)
+		tokenRes, err := controller.oidc.RefreshAccessToken(c, req.RefreshToken, rclientId)
 
 		if err != nil {
 			if errors.Is(err, service.ErrTokenExpired) {
 				tlog.App.Error().Err(err).Msg("Refresh token expired")
+				c.JSON(401, gin.H{
+					"error": "invalid_grant",
+				})
+				return
+			}
+
+			if errors.Is(err, service.ErrInvalidClient) {
+				tlog.App.Error().Err(err).Msg("Invalid client")
 				c.JSON(401, gin.H{
 					"error": "invalid_grant",
 				})

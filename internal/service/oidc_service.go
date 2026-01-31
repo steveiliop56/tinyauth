@@ -37,6 +37,7 @@ var (
 	ErrCodeNotFound  = errors.New("code_not_found")
 	ErrTokenNotFound = errors.New("token_not_found")
 	ErrTokenExpired  = errors.New("token_expired")
+	ErrInvalidClient = errors.New("invalid_client")
 )
 
 type ClaimSet struct {
@@ -212,7 +213,7 @@ func (service *OIDCService) Init() error {
 }
 
 func (service *OIDCService) GetIssuer() string {
-	return service.config.Issuer
+	return service.issuer
 }
 
 func (service *OIDCService) GetClient(id string) (config.OIDCClientConfig, bool) {
@@ -424,7 +425,7 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 	return tokenResponse, nil
 }
 
-func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken string) (TokenResponse, error) {
+func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken string, reqClientId string) (TokenResponse, error) {
 	entry, err := service.queries.GetOidcTokenByRefreshToken(c, service.Hash(refreshToken))
 
 	if err != nil {
@@ -436,6 +437,11 @@ func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken stri
 
 	if entry.RefreshTokenExpiresAt < time.Now().Unix() {
 		return TokenResponse{}, ErrTokenExpired
+	}
+
+	// Ensure the client ID in the request matches the client ID in the token
+	if entry.ClientID != reqClientId {
+		return TokenResponse{}, ErrInvalidClient
 	}
 
 	idToken, err := service.generateIDToken(config.OIDCClientConfig{

@@ -10,7 +10,7 @@ import {
   CardFooter,
   CardContent,
 } from "@/components/ui/card";
-import { getOidcClientInfoScehma } from "@/schemas/oidc-schemas";
+import { getOidcClientInfoSchema } from "@/schemas/oidc-schemas";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { toast } from "sonner";
@@ -73,13 +73,13 @@ export const AuthorizePage = () => {
     isOidc,
     compiled: compiledOIDCParams,
   } = useOIDCParams(searchParams);
-  const scopes = props.scope.split(" ");
+  const scopes = props.scope ? props.scope.split(" ").filter(Boolean) : [];
 
   const getClientInfo = useQuery({
     queryKey: ["client", props.client_id],
     queryFn: async () => {
       const res = await fetch(`/api/oidc/clients/${props.client_id}`);
-      const data = await getOidcClientInfoScehma.parseAsync(await res.json());
+      const data = await getOidcClientInfoSchema.parseAsync(await res.json());
       return data;
     },
     enabled: isOidc,
