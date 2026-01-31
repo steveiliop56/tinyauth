@@ -12,6 +12,7 @@ type Services struct {
 	dockerService        *service.DockerService
 	ldapService          *service.LdapService
 	oauthBrokerService   *service.OAuthBrokerService
+	tailscaleService     *service.TailscaleService
 }
 
 func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, error) {
@@ -35,6 +36,19 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 	} else {
 		tlog.App.Warn().Err(err).Msg("Failed to initialize LDAP service, continuing without it")
 	}
+
+	tailscaleService := service.NewTailscaleService(service.TailscaleServiceConfig{
+		AuthKey:  app.config.Tailscale.AuthKey,
+		Hostname: app.config.Tailscale.Hostname,
+	})
+
+	err = tailscaleService.Init()
+
+	if err != nil {
+		return Services{}, err
+	}
+
+	services.tailscaleService = tailscaleService
 
 	dockerService := service.NewDockerService()
 
@@ -68,7 +82,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		SessionCookieName:  app.context.sessionCookieName,
 		IP:                 app.config.Auth.IP,
 		LDAPGroupsCacheTTL: app.config.Ldap.GroupCacheTTL,
-	}, dockerService, services.ldapService, queries)
+	}, dockerService, services.ldapService, services.tailscaleService, queries)
 
 	err = authService.Init()
 

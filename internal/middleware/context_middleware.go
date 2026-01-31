@@ -37,6 +37,25 @@ func (m *ContextMiddleware) Init() error {
 
 func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Before checking the cookie, let's check tailscale
+		who, err := m.auth.IsTailscale(c)
+
+		if err != nil {
+			tlog.App.Warn().Err(err).Msg("Failed to check Tailscale, checking other auth sources")
+		}
+
+		if who != nil {
+			c.Set("context", &config.UserContext{
+				Username:   who.Node.Name,
+				Name:       who.Node.ComputedName,
+				Email:      strings.Replace(who.Node.Name, ".", "@", 1),
+				Provider:   "tailscale",
+				IsLoggedIn: true,
+			})
+			c.Next()
+			return
+		}
+
 		cookie, err := m.auth.GetSessionCookie(c)
 
 		if err != nil {

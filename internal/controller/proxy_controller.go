@@ -94,6 +94,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
+	// Is it from tailscale?
+	tailscaleWho, err := controller.auth.IsTailscale(c)
+
+	if err != nil {
+		tlog.App.Error().Err(err).Msg("Failed to get tailscale whois")
+		controller.handleError(c, req, isBrowser)
+		return
+	}
+
+	tlog.App.Debug().Interface("who", tailscaleWho).Msg("Yoyo are we from tailscale")
+
 	// Get acls
 	acls, err := controller.acls.GetAccessControls(host)
 

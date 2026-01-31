@@ -61,7 +61,7 @@ develop:
 
 # Development - Infisical
 develop-infisical:
-	infisical run --env=dev -- docker compose -f $(DEV_COMPOSE) up --force-recreate --pull=always --remove-orphans
+	infisical run --env=dev -- docker compose -f $(DEV_COMPOSE) up --force-recreate --pull=always --remove-orphans --build
 
 # Production
 prod:

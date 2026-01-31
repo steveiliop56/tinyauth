@@ -45,6 +45,7 @@ func (app *BootstrapApp) Setup() error {
 	if app.config.Auth.SessionMaxLifetime != 0 && app.config.Auth.SessionMaxLifetime < app.config.Auth.SessionExpiry {
 		return fmt.Errorf("session max lifetime cannot be less than session expiry")
 	}
+
 	// Parse users
 	users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
 
@@ -201,6 +202,19 @@ func (app *BootstrapApp) Setup() error {
 		}
 
 		return nil
+	}
+
+	// If we have tailscale configured, we will listen on it
+	if app.services.tailscaleService.IsConfigured() {
+		ln, err := app.services.tailscaleService.CreateListener()
+
+		if err != nil {
+			return fmt.Errorf("failed to create listener: %w", err)
+		}
+
+		if err := router.RunListener(ln); err != nil {
+			tlog.App.Fatal().Err(err).Msg("Failed to start tailscale listener")
+		}
 	}
 
 	// Start server

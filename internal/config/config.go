@@ -29,6 +29,7 @@ type Config struct {
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
 	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
 	Log               LogConfig          `description:"Logging configuration." yaml:"log"`
+	Tailscale         TailscaleConfig    `description:"Tailscale configuration." yaml:"tailscale"`
 }
 
 type ServerConfig struct {
@@ -82,6 +83,11 @@ type LogConfig struct {
 	Level   string     `description:"Log level (trace, debug, info, warn, error)." yaml:"level"`
 	Json    bool       `description:"Enable JSON formatted logs." yaml:"json"`
 	Streams LogStreams `description:"Configuration for specific log streams." yaml:"streams"`
+}
+
+type TailscaleConfig struct {
+	AuthKey  string `description:"Tailscale authentication key." yaml:"authKey"`
+	Hostname string `description:"Hostname for Tailscale." yaml:"hostname"`
 }
 
 type LogStreams struct {

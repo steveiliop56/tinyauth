@@ -13,6 +13,8 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
+	tsLocal "tailscale.com/client/local"
+	"tailscale.com/client/tailscale/apitype"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -52,16 +54,18 @@ type AuthService struct {
 	loginMutex      sync.RWMutex
 	ldapGroupsMutex sync.RWMutex
 	ldap            *LdapService
+	tailscale       *TailscaleService
 	queries         *repository.Queries
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, tailscale *TailscaleService, queries *repository.Queries) *AuthService {
 	return &AuthService{
 		config:          config,
 		docker:          docker,
 		loginAttempts:   make(map[string]*LoginAttempt),
 		ldapGroupsCache: make(map[string]*LdapGroupsCache),
 		ldap:            ldap,
+		tailscale:       tailscale,
 		queries:         queries,
 	}
 }
@@ -552,4 +556,21 @@ func (auth *AuthService) IsBypassedIP(acls config.AppIP, ip string) bool {
 
 	tlog.App.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
 	return false
+}
+
+func (auth *AuthService) IsTailscale(c *gin.Context) (*apitype.WhoIsResponse, error) {
+	if !auth.tailscale.IsConfigured() {
+		return nil, nil
+	}
+
+	who, err := auth.tailscale.Whois(c, c.Request.RemoteAddr)
+
+	if err != nil {
+		if errors.Is(err, tsLocal.ErrPeerNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return who, nil
 }
