@@ -36,7 +36,16 @@ func NewLdapService(config LdapServiceConfig) *LdapService {
 	}
 }
 
+// If you have an ldap address then you must need ldap
+func (ldap *LdapService) IsConfigured() bool {
+	return ldap.config.Address != ""
+}
+
 func (ldap *LdapService) Init() error {
+	if !ldap.IsConfigured() {
+		return nil
+	}
+
 	// Check whether authentication with client certificate is possible
 	if ldap.config.AuthCert != "" && ldap.config.AuthKey != "" {
 		cert, err := tls.LoadX509KeyPair(ldap.config.AuthCert, ldap.config.AuthKey)

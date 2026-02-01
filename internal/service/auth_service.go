@@ -78,7 +78,7 @@ func (auth *AuthService) SearchUser(username string) config.UserSearch {
 		}
 	}
 
-	if auth.ldap != nil {
+	if auth.ldap.IsConfigured() {
 		userDN, err := auth.ldap.GetUserDN(username)
 
 		if err != nil {
@@ -105,7 +105,7 @@ func (auth *AuthService) VerifyUser(search config.UserSearch, password string) b
 		user := auth.GetLocalUser(search.Username)
 		return auth.CheckPassword(user, password)
 	case "ldap":
-		if auth.ldap != nil {
+		if auth.ldap.IsConfigured() {
 			err := auth.ldap.Bind(search.Username, password)
 			if err != nil {
 				tlog.App.Warn().Err(err).Str("username", search.Username).Msg("Failed to bind to LDAP")
@@ -141,7 +141,7 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 }
 
 func (auth *AuthService) GetLdapUser(userDN string) (config.LdapUser, error) {
-	if auth.ldap == nil {
+	if !auth.ldap.IsConfigured() {
 		return config.LdapUser{}, errors.New("LDAP service not initialized")
 	}
 
@@ -398,7 +398,7 @@ func (auth *AuthService) LocalAuthConfigured() bool {
 }
 
 func (auth *AuthService) LdapAuthConfigured() bool {
-	return auth.ldap != nil
+	return auth.ldap.IsConfigured()
 }
 
 func (auth *AuthService) IsUserAllowed(c *gin.Context, context config.UserContext, acls config.App) bool {
