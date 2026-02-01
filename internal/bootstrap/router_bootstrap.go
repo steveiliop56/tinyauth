@@ -86,6 +86,10 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 
 	oauthController.SetupRoutes()
 
+	oidcController := controller.NewOIDCController(controller.OIDCControllerConfig{}, app.services.oidcService, apiRouter)
+
+	oidcController.SetupRoutes()
+
 	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
 		AppURL: app.config.AppURL,
 	}, apiRouter, app.services.accessControlService, app.services.authService)
@@ -108,6 +112,10 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	healthController := controller.NewHealthController(apiRouter)
 
 	healthController.SetupRoutes()
+
+	wellknownController := controller.NewWellKnownController(controller.WellKnownControllerConfig{}, app.services.oidcService, engine)
+
+	wellknownController.SetupRoutes()
 
 	return engine, nil
 }
