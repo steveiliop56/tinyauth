@@ -90,7 +90,9 @@ export const LoginPage = () => {
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {
-        window.location.replace(`/totp?${compiledOIDCParams}`);
+        window.location.replace(
+          `/totp?redirect_uri=${encodeURIComponent(props.redirect_uri)}`,
+        );
         return;
       }
 

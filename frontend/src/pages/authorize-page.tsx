@@ -109,10 +109,6 @@ export const AuthorizePage = () => {
     },
   });
 
-  if (!isLoggedIn) {
-    return <Navigate to={`/login?${compiledOIDCParams}`} replace />;
-  }
-
   if (missingParams.length > 0) {
     return (
       <Navigate
@@ -120,6 +116,10 @@ export const AuthorizePage = () => {
         replace
       />
     );
+  }
+
+  if (!isLoggedIn) {
+    return <Navigate to={`/login?${compiledOIDCParams}`} replace />;
   }
 
   if (getClientInfo.isLoading) {

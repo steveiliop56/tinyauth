@@ -233,14 +233,14 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code))
 		if err != nil {
 			if errors.Is(err, service.ErrCodeNotFound) {
-				tlog.App.Warn().Str("code", req.Code).Msg("Code not found")
+				tlog.App.Warn().Msg("Code not found")
 				c.JSON(400, gin.H{
 					"error": "invalid_grant",
 				})
 				return
 			}
 			if errors.Is(err, service.ErrCodeExpired) {
-				tlog.App.Warn().Str("code", req.Code).Msg("Code expired")
+				tlog.App.Warn().Msg("Code expired")
 				c.JSON(400, gin.H{
 					"error": "invalid_grant",
 				})
