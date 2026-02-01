@@ -68,6 +68,8 @@
     "authorizeLoadingSubtitle": "Please wait while we load the client information.",
     "authorizeSuccessTitle": "Authorized",
     "authorizeSuccessSubtitle": "You will be redirected to the app in a few seconds.",
+    "authorizeErrorClientInfo": "An error occurred while loading the client information. Please try again later.",
+    "authorizeErrorMissingParams": "The following parameters are missing: {{missingParams}}",
     "openidScopeName": "OpenID Connect",
     "openidScopeDescription": "Allows the app to access your OpenID Connect information.",
     "emailScopeName": "Email",

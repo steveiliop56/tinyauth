@@ -112,7 +112,7 @@ export const AuthorizePage = () => {
   if (missingParams.length > 0) {
     return (
       <Navigate
-        to={`/error?error=${encodeURIComponent(`Missing parameters: ${missingParams.join(", ")}`)}`}
+        to={`/error?error=${encodeURIComponent(t("authorizeErrorMissingParams", { missingParams: missingParams.join(", ") }))}`}
         replace
       />
     );
@@ -138,7 +138,7 @@ export const AuthorizePage = () => {
   if (getClientInfo.isError) {
     return (
       <Navigate
-        to={`/error?error=${encodeURIComponent(`Failed to load client information`)}`}
+        to={`/error?error=${encodeURIComponent(t("authorizeErrorClientInfo"))}`}
         replace
       />
     );
