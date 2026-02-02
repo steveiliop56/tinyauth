@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 )
 
 type Services struct {
@@ -31,7 +32,8 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 	err := ldapService.Init()
 
 	if err != nil {
-		return Services{}, err
+		tlog.App.Warn().Err(err).Msg("Failed to setup LDAP service, starting without it")
+		ldapService.Unconfigure()
 	}
 
 	services.ldapService = ldapService

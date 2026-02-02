@@ -24,10 +24,11 @@ type LdapServiceConfig struct {
 }
 
 type LdapService struct {
-	config LdapServiceConfig
-	conn   *ldapgo.Conn
-	mutex  sync.RWMutex
-	cert   *tls.Certificate
+	config       LdapServiceConfig
+	conn         *ldapgo.Conn
+	mutex        sync.RWMutex
+	cert         *tls.Certificate
+	isConfigured bool
 }
 
 func NewLdapService(config LdapServiceConfig) *LdapService {
@@ -36,13 +37,28 @@ func NewLdapService(config LdapServiceConfig) *LdapService {
 	}
 }
 
-// If you have an ldap address then you must need ldap
 func (ldap *LdapService) IsConfigured() bool {
-	return ldap.config.Address != ""
+	return ldap.isConfigured
+}
+
+func (ldap *LdapService) Unconfigure() error {
+	if !ldap.isConfigured {
+		return nil
+	}
+
+	if ldap.conn != nil {
+		if err := ldap.conn.Close(); err != nil {
+			return fmt.Errorf("failed to close LDAP connection: %w", err)
+		}
+	}
+
+	ldap.isConfigured = false
+	return nil
 }
 
 func (ldap *LdapService) Init() error {
-	if !ldap.IsConfigured() {
+	if ldap.config.Address == "" {
+		ldap.isConfigured = false
 		return nil
 	}
 

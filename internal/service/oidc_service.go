@@ -83,12 +83,13 @@ type OIDCServiceConfig struct {
 }
 
 type OIDCService struct {
-	config     OIDCServiceConfig
-	queries    *repository.Queries
-	clients    map[string]config.OIDCClientConfig
-	privateKey *rsa.PrivateKey
-	publicKey  crypto.PublicKey
-	issuer     string
+	config       OIDCServiceConfig
+	queries      *repository.Queries
+	clients      map[string]config.OIDCClientConfig
+	privateKey   *rsa.PrivateKey
+	publicKey    crypto.PublicKey
+	issuer       string
+	isConfigured bool
 }
 
 func NewOIDCService(config OIDCServiceConfig, queries *repository.Queries) *OIDCService {
@@ -99,12 +100,13 @@ func NewOIDCService(config OIDCServiceConfig, queries *repository.Queries) *OIDC
 }
 
 func (service *OIDCService) IsConfigured() bool {
-	return len(service.config.Clients) > 0
+	return service.isConfigured
 }
 
 func (service *OIDCService) Init() error {
 	// If not configured, skip init
-	if !service.IsConfigured() {
+	if len(service.config.Clients) == 0 {
+		service.isConfigured = false
 		return nil
 	}
 
