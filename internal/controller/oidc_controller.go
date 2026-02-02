@@ -97,6 +97,11 @@ func (controller *OIDCController) GetClientInfo(c *gin.Context) {
 }
 
 func (controller *OIDCController) Authorize(c *gin.Context) {
+	if !controller.oidc.IsConfigured() {
+		controller.authorizeError(c, errors.New("err_oidc_not_configured"), "OIDC not configured", "This instance is not configured for OIDC", "", "", "")
+		return
+	}
+
 	userContext, err := utils.GetContext(c)
 
 	if err != nil {
@@ -177,6 +182,14 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 }
 
 func (controller *OIDCController) Token(c *gin.Context) {
+	if !controller.oidc.IsConfigured() {
+		tlog.App.Warn().Msg("OIDC not configured")
+		c.JSON(404, gin.H{
+			"error": "not_found",
+		})
+		return
+	}
+
 	var req TokenRequest
 
 	err := c.Bind(&req)
@@ -306,6 +319,14 @@ func (controller *OIDCController) Token(c *gin.Context) {
 }
 
 func (controller *OIDCController) Userinfo(c *gin.Context) {
+	if !controller.oidc.IsConfigured() {
+		tlog.App.Warn().Msg("OIDC not configured")
+		c.JSON(404, gin.H{
+			"error": "not_found",
+		})
+		return
+	}
+
 	authorization := c.GetHeader("Authorization")
 
 	tokenType, token, ok := strings.Cut(authorization, " ")

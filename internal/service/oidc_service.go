@@ -98,9 +98,16 @@ func NewOIDCService(config OIDCServiceConfig, queries *repository.Queries) *OIDC
 	}
 }
 
-// TODO: A cleanup routine is needed to clean up expired tokens/code/userinfo
+func (service *OIDCService) IsConfigured() bool {
+	return len(service.config.Clients) > 0
+}
 
 func (service *OIDCService) Init() error {
+	// If not configured, skip init
+	if !service.IsConfigured() {
+		return nil
+	}
+
 	// Ensure issuer is https
 	uissuer, err := url.Parse(service.config.Issuer)
 
@@ -207,6 +214,7 @@ func (service *OIDCService) Init() error {
 		}
 		client.ClientSecretFile = ""
 		service.clients[id] = client
+		tlog.App.Info().Str("id", client.ID).Msg("Registered OIDC client")
 	}
 
 	return nil
