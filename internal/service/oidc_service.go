@@ -110,6 +110,8 @@ func (service *OIDCService) Init() error {
 		return nil
 	}
 
+	service.isConfigured = true
+
 	// Ensure issuer is https
 	uissuer, err := url.Parse(service.config.Issuer)
 

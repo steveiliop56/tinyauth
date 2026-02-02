@@ -62,6 +62,8 @@ func (ldap *LdapService) Init() error {
 		return nil
 	}
 
+	ldap.isConfigured = true
+
 	// Check whether authentication with client certificate is possible
 	if ldap.config.AuthCert != "" && ldap.config.AuthKey != "" {
 		cert, err := tls.LoadX509KeyPair(ldap.config.AuthCert, ldap.config.AuthKey)
