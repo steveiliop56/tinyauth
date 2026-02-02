@@ -22,6 +22,7 @@ import (
 type BootstrapApp struct {
 	config  config.Config
 	context struct {
+		appUrl              string
 		uuid                string
 		cookieDomain        string
 		sessionCookieName   string
@@ -42,10 +43,20 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 }
 
 func (app *BootstrapApp) Setup() error {
+	// get app url
+	appUrl, err := url.Parse(app.config.AppURL)
+
+	if err != nil {
+		return err
+	}
+
+	app.context.appUrl = appUrl.Scheme + "://" + appUrl.Host
+
 	// validate session config
 	if app.config.Auth.SessionMaxLifetime != 0 && app.config.Auth.SessionMaxLifetime < app.config.Auth.SessionExpiry {
 		return fmt.Errorf("session max lifetime cannot be less than session expiry")
 	}
+
 	// Parse users
 	users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
 
@@ -62,16 +73,12 @@ func (app *BootstrapApp) Setup() error {
 		secret := utils.GetSecret(provider.ClientSecret, provider.ClientSecretFile)
 		provider.ClientSecret = secret
 		provider.ClientSecretFile = ""
-		app.context.oauthProviders[name] = provider
-	}
 
-	for id := range config.OverrideProviders {
-		if provider, exists := app.context.oauthProviders[id]; exists {
-			if provider.RedirectURL == "" {
-				provider.RedirectURL = app.config.AppURL + "/api/oauth/callback/" + id
-				app.context.oauthProviders[id] = provider
-			}
+		if provider.RedirectURL == "" {
+			provider.RedirectURL = app.context.appUrl + "/api/oauth/callback/" + name
 		}
+
+		app.context.oauthProviders[name] = provider
 	}
 
 	for id, provider := range app.context.oauthProviders {
@@ -92,7 +99,7 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Get cookie domain
-	cookieDomain, err := utils.GetCookieDomain(app.config.AppURL)
+	cookieDomain, err := utils.GetCookieDomain(app.context.appUrl)
 
 	if err != nil {
 		return err
@@ -101,7 +108,6 @@ func (app *BootstrapApp) Setup() error {
 	app.context.cookieDomain = cookieDomain
 
 	// Cookie names
-	appUrl, _ := url.Parse(app.config.AppURL) // Already validated
 	app.context.uuid = utils.GenerateUUID(appUrl.Hostname())
 	cookieId := strings.Split(app.context.uuid, "-")[0]
 	app.context.sessionCookieName = fmt.Sprintf("%s-%s", config.SessionCookieName, cookieId)

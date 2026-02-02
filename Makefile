@@ -71,6 +71,10 @@ develop-infisical:
 prod:
 	docker compose -f $(PROD_COMPOSE) up --force-recreate --pull=always --remove-orphans
 
+# Production - Infisical
+prod-infisical:
+	infisical run --env=dev -- docker compose -f $(PROD_COMPOSE) up --force-recreate --pull=always --remove-orphans
+
 # SQL
 .PHONY: sql
 sql:
