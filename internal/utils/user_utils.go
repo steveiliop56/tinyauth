@@ -2,6 +2,8 @@ package utils
 
 import (
 	"errors"
+	"fmt"
+	"net/mail"
 	"strings"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
@@ -89,4 +91,14 @@ func ParseUser(userStr string) (config.User, error) {
 	}
 
 	return user, nil
+}
+
+func CompileUserEmail(username string, domain string) string {
+	_, err := mail.ParseAddress(username)
+
+	if err != nil {
+		return fmt.Sprintf("%s@%s", strings.ToLower(username), domain)
+	}
+
+	return username
 }

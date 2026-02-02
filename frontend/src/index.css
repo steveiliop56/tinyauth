@@ -160,7 +160,7 @@ code {
 }
 
 pre {
-  @apply bg-accent border border-border rounded-md p-2;
+  @apply bg-accent border border-border rounded-md p-2 whitespace-break-spaces;
 }
 
 .lead {

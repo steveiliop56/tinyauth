@@ -49,3 +49,11 @@ func TestCoalesceToString(t *testing.T) {
 	// Test with nil input
 	assert.Equal(t, "", utils.CoalesceToString(nil))
 }
+
+func TestCompileUserEmail(t *testing.T) {
+	// Test with valid email
+	assert.Equal(t, "user@example.com", utils.CompileUserEmail("user@example.com", "example.com"))
+
+	// Test with invalid email
+	assert.Equal(t, "user@example.com", utils.CompileUserEmail("user", "example.com"))
+}

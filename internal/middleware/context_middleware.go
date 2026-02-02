@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -186,7 +185,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Set("context", &config.UserContext{
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(user.Username), m.config.CookieDomain),
+				Email:       utils.CompileUserEmail(user.Username, m.config.CookieDomain),
 				Provider:    "local",
 				IsLoggedIn:  true,
 				TotpEnabled: user.TotpSecret != "",
@@ -208,7 +207,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			c.Set("context", &config.UserContext{
 				Username:    basic.Username,
 				Name:        utils.Capitalize(basic.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(basic.Username), m.config.CookieDomain),
+				Email:       utils.CompileUserEmail(basic.Username, m.config.CookieDomain),
 				Provider:    "ldap",
 				IsLoggedIn:  true,
 				LdapGroups:  strings.Join(ldapUser.Groups, ","),

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/repository"
@@ -114,8 +113,8 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 			err := controller.auth.CreateSessionCookie(c, &repository.Session{
 				Username:    user.Username,
-				Name:        utils.Capitalize(req.Username),
-				Email:       fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
+				Name:        utils.Capitalize(user.Username),
+				Email:       utils.CompileUserEmail(user.Username, controller.config.CookieDomain),
 				Provider:    "local",
 				TotpPending: true,
 			})
@@ -141,7 +140,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 	sessionCookie := repository.Session{
 		Username: req.Username,
 		Name:     utils.Capitalize(req.Username),
-		Email:    fmt.Sprintf("%s@%s", strings.ToLower(req.Username), controller.config.CookieDomain),
+		Email:    utils.CompileUserEmail(req.Username, controller.config.CookieDomain),
 		Provider: "local",
 	}
 
@@ -255,7 +254,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 	sessionCookie := repository.Session{
 		Username: user.Username,
 		Name:     utils.Capitalize(user.Username),
-		Email:    fmt.Sprintf("%s@%s", strings.ToLower(user.Username), controller.config.CookieDomain),
+		Email:    utils.CompileUserEmail(user.Username, controller.config.CookieDomain),
 		Provider: "local",
 	}
 
