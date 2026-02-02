@@ -28,7 +28,20 @@ func healthcheckCmd() *cli.Command {
 		Run: func(args []string) error {
 			tlog.NewSimpleLogger().Init()
 
-			appUrl := os.Getenv("TINYAUTH_APPURL")
+			appUrl := "http://127.0.0.1:3000"
+
+			appUrlEnv := os.Getenv("TINYAUTH_APPURL")
+			srvAddr := os.Getenv("TINYAUTH_SERVER_ADDRESS")
+			srvPort := os.Getenv("TINYAUTH_SERVER_PORT")
+
+			if appUrlEnv != "" {
+				appUrl = appUrlEnv
+			}
+
+			// Local-direct connection is preferred over the public app URL
+			if srvAddr != "" && srvPort != "" {
+				appUrl = fmt.Sprintf("http://%s:%s", srvAddr, srvPort)
+			}
 
 			if len(args) > 0 {
 				appUrl = args[0]
