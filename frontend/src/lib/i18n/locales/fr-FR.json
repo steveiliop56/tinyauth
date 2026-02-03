@@ -51,7 +51,7 @@
     "forgotPasswordTitle": "Mot de passe oublié ?",
     "failedToFetchProvidersTitle": "Échec du chargement des fournisseurs d'authentification. Veuillez vérifier votre configuration.",
     "errorTitle": "Une erreur est survenue",
-    "errorSubtitleInfo": "The following error occurred while processing your request:",
+    "errorSubtitleInfo": "L'erreur suivante s'est produite lors du traitement de votre requête :",
     "errorSubtitle": "An error occurred while trying to perform this action. Please check your browser console or the app logs for more information.",
     "forgotPasswordMessage": "Vous pouvez réinitialiser votre mot de passe en modifiant la variable d'environnement `USERS`.",
     "fieldRequired": "Ce champ est obligatoire",
