@@ -28,6 +28,7 @@ type Config struct {
 	OIDC              OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
 	UI                UIConfig           `description:"UI customization." yaml:"ui"`
 	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	LabelProvider     string             `description:"Label provider to use for ACLs (docker or kubernetes)." yaml:"labelProvider"`
 	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
 	Log               LogConfig          `description:"Logging configuration." yaml:"log"`
 }
