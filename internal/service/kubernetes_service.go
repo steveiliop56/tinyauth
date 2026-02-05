@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var _ = unstructured.Unstructured{}
@@ -45,19 +44,14 @@ func (k *KubernetesService) Init() error {
 	// Try in-cluster config first
 	config, err = rest.InClusterConfig()
 	if err != nil {
-		// Fall back to kubeconfig
-		kubeconfig := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		if err != nil {
-			tlog.App.Debug().Err(err).Msg("Kubernetes not connected")
-			k.started = false
-			return nil
-		}
+		tlog.App.Error().Err(err).Msg("Failed to get in-cluster Kubernetes config")
+		k.started = false
+		return nil
 	}
 
 	client, err := dynamic.NewForConfig(config)
 	if err != nil {
-		tlog.App.Debug().Err(err).Msg("Failed to create Kubernetes client")
+		tlog.App.Error().Err(err).Msg("Failed to create Kubernetes client")
 		k.started = false
 		return nil
 	}
@@ -65,7 +59,7 @@ func (k *KubernetesService) Init() error {
 	// Create discovery client to check available APIs
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
-		tlog.App.Debug().Err(err).Msg("Failed to create discovery client")
+		tlog.App.Error().Err(err).Msg("Failed to create discovery client")
 		k.started = false
 		return nil
 	}
