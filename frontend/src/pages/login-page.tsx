@@ -46,6 +46,7 @@ export const LoginPage = () => {
 
   const redirectTimer = useRef<number | null>(null);
   const redirectButtonTimer = useRef<number | null>(null);
+  const hasAutoRedirected = useRef(false);
 
   const searchParams = new URLSearchParams(search);
   const {
@@ -79,6 +80,7 @@ export const LoginPage = () => {
     },
     onError: () => {
       setOauthAutoRedirectHandover(false);
+      hasAutoRedirected.current = false;
       toast.error(t("loginOauthFailTitle"), {
         description: t("loginOauthFailSubtitle"),
       });
@@ -122,10 +124,12 @@ export const LoginPage = () => {
 
   useEffect(() => {
     if (
+      !hasAutoRedirected.current &&
       providers.find((provider) => provider.id === oauthAutoRedirect) &&
       !isLoggedIn &&
       props.redirect_uri !== ""
     ) {
+      hasAutoRedirected.current = true;
       // Not sure of a better way to do this
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOauthAutoRedirectHandover(true);
@@ -139,7 +143,7 @@ export const LoginPage = () => {
     isLoggedIn,
     props.redirect_uri,
     oauthAutoRedirect,
-    oauthMutation,
+    oauthMutation.mutate, // stable reference per TanStack Query
   ]);
 
   useEffect(
@@ -233,7 +237,7 @@ export const LoginPage = () => {
             loading={loginMutation.isPending || oauthMutation.isPending}
           />
         )}
-        {providers.length == 0 && (
+        {providers.length === 0 && (
           <p className="text-center text-red-600 max-w-sm">
             {t("failedToFetchProvidersTitle")}
           </p>
