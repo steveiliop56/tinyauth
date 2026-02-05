@@ -39,7 +39,6 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 
 	services.ldapService = ldapService
 
-	// Determine label provider
 	var labelProvider service.LabelProvider
 	var dockerService *service.DockerService
 	var kubernetesService *service.KubernetesService
@@ -53,7 +52,6 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		}
 		services.kubernetesService = kubernetesService
 		labelProvider = kubernetesService
-		// DockerService not created when using Kubernetes
 	default:
 		dockerService = service.NewDockerService()
 		err = dockerService.Init()
