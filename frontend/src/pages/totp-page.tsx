@@ -45,11 +45,11 @@ export const TotpPage = () => {
         if (isOidc) {
           window.location.replace(`/authorize?${compiledOIDCParams}`);
           return;
-        } else {
-          window.location.replace(
-            `/continue?redirect_uri=${encodeURIComponent(props.redirect_uri)}`,
-          );
         }
+
+        window.location.replace(
+          `/continue${props.redirect_uri && `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}`,
+        );
       }, 500);
     },
     onError: () => {
@@ -59,12 +59,9 @@ export const TotpPage = () => {
     },
   });
 
-  useEffect(
-    () => () => {
-      if (redirectTimer.current) clearTimeout(redirectTimer.current);
-    },
-    [],
-  );
+  useEffect(() => {
+    if (redirectTimer.current) clearTimeout(redirectTimer.current);
+  }, [redirectTimer]);
 
   if (!totpPending) {
     return <Navigate to="/" replace />;

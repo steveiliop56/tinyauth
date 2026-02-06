@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/card";
 import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
-import { isValidUrl } from "@/lib/utils";
 import { Trans, useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRedirectUri } from "@/lib/hooks/redirect-uri";
 
 export const ContinuePage = () => {
   const { cookieDomain, disableUiWarnings } = useAppContext();
@@ -20,48 +20,35 @@ export const ContinuePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showRedirectButton, setShowRedirectButton] = useState(false);
+  const hasRedirected = useRef(false);
 
   const searchParams = new URLSearchParams(search);
   const redirectUri = searchParams.get("redirect_uri");
 
-  const isValidRedirectUri =
-    redirectUri !== null ? isValidUrl(redirectUri) : false;
-  const redirectUriObj = isValidRedirectUri
-    ? new URL(redirectUri as string)
-    : null;
-  const isTrustedRedirectUri =
-    redirectUriObj !== null
-      ? redirectUriObj.hostname === cookieDomain ||
-        redirectUriObj.hostname.endsWith(`.${cookieDomain}`)
-      : false;
-  const isAllowedRedirectProto =
-    redirectUriObj !== null
-      ? redirectUriObj.protocol === "https:" ||
-        redirectUriObj.protocol === "http:"
-      : false;
-  const isHttpsDowngrade =
-    redirectUriObj !== null
-      ? redirectUriObj.protocol === "http:" &&
-        window.location.protocol === "https:"
-      : false;
+  const { url, valid, trusted, allowedProto, httpsDowngrade } = useRedirectUri(
+    redirectUri,
+    cookieDomain,
+  );
 
-  const handleRedirect = () => {
-    setLoading(true);
-    window.location.assign(redirectUriObj!.toString());
-  };
+  const handleRedirect = useCallback(() => {
+    hasRedirected.current = true;
+    setIsLoading(true);
+    window.location.assign(url!);
+  }, [url]);
 
   useEffect(() => {
     if (!isLoggedIn) {
       return;
     }
 
+    if (hasRedirected.current) {
+      return;
+    }
+
     if (
-      (!isValidRedirectUri ||
-        !isAllowedRedirectProto ||
-        !isTrustedRedirectUri ||
-        isHttpsDowngrade) &&
+      (!valid || !allowedProto || !trusted || httpsDowngrade) &&
       !disableUiWarnings
     ) {
       return;
@@ -72,7 +59,7 @@ export const ContinuePage = () => {
     }, 100);
 
     const reveal = setTimeout(() => {
-      setLoading(false);
+      setIsLoading(false);
       setShowRedirectButton(true);
     }, 5000);
 
@@ -80,22 +67,33 @@ export const ContinuePage = () => {
       clearTimeout(auto);
       clearTimeout(reveal);
     };
-  });
+  }, [
+    isLoggedIn,
+    hasRedirected,
+    valid,
+    allowedProto,
+    trusted,
+    httpsDowngrade,
+    disableUiWarnings,
+    setIsLoading,
+    handleRedirect,
+    setShowRedirectButton,
+  ]);
 
   if (!isLoggedIn) {
     return (
       <Navigate
-        to={`/login?redirect_uri=${encodeURIComponent(redirectUri || "")}`}
+        to={`/login${redirectUri && `?redirect_uri=${encodeURIComponent(redirectUri)}`}`}
         replace
       />
     );
   }
 
-  if (!isValidRedirectUri || !isAllowedRedirectProto) {
+  if (!valid || !allowedProto) {
     return <Navigate to="/logout" replace />;
   }
 
-  if (!isTrustedRedirectUri && !disableUiWarnings) {
+  if (!trusted && !disableUiWarnings) {
     return (
       <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -115,8 +113,8 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={handleRedirect}
-            loading={loading}
+            onClick={() => handleRedirect()}
+            loading={isLoading}
             variant="destructive"
           >
             {t("continueTitle")}
@@ -124,7 +122,7 @@ export const ContinuePage = () => {
           <Button
             onClick={() => navigate("/logout")}
             variant="outline"
-            disabled={loading}
+            disabled={isLoading}
           >
             {t("cancelTitle")}
           </Button>
@@ -133,7 +131,7 @@ export const ContinuePage = () => {
     );
   }
 
-  if (isHttpsDowngrade && !disableUiWarnings) {
+  if (httpsDowngrade && !disableUiWarnings) {
     return (
       <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -151,13 +149,17 @@ export const ContinuePage = () => {
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
-          <Button onClick={handleRedirect} loading={loading} variant="warning">
+          <Button
+            onClick={() => handleRedirect()}
+            loading={isLoading}
+            variant="warning"
+          >
             {t("continueTitle")}
           </Button>
           <Button
             onClick={() => navigate("/logout")}
             variant="outline"
-            disabled={loading}
+            disabled={isLoading}
           >
             {t("cancelTitle")}
           </Button>
@@ -176,7 +178,7 @@ export const ContinuePage = () => {
       </CardHeader>
       {showRedirectButton && (
         <CardFooter className="flex flex-col items-stretch">
-          <Button onClick={handleRedirect}>
+          <Button onClick={() => handleRedirect()}>
             {t("continueRedirectManually")}
           </Button>
         </CardFooter>
