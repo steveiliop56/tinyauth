@@ -83,7 +83,7 @@ export const ContinuePage = () => {
   if (!isLoggedIn) {
     return (
       <Navigate
-        to={`/login${redirectUri && `?redirect_uri=${encodeURIComponent(redirectUri)}`}`}
+        to={`/login${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`}
         replace
       />
     );

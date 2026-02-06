@@ -48,7 +48,7 @@ export const TotpPage = () => {
         }
 
         window.location.replace(
-          `/continue${props.redirect_uri && `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}`,
+          `/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
         );
       }, 500);
     },
@@ -60,7 +60,11 @@ export const TotpPage = () => {
   });
 
   useEffect(() => {
-    if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
+    };
   }, [redirectTimer]);
 
   if (!totpPending) {

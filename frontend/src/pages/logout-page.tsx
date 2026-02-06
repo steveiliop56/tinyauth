@@ -40,7 +40,11 @@ export const LogoutPage = () => {
   });
 
   useEffect(() => {
-    if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
+    };
   }, [redirectTimer]);
 
   if (!isLoggedIn) {

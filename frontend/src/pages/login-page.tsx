@@ -76,7 +76,7 @@ export const LoginPage = () => {
   } = useMutation({
     mutationFn: (provider: string) =>
       axios.get(
-        `/api/oauth/url/${provider}${props.redirect_uri && `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}`,
+        `/api/oauth/url/${provider}${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
       ),
     mutationKey: ["oauth"],
     onSuccess: (data) => {
@@ -108,7 +108,7 @@ export const LoginPage = () => {
     onSuccess: (data) => {
       if (data.data.totpPending) {
         window.location.replace(
-          `/totp${props.redirect_uri && `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}`,
+          `/totp${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
         );
         return;
       }
@@ -123,7 +123,7 @@ export const LoginPage = () => {
           return;
         }
         window.location.replace(
-          `/continue${props.redirect_uri && `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}`,
+          `/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
         );
       }, 500);
     },
@@ -157,13 +157,15 @@ export const LoginPage = () => {
   ]);
 
   useEffect(() => {
-    if (redirectTimer.current) {
-      clearTimeout(redirectTimer.current);
-    }
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
 
-    if (redirectButtonTimer.current) {
-      clearTimeout(redirectButtonTimer.current);
-    }
+      if (redirectButtonTimer.current) {
+        clearTimeout(redirectButtonTimer.current);
+      }
+    };
   }, [redirectTimer, redirectButtonTimer]);
 
   if (isLoggedIn && isOidc) {
@@ -173,7 +175,7 @@ export const LoginPage = () => {
   if (isLoggedIn && props.redirect_uri !== "") {
     return (
       <Navigate
-        to={`/continue${props.redirect_uri && `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`}`}
+        to={`/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`}
         replace
       />
     );
