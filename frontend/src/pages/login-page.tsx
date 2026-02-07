@@ -18,6 +18,7 @@ import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
+import { useOIDCParams } from "@/lib/hooks/oidc";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -39,26 +40,43 @@ export const LoginPage = () => {
   const { providers, title, oauthAutoRedirect } = useAppContext();
   const { search } = useLocation();
   const { t } = useTranslation();
-  const [oauthAutoRedirectHandover, setOauthAutoRedirectHandover] =
-    useState(false);
+
   const [showRedirectButton, setShowRedirectButton] = useState(false);
+
+  const hasAutoRedirectedRef = useRef(false);
 
   const redirectTimer = useRef<number | null>(null);
   const redirectButtonTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
-  const redirectUri = searchParams.get("redirect_uri");
+  const {
+    values: props,
+    isOidc,
+    compiled: compiledOIDCParams,
+  } = useOIDCParams(searchParams);
+
+  const [isOauthAutoRedirect, setIsOauthAutoRedirect] = useState(
+    providers.find((provider) => provider.id === oauthAutoRedirect) !==
+      undefined && props.redirect_uri,
+  );
 
   const oauthProviders = providers.filter(
-    (provider) => provider.id !== "username",
+    (provider) => provider.id !== "local" && provider.id !== "ldap",
   );
   const userAuthConfigured =
-    providers.find((provider) => provider.id === "username") !== undefined;
+    providers.find(
+      (provider) => provider.id === "local" || provider.id === "ldap",
+    ) !== undefined;
 
-  const oauthMutation = useMutation({
+  const {
+    mutate: oauthMutate,
+    data: oauthData,
+    isPending: oauthIsPending,
+    variables: oauthVariables,
+  } = useMutation({
     mutationFn: (provider: string) =>
       axios.get(
-        `/api/oauth/url/${provider}?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+        `/api/oauth/url/${provider}${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
       ),
     mutationKey: ["oauth"],
     onSuccess: (data) => {
@@ -69,22 +87,28 @@ export const LoginPage = () => {
       redirectTimer.current = window.setTimeout(() => {
         window.location.replace(data.data.url);
       }, 500);
+
+      if (isOauthAutoRedirect) {
+        redirectButtonTimer.current = window.setTimeout(() => {
+          setShowRedirectButton(true);
+        }, 5000);
+      }
     },
     onError: () => {
-      setOauthAutoRedirectHandover(false);
+      setIsOauthAutoRedirect(false);
       toast.error(t("loginOauthFailTitle"), {
         description: t("loginOauthFailSubtitle"),
       });
     },
   });
 
-  const loginMutation = useMutation({
+  const { mutate: loginMutate, isPending: loginIsPending } = useMutation({
     mutationFn: (values: LoginSchema) => axios.post("/api/user/login", values),
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {
         window.location.replace(
-          `/totp?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+          `/totp${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
         );
         return;
       }
@@ -94,8 +118,12 @@ export const LoginPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
+        if (isOidc) {
+          window.location.replace(`/authorize?${compiledOIDCParams}`);
+          return;
+        }
         window.location.replace(
-          `/continue?redirect_uri=${encodeURIComponent(redirectUri ?? "")}`,
+          `/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
         );
       }, 500);
     },
@@ -111,33 +139,43 @@ export const LoginPage = () => {
 
   useEffect(() => {
     if (
-      providers.find((provider) => provider.id === oauthAutoRedirect) &&
       !isLoggedIn &&
-      redirectUri
+      isOauthAutoRedirect &&
+      !hasAutoRedirectedRef.current &&
+      props.redirect_uri
     ) {
-      // Not sure of a better way to do this
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOauthAutoRedirectHandover(true);
-      oauthMutation.mutate(oauthAutoRedirect);
-      redirectButtonTimer.current = window.setTimeout(() => {
-        setShowRedirectButton(true);
-      }, 5000);
+      hasAutoRedirectedRef.current = true;
+      oauthMutate(oauthAutoRedirect);
     }
-  }, []);
+  }, [
+    isLoggedIn,
+    oauthMutate,
+    hasAutoRedirectedRef,
+    oauthAutoRedirect,
+    isOauthAutoRedirect,
+    props.redirect_uri,
+  ]);
 
-  useEffect(
-    () => () => {
-      if (redirectTimer.current) clearTimeout(redirectTimer.current);
-      if (redirectButtonTimer.current)
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
+
+      if (redirectButtonTimer.current) {
         clearTimeout(redirectButtonTimer.current);
-    },
-    [],
-  );
+      }
+    };
+  }, [redirectTimer, redirectButtonTimer]);
 
-  if (isLoggedIn && redirectUri) {
+  if (isLoggedIn && isOidc) {
+    return <Navigate to={`/authorize?${compiledOIDCParams}`} replace />;
+  }
+
+  if (isLoggedIn && props.redirect_uri !== "") {
     return (
       <Navigate
-        to={`/continue?redirect_uri=${encodeURIComponent(redirectUri)}`}
+        to={`/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`}
         replace
       />
     );
@@ -147,7 +185,7 @@ export const LoginPage = () => {
     return <Navigate to="/logout" replace />;
   }
 
-  if (oauthAutoRedirectHandover) {
+  if (isOauthAutoRedirect) {
     return (
       <Card className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -162,7 +200,14 @@ export const LoginPage = () => {
           <CardFooter className="flex flex-col items-stretch">
             <Button
               onClick={() => {
-                window.location.replace(oauthMutation.data?.data.url);
+                if (oauthData?.data.url) {
+                  window.location.replace(oauthData.data.url);
+                } else {
+                  setIsOauthAutoRedirect(false);
+                  toast.error(t("loginOauthFailTitle"), {
+                    description: t("loginOauthFailSubtitle"),
+                  });
+                }
               }}
             >
               {t("loginOauthAutoRedirectButton")}
@@ -193,12 +238,9 @@ export const LoginPage = () => {
                 title={provider.name}
                 icon={iconMap[provider.id] ?? <OAuthIcon />}
                 className="w-full"
-                onClick={() => oauthMutation.mutate(provider.id)}
-                loading={
-                  oauthMutation.isPending &&
-                  oauthMutation.variables === provider.id
-                }
-                disabled={oauthMutation.isPending || loginMutation.isPending}
+                onClick={() => oauthMutate(provider.id)}
+                loading={oauthIsPending && oauthVariables === provider.id}
+                disabled={oauthIsPending || loginIsPending}
               />
             ))}
           </div>
@@ -208,8 +250,8 @@ export const LoginPage = () => {
         )}
         {userAuthConfigured && (
           <LoginForm
-            onSubmit={(values) => loginMutation.mutate(values)}
-            loading={loginMutation.isPending || oauthMutation.isPending}
+            onSubmit={(values) => loginMutate(values)}
+            loading={loginIsPending || oauthIsPending}
           />
         )}
         {providers.length == 0 && (

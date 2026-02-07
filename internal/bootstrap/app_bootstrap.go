@@ -11,34 +11,29 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/middleware"
-	"tinyauth/internal/model"
-	"tinyauth/internal/service"
-	"tinyauth/internal/utils"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/repository"
+	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 )
 
-type Controller interface {
-	SetupRoutes()
-}
-
-type Middleware interface {
-	Middleware() gin.HandlerFunc
-	Init() error
-}
-
-type Service interface {
-	Init() error
-}
-
 type BootstrapApp struct {
-	config config.Config
-	uuid   string
+	config  config.Config
+	context struct {
+		appUrl              string
+		uuid                string
+		cookieDomain        string
+		sessionCookieName   string
+		csrfCookieName      string
+		redirectCookieName  string
+		users               []config.User
+		oauthProviders      map[string]config.OAuthServiceConfig
+		configuredProviders []controller.Provider
+		oidcClients         []config.OIDCClientConfig
+	}
+	services Services
 }
 
 func NewBootstrapApp(config config.Config) *BootstrapApp {
@@ -48,123 +43,109 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 }
 
 func (app *BootstrapApp) Setup() error {
-	// Parse users
-	users, err := utils.GetUsers(app.config.Users, app.config.UsersFile)
+	// get app url
+	appUrl, err := url.Parse(app.config.AppURL)
 
 	if err != nil {
 		return err
 	}
 
-	// Get OAuth configs
-	oauthProviders, err := utils.GetOAuthProvidersConfig(os.Environ(), os.Args, app.config.AppURL)
+	app.context.appUrl = appUrl.Scheme + "://" + appUrl.Host
+
+	// validate session config
+	if app.config.Auth.SessionMaxLifetime != 0 && app.config.Auth.SessionMaxLifetime < app.config.Auth.SessionExpiry {
+		return fmt.Errorf("session max lifetime cannot be less than session expiry")
+	}
+
+	// Parse users
+	users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
 
 	if err != nil {
 		return err
+	}
+
+	app.context.users = users
+
+	// Setup OAuth providers
+	app.context.oauthProviders = app.config.OAuth.Providers
+
+	for name, provider := range app.context.oauthProviders {
+		secret := utils.GetSecret(provider.ClientSecret, provider.ClientSecretFile)
+		provider.ClientSecret = secret
+		provider.ClientSecretFile = ""
+
+		if provider.RedirectURL == "" {
+			provider.RedirectURL = app.context.appUrl + "/api/oauth/callback/" + name
+		}
+
+		app.context.oauthProviders[name] = provider
+	}
+
+	for id, provider := range app.context.oauthProviders {
+		if provider.Name == "" {
+			if name, ok := config.OverrideProviders[id]; ok {
+				provider.Name = name
+			} else {
+				provider.Name = utils.Capitalize(id)
+			}
+		}
+		app.context.oauthProviders[id] = provider
+	}
+
+	// Setup OIDC clients
+	for id, client := range app.config.OIDC.Clients {
+		client.ID = id
+		app.context.oidcClients = append(app.context.oidcClients, client)
 	}
 
 	// Get cookie domain
-	cookieDomain, err := utils.GetCookieDomain(app.config.AppURL)
+	cookieDomain, err := utils.GetCookieDomain(app.context.appUrl)
 
 	if err != nil {
 		return err
 	}
 
+	app.context.cookieDomain = cookieDomain
+
 	// Cookie names
-	appUrl, _ := url.Parse(app.config.AppURL) // Already validated
-	uuid := utils.GenerateUUID(appUrl.Hostname())
-	app.uuid = uuid
-	cookieId := strings.Split(uuid, "-")[0]
-	sessionCookieName := fmt.Sprintf("%s-%s", config.SessionCookieName, cookieId)
-	csrfCookieName := fmt.Sprintf("%s-%s", config.CSRFCookieName, cookieId)
-	redirectCookieName := fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
+	app.context.uuid = utils.GenerateUUID(appUrl.Hostname())
+	cookieId := strings.Split(app.context.uuid, "-")[0]
+	app.context.sessionCookieName = fmt.Sprintf("%s-%s", config.SessionCookieName, cookieId)
+	app.context.csrfCookieName = fmt.Sprintf("%s-%s", config.CSRFCookieName, cookieId)
+	app.context.redirectCookieName = fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
 
 	// Dumps
-	log.Trace().Interface("config", app.config).Msg("Config dump")
-	log.Trace().Interface("users", users).Msg("Users dump")
-	log.Trace().Interface("oauthProviders", oauthProviders).Msg("OAuth providers dump")
-	log.Trace().Str("cookieDomain", cookieDomain).Msg("Cookie domain")
-	log.Trace().Str("sessionCookieName", sessionCookieName).Msg("Session cookie name")
-	log.Trace().Str("csrfCookieName", csrfCookieName).Msg("CSRF cookie name")
-	log.Trace().Str("redirectCookieName", redirectCookieName).Msg("Redirect cookie name")
+	tlog.App.Trace().Interface("config", app.config).Msg("Config dump")
+	tlog.App.Trace().Interface("users", app.context.users).Msg("Users dump")
+	tlog.App.Trace().Interface("oauthProviders", app.context.oauthProviders).Msg("OAuth providers dump")
+	tlog.App.Trace().Str("cookieDomain", app.context.cookieDomain).Msg("Cookie domain")
+	tlog.App.Trace().Str("sessionCookieName", app.context.sessionCookieName).Msg("Session cookie name")
+	tlog.App.Trace().Str("csrfCookieName", app.context.csrfCookieName).Msg("CSRF cookie name")
+	tlog.App.Trace().Str("redirectCookieName", app.context.redirectCookieName).Msg("Redirect cookie name")
 
-	// Create configs
-	authConfig := service.AuthServiceConfig{
-		Users:             users,
-		OauthWhitelist:    app.config.OAuthWhitelist,
-		SessionExpiry:     app.config.SessionExpiry,
-		SecureCookie:      app.config.SecureCookie,
-		CookieDomain:      cookieDomain,
-		LoginTimeout:      app.config.LoginTimeout,
-		LoginMaxRetries:   app.config.LoginMaxRetries,
-		SessionCookieName: sessionCookieName,
-	}
-
-	// Setup services
-	var ldapService *service.LdapService
-
-	if app.config.LdapAddress != "" {
-		ldapConfig := service.LdapServiceConfig{
-			Address:      app.config.LdapAddress,
-			BindDN:       app.config.LdapBindDN,
-			BindPassword: app.config.LdapBindPassword,
-			BaseDN:       app.config.LdapBaseDN,
-			Insecure:     app.config.LdapInsecure,
-			SearchFilter: app.config.LdapSearchFilter,
-		}
-
-		ldapService = service.NewLdapService(ldapConfig)
-
-		err := ldapService.Init()
-
-		if err != nil {
-			log.Warn().Err(err).Msg("Failed to initialize LDAP service, continuing without LDAP")
-			ldapService = nil
-		}
-	}
-
-	// Bootstrap database
-	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
-		DatabasePath: app.config.DatabasePath,
-	})
-
-	log.Debug().Str("service", fmt.Sprintf("%T", databaseService)).Msg("Initializing service")
-
-	err = databaseService.Init()
+	// Database
+	db, err := app.SetupDatabase(app.config.DatabasePath)
 
 	if err != nil {
-		return fmt.Errorf("failed to initialize database service: %w", err)
+		return fmt.Errorf("failed to setup database: %w", err)
 	}
 
-	database := databaseService.GetDatabase()
+	// Queries
+	queries := repository.New(db)
 
-	// Create services
-	dockerService := service.NewDockerService()
-	aclsService := service.NewAccessControlsService(dockerService)
-	authService := service.NewAuthService(authConfig, dockerService, ldapService, database)
-	oauthBrokerService := service.NewOAuthBrokerService(oauthProviders)
+	// Services
+	services, err := app.initServices(queries)
 
-	// Initialize services (order matters)
-	services := []Service{
-		dockerService,
-		aclsService,
-		authService,
-		oauthBrokerService,
+	if err != nil {
+		return fmt.Errorf("failed to initialize services: %w", err)
 	}
 
-	for _, svc := range services {
-		if svc != nil {
-			log.Debug().Str("service", fmt.Sprintf("%T", svc)).Msg("Initializing service")
-			err := svc.Init()
-			if err != nil {
-				return err
-			}
-		}
-	}
+	app.services = services
 
 	// Configured providers
 	configuredProviders := make([]controller.Provider, 0)
 
-	for id, provider := range oauthProviders {
+	for id, provider := range app.context.oauthProviders {
 		configuredProviders = append(configuredProviders, controller.Provider{
 			Name:  provider.Name,
 			ID:    id,
@@ -176,142 +157,70 @@ func (app *BootstrapApp) Setup() error {
 		return configuredProviders[i].Name < configuredProviders[j].Name
 	})
 
-	if authService.UserAuthConfigured() || ldapService != nil {
+	if services.authService.LocalAuthConfigured() {
 		configuredProviders = append(configuredProviders, controller.Provider{
-			Name:  "Username",
-			ID:    "username",
+			Name:  "Local",
+			ID:    "local",
 			OAuth: false,
 		})
 	}
 
-	log.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
+	if services.authService.LdapAuthConfigured() {
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  "LDAP",
+			ID:    "ldap",
+			OAuth: false,
+		})
+	}
+
+	tlog.App.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
 
 	if len(configuredProviders) == 0 {
 		return fmt.Errorf("no authentication providers configured")
 	}
 
-	// Create engine
-	engine := gin.New()
-	engine.Use(gin.Recovery())
+	app.context.configuredProviders = configuredProviders
 
-	if len(app.config.TrustedProxies) > 0 {
-		err := engine.SetTrustedProxies(strings.Split(app.config.TrustedProxies, ","))
+	// Setup router
+	router, err := app.setupRouter()
 
-		if err != nil {
-			return fmt.Errorf("failed to set trusted proxies: %w", err)
-		}
+	if err != nil {
+		return fmt.Errorf("failed to setup routes: %w", err)
 	}
 
-	// Create middlewares
-	var middlewares []Middleware
-
-	contextMiddleware := middleware.NewContextMiddleware(middleware.ContextMiddlewareConfig{
-		CookieDomain: cookieDomain,
-	}, authService, oauthBrokerService)
-
-	uiMiddleware := middleware.NewUIMiddleware()
-	zerologMiddleware := middleware.NewZerologMiddleware()
-
-	middlewares = append(middlewares, contextMiddleware, uiMiddleware, zerologMiddleware)
-
-	for _, middleware := range middlewares {
-		log.Debug().Str("middleware", fmt.Sprintf("%T", middleware)).Msg("Initializing middleware")
-		err := middleware.Init()
-		if err != nil {
-			return fmt.Errorf("failed to initialize middleware %T: %w", middleware, err)
-		}
-		engine.Use(middleware.Middleware())
-	}
-
-	// Create routers
-	mainRouter := engine.Group("")
-	apiRouter := engine.Group("/api")
-
-	// Create controllers
-	contextController := controller.NewContextController(controller.ContextControllerConfig{
-		Providers:             configuredProviders,
-		Title:                 app.config.Title,
-		AppURL:                app.config.AppURL,
-		CookieDomain:          cookieDomain,
-		ForgotPasswordMessage: app.config.ForgotPasswordMessage,
-		BackgroundImage:       app.config.BackgroundImage,
-		OAuthAutoRedirect:     app.config.OAuthAutoRedirect,
-		DisableUIWarnings:     app.config.DisableUIWarnings,
-	}, apiRouter)
-
-	oauthController := controller.NewOAuthController(controller.OAuthControllerConfig{
-		AppURL:             app.config.AppURL,
-		SecureCookie:       app.config.SecureCookie,
-		CSRFCookieName:     csrfCookieName,
-		RedirectCookieName: redirectCookieName,
-		CookieDomain:       cookieDomain,
-	}, apiRouter, authService, oauthBrokerService)
-
-	proxyController := controller.NewProxyController(controller.ProxyControllerConfig{
-		AppURL: app.config.AppURL,
-	}, apiRouter, aclsService, authService)
-
-	userController := controller.NewUserController(controller.UserControllerConfig{
-		CookieDomain: cookieDomain,
-	}, apiRouter, authService)
-
-	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{
-		ResourcesDir:      app.config.ResourcesDir,
-		ResourcesDisabled: app.config.DisableResources,
-	}, mainRouter)
-
-	healthController := controller.NewHealthController(apiRouter)
-
-	// Setup routes
-	controller := []Controller{
-		contextController,
-		oauthController,
-		proxyController,
-		userController,
-		healthController,
-		resourcesController,
-	}
-
-	for _, ctrl := range controller {
-		log.Debug().Msgf("Setting up %T controller", ctrl)
-		ctrl.SetupRoutes()
-	}
+	// Start db cleanup routine
+	tlog.App.Debug().Msg("Starting database cleanup routine")
+	go app.dbCleanup(queries)
 
 	// If analytics are not disabled, start heartbeat
 	if !app.config.DisableAnalytics {
-		log.Debug().Msg("Starting heartbeat routine")
+		tlog.App.Debug().Msg("Starting heartbeat routine")
 		go app.heartbeat()
 	}
 
-	// Start DB cleanup routine
-	log.Debug().Msg("Starting database cleanup routine")
-	go app.dbCleanup(database)
-
 	// If we have an socket path, bind to it
-	if app.config.SocketPath != "" {
-		// Remove existing socket file
-		if _, err := os.Stat(app.config.SocketPath); err == nil {
-			log.Info().Msgf("Removing existing socket file %s", app.config.SocketPath)
-			err := os.Remove(app.config.SocketPath)
+	if app.config.Server.SocketPath != "" {
+		if _, err := os.Stat(app.config.Server.SocketPath); err == nil {
+			tlog.App.Info().Msgf("Removing existing socket file %s", app.config.Server.SocketPath)
+			err := os.Remove(app.config.Server.SocketPath)
 			if err != nil {
 				return fmt.Errorf("failed to remove existing socket file: %w", err)
 			}
 		}
 
-		// Start server with unix socket
-		log.Info().Msgf("Starting server on unix socket %s", app.config.SocketPath)
-		if err := engine.RunUnix(app.config.SocketPath); err != nil {
-			log.Fatal().Err(err).Msg("Failed to start server")
+		tlog.App.Info().Msgf("Starting server on unix socket %s", app.config.Server.SocketPath)
+		if err := router.RunUnix(app.config.Server.SocketPath); err != nil {
+			tlog.App.Fatal().Err(err).Msg("Failed to start server")
 		}
 
 		return nil
 	}
 
 	// Start server
-	address := fmt.Sprintf("%s:%d", app.config.Address, app.config.Port)
-	log.Info().Msgf("Starting server on %s", address)
-	if err := engine.Run(address); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start server")
+	address := fmt.Sprintf("%s:%d", app.config.Server.Address, app.config.Server.Port)
+	tlog.App.Info().Msgf("Starting server on %s", address)
+	if err := router.Run(address); err != nil {
+		tlog.App.Fatal().Err(err).Msg("Failed to start server")
 	}
 
 	return nil
@@ -328,27 +237,29 @@ func (app *BootstrapApp) heartbeat() {
 
 	var body heartbeat
 
-	body.UUID = app.uuid
+	body.UUID = app.context.uuid
 	body.Version = config.Version
 
 	bodyJson, err := json.Marshal(body)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal heartbeat body")
+		tlog.App.Error().Err(err).Msg("Failed to marshal heartbeat body")
 		return
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 30 * time.Second, // The server should never take more than 30 seconds to respond
+	}
 
 	heartbeatURL := config.ApiServer + "/v1/instances/heartbeat"
 
-	for ; true; <-ticker.C {
-		log.Debug().Msg("Sending heartbeat")
+	for range ticker.C {
+		tlog.App.Debug().Msg("Sending heartbeat")
 
 		req, err := http.NewRequest(http.MethodPost, heartbeatURL, bytes.NewReader(bodyJson))
 
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to create heartbeat request")
+			tlog.App.Error().Err(err).Msg("Failed to create heartbeat request")
 			continue
 		}
 
@@ -357,28 +268,28 @@ func (app *BootstrapApp) heartbeat() {
 		res, err := client.Do(req)
 
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to send heartbeat")
+			tlog.App.Error().Err(err).Msg("Failed to send heartbeat")
 			continue
 		}
 
 		res.Body.Close()
 
 		if res.StatusCode != 200 && res.StatusCode != 201 {
-			log.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
+			tlog.App.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
 		}
 	}
 }
 
-func (app *BootstrapApp) dbCleanup(db *gorm.DB) {
+func (app *BootstrapApp) dbCleanup(queries *repository.Queries) {
 	ticker := time.NewTicker(time.Duration(30) * time.Minute)
 	defer ticker.Stop()
 	ctx := context.Background()
 
-	for ; true; <-ticker.C {
-		log.Debug().Msg("Cleaning up old database sessions")
-		_, err := gorm.G[model.Session](db).Where("expiry < ?", time.Now().Unix()).Delete(ctx)
+	for range ticker.C {
+		tlog.App.Debug().Msg("Cleaning up old database sessions")
+		err := queries.DeleteExpiredSessions(ctx, time.Now().Unix())
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to cleanup old sessions")
+			tlog.App.Error().Err(err).Msg("Failed to clean up old database sessions")
 		}
 	}
 }

@@ -3,15 +3,19 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
-	"tinyauth/internal/config"
-	"tinyauth/internal/service"
-	"tinyauth/internal/utils"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
-	"github.com/rs/zerolog/log"
 )
+
+var SupportedProxies = []string{"nginx", "traefik", "caddy", "envoy"}
 
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
@@ -39,7 +43,8 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
-	proxyGroup.GET("/:proxy", controller.proxyHandler)
+	// There is a later check to control allowed methods per proxy
+	proxyGroup.Any("/:proxy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
@@ -47,7 +52,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	err := c.BindUri(&req)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to bind URI")
+		tlog.App.Error().Err(err).Msg("Failed to bind URI")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
@@ -55,11 +60,24 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Proxy != "nginx" && req.Proxy != "traefik" && req.Proxy != "caddy" {
-		log.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
+	if !slices.Contains(SupportedProxies, req.Proxy) {
+		tlog.App.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
 		c.JSON(400, gin.H{
 			"status":  400,
 			"message": "Bad Request",
+		})
+		return
+	}
+
+	// Only allow GET for non-envoy proxies.
+	// Envoy uses the original client method for the external auth request
+	// so we allow Any standard HTTP method for /api/auth/envoy
+	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
+		tlog.App.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy")
+		c.Header("Allow", "GET")
+		c.JSON(405, gin.H{
+			"status":  405,
+			"message": "Method Not Allowed",
 		})
 		return
 	}
@@ -67,9 +85,9 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
 
 	if isBrowser {
-		log.Debug().Msg("Request identified as (most likely) coming from a browser")
+		tlog.App.Debug().Msg("Request identified as (most likely) coming from a browser")
 	} else {
-		log.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
+		tlog.App.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
 	}
 
 	uri := c.Request.Header.Get("X-Forwarded-Uri")
@@ -80,12 +98,12 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	acls, err := controller.acls.GetAccessControls(host)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get access controls for resource")
+		tlog.App.Error().Err(err).Msg("Failed to get access controls for resource")
 		controller.handleError(c, req, isBrowser)
 		return
 	}
 
-	log.Trace().Interface("acls", acls).Msg("ACLs for resource")
+	tlog.App.Trace().Interface("acls", acls).Msg("ACLs for resource")
 
 	clientIP := c.ClientIP()
 
@@ -101,13 +119,13 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	authEnabled, err := controller.auth.IsAuthEnabled(uri, acls.Path)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
+		tlog.App.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
 		controller.handleError(c, req, isBrowser)
 		return
 	}
 
 	if !authEnabled {
-		log.Debug().Msg("Authentication disabled for resource, allowing access")
+		tlog.App.Debug().Msg("Authentication disabled for resource, allowing access")
 		controller.setHeaders(c, acls)
 		c.JSON(200, gin.H{
 			"status":  200,
@@ -131,7 +149,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		})
 
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to encode unauthorized query")
+			tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 			return
 		}
@@ -145,7 +163,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	context, err := utils.GetContext(c)
 
 	if err != nil {
-		log.Debug().Msg("No user context found in request, treating as not logged in")
+		tlog.App.Debug().Msg("No user context found in request, treating as not logged in")
 		userContext = config.UserContext{
 			IsLoggedIn: false,
 		}
@@ -153,18 +171,18 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		userContext = context
 	}
 
-	log.Trace().Interface("context", userContext).Msg("User context from request")
+	tlog.App.Trace().Interface("context", userContext).Msg("User context from request")
 
-	if userContext.Provider == "basic" && userContext.TotpEnabled {
-		log.Debug().Msg("User has TOTP enabled, denying basic auth access")
+	if userContext.IsBasicAuth && userContext.TotpEnabled {
+		tlog.App.Debug().Msg("User has TOTP enabled, denying basic auth access")
 		userContext.IsLoggedIn = false
 	}
 
 	if userContext.IsLoggedIn {
-		appAllowed := controller.auth.IsResourceAllowed(c, userContext, acls)
+		userAllowed := controller.auth.IsUserAllowed(c, userContext, acls)
 
-		if !appAllowed {
-			log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
+		if !userAllowed {
+			tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
 
 			if req.Proxy == "nginx" || !isBrowser {
 				c.JSON(403, gin.H{
@@ -179,7 +197,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			})
 
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to encode unauthorized query")
+				tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
 				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 				return
 			}
@@ -194,11 +212,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			return
 		}
 
-		if userContext.OAuth {
-			groupOK := controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
+		if userContext.OAuth || userContext.Provider == "ldap" {
+			var groupOK bool
+
+			if userContext.OAuth {
+				groupOK = controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
+			} else {
+				groupOK = controller.auth.IsInLdapGroup(c, userContext, acls.LDAP.Groups)
+			}
 
 			if !groupOK {
-				log.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User OAuth groups do not match resource requirements")
+				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User groups do not match resource requirements")
 
 				if req.Proxy == "nginx" || !isBrowser {
 					c.JSON(403, gin.H{
@@ -214,7 +238,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				})
 
 				if err != nil {
-					log.Error().Err(err).Msg("Failed to encode unauthorized query")
+					tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 					return
 				}
@@ -233,7 +257,14 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		c.Header("Remote-User", utils.SanitizeHeader(userContext.Username))
 		c.Header("Remote-Name", utils.SanitizeHeader(userContext.Name))
 		c.Header("Remote-Email", utils.SanitizeHeader(userContext.Email))
-		c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
+
+		if userContext.Provider == "ldap" {
+			c.Header("Remote-Groups", utils.SanitizeHeader(userContext.LdapGroups))
+		} else if userContext.Provider != "local" {
+			c.Header("Remote-Groups", utils.SanitizeHeader(userContext.OAuthGroups))
+		}
+
+		c.Header("Remote-Sub", utils.SanitizeHeader(userContext.OAuthSub))
 
 		controller.setHeaders(c, acls)
 
@@ -257,7 +288,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	})
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to encode redirect URI query")
+		tlog.App.Error().Err(err).Msg("Failed to encode redirect URI query")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
@@ -271,14 +302,14 @@ func (controller *ProxyController) setHeaders(c *gin.Context, acls config.App) {
 	headers := utils.ParseHeaders(acls.Response.Headers)
 
 	for key, value := range headers {
-		log.Debug().Str("header", key).Msg("Setting header")
+		tlog.App.Debug().Str("header", key).Msg("Setting header")
 		c.Header(key, value)
 	}
 
 	basicPassword := utils.GetSecret(acls.Response.BasicAuth.Password, acls.Response.BasicAuth.PasswordFile)
 
 	if acls.Response.BasicAuth.Username != "" && basicPassword != "" {
-		log.Debug().Str("username", acls.Response.BasicAuth.Username).Msg("Setting basic auth header")
+		tlog.App.Debug().Str("username", acls.Response.BasicAuth.Username).Msg("Setting basic auth header")
 		c.Header("Authorization", fmt.Sprintf("Basic %s", utils.GetBasicAuth(acls.Response.BasicAuth.Username, basicPassword)))
 	}
 }

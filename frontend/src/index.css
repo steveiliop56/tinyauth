@@ -159,6 +159,10 @@ code {
   @apply relative rounded bg-muted px-[0.2rem] py-[0.1rem] font-mono text-sm font-semibold break-all;
 }
 
+pre {
+  @apply bg-accent border border-border rounded-md p-2 whitespace-break-spaces;
+}
+
 .lead {
   @apply text-xl text-muted-foreground;
 }

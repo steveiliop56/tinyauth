@@ -15,39 +15,105 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	Port                  int    `mapstructure:"port" validate:"required"`
-	Address               string `validate:"required,ip4_addr" mapstructure:"address"`
-	AppURL                string `validate:"required,url" mapstructure:"app-url"`
-	Users                 string `mapstructure:"users"`
-	UsersFile             string `mapstructure:"users-file"`
-	SecureCookie          bool   `mapstructure:"secure-cookie"`
-	OAuthWhitelist        string `mapstructure:"oauth-whitelist"`
-	OAuthAutoRedirect     string `mapstructure:"oauth-auto-redirect"`
-	SessionExpiry         int    `mapstructure:"session-expiry"`
-	LogLevel              string `mapstructure:"log-level" validate:"oneof=trace debug info warn error fatal panic"`
-	Title                 string `mapstructure:"app-title"`
-	LoginTimeout          int    `mapstructure:"login-timeout"`
-	LoginMaxRetries       int    `mapstructure:"login-max-retries"`
-	ForgotPasswordMessage string `mapstructure:"forgot-password-message"`
-	BackgroundImage       string `mapstructure:"background-image" validate:"required"`
-	LdapAddress           string `mapstructure:"ldap-address"`
-	LdapBindDN            string `mapstructure:"ldap-bind-dn"`
-	LdapBindPassword      string `mapstructure:"ldap-bind-password"`
-	LdapBaseDN            string `mapstructure:"ldap-base-dn"`
-	LdapInsecure          bool   `mapstructure:"ldap-insecure"`
-	LdapSearchFilter      string `mapstructure:"ldap-search-filter"`
-	ResourcesDir          string `mapstructure:"resources-dir"`
-	DatabasePath          string `mapstructure:"database-path" validate:"required"`
-	TrustedProxies        string `mapstructure:"trusted-proxies"`
-	DisableAnalytics      bool   `mapstructure:"disable-analytics"`
-	DisableResources      bool   `mapstructure:"disable-resources"`
-	DisableUIWarnings     bool   `mapstructure:"disable-ui-warnings"`
-	SocketPath            string `mapstructure:"socket-path"`
+	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
+	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
+	DatabasePath      string             `description:"The path to the database file." yaml:"databasePath"`
+	DisableAnalytics  bool               `description:"Disable analytics." yaml:"disableAnalytics"`
+	DisableResources  bool               `description:"Disable resources server." yaml:"disableResources"`
+	DisableUIWarnings bool               `description:"Disable UI warnings." yaml:"disableUIWarnings"`
+	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
+	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
+	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	OIDC              OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
+	UI                UIConfig           `description:"UI customization." yaml:"ui"`
+	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
+	Log               LogConfig          `description:"Logging configuration." yaml:"log"`
 }
+
+type ServerConfig struct {
+	Port           int      `description:"The port on which the server listens." yaml:"port"`
+	Address        string   `description:"The address on which the server listens." yaml:"address"`
+	SocketPath     string   `description:"The path to the Unix socket." yaml:"socketPath"`
+	TrustedProxies []string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
+}
+
+type AuthConfig struct {
+	IP                 IPConfig `description:"IP whitelisting config options." yaml:"ip"`
+	Users              []string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
+	UsersFile          string   `description:"Path to the users file." yaml:"usersFile"`
+	SecureCookie       bool     `description:"Enable secure cookies." yaml:"secureCookie"`
+	SessionExpiry      int      `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
+	SessionMaxLifetime int      `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
+	LoginTimeout       int      `description:"Login timeout in seconds." yaml:"loginTimeout"`
+	LoginMaxRetries    int      `description:"Maximum login retries." yaml:"loginMaxRetries"`
+}
+
+type IPConfig struct {
+	Allow []string `description:"List of allowed IPs or CIDR ranges." yaml:"allow"`
+	Block []string `description:"List of blocked IPs or CIDR ranges." yaml:"block"`
+}
+
+type OAuthConfig struct {
+	Whitelist    []string                      `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist"`
+	AutoRedirect string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect"`
+	Providers    map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers"`
+}
+
+type OIDCConfig struct {
+	PrivateKeyPath string                      `description:"Path to the private key file." yaml:"privateKeyPath"`
+	PublicKeyPath  string                      `description:"Path to the public key file." yaml:"publicKeyPath"`
+	Clients        map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients"`
+}
+
+type UIConfig struct {
+	Title                 string `description:"The title of the UI." yaml:"title"`
+	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage"`
+	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage"`
+}
+
+type LdapConfig struct {
+	Address       string `description:"LDAP server address." yaml:"address"`
+	BindDN        string `description:"Bind DN for LDAP authentication." yaml:"bindDn"`
+	BindPassword  string `description:"Bind password for LDAP authentication." yaml:"bindPassword"`
+	BaseDN        string `description:"Base DN for LDAP searches." yaml:"baseDn"`
+	Insecure      bool   `description:"Allow insecure LDAP connections." yaml:"insecure"`
+	SearchFilter  string `description:"LDAP search filter." yaml:"searchFilter"`
+	AuthCert      string `description:"Certificate for mTLS authentication." yaml:"authCert"`
+	AuthKey       string `description:"Certificate key for mTLS authentication." yaml:"authKey"`
+	GroupCacheTTL int    `description:"Cache duration for LDAP group membership in seconds." yaml:"groupCacheTTL"`
+}
+
+type LogConfig struct {
+	Level   string     `description:"Log level (trace, debug, info, warn, error)." yaml:"level"`
+	Json    bool       `description:"Enable JSON formatted logs." yaml:"json"`
+	Streams LogStreams `description:"Configuration for specific log streams." yaml:"streams"`
+}
+
+type LogStreams struct {
+	HTTP  LogStreamConfig `description:"HTTP request logging." yaml:"http"`
+	App   LogStreamConfig `description:"Application logging." yaml:"app"`
+	Audit LogStreamConfig `description:"Audit logging." yaml:"audit"`
+}
+
+type LogStreamConfig struct {
+	Enabled bool   `description:"Enable this log stream." yaml:"enabled"`
+	Level   string `description:"Log level for this stream. Use global if empty." yaml:"level"`
+}
+
+type ExperimentalConfig struct {
+	ConfigFile string `description:"Path to config file." yaml:"-"`
+}
+
+// Config loader options
+
+const DefaultNamePrefix = "TINYAUTH_"
 
 // OAuth/OIDC config
 
 type Claims struct {
+	Sub               string `json:"sub"`
 	Name              string `json:"name"`
 	Email             string `json:"email"`
 	PreferredUsername string `json:"preferred_username"`
@@ -55,16 +121,25 @@ type Claims struct {
 }
 
 type OAuthServiceConfig struct {
-	ClientID           string `field:"client-id"`
-	ClientSecret       string
-	ClientSecretFile   string
-	Scopes             []string
-	RedirectURL        string `field:"redirect-url"`
-	AuthURL            string `field:"auth-url"`
-	TokenURL           string `field:"token-url"`
-	UserinfoURL        string `field:"user-info-url"`
-	InsecureSkipVerify bool
-	Name               string
+	ClientID         string   `description:"OAuth client ID." yaml:"clientId"`
+	ClientSecret     string   `description:"OAuth client secret." yaml:"clientSecret"`
+	ClientSecretFile string   `description:"Path to the file containing the OAuth client secret." yaml:"clientSecretFile"`
+	Scopes           []string `description:"OAuth scopes." yaml:"scopes"`
+	RedirectURL      string   `description:"OAuth redirect URL." yaml:"redirectUrl"`
+	AuthURL          string   `description:"OAuth authorization URL." yaml:"authUrl"`
+	TokenURL         string   `description:"OAuth token URL." yaml:"tokenUrl"`
+	UserinfoURL      string   `description:"OAuth userinfo URL." yaml:"userinfoUrl"`
+	Insecure         bool     `description:"Allow insecure OAuth connections." yaml:"insecure"`
+	Name             string   `description:"Provider name in UI." yaml:"name"`
+}
+
+type OIDCClientConfig struct {
+	ID                  string   `description:"OIDC client ID." yaml:"-"`
+	ClientID            string   `description:"OIDC client ID." yaml:"clientId"`
+	ClientSecret        string   `description:"OIDC client secret." yaml:"clientSecret"`
+	ClientSecretFile    string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile"`
+	TrustedRedirectURIs []string `description:"List of trusted redirect URLs." yaml:"trustedRedirectUrls"`
+	Name                string   `description:"Client name in UI." yaml:"name"`
 }
 
 var OverrideProviders = map[string]string{
@@ -80,20 +155,14 @@ type User struct {
 	TotpSecret string
 }
 
+type LdapUser struct {
+	DN     string
+	Groups []string
+}
+
 type UserSearch struct {
 	Username string
 	Type     string // local, ldap or unknown
-}
-
-type SessionCookie struct {
-	UUID        string
-	Username    string
-	Name        string
-	Email       string
-	Provider    string
-	TotpPending bool
-	OAuthGroups string
-	OAuthName   string
 }
 
 type UserContext struct {
@@ -101,12 +170,15 @@ type UserContext struct {
 	Name        string
 	Email       string
 	IsLoggedIn  bool
+	IsBasicAuth bool
 	OAuth       bool
 	Provider    string
 	TotpPending bool
 	OAuthGroups string
 	TotpEnabled bool
 	OAuthName   string
+	OAuthSub    string
+	LdapGroups  string
 }
 
 // API responses and queries
@@ -122,61 +194,60 @@ type RedirectQuery struct {
 	RedirectURI string `url:"redirect_uri"`
 }
 
-// Labels
+// ACLs
 
 type Apps struct {
-	Apps map[string]App
+	Apps map[string]App `description:"App ACLs configuration." yaml:"apps"`
 }
 
 type App struct {
-	Config   AppConfig
-	Users    AppUsers
-	OAuth    AppOAuth
-	IP       AppIP
-	Response AppResponse
-	Path     AppPath
+	Config   AppConfig   `description:"App configuration." yaml:"config"`
+	Users    AppUsers    `description:"User access configuration." yaml:"users"`
+	OAuth    AppOAuth    `description:"OAuth access configuration." yaml:"oauth"`
+	IP       AppIP       `description:"IP access configuration." yaml:"ip"`
+	Response AppResponse `description:"Response customization." yaml:"response"`
+	Path     AppPath     `description:"Path access configuration." yaml:"path"`
+	LDAP     AppLDAP     `description:"LDAP access configuration." yaml:"ldap"`
 }
 
 type AppConfig struct {
-	Domain string
+	Domain string `description:"The domain of the app." yaml:"domain"`
 }
 
 type AppUsers struct {
-	Allow string
-	Block string
+	Allow string `description:"Comma-separated list of allowed users." yaml:"allow"`
+	Block string `description:"Comma-separated list of blocked users." yaml:"block"`
 }
 
 type AppOAuth struct {
-	Whitelist string
-	Groups    string
+	Whitelist string `description:"Comma-separated list of allowed OAuth groups." yaml:"whitelist"`
+	Groups    string `description:"Comma-separated list of required OAuth groups." yaml:"groups"`
+}
+
+type AppLDAP struct {
+	Groups string `description:"Comma-separated list of required LDAP groups." yaml:"groups"`
 }
 
 type AppIP struct {
-	Allow  []string
-	Block  []string
-	Bypass []string
+	Allow  []string `description:"List of allowed IPs or CIDR ranges." yaml:"allow"`
+	Block  []string `description:"List of blocked IPs or CIDR ranges." yaml:"block"`
+	Bypass []string `description:"List of IPs or CIDR ranges that bypass authentication." yaml:"bypass"`
 }
 
 type AppResponse struct {
-	Headers   []string
-	BasicAuth AppBasicAuth
+	Headers   []string     `description:"Custom headers to add to the response." yaml:"headers"`
+	BasicAuth AppBasicAuth `description:"Basic authentication for the app." yaml:"basicAuth"`
 }
 
 type AppBasicAuth struct {
-	Username     string
-	Password     string
-	PasswordFile string
+	Username     string `description:"Basic auth username." yaml:"username"`
+	Password     string `description:"Basic auth password." yaml:"password"`
+	PasswordFile string `description:"Path to the file containing the basic auth password." yaml:"passwordFile"`
 }
 
 type AppPath struct {
-	Allow string
-	Block string
-}
-
-// Flags
-
-type Providers struct {
-	Providers map[string]OAuthServiceConfig
+	Allow string `description:"Comma-separated list of allowed paths." yaml:"allow"`
+	Block string `description:"Comma-separated list of blocked paths." yaml:"block"`
 }
 
 // API server

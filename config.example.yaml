@@ -1,0 +1,102 @@
+# Tinyauth Example Configuration
+
+# The base URL where Tinyauth is accessible
+appUrl: "https://auth.example.com"
+# Directory for static resources
+resourcesDir: "./resources"
+# Path to SQLite database file
+databasePath: "./tinyauth.db"
+# Disable usage analytics
+disableAnalytics: false
+# Disable static resource serving
+disableResources: false
+# Disable UI warning messages
+disableUIWarnings: false
+
+# Logging Configuration
+log:
+  # Log level: trace, debug, info, warn, error
+  level: "info"
+  json: false
+  streams:
+    app:
+      enabled: true
+      level: "warn"
+    http:
+      enabled: true
+      level: "debug"
+    audit:
+      enabled: false
+      level: "info"
+
+# Server Configuration
+server:
+  # Port to listen on
+  port: 3000
+  # Interface to bind to (0.0.0.0 for all interfaces)
+  address: "0.0.0.0"
+  # Unix socket path (optional, overrides port/address if set)
+  socketPath: ""
+  # Comma-separated list of trusted proxy IPs/CIDRs
+  trustedProxies: ""
+
+# Authentication Configuration
+auth:
+  # Format: username:bcrypt_hash (use bcrypt to generate hash)
+  users: "admin:$2a$10$example_bcrypt_hash_here"
+  # Path to external users file (optional)
+  usersFile: ""
+  # Enable secure cookies (requires HTTPS)
+  secureCookie: false
+  # Session expiry in seconds (3600 = 1 hour)
+  sessionExpiry: 3600
+  # Session maximum lifetime in seconds (0 = unlimited)
+  sessionMaxLifetime: 0
+  # Login timeout in seconds (300 = 5 minutes)
+  loginTimeout: 300
+  # Maximum login retries before lockout
+  loginMaxRetries: 3
+
+# OAuth Configuration
+oauth:
+  # Regex pattern for allowed email addresses (e.g., /@example\.com$/)
+  whitelist: ""
+  # Provider ID to auto-redirect to (skips login page)
+  autoRedirect: ""
+  # OAuth Provider Configuration (replace myprovider with your provider name)
+  providers:
+    myprovider:
+      clientId: "your_client_id_here"
+      clientSecret: "your_client_secret_here"
+      authUrl: "https://provider.example.com/oauth/authorize"
+      tokenUrl: "https://provider.example.com/oauth/token"
+      userInfoUrl: "https://provider.example.com/oauth/userinfo"
+      redirectUrl: "https://auth.example.com/api/oauth/callback/myprovider"
+      scopes: "openid email profile"
+      name: "My OAuth Provider"
+      # Allow insecure connections (self-signed certificates)
+      insecure: false
+
+# UI Customization
+ui:
+  # Custom title for login page
+  title: "Tinyauth"
+  # Message shown on forgot password page
+  forgotPasswordMessage: "Contact your administrator to reset your password"
+  # Background image URL for login page
+  backgroundImage: ""
+
+# LDAP Configuration (optional)
+ldap:
+  # LDAP server address
+  address: "ldap://ldap.example.com:389"
+  # DN for binding to LDAP server
+  bindDn: "cn=readonly,dc=example,dc=com"
+  # Password for bind DN
+  bindPassword: "your_bind_password"
+  # Base DN for user searches
+  baseDn: "dc=example,dc=com"
+  # Search filter (%s will be replaced with username)
+  searchFilter: "(&(uid=%s)(memberOf=cn=users,ou=groups,dc=example,dc=com))"
+  # Allow insecure LDAP connections
+  insecure: false

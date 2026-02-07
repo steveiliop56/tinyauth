@@ -7,9 +7,13 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/service"
+
+	"github.com/steveiliop56/tinyauth/internal/bootstrap"
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/repository"
+	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
@@ -20,6 +24,8 @@ var cookieValue string
 var totpSecret = "6WFZXPEZRK5MZHHYAFW4DAOUYQMCASBJ"
 
 func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
+	tlog.NewSimpleLogger().Init()
+
 	// Setup
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
@@ -33,14 +39,16 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 	group := router.Group("/api")
 	recorder := httptest.NewRecorder()
 
+	// Mock app
+	app := bootstrap.NewBootstrapApp(config.Config{})
+
 	// Database
-	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
-		DatabasePath: "/tmp/tinyauth_test.db",
-	})
+	db, err := app.SetupDatabase(":memory:")
 
-	assert.NilError(t, databaseService.Init())
+	assert.NilError(t, err)
 
-	database := databaseService.GetDatabase()
+	// Queries
+	queries := repository.New(db)
 
 	// Auth service
 	authService := service.NewAuthService(service.AuthServiceConfig{
@@ -55,14 +63,15 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 				TotpSecret: totpSecret,
 			},
 		},
-		OauthWhitelist:    "",
-		SessionExpiry:     3600,
-		SecureCookie:      false,
-		CookieDomain:      "localhost",
-		LoginTimeout:      300,
-		LoginMaxRetries:   3,
-		SessionCookieName: "tinyauth-session",
-	}, nil, nil, database)
+		OauthWhitelist:     []string{},
+		SessionExpiry:      3600,
+		SessionMaxLifetime: 0,
+		SecureCookie:       false,
+		CookieDomain:       "localhost",
+		LoginTimeout:       300,
+		LoginMaxRetries:    3,
+		SessionCookieName:  "tinyauth-session",
+	}, nil, nil, queries)
 
 	// Controller
 	ctrl := controller.NewUserController(controller.UserControllerConfig{
@@ -195,7 +204,7 @@ func TestTotpHandler(t *testing.T) {
 				Email:       "totpuser@example.com",
 				IsLoggedIn:  false,
 				OAuth:       false,
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: true,
 				OAuthGroups: "",
 				TotpEnabled: true,
@@ -258,7 +267,7 @@ func TestTotpHandler(t *testing.T) {
 				Email:       "totpuser@example.com",
 				IsLoggedIn:  false,
 				OAuth:       false,
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: true,
 				OAuthGroups: "",
 				TotpEnabled: true,
@@ -281,7 +290,7 @@ func TestTotpHandler(t *testing.T) {
 				Email:       "totpuser@example.com",
 				IsLoggedIn:  false,
 				OAuth:       false,
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: false,
 				OAuthGroups: "",
 				TotpEnabled: false,

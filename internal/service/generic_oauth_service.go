@@ -10,9 +10,10 @@ import (
 	"io"
 	"net/http"
 	"time"
-	"tinyauth/internal/config"
 
-	"github.com/rs/zerolog/log"
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
+
 	"golang.org/x/oauth2"
 )
 
@@ -38,7 +39,7 @@ func NewGenericOAuthService(config config.OAuthServiceConfig) *GenericOAuthServi
 				TokenURL: config.TokenURL,
 			},
 		},
-		insecureSkipVerify: config.InsecureSkipVerify,
+		insecureSkipVerify: config.Insecure,
 		userinfoUrl:        config.UserinfoURL,
 		name:               config.Name,
 	}
@@ -54,6 +55,7 @@ func (generic *GenericOAuthService) Init() error {
 
 	httpClient := &http.Client{
 		Transport: transport,
+		Timeout:   30 * time.Second,
 	}
 
 	ctx := context.Background()
@@ -115,7 +117,7 @@ func (generic *GenericOAuthService) Userinfo() (config.Claims, error) {
 		return user, err
 	}
 
-	log.Trace().Str("body", string(body)).Msg("Userinfo response body")
+	tlog.App.Trace().Str("body", string(body)).Msg("Userinfo response body")
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {

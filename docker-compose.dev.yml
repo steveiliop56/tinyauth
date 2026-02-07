@@ -1,7 +1,7 @@
 services:
   traefik:
     container_name: traefik
-    image: traefik:v3.3
+    image: traefik:v3.6
     command: --api.insecure=true --providers.docker
     ports:
       - 80:80
@@ -42,7 +42,6 @@ services:
     volumes:
       - ./internal:/tinyauth/internal
       - ./cmd:/tinyauth/cmd
-      - ./main.go:/tinyauth/main.go
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
     ports:
@@ -51,3 +50,4 @@ services:
     labels:
       traefik.enable: true
       traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth-backend:3000/api/auth/traefik
+      traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders: remote-user, remote-sub, remote-name, remote-email, remote-groups

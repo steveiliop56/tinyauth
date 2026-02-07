@@ -2,8 +2,9 @@ package decoders_test
 
 import (
 	"testing"
-	"tinyauth/internal/config"
-	"tinyauth/internal/utils/decoders"
+
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils/decoders"
 
 	"gotest.tools/v3/assert"
 )
@@ -62,7 +63,7 @@ func TestDecodeLabels(t *testing.T) {
 	}
 
 	// Test
-	result, err := decoders.DecodeLabels(test)
+	result, err := decoders.DecodeLabels[config.Apps](test, "apps")
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, result)
 }

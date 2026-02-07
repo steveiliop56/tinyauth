@@ -1,5 +1,5 @@
 # Site builder
-FROM oven/bun:1.3.3-alpine AS frontend-builder
+FROM oven/bun:1.3.8-alpine AS frontend-builder
 
 WORKDIR /frontend
 
@@ -28,20 +28,24 @@ ARG BUILD_TIMESTAMP
 
 WORKDIR /tinyauth
 
+COPY ./paerser ./paerser
+
 COPY go.mod ./
 COPY go.sum ./
 
 RUN go mod download
 
-COPY ./main.go ./
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY --from=frontend-builder /frontend/dist ./internal/assets/dist
 
-RUN CGO_ENABLED=0 go build -ldflags "-s -w -X tinyauth/internal/config.Version=${VERSION} -X tinyauth/internal/config.CommitHash=${COMMIT_HASH} -X tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" 
- 
+RUN CGO_ENABLED=0 go build -ldflags "-s -w \
+    -X github.com/steveiliop56/tinyauth/internal/config.Version=${VERSION} \
+    -X github.com/steveiliop56/tinyauth/internal/config.CommitHash=${COMMIT_HASH} \
+    -X github.com/steveiliop56/tinyauth/internal/config.BuildTimestamp=${BUILD_TIMESTAMP}" ./cmd/tinyauth
+
 # Runner
-FROM alpine:3.22 AS runner
+FROM alpine:3.23 AS runner
 
 WORKDIR /tinyauth
 
@@ -53,7 +57,9 @@ EXPOSE 3000
 
 VOLUME ["/data"]
 
-ENV GIN_MODE=release
+ENV TINYAUTH_DATABASEPATH=/data/tinyauth.db
+
+ENV TINYAUTH_RESOURCESDIR=/data/resources
 
 ENV PATH=$PATH:/tinyauth
 

@@ -14,12 +14,11 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.MODE === "development",
-
-    interpolation: {
-      escapeValue: false,
-    },
-
+    nonExplicitSupportedLngs: true,
     load: "currentOnly",
+    detection: {
+      lookupLocalStorage: "tinyauth-lang",
+    },
   });
 
 export default i18n;

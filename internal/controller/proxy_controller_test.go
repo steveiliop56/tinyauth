@@ -3,15 +3,21 @@ package controller_test
 import (
 	"net/http/httptest"
 	"testing"
-	"tinyauth/internal/config"
-	"tinyauth/internal/controller"
-	"tinyauth/internal/service"
+
+	"github.com/steveiliop56/tinyauth/internal/bootstrap"
+	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/repository"
+	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"
 )
 
 func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder, *service.AuthService) {
+	tlog.NewSimpleLogger().Init()
+
 	// Setup
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
@@ -25,14 +31,16 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	group := router.Group("/api")
 	recorder := httptest.NewRecorder()
 
+	// Mock app
+	app := bootstrap.NewBootstrapApp(config.Config{})
+
 	// Database
-	databaseService := service.NewDatabaseService(service.DatabaseServiceConfig{
-		DatabasePath: "/tmp/tinyauth_test.db",
-	})
+	db, err := app.SetupDatabase(":memory:")
 
-	assert.NilError(t, databaseService.Init())
+	assert.NilError(t, err)
 
-	database := databaseService.GetDatabase()
+	// Queries
+	queries := repository.New(db)
 
 	// Docker
 	dockerService := service.NewDockerService()
@@ -40,7 +48,7 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	assert.NilError(t, dockerService.Init())
 
 	// Access controls
-	accessControlsService := service.NewAccessControlsService(dockerService)
+	accessControlsService := service.NewAccessControlsService(dockerService, map[string]config.App{})
 
 	assert.NilError(t, accessControlsService.Init())
 
@@ -52,14 +60,15 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 				Password: "$2a$10$ne6z693sTgzT3ePoQ05PgOecUHnBjM7sSNj6M.l5CLUP.f6NyCnt.", // test
 			},
 		},
-		OauthWhitelist:    "",
-		SessionExpiry:     3600,
-		SecureCookie:      false,
-		CookieDomain:      "localhost",
-		LoginTimeout:      300,
-		LoginMaxRetries:   3,
-		SessionCookieName: "tinyauth-session",
-	}, dockerService, nil, database)
+		OauthWhitelist:     []string{},
+		SessionExpiry:      3600,
+		SessionMaxLifetime: 0,
+		SecureCookie:       false,
+		CookieDomain:       "localhost",
+		LoginTimeout:       300,
+		LoginMaxRetries:    3,
+		SessionCookieName:  "tinyauth-session",
+	}, dockerService, nil, queries)
 
 	// Controller
 	ctrl := controller.NewProxyController(controller.ProxyControllerConfig{
@@ -80,9 +89,41 @@ func TestProxyHandler(t *testing.T) {
 
 	assert.Equal(t, 400, recorder.Code)
 
+	// Test invalid method for non-envoy proxy
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("POST", "/api/auth/traefik", nil)
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 405, recorder.Code)
+	assert.Equal(t, "GET", recorder.Header().Get("Allow"))
+
 	// Test logged out user (traefik/caddy)
 	recorder = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "example.com")
+	req.Header.Set("X-Forwarded-Uri", "/somepath")
+	req.Header.Set("Accept", "text/html")
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 307, recorder.Code)
+	assert.Equal(t, "http://localhost:8080/login?redirect_uri=https%3A%2F%2Fexample.com%2Fsomepath", recorder.Header().Get("Location"))
+
+	// Test logged out user (envoy - POST method)
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("POST", "/api/auth/envoy", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "example.com")
+	req.Header.Set("X-Forwarded-Uri", "/somepath")
+	req.Header.Set("Accept", "text/html")
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, 307, recorder.Code)
+	assert.Equal(t, "http://localhost:8080/login?redirect_uri=https%3A%2F%2Fexample.com%2Fsomepath", recorder.Header().Get("Location"))
+
+	// Test logged out user (envoy - DELETE method)
+	recorder = httptest.NewRecorder()
+	req = httptest.NewRequest("DELETE", "/api/auth/envoy", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
 	req.Header.Set("X-Forwarded-Host", "example.com")
 	req.Header.Set("X-Forwarded-Uri", "/somepath")
@@ -102,11 +143,11 @@ func TestProxyHandler(t *testing.T) {
 	// Test logged in user
 	c := gin.CreateTestContextOnly(recorder, router)
 
-	err := authService.CreateSessionCookie(c, &config.SessionCookie{
+	err := authService.CreateSessionCookie(c, &repository.Session{
 		Username:    "testuser",
 		Name:        "testuser",
 		Email:       "testuser@example.com",
-		Provider:    "username",
+		Provider:    "local",
 		TotpPending: false,
 		OAuthGroups: "",
 	})
@@ -123,7 +164,7 @@ func TestProxyHandler(t *testing.T) {
 				Email:       "testuser@example.com",
 				IsLoggedIn:  true,
 				OAuth:       false,
-				Provider:    "username",
+				Provider:    "local",
 				TotpPending: false,
 				OAuthGroups: "",
 				TotpEnabled: false,
@@ -151,8 +192,9 @@ func TestProxyHandler(t *testing.T) {
 				Name:        "testuser",
 				Email:       "testuser@example.com",
 				IsLoggedIn:  true,
+				IsBasicAuth: true,
 				OAuth:       false,
-				Provider:    "basic",
+				Provider:    "local",
 				TotpPending: false,
 				OAuthGroups: "",
 				TotpEnabled: true,

@@ -1,29 +1,41 @@
 # dist
-internal/assets/dist
+/internal/assets/dist
 
 # binaries
-tinyauth
+/tinyauth
+/tinyauth-arm64
+/tinyauth-amd64
 
 # test docker compose
-docker-compose.test*
+/docker-compose.test*
 
 # users file
-users.txt
+/users.txt
 
 # secret test file
-secret*
+/secret*
 
 # apple stuff
 .DS_Store
 
 # env
-.env
+/.env
 
 # tmp directory
-tmp
-
-# version files
-internal/assets/version
+/tmp
 
 # data directory
-data
+/data
+
+# config file
+/config.yml
+
+# binary out
+/tinyauth.db
+/resources
+
+# debug files
+__debug_*
+
+# infisical
+/.infisical.json

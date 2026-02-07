@@ -14,11 +14,10 @@ import z from "zod";
 interface Props {
   formId: string;
   onSubmit: (code: TotpSchema) => void;
-  loading?: boolean;
 }
 
 export const TotpForm = (props: Props) => {
-  const { formId, onSubmit, loading } = props;
+  const { formId, onSubmit } = props;
   const { t } = useTranslation();
 
   z.config({
@@ -29,6 +28,14 @@ export const TotpForm = (props: Props) => {
   const form = useForm<TotpSchema>({
     resolver: zodResolver(totpSchema),
   });
+
+  const handleChange = (value: string) => {
+    form.setValue("code", value, { shouldDirty: true, shouldValidate: true });
+
+    if (value.length === 6) {
+      onSubmit({ code: value });
+    }
+  };
 
   return (
     <Form {...form}>
@@ -41,10 +48,10 @@ export const TotpForm = (props: Props) => {
               <FormControl>
                 <InputOTP
                   maxLength={6}
-                  disabled={loading}
                   {...field}
                   autoComplete="one-time-code"
                   autoFocus
+                  onChange={handleChange}
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
