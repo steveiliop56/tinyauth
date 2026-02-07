@@ -52,7 +52,7 @@
     "failedToFetchProvidersTitle": "Impossibile caricare i provider di autenticazione. Si prega di controllare la configurazione.",
     "errorTitle": "Si è verificato un errore",
     "errorSubtitleInfo": "The following error occurred while processing your request:",
-    "errorSubtitle": "An error occurred while trying to perform this action. Please check your browser console or the app logs for more information.",
+    "errorSubtitle": "An error occurred while trying to perform this action. Please check the console for more information.",
     "forgotPasswordMessage": "Puoi reimpostare la tua password modificando la variabile d'ambiente `USERS`.",
     "fieldRequired": "Questo campo è obbligatorio",
     "invalidInput": "Input non valido",
