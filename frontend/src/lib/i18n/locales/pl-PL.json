@@ -52,7 +52,7 @@
     "failedToFetchProvidersTitle": "Nie udało się załadować dostawców uwierzytelniania. Sprawdź swoją konfigurację.",
     "errorTitle": "Wystąpił błąd",
     "errorSubtitleInfo": "Podczas przetwarzania żądania wystąpił następujący błąd:",
-    "errorSubtitle": "Wystąpił błąd podczas próby wykonania tej czynności. Sprawdź konsolę przeglądarki lub dzienniki aplikacji, aby uzyskać więcej informacji.",
+    "errorSubtitle": "Wystąpił błąd podczas próby wykonania tej czynności. Sprawdź konsolę, aby uzyskać więcej informacji.",
     "forgotPasswordMessage": "Możesz zresetować hasło, zmieniając zmienną środowiskową `USERS`.",
     "fieldRequired": "To pole jest wymagane",
     "invalidInput": "Nieprawidłowe dane wejściowe",
