@@ -138,7 +138,7 @@ type OIDCClientConfig struct {
 	ClientID            string   `description:"OIDC client ID." yaml:"clientId"`
 	ClientSecret        string   `description:"OIDC client secret." yaml:"clientSecret"`
 	ClientSecretFile    string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile"`
-	TrustedRedirectURIs []string `description:"List of trusted redirect URLs." yaml:"trustedRedirectUrls"`
+	TrustedRedirectURIs []string `description:"List of trusted redirect URIs." yaml:"trustedRedirectUris"`
 	Name                string   `description:"Client name in UI." yaml:"name"`
 }
 
