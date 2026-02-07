@@ -52,7 +52,7 @@
     "failedToFetchProvidersTitle": "Échec du chargement des fournisseurs d'authentification. Veuillez vérifier votre configuration.",
     "errorTitle": "Une erreur est survenue",
     "errorSubtitleInfo": "L'erreur suivante s'est produite lors du traitement de votre requête :",
-    "errorSubtitle": "Une erreur est survenue lors de l'exécution de cette action. Veuillez consulter la console du navigateur pour plus d'informations.",
+    "errorSubtitle": "Une erreur est survenue lors de l'exécution de cette action. Veuillez consulter la console pour plus d'informations.",
     "forgotPasswordMessage": "Vous pouvez réinitialiser votre mot de passe en modifiant la variable d'environnement `USERS`.",
     "fieldRequired": "Ce champ est obligatoire",
     "invalidInput": "Saisie non valide",
