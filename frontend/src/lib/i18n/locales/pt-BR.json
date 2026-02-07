@@ -52,7 +52,7 @@
     "failedToFetchProvidersTitle": "Falha ao carregar provedores de autenticação. Verifique sua configuração.",
     "errorTitle": "Ocorreu um erro",
     "errorSubtitleInfo": "The following error occurred while processing your request:",
-    "errorSubtitle": "An error occurred while trying to perform this action. Please check your browser console or the app logs for more information.",
+    "errorSubtitle": "Ocorreu um erro ao tentar executar esta ação. Por favor, verifique o console para mais informações.",
     "forgotPasswordMessage": "Você pode redefinir sua senha alterando a variável de ambiente `USERS`.",
     "fieldRequired": "Este campo é obrigatório",
     "invalidInput": "Entrada Inválida",
