@@ -52,7 +52,7 @@
     "failedToFetchProvidersTitle": "Nepodařilo se načíst poskytovatele ověřování. Zkontrolujte prosím konfiguraci.",
     "errorTitle": "Došlo k chybě",
     "errorSubtitleInfo": "The following error occurred while processing your request:",
-    "errorSubtitle": "An error occurred while trying to perform this action. Please check your browser console or the app logs for more information.",
+    "errorSubtitle": "Nastala chyba při pokusu o provedení této akce. Pro více informací prosím zkontrolujte konzolu.",
     "forgotPasswordMessage": "Heslo můžete obnovit změnou proměnné `USERS`.",
     "fieldRequired": "Toto pole je povinné",
     "invalidInput": "Neplatný údaj",
