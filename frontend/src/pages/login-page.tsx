@@ -200,7 +200,14 @@ export const LoginPage = () => {
           <CardFooter className="flex flex-col items-stretch">
             <Button
               onClick={() => {
-                window.location.replace(oauthData?.data.url);
+                if (oauthData?.data.url) {
+                  window.location.replace(oauthData.data.url);
+                } else {
+                  setIsOauthAutoRedirect(false);
+                  toast.error(t("loginOauthFailTitle"), {
+                    description: t("loginOauthFailSubtitle"),
+                  });
+                }
               }}
             >
               {t("loginOauthAutoRedirectButton")}
