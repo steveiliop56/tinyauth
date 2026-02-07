@@ -52,7 +52,7 @@
     "failedToFetchProvidersTitle": "加载身份验证提供程序失败，请检查您的配置。",
     "errorTitle": "发生了错误",
     "errorSubtitleInfo": "The following error occurred while processing your request:",
-    "errorSubtitle": "An error occurred while trying to perform this action. Please check your browser console or the app logs for more information.",
+    "errorSubtitle": "执行此操作时发生错误，请检查控制台以获取更多信息。",
     "forgotPasswordMessage": "您可以通过更改 `USERS ` 环境变量重置您的密码。",
     "fieldRequired": "必添字段",
     "invalidInput": "无效的输入",
