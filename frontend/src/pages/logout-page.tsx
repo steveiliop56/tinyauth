@@ -29,7 +29,7 @@ export const LogoutPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
-        window.location.assign("/login");
+        window.location.replace("/login");
       }, 500);
     },
     onError: () => {
@@ -39,12 +39,13 @@ export const LogoutPage = () => {
     },
   });
 
-  useEffect(
-    () => () => {
-      if (redirectTimer.current) clearTimeout(redirectTimer.current);
-    },
-    [],
-  );
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
+    };
+  }, [redirectTimer]);
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;

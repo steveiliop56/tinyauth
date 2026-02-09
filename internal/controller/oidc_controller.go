@@ -33,6 +33,8 @@ type TokenRequest struct {
 	Code         string `form:"code" url:"code"`
 	RedirectURI  string `form:"redirect_uri" url:"redirect_uri"`
 	RefreshToken string `form:"refresh_token" url:"refresh_token"`
+	ClientSecret string `form:"client_secret" url:"client_secret"`
+	ClientID     string `form:"client_id" url:"client_id"`
 }
 
 type CallbackError struct {
@@ -47,6 +49,11 @@ type ErrorScreen struct {
 
 type ClientRequest struct {
 	ClientID string `uri:"id" binding:"required"`
+}
+
+type ClientCredentials struct {
+	ClientID     string
+	ClientSecret string
 }
 
 func NewOIDCController(config OIDCControllerConfig, oidcService *service.OIDCService, router *gin.RouterGroup) *OIDCController {
@@ -210,29 +217,45 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		return
 	}
 
-	rclientId, rclientSecret, ok := c.Request.BasicAuth()
-
-	if !ok {
-		tlog.App.Error().Msg("Missing authorization header")
-		c.Header("www-authenticate", "basic")
-		c.JSON(401, gin.H{
-			"error": "invalid_client",
-		})
-		return
+	// First we try form values
+	creds := ClientCredentials{
+		ClientID:     req.ClientID,
+		ClientSecret: req.ClientSecret,
 	}
 
-	client, ok := controller.oidc.GetClient(rclientId)
+	// If it fails, we try basic auth
+	if creds.ClientID == "" || creds.ClientSecret == "" {
+		tlog.App.Debug().Msg("Tried form values and they are empty, trying basic auth")
+
+		clientId, clientSecret, ok := c.Request.BasicAuth()
+
+		if !ok {
+			tlog.App.Error().Msg("Missing authorization header")
+			c.Header("www-authenticate", "basic")
+			c.JSON(401, gin.H{
+				"error": "invalid_client",
+			})
+			return
+		}
+
+		creds.ClientID = clientId
+		creds.ClientSecret = clientSecret
+	}
+
+	// END - we don't support other authentication methods
+
+	client, ok := controller.oidc.GetClient(creds.ClientID)
 
 	if !ok {
-		tlog.App.Warn().Str("client_id", rclientId).Msg("Client not found")
+		tlog.App.Warn().Str("client_id", creds.ClientID).Msg("Client not found")
 		c.JSON(400, gin.H{
 			"error": "invalid_client",
 		})
 		return
 	}
 
-	if client.ClientSecret != rclientSecret {
-		tlog.App.Warn().Str("client_id", rclientId).Msg("Invalid client secret")
+	if client.ClientSecret != creds.ClientSecret {
+		tlog.App.Warn().Str("client_id", creds.ClientID).Msg("Invalid client secret")
 		c.JSON(400, gin.H{
 			"error": "invalid_client",
 		})
@@ -286,7 +309,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		tokenResponse = tokenRes
 	case "refresh_token":
-		tokenRes, err := controller.oidc.RefreshAccessToken(c, req.RefreshToken, rclientId)
+		tokenRes, err := controller.oidc.RefreshAccessToken(c, req.RefreshToken, creds.ClientID)
 
 		if err != nil {
 			if errors.Is(err, service.ErrTokenExpired) {
