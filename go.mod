@@ -23,7 +23,7 @@ require (
 	github.com/weppos/publicsuffix-go v0.50.2
 	golang.org/x/crypto v0.47.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.35.0
 	gotest.tools/v3 v3.5.2
 	modernc.org/sqlite v1.44.3
 )
