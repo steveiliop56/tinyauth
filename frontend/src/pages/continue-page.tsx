@@ -108,6 +108,7 @@ export const ContinuePage = () => {
                 code: <code />,
               }}
               values={{ cookieDomain }}
+              shouldUnescape={true}
             />
           </CardDescription>
         </CardHeader>
