@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
@@ -192,6 +194,10 @@ func (app *BootstrapApp) Setup() error {
 	tlog.App.Debug().Msg("Starting database cleanup routine")
 	go app.dbCleanup(queries)
 
+	// Start SIGHUP handler for user reload
+	tlog.App.Debug().Msg("Starting SIGHUP handler for user reload")
+	go app.handleSIGHUP()
+
 	// If analytics are not disabled, start heartbeat
 	if !app.config.DisableAnalytics {
 		tlog.App.Debug().Msg("Starting heartbeat routine")
@@ -277,6 +283,23 @@ func (app *BootstrapApp) heartbeat() {
 		if res.StatusCode != 200 && res.StatusCode != 201 {
 			tlog.App.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
 		}
+	}
+}
+
+func (app *BootstrapApp) handleSIGHUP() {
+	sighup := make(chan os.Signal, 1)
+	signal.Notify(sighup, syscall.SIGHUP)
+
+	for range sighup {
+		tlog.App.Info().Msg("Received SIGHUP, reloading users")
+
+		users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to reload users")
+			continue
+		}
+
+		app.services.authService.ReloadUsers(users)
 	}
 }
 
