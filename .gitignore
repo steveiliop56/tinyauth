@@ -39,3 +39,6 @@ __debug_*
 
 # infisical
 /.infisical.json
+
+# traefik data
+/traefik
