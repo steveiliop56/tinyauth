@@ -32,6 +32,8 @@ export const ContinuePage = () => {
     cookieDomain,
   );
 
+  const urlHref = url?.href;
+
   const hasValidRedirect = valid && allowedProto;
   const showUntrustedWarning =
     hasValidRedirect && !trusted && !disableUiWarnings;
@@ -44,13 +46,13 @@ export const ContinuePage = () => {
     !showInsecureWarning;
 
   const redirectToTarget = useCallback(() => {
-    if (!url || hasRedirected.current) {
+    if (!urlHref || hasRedirected.current) {
       return;
     }
 
     hasRedirected.current = true;
-    window.location.assign(url);
-  }, [url]);
+    window.location.assign(urlHref);
+  }, [urlHref]);
 
   const handleRedirect = useCallback(() => {
     setIsLoading(true);
