@@ -62,19 +62,42 @@ func buildPaths(parent reflect.Type, parentValue reflect.Value, parentPath strin
 
 func buildPath(field reflect.StructField, fieldValue reflect.Value, parent string, paths *[]Path) {
 	desc := field.Tag.Get("description")
+	yamlTag := field.Tag.Get("yaml")
+
+	// probably internal logic, should be skipped
+	if yamlTag == "-" {
+		return
+	}
+
 	defaultValue := fieldValue.Interface()
+
 	path := Path{
 		Name:        parent + strings.ToUpper(field.Name),
 		Description: desc,
-		Value:       defaultValue,
 	}
-	if fieldValue.Kind() == reflect.Slice {
+
+	switch fieldValue.Kind() {
+	case reflect.Slice:
 		sl, ok := defaultValue.([]string)
 		if !ok {
 			slog.Error("invalid default value", "value", defaultValue)
 			return
 		}
 		path.Value = strings.Join(sl, ",")
+	case reflect.String:
+		st, ok := defaultValue.(string)
+		if !ok {
+			slog.Error("invalid default value", "value", defaultValue)
+			return
+		}
+		// good idea to escape strings probably
+		if st != "" {
+			path.Value = fmt.Sprintf(`"%s"`, st)
+		} else {
+			path.Value = ""
+		}
+	default:
+		path.Value = defaultValue
 	}
 	*paths = append(*paths, path)
 }
@@ -107,7 +130,7 @@ func compileEnv(paths []Path) []byte {
 		buffer.WriteString(path.Name)
 		buffer.WriteString("=")
 		fmt.Fprintf(&buffer, "%v", path.Value)
-		buffer.WriteString("\n")
+		buffer.WriteString("\n\n")
 	}
 
 	return buffer.Bytes()
