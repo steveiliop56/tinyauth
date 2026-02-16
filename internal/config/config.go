@@ -1,5 +1,58 @@
 package config
 
+// Default configuration
+func NewDefaultConfiguration() *Config {
+	return &Config{
+		ResourcesDir: "./resources",
+		DatabasePath: "./tinyauth.db",
+		Server: ServerConfig{
+			Port:    3000,
+			Address: "0.0.0.0",
+		},
+		Auth: AuthConfig{
+			SessionExpiry:      86400, // 1 day
+			SessionMaxLifetime: 0,     // disabled
+			LoginTimeout:       300,   // 5 minutes
+			LoginMaxRetries:    3,
+		},
+		UI: UIConfig{
+			Title:                 "Tinyauth",
+			ForgotPasswordMessage: "You can change your password by changing the configuration.",
+			BackgroundImage:       "/background.jpg",
+		},
+		Ldap: LdapConfig{
+			Insecure:      false,
+			SearchFilter:  "(uid=%s)",
+			GroupCacheTTL: 900, // 15 minutes
+		},
+		Log: LogConfig{
+			Level: "info",
+			Json:  false,
+			Streams: LogStreams{
+				HTTP: LogStreamConfig{
+					Enabled: true,
+					Level:   "",
+				},
+				App: LogStreamConfig{
+					Enabled: true,
+					Level:   "",
+				},
+				Audit: LogStreamConfig{
+					Enabled: false,
+					Level:   "",
+				},
+			},
+		},
+		OIDC: OIDCConfig{
+			PrivateKeyPath: "./tinyauth_oidc_key",
+			PublicKeyPath:  "./tinyauth_oidc_key.pub",
+		},
+		Experimental: ExperimentalConfig{
+			ConfigFile: "",
+		},
+	}
+}
+
 // Version information, set at build time
 
 var Version = "development"
