@@ -21,8 +21,8 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 
-	if len(app.config.Server.TrustedProxies) > 0 {
-		err := engine.SetTrustedProxies(app.config.Server.TrustedProxies)
+	if len(app.config.Auth.TrustedProxies) > 0 {
+		err := engine.SetTrustedProxies(app.config.Auth.TrustedProxies)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to set trusted proxies: %w", err)
@@ -71,7 +71,7 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 		ForgotPasswordMessage: app.config.UI.ForgotPasswordMessage,
 		BackgroundImage:       app.config.UI.BackgroundImage,
 		OAuthAutoRedirect:     app.config.OAuth.AutoRedirect,
-		DisableUIWarnings:     app.config.DisableUIWarnings,
+		DisableUIWarnings:     app.config.UI.DisableWarnings,
 	}, apiRouter)
 
 	contextController.SetupRoutes()

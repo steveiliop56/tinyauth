@@ -15,28 +15,26 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
-	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
-	DatabasePath      string             `description:"The path to the database file." yaml:"databasePath"`
-	DisableAnalytics  bool               `description:"Disable analytics." yaml:"disableAnalytics"`
-	DisableResources  bool               `description:"Disable resources server." yaml:"disableResources"`
-	DisableUIWarnings bool               `description:"Disable UI warnings." yaml:"disableUIWarnings"`
-	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
-	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
-	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
-	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
-	OIDC              OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
-	UI                UIConfig           `description:"UI customization." yaml:"ui"`
-	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
-	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
-	Log               LogConfig          `description:"Logging configuration." yaml:"log"`
+	AppURL           string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
+	ResourcesDir     string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
+	DatabasePath     string             `description:"The path to the database file." yaml:"databasePath"`
+	DisableAnalytics bool               `description:"Disable analytics." yaml:"disableAnalytics"`
+	DisableResources bool               `description:"Disable resources server." yaml:"disableResources"`
+	Server           ServerConfig       `description:"Server configuration." yaml:"server"`
+	Auth             AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	Apps             map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
+	OAuth            OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	OIDC             OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
+	UI               UIConfig           `description:"UI customization." yaml:"ui"`
+	Ldap             LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	Experimental     ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
+	Log              LogConfig          `description:"Logging configuration." yaml:"log"`
 }
 
 type ServerConfig struct {
-	Port           int      `description:"The port on which the server listens." yaml:"port"`
-	Address        string   `description:"The address on which the server listens." yaml:"address"`
-	SocketPath     string   `description:"The path to the Unix socket." yaml:"socketPath"`
-	TrustedProxies []string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
+	Port       int    `description:"The port on which the server listens." yaml:"port"`
+	Address    string `description:"The address on which the server listens." yaml:"address"`
+	SocketPath string `description:"The path to the Unix socket." yaml:"socketPath"`
 }
 
 type AuthConfig struct {
@@ -48,6 +46,7 @@ type AuthConfig struct {
 	SessionMaxLifetime int      `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
 	LoginTimeout       int      `description:"Login timeout in seconds." yaml:"loginTimeout"`
 	LoginMaxRetries    int      `description:"Maximum login retries." yaml:"loginMaxRetries"`
+	TrustedProxies     []string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
 }
 
 type IPConfig struct {
@@ -71,6 +70,7 @@ type UIConfig struct {
 	Title                 string `description:"The title of the UI." yaml:"title"`
 	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage"`
 	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage"`
+	DisableWarnings       bool   `description:"Disable UI warnings." yaml:"disableWarnings"`
 }
 
 type LdapConfig struct {
