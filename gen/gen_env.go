@@ -110,7 +110,7 @@ func buildMapPaths(field reflect.StructField, parentPath string, paths *[]Path) 
 		return
 	}
 
-	mapPath := parentPath + strings.ToUpper(field.Name) + "_[NAME]_"
+	mapPath := parentPath + strings.ToUpper(field.Name) + "_NAME_"
 	valueType := fieldType.Elem()
 
 	if valueType.Kind() == reflect.Struct {
