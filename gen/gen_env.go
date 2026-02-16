@@ -68,6 +68,14 @@ func buildPath(field reflect.StructField, fieldValue reflect.Value, parent strin
 		Description: desc,
 		Value:       defaultValue,
 	}
+	if fieldValue.Kind() == reflect.Slice {
+		sl, ok := defaultValue.([]string)
+		if !ok {
+			slog.Error("invalid default value", "value", defaultValue)
+			return
+		}
+		path.Value = strings.Join(sl, ",")
+	}
 	*paths = append(*paths, path)
 }
 
