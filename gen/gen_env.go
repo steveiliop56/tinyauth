@@ -31,11 +31,13 @@ func generateExampleEnv() {
 	err := os.Remove(".env.example")
 	if err != nil {
 		slog.Error("failed to remove example env file", "error", err)
+		os.Exit(1)
 	}
 
 	err = os.WriteFile(".env.example", compiled, 0644)
 	if err != nil {
 		slog.Error("failed to write example env file", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -48,20 +50,13 @@ func buildPaths(parent reflect.Type, parentValue reflect.Value, parentPath strin
 		case reflect.Struct:
 			childPath := parentPath + strings.ToUpper(field.Name) + "_"
 			buildPaths(fieldType, fieldValue, childPath, paths)
-		case reflect.Bool:
-			buildPath(field, fieldValue, parentPath, paths)
-		case reflect.String:
-			buildPath(field, fieldValue, parentPath, paths)
-		case reflect.Slice:
-			buildPath(field, fieldValue, parentPath, paths)
-		case reflect.Int:
-			buildPath(field, fieldValue, parentPath, paths)
 		case reflect.Map:
 			buildMapPaths(field, parentPath, paths)
+		case reflect.Bool, reflect.String, reflect.Slice, reflect.Int:
+			buildPath(field, fieldValue, parentPath, paths)
 		default:
 			slog.Info("unknown type", "type", fieldType.Kind())
 		}
-
 	}
 }
 
