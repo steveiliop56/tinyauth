@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"reflect"
@@ -11,7 +13,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 )
 
-type Path struct {
+type EnvEntry struct {
 	Name        string
 	Description string
 	Value       any
@@ -19,17 +21,17 @@ type Path struct {
 
 func generateExampleEnv() {
 	cfg := config.NewDefaultConfiguration()
-	paths := make([]Path, 0)
+	entries := make([]EnvEntry, 0)
 
 	root := reflect.TypeOf(cfg).Elem()
 	rootValue := reflect.ValueOf(cfg).Elem()
 	rootPath := "TINYAUTH_"
 
-	buildPaths(root, rootValue, rootPath, &paths)
-	compiled := compileEnv(paths)
+	walkAndBuild(root, rootValue, rootPath, &entries, buildEnvEntry, buildEnvMapEntry, buildEnvChildPath)
+	compiled := compileEnv(entries)
 
 	err := os.Remove(".env.example")
-	if err != nil {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		slog.Error("failed to remove example env file", "error", err)
 		os.Exit(1)
 	}
@@ -41,96 +43,88 @@ func generateExampleEnv() {
 	}
 }
 
-func buildPaths(parent reflect.Type, parentValue reflect.Value, parentPath string, paths *[]Path) {
-	for i := 0; i < parent.NumField(); i++ {
-		field := parent.Field(i)
-		fieldType := field.Type
-		fieldValue := parentValue.Field(i)
-		switch fieldType.Kind() {
-		case reflect.Struct:
-			childPath := parentPath + strings.ToUpper(field.Name) + "_"
-			buildPaths(fieldType, fieldValue, childPath, paths)
-		case reflect.Map:
-			buildMapPaths(field, parentPath, paths)
-		case reflect.Bool, reflect.String, reflect.Slice, reflect.Int:
-			buildPath(field, fieldValue, parentPath, paths)
-		default:
-			slog.Info("unknown type", "type", fieldType.Kind())
-		}
-	}
-}
+func buildEnvEntry(child reflect.StructField, childValue reflect.Value, parentPath string, entries *[]EnvEntry) {
+	desc := child.Tag.Get("description")
+	tag := child.Tag.Get("yaml")
 
-func buildPath(field reflect.StructField, fieldValue reflect.Value, parent string, paths *[]Path) {
-	desc := field.Tag.Get("description")
-	yamlTag := field.Tag.Get("yaml")
-
-	// probably internal logic, should be skipped
-	if yamlTag == "-" {
+	if tag == "-" {
 		return
 	}
 
-	defaultValue := fieldValue.Interface()
+	value := childValue.Interface()
 
-	path := Path{
-		Name:        parent + strings.ToUpper(field.Name),
+	entry := EnvEntry{
+		Name:        parentPath + strings.ToUpper(child.Name),
 		Description: desc,
 	}
 
-	switch fieldValue.Kind() {
+	switch childValue.Kind() {
 	case reflect.Slice:
-		sl, ok := defaultValue.([]string)
+		sl, ok := value.([]string)
 		if !ok {
-			slog.Error("invalid default value", "value", defaultValue)
+			slog.Error("invalid default value", "value", value)
 			return
 		}
-		path.Value = strings.Join(sl, ",")
+		entry.Value = strings.Join(sl, ",")
 	case reflect.String:
-		st, ok := defaultValue.(string)
+		st, ok := value.(string)
 		if !ok {
-			slog.Error("invalid default value", "value", defaultValue)
+			slog.Error("invalid default value", "value", value)
 			return
 		}
-		// good idea to escape strings probably
 		if st != "" {
-			path.Value = fmt.Sprintf(`"%s"`, st)
+			entry.Value = fmt.Sprintf(`"%s"`, st)
 		} else {
-			path.Value = ""
+			entry.Value = ""
 		}
 	default:
-		path.Value = defaultValue
+		entry.Value = value
 	}
-	*paths = append(*paths, path)
+	*entries = append(*entries, entry)
 }
 
-func buildMapPaths(field reflect.StructField, parentPath string, paths *[]Path) {
-	fieldType := field.Type
+func buildEnvMapEntry(child reflect.StructField, parentPath string, entries *[]EnvEntry) {
+	fieldType := child.Type
 
 	if fieldType.Key().Kind() != reflect.String {
 		slog.Info("unsupported map key type", "type", fieldType.Key().Kind())
 		return
 	}
 
-	mapPath := parentPath + strings.ToUpper(field.Name) + "_name_"
+	mapPath := parentPath + strings.ToUpper(child.Name) + "_name_"
 	valueType := fieldType.Elem()
 
 	if valueType.Kind() == reflect.Struct {
 		zeroValue := reflect.New(valueType).Elem()
-		buildPaths(valueType, zeroValue, mapPath, paths)
+		walkAndBuild(valueType, zeroValue, mapPath, entries, buildEnvEntry, buildEnvMapEntry, buildEnvChildPath)
 	}
 }
 
-func compileEnv(paths []Path) []byte {
+func buildEnvChildPath(parent string, child string) string {
+	return parent + strings.ToUpper(child) + "_"
+}
+
+func compileEnv(entries []EnvEntry) []byte {
 	buffer := bytes.Buffer{}
 	buffer.WriteString("# Tinyauth example configuration\n\n")
 
-	for _, path := range paths {
+	previousSection := ""
+
+	for _, entry := range entries {
+		if strings.Count(entry.Name, "_") > 1 {
+			section := strings.Split(strings.TrimPrefix(entry.Name, "TINYAUTH_"), "_")[0]
+			if section != previousSection {
+				buffer.WriteString("\n# " + strings.ToLower(section) + " config\n\n")
+				previousSection = section
+			}
+		}
 		buffer.WriteString("# ")
-		buffer.WriteString(path.Description)
+		buffer.WriteString(entry.Description)
 		buffer.WriteString("\n")
-		buffer.WriteString(path.Name)
+		buffer.WriteString(entry.Name)
 		buffer.WriteString("=")
-		fmt.Fprintf(&buffer, "%v", path.Value)
-		buffer.WriteString("\n\n")
+		fmt.Fprintf(&buffer, "%v", entry.Value)
+		buffer.WriteString("\n")
 	}
 
 	return buffer.Bytes()

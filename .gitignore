@@ -42,3 +42,6 @@ __debug_*
 
 # traefik data
 /traefik
+
+# generated markdown (for docs)
+/config.gen.md
