@@ -30,15 +30,9 @@ func healthcheckCmd() *cli.Command {
 
 			appUrl := "http://127.0.0.1:3000"
 
-			appUrlEnv := os.Getenv("TINYAUTH_APPURL")
 			srvAddr := os.Getenv("TINYAUTH_SERVER_ADDRESS")
 			srvPort := os.Getenv("TINYAUTH_SERVER_PORT")
 
-			if appUrlEnv != "" {
-				appUrl = appUrlEnv
-			}
-
-			// Local-direct connection is preferred over the public app URL
 			if srvAddr != "" && srvPort != "" {
 				appUrl = fmt.Sprintf("http://%s:%s", srvAddr, srvPort)
 			}
@@ -48,7 +42,7 @@ func healthcheckCmd() *cli.Command {
 			}
 
 			if appUrl == "" {
-				return errors.New("TINYAUTH_APPURL is not set and no argument was provided")
+				return errors.New("Could not determine app URL")
 			}
 
 			tlog.App.Info().Str("app_url", appUrl).Msg("Performing health check")
