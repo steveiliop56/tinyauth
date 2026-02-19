@@ -32,34 +32,43 @@ export const ContinuePage = () => {
     cookieDomain,
   );
 
-  const handleRedirect = useCallback(() => {
+  const urlHref = url?.href;
+
+  const hasValidRedirect = valid && allowedProto;
+  const showUntrustedWarning =
+    hasValidRedirect && !trusted && !disableUiWarnings;
+  const showInsecureWarning =
+    hasValidRedirect && httpsDowngrade && !disableUiWarnings;
+  const shouldAutoRedirect =
+    isLoggedIn &&
+    hasValidRedirect &&
+    !showUntrustedWarning &&
+    !showInsecureWarning;
+
+  const redirectToTarget = useCallback(() => {
+    if (!urlHref || hasRedirected.current) {
+      return;
+    }
+
     hasRedirected.current = true;
+    window.location.assign(urlHref);
+  }, [urlHref]);
+
+  const handleRedirect = useCallback(() => {
     setIsLoading(true);
-    window.location.assign(url!);
-  }, [url]);
+    redirectToTarget();
+  }, [redirectToTarget]);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      return;
-    }
-
-    if (hasRedirected.current) {
-      return;
-    }
-
-    if (
-      (!valid || !allowedProto || !trusted || httpsDowngrade) &&
-      !disableUiWarnings
-    ) {
+    if (!shouldAutoRedirect) {
       return;
     }
 
     const auto = setTimeout(() => {
-      handleRedirect();
+      redirectToTarget();
     }, 100);
 
     const reveal = setTimeout(() => {
-      setIsLoading(false);
       setShowRedirectButton(true);
     }, 5000);
 
@@ -67,18 +76,7 @@ export const ContinuePage = () => {
       clearTimeout(auto);
       clearTimeout(reveal);
     };
-  }, [
-    isLoggedIn,
-    hasRedirected,
-    valid,
-    allowedProto,
-    trusted,
-    httpsDowngrade,
-    disableUiWarnings,
-    setIsLoading,
-    handleRedirect,
-    setShowRedirectButton,
-  ]);
+  }, [shouldAutoRedirect, redirectToTarget]);
 
   if (!isLoggedIn) {
     return (
@@ -89,11 +87,11 @@ export const ContinuePage = () => {
     );
   }
 
-  if (!valid || !allowedProto) {
+  if (!hasValidRedirect) {
     return <Navigate to="/logout" replace />;
   }
 
-  if (!trusted && !disableUiWarnings) {
+  if (showUntrustedWarning) {
     return (
       <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -108,12 +106,13 @@ export const ContinuePage = () => {
                 code: <code />,
               }}
               values={{ cookieDomain }}
+              shouldUnescape={true}
             />
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() => handleRedirect()}
+            onClick={handleRedirect}
             loading={isLoading}
             variant="destructive"
           >
@@ -131,7 +130,7 @@ export const ContinuePage = () => {
     );
   }
 
-  if (httpsDowngrade && !disableUiWarnings) {
+  if (showInsecureWarning) {
     return (
       <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
         <CardHeader>
@@ -150,7 +149,7 @@ export const ContinuePage = () => {
         </CardHeader>
         <CardFooter className="flex flex-col items-stretch gap-2">
           <Button
-            onClick={() => handleRedirect()}
+            onClick={handleRedirect}
             loading={isLoading}
             variant="warning"
           >
@@ -178,7 +177,7 @@ export const ContinuePage = () => {
       </CardHeader>
       {showRedirectButton && (
         <CardFooter className="flex flex-col items-stretch">
-          <Button onClick={() => handleRedirect()}>
+          <Button onClick={handleRedirect}>
             {t("continueRedirectManually")}
           </Button>
         </CardFooter>

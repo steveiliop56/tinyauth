@@ -1,5 +1,58 @@
 package config
 
+// Default configuration
+func NewDefaultConfiguration() *Config {
+	return &Config{
+		ResourcesDir: "./resources",
+		DatabasePath: "./tinyauth.db",
+		Server: ServerConfig{
+			Port:    3000,
+			Address: "0.0.0.0",
+		},
+		Auth: AuthConfig{
+			SessionExpiry:      86400, // 1 day
+			SessionMaxLifetime: 0,     // disabled
+			LoginTimeout:       300,   // 5 minutes
+			LoginMaxRetries:    3,
+		},
+		UI: UIConfig{
+			Title:                 "Tinyauth",
+			ForgotPasswordMessage: "You can change your password by changing the configuration.",
+			BackgroundImage:       "/background.jpg",
+		},
+		Ldap: LdapConfig{
+			Insecure:      false,
+			SearchFilter:  "(uid=%s)",
+			GroupCacheTTL: 900, // 15 minutes
+		},
+		Log: LogConfig{
+			Level: "info",
+			Json:  false,
+			Streams: LogStreams{
+				HTTP: LogStreamConfig{
+					Enabled: true,
+					Level:   "",
+				},
+				App: LogStreamConfig{
+					Enabled: true,
+					Level:   "",
+				},
+				Audit: LogStreamConfig{
+					Enabled: false,
+					Level:   "",
+				},
+			},
+		},
+		OIDC: OIDCConfig{
+			PrivateKeyPath: "./tinyauth_oidc_key",
+			PublicKeyPath:  "./tinyauth_oidc_key.pub",
+		},
+		Experimental: ExperimentalConfig{
+			ConfigFile: "",
+		},
+	}
+}
+
 // Version information, set at build time
 
 var Version = "development"
@@ -34,10 +87,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port           int      `description:"The port on which the server listens." yaml:"port"`
-	Address        string   `description:"The address on which the server listens." yaml:"address"`
-	SocketPath     string   `description:"The path to the Unix socket." yaml:"socketPath"`
-	TrustedProxies []string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
+	Port       int    `description:"The port on which the server listens." yaml:"port"`
+	Address    string `description:"The address on which the server listens." yaml:"address"`
+	SocketPath string `description:"The path to the Unix socket." yaml:"socketPath"`
 }
 
 type AuthConfig struct {
@@ -49,6 +101,7 @@ type AuthConfig struct {
 	SessionMaxLifetime int      `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
 	LoginTimeout       int      `description:"Login timeout in seconds." yaml:"loginTimeout"`
 	LoginMaxRetries    int      `description:"Maximum login retries." yaml:"loginMaxRetries"`
+	TrustedProxies     []string `description:"Comma-separated list of trusted proxy addresses." yaml:"trustedProxies"`
 }
 
 type IPConfig struct {
@@ -72,6 +125,7 @@ type UIConfig struct {
 	Title                 string `description:"The title of the UI." yaml:"title"`
 	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage"`
 	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage"`
+	DisableWarnings       bool   `description:"Disable UI warnings." yaml:"disableWarnings"`
 }
 
 type LdapConfig struct {

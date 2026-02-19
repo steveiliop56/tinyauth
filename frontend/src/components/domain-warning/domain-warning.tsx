@@ -33,6 +33,7 @@ export const DomainWarning = (props: Props) => {
             i18nKey="domainWarningSubtitle"
             values={{ appUrl, currentUrl }}
             components={{ code: <code /> }}
+            shouldUnescape={true}
           />
         </CardDescription>
       </CardHeader>

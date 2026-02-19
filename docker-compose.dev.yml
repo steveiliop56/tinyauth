@@ -13,7 +13,7 @@ services:
     image: traefik/whoami:latest
     labels:
       traefik.enable: true
-      traefik.http.routers.whoami.rule: Host(`whoami.example.com`)
+      traefik.http.routers.whoami.rule: Host(`whoami.127.0.0.1.sslip.io`)
       traefik.http.routers.whoami.middlewares: tinyauth
 
   tinyauth-frontend:
@@ -27,7 +27,7 @@ services:
       - 5173:5173
     labels:
       traefik.enable: true
-      traefik.http.routers.tinyauth.rule: Host(`tinyauth.example.com`)
+      traefik.http.routers.tinyauth.rule: Host(`tinyauth.127.0.0.1.sslip.io`)
 
   tinyauth-backend:
     container_name: tinyauth-backend

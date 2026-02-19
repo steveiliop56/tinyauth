@@ -10,7 +10,7 @@ BUILD_TIMESTAMP := $(shell date '+%Y-%m-%dT%H:%M:%S')
 BIN_NAME := tinyauth-$(GOARCH)
 
 # Development vars
-DEV_COMPOSE := $(shell test -f "docker-compose.test.yml" && echo "docker-compose.test.yml" || echo "docker-compose.yml" )
+DEV_COMPOSE := $(shell test -f "docker-compose.test.yml" && echo "docker-compose.test.yml" || echo "docker-compose.dev.yml" )
 PROD_COMPOSE := $(shell test -f "docker-compose.test.prod.yml" && echo "docker-compose.test.prod.yml" || echo "docker-compose.example.yml" )
 
 # Deps
@@ -60,11 +60,11 @@ test:
 	go test -v ./...
 
 # Development
-develop:
+dev:
 	docker compose -f $(DEV_COMPOSE) up --force-recreate --pull=always --remove-orphans --build
 
 # Development - Infisical
-develop-infisical:
+dev-infisical:
 	infisical run --env=dev -- docker compose -f $(DEV_COMPOSE) up --force-recreate --pull=always --remove-orphans --build
 
 # Production
@@ -79,3 +79,7 @@ prod-infisical:
 .PHONY: sql
 sql:
 	sqlc generate
+
+# Go gen
+generate:
+	go run ./gen

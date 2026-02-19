@@ -17,10 +17,10 @@ export const useRedirectUri = (
 
   if (!redirect_uri) {
     return {
-      valid: false,
-      trusted: false,
-      allowedProto: false,
-      httpsDowngrade: false,
+      valid: isValid,
+      trusted: isTrusted,
+      allowedProto: isAllowedProto,
+      httpsDowngrade: isHttpsDowngrade,
     };
   }
 
@@ -30,10 +30,10 @@ export const useRedirectUri = (
     url = new URL(redirect_uri);
   } catch {
     return {
-      valid: false,
-      trusted: false,
-      allowedProto: false,
-      httpsDowngrade: false,
+      valid: isValid,
+      trusted: isTrusted,
+      allowedProto: isAllowedProto,
+      httpsDowngrade: isHttpsDowngrade,
     };
   }
 

@@ -12,60 +12,8 @@ import (
 	"github.com/traefik/paerser/cli"
 )
 
-func NewTinyauthCmdConfiguration() *config.Config {
-	return &config.Config{
-		ResourcesDir: "./resources",
-		DatabasePath: "./tinyauth.db",
-		Server: config.ServerConfig{
-			Port:    3000,
-			Address: "0.0.0.0",
-		},
-		Auth: config.AuthConfig{
-			SessionExpiry:      86400, // 1 day
-			SessionMaxLifetime: 0,     // disabled
-			LoginTimeout:       300,   // 5 minutes
-			LoginMaxRetries:    3,
-		},
-		UI: config.UIConfig{
-			Title:                 "Tinyauth",
-			ForgotPasswordMessage: "You can change your password by changing the configuration.",
-			BackgroundImage:       "/background.jpg",
-		},
-		Ldap: config.LdapConfig{
-			Insecure:      false,
-			SearchFilter:  "(uid=%s)",
-			GroupCacheTTL: 900, // 15 minutes
-		},
-		Log: config.LogConfig{
-			Level: "info",
-			Json:  false,
-			Streams: config.LogStreams{
-				HTTP: config.LogStreamConfig{
-					Enabled: true,
-					Level:   "",
-				},
-				App: config.LogStreamConfig{
-					Enabled: true,
-					Level:   "",
-				},
-				Audit: config.LogStreamConfig{
-					Enabled: false,
-					Level:   "",
-				},
-			},
-		},
-		OIDC: config.OIDCConfig{
-			PrivateKeyPath: "./tinyauth_oidc_key",
-			PublicKeyPath:  "./tinyauth_oidc_key.pub",
-		},
-		Experimental: config.ExperimentalConfig{
-			ConfigFile: "",
-		},
-	}
-}
-
 func main() {
-	tConfig := NewTinyauthCmdConfiguration()
+	tConfig := config.NewDefaultConfiguration()
 
 	loaders := []cli.ResourceLoader{
 		&loaders.FileLoader{},

@@ -39,3 +39,9 @@ __debug_*
 
 # infisical
 /.infisical.json
+
+# traefik data
+/traefik
+
+# generated markdown (for docs)
+/config.gen.md

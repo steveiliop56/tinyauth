@@ -67,6 +67,7 @@ export const LogoutPage = () => {
                 username: email,
                 provider: oauthName,
               }}
+              shouldUnescape={true}
             />
           ) : (
             <Trans
@@ -78,6 +79,7 @@ export const LogoutPage = () => {
               values={{
                 username,
               }}
+              shouldUnescape={true}
             />
           )}
         </CardDescription>
