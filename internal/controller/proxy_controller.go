@@ -94,7 +94,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	proto := c.Request.Header.Get("X-Forwarded-Proto")
 	host := c.Request.Header.Get("X-Forwarded-Host")
 
- tlog.App.Trace().Str("x-forwarded-proto", proto).Str("x-forwarded-host", host).Str("x-forwarded-uri", uri).Msg("Proxy headers")
+    tlog.App.Trace().Str("x-forwarded-proto", proto).Str("x-forwarded-host", host).Str("x-forwarded-uri", uri).Msg("Proxy headers")
 
 	// Get acls
 	acls, err := controller.acls.GetAccessControls(host)
