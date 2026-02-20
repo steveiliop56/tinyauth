@@ -68,22 +68,21 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	AppURL            string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
-	ResourcesDir      string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
-	DatabasePath      string             `description:"The path to the database file." yaml:"databasePath"`
-	DisableAnalytics  bool               `description:"Disable analytics." yaml:"disableAnalytics"`
-	DisableResources  bool               `description:"Disable resources server." yaml:"disableResources"`
-	DisableUIWarnings bool               `description:"Disable UI warnings." yaml:"disableUIWarnings"`
-	Server            ServerConfig       `description:"Server configuration." yaml:"server"`
-	Auth              AuthConfig         `description:"Authentication configuration." yaml:"auth"`
-	Apps              map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
-	OAuth             OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
-	OIDC              OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
-	UI                UIConfig           `description:"UI customization." yaml:"ui"`
-	Ldap              LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
-	LabelProvider     string             `description:"Label provider to use for ACLs (docker or kubernetes)." yaml:"labelProvider"`
-	Experimental      ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
-	Log               LogConfig          `description:"Logging configuration." yaml:"log"`
+	AppURL           string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
+	ResourcesDir     string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
+	DatabasePath     string             `description:"The path to the database file." yaml:"databasePath"`
+	DisableAnalytics bool               `description:"Disable analytics." yaml:"disableAnalytics"`
+	DisableResources bool               `description:"Disable resources server." yaml:"disableResources"`
+	Server           ServerConfig       `description:"Server configuration." yaml:"server"`
+	Auth             AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	Apps             map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
+	OAuth            OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	OIDC             OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
+	UI               UIConfig           `description:"UI customization." yaml:"ui"`
+	Ldap             LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	LabelProvider    string             `description:"Label provider to use for ACLs (docker or kubernetes)." yaml:"labelProvider"`
+	Experimental     ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
+	Log              LogConfig          `description:"Logging configuration." yaml:"log"`
 }
 
 type ServerConfig struct {
