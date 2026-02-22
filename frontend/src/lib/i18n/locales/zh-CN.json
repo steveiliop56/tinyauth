@@ -69,7 +69,7 @@
     "authorizeSuccessTitle": "已授权",
     "authorizeSuccessSubtitle": "您将在几秒钟内被重定向到应用程序。",
     "authorizeErrorClientInfo": "加载客户端信息时发生错误。请稍后再试。",
-    "authorizeErrorMissingParams": "The following parameters are missing: {{missingParams}}",
+    "authorizeErrorMissingParams": "参数缺失：{{missingParams}}",
     "openidScopeName": "OpenID 连接",
     "openidScopeDescription": "允许应用访问您的 OpenID 连接信息。",
     "emailScopeName": "邮箱",
