@@ -62,7 +62,7 @@
     "goToCorrectDomainTitle": "转到正确的域名",
     "authorizeTitle": "授权",
     "authorizeCardTitle": "继续访问 {{app}}？",
-    "authorizeSubtitle": "你想继续使用这个应用程序吗？请仔细查看该应用程序请求的权限。",
+    "authorizeSubtitle": "您想继续使用此应用程序吗？请仔细查看该应用程序请求的权限",
     "authorizeSubtitleOAuth": "您想要继续使用此应用吗？",
     "authorizeLoadingTitle": "正在加载...",
     "authorizeLoadingSubtitle": "正在加载客户端信息，请稍候。",
