@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/steveiliop56/tinyauth/internal/utils"
@@ -26,9 +26,10 @@ func createOidcClientCmd() *cli.Command {
 
 			clientName := args[0]
 
-			// prevent client name from using periods or underscores in order to prevent breaking flags or env vars
-			if strings.Contains(clientName, "_") || strings.Contains(clientName, ".") {
-				tlog.App.Fatal().Msg("Client name cannot contain underscores or periods")
+			match, err := regexp.MatchString("^[a-zA-Z0-9-]*$", clientName)
+
+			if !match || err != nil {
+				tlog.App.Fatal().Msg("Client name can only contain alphanumeric characters and hyphens")
 			}
 
 			uuid := uuid.New()
