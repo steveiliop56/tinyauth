@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"net"
@@ -104,4 +105,10 @@ func CheckFilter(filter string, str string) bool {
 func GenerateUUID(str string) string {
 	uuid := uuid.NewSHA1(uuid.NameSpaceURL, []byte(str))
 	return uuid.String()
+}
+
+func GenerateString(length int) string {
+	src := make([]byte, length)
+	rand.Read(src)
+	return base64.RawURLEncoding.EncodeToString(src)[:length]
 }

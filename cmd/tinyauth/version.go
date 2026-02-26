@@ -11,7 +11,7 @@ import (
 func versionCmd() *cli.Command {
 	return &cli.Command{
 		Name:          "version",
-		Description:   "Print the version number of Tinyauth.",
+		Description:   "Print the version number of Tinyauth",
 		Configuration: nil,
 		Resources:     nil,
 		Run: func(_ []string) error {
