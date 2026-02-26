@@ -23,7 +23,7 @@ func main() {
 
 	cmdTinyauth := &cli.Command{
 		Name:          "tinyauth",
-		Description:   "The simplest way to protect your apps with a login screen.",
+		Description:   "The simplest way to protect your apps with a login screen",
 		Configuration: tConfig,
 		Resources:     loaders,
 		Run: func(_ []string) error {
@@ -33,12 +33,17 @@ func main() {
 
 	cmdUser := &cli.Command{
 		Name:        "user",
-		Description: "Utilities for creating and verifying Tinyauth users.",
+		Description: "Manage Tinyauth users",
 	}
 
 	cmdTotp := &cli.Command{
 		Name:        "totp",
-		Description: "Utilities for creating Tinyauth TOTP users.",
+		Description: "Manage Tinyauth TOTP users",
+	}
+
+	cmdOidc := &cli.Command{
+		Name:        "oidc",
+		Description: "Manage Tinyauth OIDC clients",
 	}
 
 	err := cmdTinyauth.AddCommand(versionCmd())
@@ -71,6 +76,12 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to add create command")
 	}
 
+	err = cmdOidc.AddCommand(createOidcClientCmd())
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to add create command")
+	}
+
 	err = cmdTinyauth.AddCommand(cmdUser)
 
 	if err != nil {
@@ -81,6 +92,12 @@ func main() {
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to add totp command")
+	}
+
+	err = cmdTinyauth.AddCommand(cmdOidc)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to add oidc command")
 	}
 
 	err = cli.Execute(cmdTinyauth)
