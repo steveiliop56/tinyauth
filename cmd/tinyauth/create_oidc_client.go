@@ -1,12 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/steveiliop56/tinyauth/internal/utils"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/traefik/paerser/cli"
 )
 
@@ -18,10 +18,8 @@ func createOidcClientCmd() *cli.Command {
 		Resources:     nil,
 		AllowArg:      true,
 		Run: func(args []string) error {
-			tlog.NewSimpleLogger().Init()
-
 			if len(args) == 0 {
-				tlog.App.Fatal().Msg("Client name is required. Use tinyauth oidc create <name>")
+				return errors.New("client name is required. use tinyauth oidc create <name>")
 			}
 
 			clientName := args[0]
@@ -29,7 +27,7 @@ func createOidcClientCmd() *cli.Command {
 			match, err := regexp.MatchString("^[a-zA-Z0-9-]*$", clientName)
 
 			if !match || err != nil {
-				tlog.App.Fatal().Msg("Client name can only contain alphanumeric characters and hyphens")
+				return errors.New("client name can only contain alphanumeric characters and hyphens")
 			}
 
 			uuid := uuid.New()
