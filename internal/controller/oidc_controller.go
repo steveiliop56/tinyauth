@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"net/http"
@@ -145,7 +144,7 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 
 	// WARNING: Since Tinyauth is stateless, we cannot have a sub that never changes. We will just create a uuid out of the username and client name which remains stable, but if username or client name changes then sub changes too.
 	sub := utils.GenerateUUID(fmt.Sprintf("%s:%s", userContext.Username, client.ID))
-	code := rand.Text()
+	code := utils.GenerateString(32)
 
 	// Before storing the code, delete old session
 	err = controller.oidc.DeleteOldSession(c, sub)

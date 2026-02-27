@@ -60,7 +60,7 @@ func (controller *WellKnownController) OpenIDConnectConfiguration(c *gin.Context
 		IDTokenSigningAlgValuesSupported:  []string{"RS256"},
 		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
 		ClaimsSupported:                   []string{"sub", "updated_at", "name", "preferred_username", "email", "groups"},
-		ServiceDocumentation:              "https://tinyauth.app/docs/reference/openid",
+		ServiceDocumentation:              "https://tinyauth.app/docs/guides/oidc",
 	})
 }
 

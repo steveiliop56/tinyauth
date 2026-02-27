@@ -15,26 +15,25 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("/react")) {
-              return "vendor-react";
-            }
-
-            if (id.includes("/@radix-ui")) {
-              return "vendor-radix";
-            }
-
-            if (id.includes("/i18next")) {
-              return "vendor-i18next";
-            }
-
-            if (id.includes("/zod")) {
-              return "vendor-zod";
-            }
-
-            return "vendor";
-          }
+        manualChunks: {
+          ui: [
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-label",
+            "@radix-ui/react-select",
+            "@radix-ui/react-separator",
+            "@radix-ui/react-slot",
+            "input-otp",
+            "tailwindcss",
+            "tailwind-merge",
+            "sonner",
+            "lucide-react",
+          ],
+          i18n: [
+            "i18next",
+            "i18next-browser-languagedetector",
+            "i18next-resources-to-backend",
+          ],
+          util: ["zod", "axios", "react-hook-form"],
         },
       },
     },

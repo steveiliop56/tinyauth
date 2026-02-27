@@ -403,8 +403,8 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 		return TokenResponse{}, err
 	}
 
-	accessToken := rand.Text()
-	refreshToken := rand.Text()
+	accessToken := utils.GenerateString(32)
+	refreshToken := utils.GenerateString(32)
 
 	tokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
 
@@ -464,8 +464,8 @@ func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken stri
 		return TokenResponse{}, err
 	}
 
-	accessToken := rand.Text()
-	newRefreshToken := rand.Text()
+	accessToken := utils.GenerateString(32)
+	newRefreshToken := utils.GenerateString(32)
 
 	tokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
 	refrshTokenExpiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry*2) * time.Second).Unix()

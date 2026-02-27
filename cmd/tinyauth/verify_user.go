@@ -40,7 +40,7 @@ func verifyUserCmd() *cli.Command {
 
 	return &cli.Command{
 		Name:          "verify",
-		Description:   "Verify a user is set up correctly.",
+		Description:   "Verify a user is set up correctly",
 		Configuration: tCfg,
 		Resources:     loaders,
 		Run: func(_ []string) error {
