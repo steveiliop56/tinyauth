@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
@@ -143,43 +145,9 @@ func (app *BootstrapApp) Setup() error {
 	app.services = services
 
 	// Configured providers
-	configuredProviders := make([]controller.Provider, 0)
-
-	for id, provider := range app.context.oauthProviders {
-		configuredProviders = append(configuredProviders, controller.Provider{
-			Name:  provider.Name,
-			ID:    id,
-			OAuth: true,
-		})
+	if err := app.refreshConfiguredProviders(); err != nil {
+		return err
 	}
-
-	sort.Slice(configuredProviders, func(i, j int) bool {
-		return configuredProviders[i].Name < configuredProviders[j].Name
-	})
-
-	if services.authService.LocalAuthConfigured() {
-		configuredProviders = append(configuredProviders, controller.Provider{
-			Name:  "Local",
-			ID:    "local",
-			OAuth: false,
-		})
-	}
-
-	if services.authService.LdapAuthConfigured() {
-		configuredProviders = append(configuredProviders, controller.Provider{
-			Name:  "LDAP",
-			ID:    "ldap",
-			OAuth: false,
-		})
-	}
-
-	tlog.App.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
-
-	if len(configuredProviders) == 0 {
-		return fmt.Errorf("no authentication providers configured")
-	}
-
-	app.context.configuredProviders = configuredProviders
 
 	// Setup router
 	router, err := app.setupRouter()
@@ -191,6 +159,10 @@ func (app *BootstrapApp) Setup() error {
 	// Start db cleanup routine
 	tlog.App.Debug().Msg("Starting database cleanup routine")
 	go app.dbCleanup(queries)
+
+	// Start SIGHUP handler for user reload
+	tlog.App.Debug().Msg("Starting SIGHUP handler for user reload")
+	go app.handleSIGHUP()
 
 	// If analytics are not disabled, start heartbeat
 	if !app.config.DisableAnalytics {
@@ -276,6 +248,69 @@ func (app *BootstrapApp) heartbeat() {
 
 		if res.StatusCode != 200 && res.StatusCode != 201 {
 			tlog.App.Debug().Str("status", res.Status).Msg("Heartbeat returned non-200/201 status")
+		}
+	}
+}
+
+func (app *BootstrapApp) refreshConfiguredProviders() error {
+	configuredProviders := make([]controller.Provider, 0)
+
+	for id, provider := range app.context.oauthProviders {
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  provider.Name,
+			ID:    id,
+			OAuth: true,
+		})
+	}
+
+	sort.Slice(configuredProviders, func(i, j int) bool {
+		return configuredProviders[i].Name < configuredProviders[j].Name
+	})
+
+	if app.services.authService.LocalAuthConfigured() {
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  "Local",
+			ID:    "local",
+			OAuth: false,
+		})
+	}
+
+	if app.services.authService.LdapAuthConfigured() {
+		configuredProviders = append(configuredProviders, controller.Provider{
+			Name:  "LDAP",
+			ID:    "ldap",
+			OAuth: false,
+		})
+	}
+
+	tlog.App.Debug().Interface("providers", configuredProviders).Msg("Authentication providers")
+
+	if len(configuredProviders) == 0 {
+		return fmt.Errorf("no authentication providers configured")
+	}
+
+	app.context.configuredProviders = configuredProviders
+	return nil
+}
+
+func (app *BootstrapApp) handleSIGHUP() {
+	sighup := make(chan os.Signal, 1)
+	signal.Notify(sighup, syscall.SIGHUP)
+
+	for range sighup {
+		tlog.App.Info().Msg("Received SIGHUP, reloading users")
+
+		users, err := utils.GetUsers(app.config.Auth.Users, app.config.Auth.UsersFile)
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to reload users")
+			continue
+		}
+
+		app.services.authService.ReloadUsers(users)
+
+		// Refresh configured providers so the UI's "Local" toggle stays in sync
+		if err := app.refreshConfiguredProviders(); err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to refresh configured providers after user reload")
 		}
 	}
 }

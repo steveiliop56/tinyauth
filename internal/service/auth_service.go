@@ -51,6 +51,7 @@ type AuthService struct {
 	ldapGroupsCache map[string]*LdapGroupsCache
 	loginMutex      sync.RWMutex
 	ldapGroupsMutex sync.RWMutex
+	usersMutex      sync.RWMutex
 	ldap            *LdapService
 	queries         *repository.Queries
 }
@@ -130,6 +131,9 @@ func (auth *AuthService) VerifyUser(search config.UserSearch, password string) b
 }
 
 func (auth *AuthService) GetLocalUser(username string) config.User {
+	auth.usersMutex.RLock()
+	defer auth.usersMutex.RUnlock()
+
 	for _, user := range auth.config.Users {
 		if user.Username == username {
 			return user
@@ -138,6 +142,14 @@ func (auth *AuthService) GetLocalUser(username string) config.User {
 
 	tlog.App.Warn().Str("username", username).Msg("Local user not found")
 	return config.User{}
+}
+
+func (auth *AuthService) ReloadUsers(users []config.User) {
+	auth.usersMutex.Lock()
+	defer auth.usersMutex.Unlock()
+
+	auth.config.Users = users
+	tlog.App.Info().Int("count", len(users)).Msg("Users reloaded")
 }
 
 func (auth *AuthService) GetLdapUser(userDN string) (config.LdapUser, error) {
@@ -394,6 +406,9 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, e
 }
 
 func (auth *AuthService) LocalAuthConfigured() bool {
+	auth.usersMutex.RLock()
+	defer auth.usersMutex.RUnlock()
+
 	return len(auth.config.Users) > 0
 }
 
