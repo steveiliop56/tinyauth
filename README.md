@@ -21,6 +21,9 @@ Tinyauth is a simple authentication middleware that adds a simple login screen o
 > [!WARNING]
 > Tinyauth is in active development and configuration may change often. Please make sure to carefully read the release notes before updating.
 
+> [!NOTE]
+> This is the main development branch. For the latest stable release, see the [documentation](https://tinyauth.app) or the latest stable tag.
+
 ## Getting Started
 
 You can easily get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started). There is also an available [docker compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities.
