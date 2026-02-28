@@ -71,7 +71,7 @@
     "authorizeErrorClientInfo": "Une erreur est survenue lors du chargement des informations du client. Veuillez réessayer plus tard.",
     "authorizeErrorMissingParams": "Les paramètres suivants sont manquants : {{missingParams}}",
     "openidScopeName": "Connexion OpenID",
-    "openidScopeDescription": "Allows the app to access your OpenID Connect information.",
+    "openidScopeDescription": "Autorise l'application à accéder à vos informations \"OpenID Connect\".",
     "emailScopeName": "Email",
     "emailScopeDescription": "Autorise l'application à accéder à votre adresse e-mail.",
     "profileScopeName": "Profil",
