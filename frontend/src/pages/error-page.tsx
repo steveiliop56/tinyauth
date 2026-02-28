@@ -14,10 +14,10 @@ export const ErrorPage = () => {
   const error = searchParams.get("error") ?? "";
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("errorTitle")}</CardTitle>
-        <CardDescription className="flex flex-col gap-1.5">
+    <Card className="min-w-xs">
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("errorTitle")}</CardTitle>
+        <CardDescription className="flex flex-col gap-3">
           {error ? (
             <>
               <p>{t("errorSubtitleInfo")}</p>

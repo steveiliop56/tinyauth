@@ -21,13 +21,15 @@ export const NotFoundPage = () => {
   };
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("notFoundTitle")}</CardTitle>
+    <Card className="min-w-xs">
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("notFoundTitle")}</CardTitle>
         <CardDescription>{t("notFoundSubtitle")}</CardDescription>
       </CardHeader>
       <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={handleRedirect} loading={loading}>{t("notFoundButton")}</Button>
+        <Button onClick={handleRedirect} loading={loading}>
+          {t("notFoundButton")}
+        </Button>
       </CardFooter>
     </Card>
   );

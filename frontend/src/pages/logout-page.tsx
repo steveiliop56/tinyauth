@@ -52,9 +52,9 @@ export const LogoutPage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("logoutTitle")}</CardTitle>
+    <Card className="min-w-xs">
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("logoutTitle")}</CardTitle>
         <CardDescription>
           {provider !== "local" && provider !== "ldap" ? (
             <Trans

@@ -1,5 +1,6 @@
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -13,13 +14,19 @@ export const ForgotPasswordPage = () => {
   const { t } = useTranslation();
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-3xl">{t("forgotPasswordTitle")}</CardTitle>
-        <CardDescription>
-          <Markdown>{forgotPasswordMessage !== "" ? forgotPasswordMessage : t('forgotPasswordMessage')}</Markdown>
-        </CardDescription>
+        <CardTitle className="text-xl">{t("forgotPasswordTitle")}</CardTitle>
       </CardHeader>
+      <CardContent>
+        <CardDescription>
+          <Markdown>
+            {forgotPasswordMessage !== ""
+              ? forgotPasswordMessage
+              : t("forgotPasswordMessage")}
+          </Markdown>
+        </CardDescription>
+      </CardContent>
     </Card>
   );
 };

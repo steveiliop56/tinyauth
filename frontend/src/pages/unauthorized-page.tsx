@@ -47,9 +47,9 @@ export const UnauthorizedPage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("unauthorizedTitle")}</CardTitle>
+    <Card className="min-w-xs">
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("unauthorizedTitle")}</CardTitle>
         <CardDescription>
           <Trans
             i18nKey={i18nKey}
