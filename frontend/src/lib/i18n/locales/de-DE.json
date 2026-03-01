@@ -58,6 +58,8 @@
     "invalidInput": "Ungültige Eingabe",
     "domainWarningTitle": "Ungültige Domain",
     "domainWarningSubtitle": "Diese Instanz ist so konfiguriert, dass sie von <code>{{appUrl}}</code> aufgerufen werden kann, aber <code>{{currentUrl}}</code> wird verwendet. Wenn Sie fortfahren, können Probleme bei der Authentifizierung auftreten.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Ignorieren",
     "goToCorrectDomainTitle": "Zur korrekten Domain gehen",
     "authorizeTitle": "Authorize",
