@@ -58,6 +58,8 @@
     "invalidInput": "Неисправан унос",
     "domainWarningTitle": "Неисправан домен",
     "domainWarningSubtitle": "Ова инстанца је подешена да јој се приступа са <code>{{appUrl}}</code>, али се користи <code>{{currentUrl}}</code>. Ако наставите, можете искусити проблеме са аутентификацијом.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Игнориши",
     "goToCorrectDomainTitle": "Иди на исправан домен",
     "authorizeTitle": "Ауторизуј",
