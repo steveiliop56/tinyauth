@@ -220,7 +220,7 @@ export const LoginPage = () => {
     );
   }
   return (
-    <Card className="md:min-w-sm">
+    <Card>
       <CardHeader className="gap-1.5">
         <CardTitle className="text-center text-xl">{title}</CardTitle>
         {providers.length > 0 && (
@@ -264,14 +264,16 @@ export const LoginPage = () => {
         )}
       </CardContent>
       <CardFooter>
-        <Button
-          className="w-full"
-          type="submit"
-          form={formId}
-          loading={loginIsPending || oauthIsPending}
-        >
-          {t("loginSubmit")}
-        </Button>
+        {userAuthConfigured && (
+          <Button
+            className="w-full"
+            type="submit"
+            form={formId}
+            loading={loginIsPending || oauthIsPending}
+          >
+            {t("loginSubmit")}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

@@ -24,9 +24,9 @@ export const DomainWarning = (props: Props) => {
   const redirectUri = searchParams.get("redirect_uri");
 
   return (
-    <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("domainWarningTitle")}</CardTitle>
+    <Card role="alert" aria-live="assertive">
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("domainWarningTitle")}</CardTitle>
         <CardDescription>
           <Trans
             t={t}
@@ -37,7 +37,7 @@ export const DomainWarning = (props: Props) => {
           />
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-col items-stretch gap-2">
+      <CardFooter className="flex flex-col items-stretch gap-3">
         <Button onClick={onClick} variant="warning">
           {t("ignoreTitle")}
         </Button>

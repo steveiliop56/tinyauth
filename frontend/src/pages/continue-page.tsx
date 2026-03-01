@@ -94,7 +94,7 @@ export const ContinuePage = () => {
   if (showUntrustedWarning) {
     return (
       <Card role="alert" aria-live="assertive">
-        <CardHeader>
+        <CardHeader className="gap-1.5">
           <CardTitle className="text-xl">
             {t("continueUntrustedRedirectTitle")}
           </CardTitle>
@@ -133,8 +133,8 @@ export const ContinuePage = () => {
   if (showInsecureWarning) {
     return (
       <Card role="alert" aria-live="assertive">
-        <CardHeader>
-          <CardTitle className="text-3xl">
+        <CardHeader className="gap-1.5">
+          <CardTitle className="text-xl">
             {t("continueInsecureRedirectTitle")}
           </CardTitle>
           <CardDescription>
@@ -168,7 +168,7 @@ export const ContinuePage = () => {
   }
 
   return (
-    <Card className="min-w-xs">
+    <Card>
       <CardHeader className="gap-1.5">
         <CardTitle className="text-xl">
           {t("continueRedirectingTitle")}
@@ -176,8 +176,8 @@ export const ContinuePage = () => {
         <CardDescription>{t("continueRedirectingSubtitle")}</CardDescription>
       </CardHeader>
       {showRedirectButton && (
-        <CardFooter className="flex flex-col items-stretch">
-          <Button onClick={handleRedirect}>
+        <CardFooter>
+          <Button className="w-full" onClick={handleRedirect}>
             {t("continueRedirectManually")}
           </Button>
         </CardFooter>

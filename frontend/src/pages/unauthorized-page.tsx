@@ -47,7 +47,7 @@ export const UnauthorizedPage = () => {
   }
 
   return (
-    <Card className="min-w-xs">
+    <Card>
       <CardHeader className="gap-1.5">
         <CardTitle className="text-xl">{t("unauthorizedTitle")}</CardTitle>
         <CardDescription>
@@ -65,8 +65,13 @@ export const UnauthorizedPage = () => {
           />
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-col items-stretch">
-        <Button onClick={handleRedirect} loading={loading}>
+      <CardFooter>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handleRedirect}
+          loading={loading}
+        >
           {t("unauthorizedButton")}
         </Button>
       </CardFooter>

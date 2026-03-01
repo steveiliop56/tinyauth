@@ -154,7 +154,7 @@ export const AuthorizePage = () => {
   return (
     <Card>
       <CardHeader className="mb-2">
-        <div className="flex flex-col gap-3 items-center justify-center">
+        <div className="flex flex-col gap-3 items-center justify-center text-center">
           <div className="bg-accent-foreground text-muted text-xl font-bold font-sans rounded-lg px-4 py-3">
             {getClientInfo.data?.name.slice(0, 1)}
           </div>
@@ -163,7 +163,7 @@ export const AuthorizePage = () => {
               app: getClientInfo.data?.name || "Unknown",
             })}
           </CardTitle>
-          <CardDescription className="text-sm max-w-sm text-center">
+          <CardDescription className="text-sm max-w-sm">
             {scopes.includes("openid")
               ? t("authorizeSubtitle")
               : t("authorizeSubtitleOAuth")}

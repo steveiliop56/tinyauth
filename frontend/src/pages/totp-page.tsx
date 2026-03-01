@@ -83,8 +83,13 @@ export const TotpPage = () => {
           onSubmit={(values) => totpMutation.mutate(values)}
         />
       </CardContent>
-      <CardFooter className="flex flex-col items-stretch">
-        <Button form={formId} type="submit" loading={totpMutation.isPending}>
+      <CardFooter>
+        <Button
+          className="w-full"
+          form={formId}
+          type="submit"
+          loading={totpMutation.isPending}
+        >
           {t("continueTitle")}
         </Button>
       </CardFooter>

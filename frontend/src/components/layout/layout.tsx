@@ -25,7 +25,7 @@ const BaseLayout = ({ children }: { children: React.ReactNode }) => {
         <ThemeToggle />
         <LanguageSelector />
       </div>
-      <div className="max-w-sm">{children}</div>
+      <div className="max-w-sm md:min-w-sm min-w-xs">{children}</div>
     </div>
   );
 };

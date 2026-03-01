@@ -52,7 +52,7 @@ export const LogoutPage = () => {
   }
 
   return (
-    <Card className="min-w-xs">
+    <Card>
       <CardHeader className="gap-1.5">
         <CardTitle className="text-xl">{t("logoutTitle")}</CardTitle>
         <CardDescription>
@@ -84,8 +84,10 @@ export const LogoutPage = () => {
           )}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-col items-stretch">
+      <CardFooter>
         <Button
+          className="w-full"
+          variant="outline"
           loading={logoutMutation.isPending}
           onClick={() => logoutMutation.mutate()}
         >
