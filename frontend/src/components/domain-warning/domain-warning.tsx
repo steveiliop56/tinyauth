@@ -1,12 +1,12 @@
 import {
   Card,
-  CardDescription,
+  CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "../ui/card";
 import { Button } from "../ui/button";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 
 interface Props {
@@ -25,22 +25,25 @@ export const DomainWarning = (props: Props) => {
 
   return (
     <Card role="alert" aria-live="assertive">
-      <CardHeader className="gap-1.5">
+      <CardHeader>
         <CardTitle className="text-xl">{t("domainWarningTitle")}</CardTitle>
-        <CardDescription>
-          <Trans
-            t={t}
-            i18nKey="domainWarningSubtitle"
-            values={{ appUrl, currentUrl }}
-            components={{ code: <code /> }}
-            shouldUnescape={true}
-          />
-        </CardDescription>
       </CardHeader>
+      <CardContent className="flex flex-col gap-3 text-sm mb-1.25">
+        <p className="text-muted-foreground">{t("domainWarningSubtitle")}</p>
+        <pre>
+          <span className="text-muted-foreground">
+            {t("domainWarningExpected")}&nbsp;
+            <span className="text-primary">{appUrl}</span>
+          </span>
+        </pre>
+        <pre>
+          <span className="text-muted-foreground">
+            {t("domainWarningCurrent")}&nbsp;
+            <span className="text-primary">{currentUrl}</span>
+          </span>
+        </pre>
+      </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-3">
-        <Button onClick={onClick} variant="warning">
-          {t("ignoreTitle")}
-        </Button>
         <Button
           onClick={() =>
             window.location.assign(
@@ -50,6 +53,9 @@ export const DomainWarning = (props: Props) => {
           variant="outline"
         >
           {t("goToCorrectDomainTitle")}
+        </Button>
+        <Button onClick={onClick} variant="warning">
+          {t("ignoreTitle")}
         </Button>
       </CardFooter>
     </Card>
