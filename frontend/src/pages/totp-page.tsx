@@ -72,9 +72,9 @@ export const TotpPage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("totpTitle")}</CardTitle>
+    <Card>
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("totpTitle")}</CardTitle>
         <CardDescription>{t("totpSubtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center">
@@ -83,8 +83,13 @@ export const TotpPage = () => {
           onSubmit={(values) => totpMutation.mutate(values)}
         />
       </CardContent>
-      <CardFooter className="flex flex-col items-stretch">
-        <Button form={formId} type="submit" loading={totpMutation.isPending}>
+      <CardFooter>
+        <Button
+          className="w-full"
+          form={formId}
+          type="submit"
+          loading={totpMutation.isPending}
+        >
           {t("continueTitle")}
         </Button>
       </CardFooter>

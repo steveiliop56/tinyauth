@@ -14,18 +14,18 @@ const BaseLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div
-      className="relative flex flex-col justify-center items-center min-h-svh"
+      className="flex flex-col justify-center items-center min-h-svh px-4"
       style={{
         backgroundImage: `url(${backgroundImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      <div className="absolute top-5 right-5 flex flex-row gap-2">
+      <div className="absolute top-4 right-4 flex flex-row gap-2">
         <ThemeToggle />
         <LanguageSelector />
       </div>
-      {children}
+      <div className="max-w-sm md:min-w-sm min-w-xs">{children}</div>
     </div>
   );
 };

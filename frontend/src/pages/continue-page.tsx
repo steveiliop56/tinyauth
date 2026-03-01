@@ -93,9 +93,9 @@ export const ContinuePage = () => {
 
   if (showUntrustedWarning) {
     return (
-      <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
-        <CardHeader>
-          <CardTitle className="text-3xl">
+      <Card role="alert" aria-live="assertive">
+        <CardHeader className="gap-1.5">
+          <CardTitle className="text-xl">
             {t("continueUntrustedRedirectTitle")}
           </CardTitle>
           <CardDescription>
@@ -110,7 +110,7 @@ export const ContinuePage = () => {
             />
           </CardDescription>
         </CardHeader>
-        <CardFooter className="flex flex-col items-stretch gap-2">
+        <CardFooter className="flex flex-col items-stretch gap-3">
           <Button
             onClick={handleRedirect}
             loading={isLoading}
@@ -132,9 +132,9 @@ export const ContinuePage = () => {
 
   if (showInsecureWarning) {
     return (
-      <Card role="alert" aria-live="assertive" className="min-w-xs sm:min-w-sm">
-        <CardHeader>
-          <CardTitle className="text-3xl">
+      <Card role="alert" aria-live="assertive">
+        <CardHeader className="gap-1.5">
+          <CardTitle className="text-xl">
             {t("continueInsecureRedirectTitle")}
           </CardTitle>
           <CardDescription>
@@ -147,7 +147,7 @@ export const ContinuePage = () => {
             />
           </CardDescription>
         </CardHeader>
-        <CardFooter className="flex flex-col items-stretch gap-2">
+        <CardFooter className="flex flex-col items-stretch gap-3">
           <Button
             onClick={handleRedirect}
             loading={isLoading}
@@ -168,16 +168,16 @@ export const ContinuePage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">
+    <Card>
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">
           {t("continueRedirectingTitle")}
         </CardTitle>
         <CardDescription>{t("continueRedirectingSubtitle")}</CardDescription>
       </CardHeader>
       {showRedirectButton && (
-        <CardFooter className="flex flex-col items-stretch">
-          <Button onClick={handleRedirect}>
+        <CardFooter>
+          <Button className="w-full" onClick={handleRedirect}>
             {t("continueRedirectManually")}
           </Button>
         </CardFooter>

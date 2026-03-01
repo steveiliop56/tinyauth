@@ -22,7 +22,7 @@ import { useOIDCParams } from "@/lib/hooks/oidc";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { toast } from "sonner";
@@ -47,6 +47,8 @@ export const LoginPage = () => {
 
   const redirectTimer = useRef<number | null>(null);
   const redirectButtonTimer = useRef<number | null>(null);
+
+  const formId = useId();
 
   const searchParams = new URLSearchParams(search);
   const {
@@ -187,9 +189,9 @@ export const LoginPage = () => {
 
   if (isOauthAutoRedirect) {
     return (
-      <Card className="min-w-xs sm:min-w-sm">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-3xl">
+          <CardTitle className="text-xl">
             {t("loginOauthAutoRedirectTitle")}
           </CardTitle>
           <CardDescription>
@@ -218,9 +220,9 @@ export const LoginPage = () => {
     );
   }
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-center text-3xl">{title}</CardTitle>
+    <Card>
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-center text-xl">{title}</CardTitle>
         {providers.length > 0 && (
           <CardDescription className="text-center">
             {oauthProviders.length !== 0
@@ -231,7 +233,7 @@ export const LoginPage = () => {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {oauthProviders.length !== 0 && (
-          <div className="flex flex-col gap-2 items-center justify-center">
+          <div className="flex flex-col gap-2.5 items-center justify-center">
             {oauthProviders.map((provider) => (
               <OAuthButton
                 key={provider.id}
@@ -252,6 +254,7 @@ export const LoginPage = () => {
           <LoginForm
             onSubmit={(values) => loginMutate(values)}
             loading={loginIsPending || oauthIsPending}
+            formId={formId}
           />
         )}
         {providers.length == 0 && (
@@ -260,6 +263,18 @@ export const LoginPage = () => {
           </p>
         )}
       </CardContent>
+      <CardFooter>
+        {userAuthConfigured && (
+          <Button
+            className="w-full"
+            type="submit"
+            form={formId}
+            loading={loginIsPending || oauthIsPending}
+          >
+            {t("loginSubmit")}
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 };

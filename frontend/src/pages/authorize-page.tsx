@@ -18,6 +18,11 @@ import { useOIDCParams } from "@/lib/hooks/oidc";
 import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
 import { Mail, Shield, User, Users } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Scope = {
   id: string;
@@ -27,7 +32,7 @@ type Scope = {
 };
 
 const scopeMapIconProps = {
-  className: "stroke-card stroke-2.5",
+  className: "stroke-muted-foreground stroke-[1.75] h-4",
 };
 
 const createScopeMap = (t: TFunction<"translation", undefined>): Scope[] => {
@@ -124,13 +129,15 @@ export const AuthorizePage = () => {
 
   if (getClientInfo.isLoading) {
     return (
-      <Card className="min-w-xs sm:min-w-sm">
+      <Card className="gap-0">
         <CardHeader>
-          <CardTitle className="text-3xl">
+          <CardTitle className="text-xl">
             {t("authorizeLoadingTitle")}
           </CardTitle>
-          <CardDescription>{t("authorizeLoadingSubtitle")}</CardDescription>
         </CardHeader>
+        <CardContent>
+          <CardDescription>{t("authorizeLoadingSubtitle")}</CardDescription>
+        </CardContent>
       </Card>
     );
   }
@@ -145,41 +152,46 @@ export const AuthorizePage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm mx-4">
-      <CardHeader>
-        <CardTitle className="text-3xl">
-          {t("authorizeCardTitle", {
-            app: getClientInfo.data?.name || "Unknown",
-          })}
-        </CardTitle>
-        <CardDescription>
-          {scopes.includes("openid")
-            ? t("authorizeSubtitle")
-            : t("authorizeSubtitleOAuth")}
-        </CardDescription>
+    <Card>
+      <CardHeader className="mb-2">
+        <div className="flex flex-col gap-3 items-center justify-center text-center">
+          <div className="bg-accent-foreground text-muted text-xl font-bold font-sans rounded-lg px-4 py-3">
+            {getClientInfo.data?.name.slice(0, 1)}
+          </div>
+          <CardTitle className="text-xl">
+            {t("authorizeCardTitle", {
+              app: getClientInfo.data?.name || "Unknown",
+            })}
+          </CardTitle>
+          <CardDescription className="text-sm max-w-sm">
+            {scopes.includes("openid")
+              ? t("authorizeSubtitle")
+              : t("authorizeSubtitleOAuth")}
+          </CardDescription>
+        </div>
       </CardHeader>
-      {scopes.includes("openid") && (
-        <CardContent className="flex flex-col gap-4">
-          {scopes.map((id) => {
-            const scope = scopeMap.find((s) => s.id === id);
-            if (!scope) return null;
-            return (
-              <div key={scope.id} className="flex flex-row items-center gap-3">
-                <div className="p-2 flex flex-col items-center justify-center bg-card-foreground rounded-md">
-                  {scope.icon}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <div className="text-md">{scope.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {scope.description}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </CardContent>
-      )}
-      <CardFooter className="flex flex-col items-stretch gap-2">
+      <CardContent className="mb-2">
+        {scopes.includes("openid") && (
+          <div className="flex flex-wrap gap-2 items-center justify-center">
+            {scopes.map((id) => {
+              const scope = scopeMap.find((s) => s.id === id);
+              if (!scope) return null;
+              return (
+                <Tooltip key={scope.id}>
+                  <TooltipTrigger className="flex flex-row justify-center items-center gap-1 rounded-full bg-secondary font-light pl-2 pr-4 py-1 border-border border">
+                    <div>{scope.icon}</div>
+                    <div className="text-sm text-accent-foreground">
+                      {scope.name}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{scope.description}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="flex flex-col items-stretch gap-3">
         <Button
           onClick={() => authorizeMutation.mutate()}
           loading={authorizeMutation.isPending}
