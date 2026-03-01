@@ -58,6 +58,8 @@
     "invalidInput": "Saisie non valide",
     "domainWarningTitle": "Domaine invalide",
     "domainWarningSubtitle": "Cette instance est configurée pour être accédée depuis <code>{{appUrl}}</code>, mais <code>{{currentUrl}}</code> est utilisé. Si vous continuez, vous pourriez rencontrer des problèmes d'authentification.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Ignorer",
     "goToCorrectDomainTitle": "Aller au bon domaine",
     "authorizeTitle": "Autoriser",

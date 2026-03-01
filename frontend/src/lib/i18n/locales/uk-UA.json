@@ -58,6 +58,8 @@
     "invalidInput": "Невірне введення",
     "domainWarningTitle": "Невірний домен",
     "domainWarningSubtitle": "Даний ресурс налаштований для доступу з <code>{{appUrl}}</code>, але використовується <code>{{currentUrl}}</code>. Якщо ви продовжите, можуть виникнути проблеми з автентифікацією.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Ігнорувати",
     "goToCorrectDomainTitle": "Перейти за коректним доменом",
     "authorizeTitle": "Авторизуватись",

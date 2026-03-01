@@ -58,6 +58,8 @@
     "invalidInput": "Input non valido",
     "domainWarningTitle": "Dominio non valido",
     "domainWarningSubtitle": "Questa istanza è configurata per essere accessibile da <code>{{appUrl}}</code>, ma la stai visitando da <code>{{currentUrl}}</code>. Se procedi, potresti incorrere in problemi di autenticazione.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Ignora",
     "goToCorrectDomainTitle": "Vai al dominio corretto",
     "authorizeTitle": "Autorizza",

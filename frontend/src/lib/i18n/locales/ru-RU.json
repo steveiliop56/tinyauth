@@ -58,6 +58,8 @@
     "invalidInput": "Недопустимый ввод",
     "domainWarningTitle": "Неверный домен",
     "domainWarningSubtitle": "Этот экземпляр настроен на доступ к нему из <code>{{appUrl}}</code>, но <code>{{currentUrl}}</code> в настоящее время используется. Если вы продолжите, то могут возникнуть проблемы с авторизацией.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Игнорировать",
     "goToCorrectDomainTitle": "Перейти к правильному домену",
     "authorizeTitle": "Authorize",
