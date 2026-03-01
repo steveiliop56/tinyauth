@@ -58,6 +58,8 @@
     "invalidInput": "Nieprawidłowe dane wejściowe",
     "domainWarningTitle": "Nieprawidłowa domena",
     "domainWarningSubtitle": "Ta instancja jest skonfigurowana do uzyskania dostępu z <code>{{appUrl}}</code>, ale <code>{{currentUrl}}</code> jest w użyciu. Jeśli będziesz kontynuować, mogą wystąpić problemy z uwierzytelnianiem.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Zignoruj",
     "goToCorrectDomainTitle": "Przejdź do prawidłowej domeny",
     "authorizeTitle": "Autoryzuj",
