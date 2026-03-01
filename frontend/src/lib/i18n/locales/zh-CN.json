@@ -58,6 +58,8 @@
     "invalidInput": "无效的输入",
     "domainWarningTitle": "无效域名",
     "domainWarningSubtitle": "当前实例配置的访问地址为 <code>{{appUrl}}</code>，但您正在使用 <code>{{currentUrl}}</code>。若继续操作，可能会遇到身份验证问题。",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "忽略",
     "goToCorrectDomainTitle": "转到正确的域名",
     "authorizeTitle": "授权",
