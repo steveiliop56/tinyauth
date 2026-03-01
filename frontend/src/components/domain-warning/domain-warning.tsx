@@ -21,7 +21,6 @@ export const DomainWarning = (props: Props) => {
   const { search } = useLocation();
 
   const searchParams = new URLSearchParams(search);
-  const redirectUri = searchParams.get("redirect_uri");
 
   return (
     <Card role="alert" aria-live="assertive">
@@ -46,9 +45,7 @@ export const DomainWarning = (props: Props) => {
       <CardFooter className="flex flex-col items-stretch gap-3">
         <Button
           onClick={() =>
-            window.location.assign(
-              `${appUrl}/login?redirect_uri=${encodeURIComponent(redirectUri || "")}`,
-            )
+            window.location.assign(`${appUrl}/login?${searchParams.toString()}`)
           }
           variant="outline"
         >
