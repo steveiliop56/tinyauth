@@ -9,14 +9,14 @@ import (
 )
 
 type AccessControlsService struct {
-	docker *DockerService
-	static map[string]config.App
+	labelProvider LabelProvider
+	static        map[string]config.App
 }
 
-func NewAccessControlsService(docker *DockerService, static map[string]config.App) *AccessControlsService {
+func NewAccessControlsService(labelProvider LabelProvider, static map[string]config.App) *AccessControlsService {
 	return &AccessControlsService{
-		docker: docker,
-		static: static,
+		labelProvider: labelProvider,
+		static:        static,
 	}
 }
 
@@ -48,7 +48,7 @@ func (acls *AccessControlsService) GetAccessControls(domain string) (config.App,
 		return app, nil
 	}
 
-	// Fallback to Docker labels
-	tlog.App.Debug().Msg("Falling back to Docker labels for ACLs")
-	return acls.docker.GetLabels(domain)
+	// Fallback to label provider
+	tlog.App.Debug().Msg("Falling back to label provider for ACLs")
+	return acls.labelProvider.GetLabels(domain)
 }

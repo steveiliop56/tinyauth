@@ -14,7 +14,7 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github or any other provider to all of your apps. It supports all the popular proxies like Traefik, Nginx and Caddy.
+Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github or any other provider to all of your apps. It supports all the popular proxies like Traefik, Nginx and Caddy, and can read configuration from Docker container labels or Kubernetes Ingress annotations.
 
 ![Screenshot](assets/screenshot.png)
 
