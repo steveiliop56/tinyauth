@@ -58,6 +58,8 @@
     "invalidInput": "無效的輸入",
     "domainWarningTitle": "無效的網域",
     "domainWarningSubtitle": "此服務設定為透過 <code>{{appUrl}}</code> 存取，但目前使用的是 <code>{{currentUrl}}</code>。若繼續操作，可能會遇到驗證問題。",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "忽略",
     "goToCorrectDomainTitle": "前往正確域名",
     "authorizeTitle": "授權",
