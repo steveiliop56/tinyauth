@@ -93,7 +93,7 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	Path string `description:"The path to the database file." yaml:"path"`
+	Path string `description:"The path to the database, including file name." yaml:"path"`
 }
 
 type AnalyticsConfig struct {
@@ -135,8 +135,8 @@ type OAuthConfig struct {
 }
 
 type OIDCConfig struct {
-	PrivateKeyPath string                      `description:"Path to the private key file." yaml:"privateKeyPath"`
-	PublicKeyPath  string                      `description:"Path to the public key file." yaml:"publicKeyPath"`
+	PrivateKeyPath string                      `description:"Path to the private key file, including file name." yaml:"privateKeyPath"`
+	PublicKeyPath  string                      `description:"Path to the public key file, including file name." yaml:"publicKeyPath"`
 	Clients        map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients"`
 }
 
