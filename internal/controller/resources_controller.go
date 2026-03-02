@@ -7,8 +7,8 @@ import (
 )
 
 type ResourcesControllerConfig struct {
-	ResourcesDir      string
-	ResourcesDisabled bool
+	Path    string
+	Enabled bool
 }
 
 type ResourcesController struct {
@@ -18,7 +18,7 @@ type ResourcesController struct {
 }
 
 func NewResourcesController(config ResourcesControllerConfig, router *gin.RouterGroup) *ResourcesController {
-	fileServer := http.StripPrefix("/resources", http.FileServer(http.Dir(config.ResourcesDir)))
+	fileServer := http.StripPrefix("/resources", http.FileServer(http.Dir(config.Path)))
 
 	return &ResourcesController{
 		config:     config,
@@ -32,14 +32,14 @@ func (controller *ResourcesController) SetupRoutes() {
 }
 
 func (controller *ResourcesController) resourcesHandler(c *gin.Context) {
-	if controller.config.ResourcesDir == "" {
+	if controller.config.Path == "" {
 		c.JSON(404, gin.H{
 			"status":  404,
 			"message": "Resources not found",
 		})
 		return
 	}
-	if controller.config.ResourcesDisabled {
+	if !controller.config.Enabled {
 		c.JSON(403, gin.H{
 			"status":  403,
 			"message": "Resources are disabled",

@@ -3,8 +3,16 @@ package config
 // Default configuration
 func NewDefaultConfiguration() *Config {
 	return &Config{
-		ResourcesDir: "./resources",
-		DatabasePath: "./tinyauth.db",
+		Database: DatabaseConfig{
+			Path: "./tinyauth.db",
+		},
+		Analytics: AnalyticsConfig{
+			Enabled: true,
+		},
+		Resources: ResourcesConfig{
+			Enabled: true,
+			Path:    "./resources",
+		},
 		Server: ServerConfig{
 			Port:    3000,
 			Address: "0.0.0.0",
@@ -19,6 +27,7 @@ func NewDefaultConfiguration() *Config {
 			Title:                 "Tinyauth",
 			ForgotPasswordMessage: "You can change your password by changing the configuration.",
 			BackgroundImage:       "/background.jpg",
+			WarningsEnabled:       true,
 		},
 		Ldap: LdapConfig{
 			Insecure:      false,
@@ -68,20 +77,32 @@ var RedirectCookieName = "tinyauth-redirect"
 // Main app config
 
 type Config struct {
-	AppURL           string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
-	ResourcesDir     string             `description:"The directory where resources are stored." yaml:"resourcesDir"`
-	DatabasePath     string             `description:"The path to the database file." yaml:"databasePath"`
-	DisableAnalytics bool               `description:"Disable analytics." yaml:"disableAnalytics"`
-	DisableResources bool               `description:"Disable resources server." yaml:"disableResources"`
-	Server           ServerConfig       `description:"Server configuration." yaml:"server"`
-	Auth             AuthConfig         `description:"Authentication configuration." yaml:"auth"`
-	Apps             map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
-	OAuth            OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
-	OIDC             OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
-	UI               UIConfig           `description:"UI customization." yaml:"ui"`
-	Ldap             LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
-	Experimental     ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
-	Log              LogConfig          `description:"Logging configuration." yaml:"log"`
+	AppURL       string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
+	Database     DatabaseConfig     `description:"Database configuration." yaml:"database"`
+	Analytics    AnalyticsConfig    `description:"Analytics configuration." yaml:"analytics"`
+	Resources    ResourcesConfig    `description:"Resources configuration." yaml:"resources"`
+	Server       ServerConfig       `description:"Server configuration." yaml:"server"`
+	Auth         AuthConfig         `description:"Authentication configuration." yaml:"auth"`
+	Apps         map[string]App     `description:"Application ACLs configuration." yaml:"apps"`
+	OAuth        OAuthConfig        `description:"OAuth configuration." yaml:"oauth"`
+	OIDC         OIDCConfig         `description:"OIDC configuration." yaml:"oidc"`
+	UI           UIConfig           `description:"UI customization." yaml:"ui"`
+	Ldap         LdapConfig         `description:"LDAP configuration." yaml:"ldap"`
+	Experimental ExperimentalConfig `description:"Experimental features, use with caution." yaml:"experimental"`
+	Log          LogConfig          `description:"Logging configuration." yaml:"log"`
+}
+
+type DatabaseConfig struct {
+	Path string `description:"The path to the database, including file name." yaml:"path"`
+}
+
+type AnalyticsConfig struct {
+	Enabled bool `description:"Enable periodic version information collection." yaml:"enabled"`
+}
+
+type ResourcesConfig struct {
+	Enabled bool   `description:"Enable the resources server." yaml:"enabled"`
+	Path    string `description:"The directory where resources are stored." yaml:"path"`
 }
 
 type ServerConfig struct {
@@ -114,8 +135,8 @@ type OAuthConfig struct {
 }
 
 type OIDCConfig struct {
-	PrivateKeyPath string                      `description:"Path to the private key file." yaml:"privateKeyPath"`
-	PublicKeyPath  string                      `description:"Path to the public key file." yaml:"publicKeyPath"`
+	PrivateKeyPath string                      `description:"Path to the private key file, including file name." yaml:"privateKeyPath"`
+	PublicKeyPath  string                      `description:"Path to the public key file, including file name." yaml:"publicKeyPath"`
 	Clients        map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients"`
 }
 
@@ -123,7 +144,7 @@ type UIConfig struct {
 	Title                 string `description:"The title of the UI." yaml:"title"`
 	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage"`
 	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage"`
-	DisableWarnings       bool   `description:"Disable UI warnings." yaml:"disableWarnings"`
+	WarningsEnabled       bool   `description:"Enable UI warnings." yaml:"warningsEnabled"`
 }
 
 type LdapConfig struct {

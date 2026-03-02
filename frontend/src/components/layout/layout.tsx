@@ -31,7 +31,7 @@ const BaseLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const Layout = () => {
-  const { appUrl, disableUiWarnings } = useAppContext();
+  const { appUrl, warningsEnabled } = useAppContext();
   const [ignoreDomainWarning, setIgnoreDomainWarning] = useState(() => {
     return window.sessionStorage.getItem("ignoreDomainWarning") === "true";
   });
@@ -42,7 +42,7 @@ export const Layout = () => {
     setIgnoreDomainWarning(true);
   }, [setIgnoreDomainWarning]);
 
-  if (!ignoreDomainWarning && !disableUiWarnings && appUrl !== currentUrl) {
+  if (!ignoreDomainWarning && warningsEnabled && appUrl !== currentUrl) {
     return (
       <BaseLayout>
         <DomainWarning
