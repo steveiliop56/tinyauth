@@ -43,7 +43,7 @@ export const LoginForm = (props: Props) => {
               <FormLabel className="mb-2">{t("loginUsername")}</FormLabel>
               <FormControl className="mb-1">
                 <Input
-                  placeholder={t("loginUsername")}
+                  placeholder={t("loginUsername").toLocaleLowerCase()}
                   disabled={loading}
                   autoComplete="username"
                   {...field}
@@ -62,7 +62,7 @@ export const LoginForm = (props: Props) => {
                 <FormLabel className="mb-2">{t("loginPassword")}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t("loginPassword")}
+                    placeholder={t("loginPassword").toLowerCase()}
                     type="password"
                     disabled={loading}
                     autoComplete="current-password"
