@@ -155,7 +155,7 @@ export const AuthorizePage = () => {
     <Card>
       <CardHeader className="mb-2">
         <div className="flex flex-col gap-3 items-center justify-center text-center">
-          <div className="bg-accent-foreground text-muted text-xl font-bold font-sans rounded-lg px-4 py-3">
+          <div className="bg-accent-foreground box-content text-muted text-xl font-bold font-sans rounded-lg size-10 p-2 flex items-center justify-center">
             {getClientInfo.data?.name.slice(0, 1)}
           </div>
           <CardTitle className="text-xl">
@@ -170,8 +170,8 @@ export const AuthorizePage = () => {
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="mb-2">
-        {scopes.includes("openid") && (
+      {scopes.includes("openid") && (
+        <CardContent className="mb-2">
           <div className="flex flex-wrap gap-2 items-center justify-center">
             {scopes.map((id) => {
               const scope = scopeMap.find((s) => s.id === id);
@@ -189,8 +189,8 @@ export const AuthorizePage = () => {
               );
             })}
           </div>
-        )}
-      </CardContent>
+        </CardContent>
+      )}
       <CardFooter className="flex flex-col items-stretch gap-3">
         <Button
           onClick={() => authorizeMutation.mutate()}

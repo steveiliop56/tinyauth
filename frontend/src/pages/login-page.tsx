@@ -258,13 +258,13 @@ export const LoginPage = () => {
           />
         )}
         {providers.length == 0 && (
-          <p className="text-center text-red-600 max-w-sm">
+          <pre className="break-normal! text-sm text-red-600">
             {t("failedToFetchProvidersTitle")}
-          </p>
+          </pre>
         )}
       </CardContent>
-      <CardFooter>
-        {userAuthConfigured && (
+      {userAuthConfigured && (
+        <CardFooter>
           <Button
             className="w-full"
             type="submit"
@@ -273,8 +273,8 @@ export const LoginPage = () => {
           >
             {t("loginSubmit")}
           </Button>
-        )}
-      </CardFooter>
+        </CardFooter>
+      )}
     </Card>
   );
 };
