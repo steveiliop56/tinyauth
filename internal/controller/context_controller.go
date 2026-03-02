@@ -33,7 +33,7 @@ type AppContextResponse struct {
 	ForgotPasswordMessage string     `json:"forgotPasswordMessage"`
 	BackgroundImage       string     `json:"backgroundImage"`
 	OAuthAutoRedirect     string     `json:"oauthAutoRedirect"`
-	DisableUIWarnings     bool       `json:"disableUiWarnings"`
+	WarningsEnabled       bool       `json:"warningsEnabled"`
 }
 
 type Provider struct {
@@ -50,7 +50,7 @@ type ContextControllerConfig struct {
 	ForgotPasswordMessage string
 	BackgroundImage       string
 	OAuthAutoRedirect     string
-	DisableUIWarnings     bool
+	WarningsEnabled       bool
 }
 
 type ContextController struct {
@@ -59,7 +59,7 @@ type ContextController struct {
 }
 
 func NewContextController(config ContextControllerConfig, router *gin.RouterGroup) *ContextController {
-	if config.DisableUIWarnings {
+	if !config.WarningsEnabled {
 		tlog.App.Warn().Msg("UI warnings are disabled. This may expose users to security risks. Proceed with caution.")
 	}
 
@@ -124,6 +124,6 @@ func (controller *ContextController) appContextHandler(c *gin.Context) {
 		ForgotPasswordMessage: controller.config.ForgotPasswordMessage,
 		BackgroundImage:       controller.config.BackgroundImage,
 		OAuthAutoRedirect:     controller.config.OAuthAutoRedirect,
-		DisableUIWarnings:     controller.config.DisableUIWarnings,
+		WarningsEnabled:       controller.config.WarningsEnabled,
 	})
 }

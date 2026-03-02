@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRedirectUri } from "@/lib/hooks/redirect-uri";
 
 export const ContinuePage = () => {
-  const { cookieDomain, disableUiWarnings } = useAppContext();
+  const { cookieDomain, warningsEnabled } = useAppContext();
   const { isLoggedIn } = useUserContext();
   const { search } = useLocation();
   const { t } = useTranslation();
@@ -35,10 +35,9 @@ export const ContinuePage = () => {
   const urlHref = url?.href;
 
   const hasValidRedirect = valid && allowedProto;
-  const showUntrustedWarning =
-    hasValidRedirect && !trusted && !disableUiWarnings;
+  const showUntrustedWarning = hasValidRedirect && !trusted && warningsEnabled;
   const showInsecureWarning =
-    hasValidRedirect && httpsDowngrade && !disableUiWarnings;
+    hasValidRedirect && httpsDowngrade && warningsEnabled;
   const shouldAutoRedirect =
     isLoggedIn &&
     hasValidRedirect &&

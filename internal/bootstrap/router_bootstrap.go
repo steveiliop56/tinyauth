@@ -71,7 +71,7 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 		ForgotPasswordMessage: app.config.UI.ForgotPasswordMessage,
 		BackgroundImage:       app.config.UI.BackgroundImage,
 		OAuthAutoRedirect:     app.config.OAuth.AutoRedirect,
-		DisableUIWarnings:     app.config.UI.DisableWarnings,
+		WarningsEnabled:       app.config.UI.WarningsEnabled,
 	}, apiRouter)
 
 	contextController.SetupRoutes()
@@ -103,8 +103,8 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	userController.SetupRoutes()
 
 	resourcesController := controller.NewResourcesController(controller.ResourcesControllerConfig{
-		ResourcesDir:      app.config.ResourcesDir,
-		ResourcesDisabled: app.config.DisableResources,
+		Path:    app.config.Resources.Path,
+		Enabled: app.config.Resources.Enabled,
 	}, &engine.RouterGroup)
 
 	resourcesController.SetupRoutes()
