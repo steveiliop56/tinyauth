@@ -46,10 +46,10 @@ type ClaimSet struct {
 	Sub               string   `json:"sub"`
 	Iat               int64    `json:"iat"`
 	Exp               int64    `json:"exp"`
-	Name              string   `json:"name"`
-	Email             string   `json:"email"`
-	PreferredUsername string   `json:"preferred_username"`
-	Groups            []string `json:"groups"`
+	Name              string   `json:"name,omitempty"`
+	Email             string   `json:"email,omitempty"`
+	PreferredUsername string   `json:"preferred_username,omitempty"`
+	Groups            []string `json:"groups,omitempty"`
 }
 
 type UserinfoResponse struct {
@@ -57,7 +57,7 @@ type UserinfoResponse struct {
 	Name              string   `json:"name"`
 	Email             string   `json:"email"`
 	PreferredUsername string   `json:"preferred_username"`
-	Groups            []string `json:"groups"`
+	Groups            []string `json:"groups,omitempty"`
 	UpdatedAt         int64    `json:"updated_at"`
 }
 
