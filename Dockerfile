@@ -57,9 +57,9 @@ EXPOSE 3000
 
 VOLUME ["/data"]
 
-ENV TINYAUTH_DATABASEPATH=/data/tinyauth.db
+ENV TINYAUTH_DATABASE_PATH=/data/tinyauth.db
 
-ENV TINYAUTH_RESOURCESDIR=/data/resources
+ENV TINYAUTH_RESOURCES_PATH=/data/resources
 
 ENV PATH=$PATH:/tinyauth
 
