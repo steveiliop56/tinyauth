@@ -41,11 +41,15 @@ var (
 )
 
 type ClaimSet struct {
-	Iss string `json:"iss"`
-	Aud string `json:"aud"`
-	Sub string `json:"sub"`
-	Iat int64  `json:"iat"`
-	Exp int64  `json:"exp"`
+	Iss               string   `json:"iss"`
+	Aud               string   `json:"aud"`
+	Sub               string   `json:"sub"`
+	Iat               int64    `json:"iat"`
+	Exp               int64    `json:"exp"`
+	Name              string   `json:"name"`
+	Email             string   `json:"email"`
+	PreferredUsername string   `json:"preferred_username"`
+	Groups            []string `json:"groups"`
 }
 
 type UserinfoResponse struct {
@@ -349,7 +353,7 @@ func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string) (repos
 	return oidcCode, nil
 }
 
-func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub string) (string, error) {
+func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, user repository.OidcUserinfo, scope string) (string, error) {
 	createdAt := time.Now().Unix()
 	expiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
 
@@ -367,12 +371,18 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 		return "", err
 	}
 
+	userInfo := service.CompileUserinfo(user, scope)
+
 	claims := ClaimSet{
-		Iss: service.issuer,
-		Aud: client.ClientID,
-		Sub: sub,
-		Iat: createdAt,
-		Exp: expiresAt,
+		Iss:               service.issuer,
+		Aud:               client.ClientID,
+		Sub:               user.Sub,
+		Iat:               createdAt,
+		Exp:               expiresAt,
+		Name:              userInfo.Name,
+		Email:             userInfo.Email,
+		PreferredUsername: userInfo.PreferredUsername,
+		Groups:            userInfo.Groups,
 	}
 
 	payload, err := json.Marshal(claims)
@@ -397,7 +407,13 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 }
 
 func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OIDCClientConfig, sub string, scope string) (TokenResponse, error) {
-	idToken, err := service.generateIDToken(client, sub)
+	user, err := service.GetUserinfo(c, sub)
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	idToken, err := service.generateIDToken(client, user, scope)
 
 	if err != nil {
 		return TokenResponse{}, err
@@ -456,9 +472,15 @@ func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken stri
 		return TokenResponse{}, ErrInvalidClient
 	}
 
+	user, err := service.GetUserinfo(c, entry.Sub)
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
 	idToken, err := service.generateIDToken(config.OIDCClientConfig{
 		ClientID: entry.ClientID,
-	}, entry.Sub)
+	}, user, entry.Scope)
 
 	if err != nil {
 		return TokenResponse{}, err
