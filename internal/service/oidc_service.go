@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -665,10 +666,21 @@ func (service *OIDCService) Cleanup() {
 }
 
 func (service *OIDCService) GetJWK() ([]byte, error) {
+	hasher := sha256.New()
+
+	der := x509.MarshalPKCS1PublicKey(&service.privateKey.PublicKey)
+
+	if der == nil {
+		return nil, errors.New("failed to marshal public key")
+	}
+
+	hasher.Write(der)
+
 	jwk := jose.JSONWebKey{
 		Key:       service.privateKey,
 		Algorithm: string(jose.RS256),
 		Use:       "sig",
+		KeyID:     base64.URLEncoding.EncodeToString(hasher.Sum(nil)),
 	}
 
 	return jwk.Public().MarshalJSON()
