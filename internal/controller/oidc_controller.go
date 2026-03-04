@@ -231,7 +231,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		if !ok {
 			tlog.App.Error().Msg("Missing authorization header")
 			c.Header("www-authenticate", "basic")
-			c.JSON(401, gin.H{
+			c.JSON(400, gin.H{
 				"error": "invalid_client",
 			})
 			return
@@ -313,7 +313,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		if err != nil {
 			if errors.Is(err, service.ErrTokenExpired) {
 				tlog.App.Error().Err(err).Msg("Refresh token expired")
-				c.JSON(401, gin.H{
+				c.JSON(400, gin.H{
 					"error": "invalid_grant",
 				})
 				return
@@ -321,7 +321,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 			if errors.Is(err, service.ErrInvalidClient) {
 				tlog.App.Error().Err(err).Msg("Invalid client")
-				c.JSON(401, gin.H{
+				c.JSON(400, gin.H{
 					"error": "invalid_grant",
 				})
 				return
@@ -336,6 +336,9 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		tokenResponse = tokenRes
 	}
+
+	c.Header("cache-control", "no-store")
+	c.Header("pragma", "no-cache")
 
 	c.JSON(200, tokenResponse)
 }
