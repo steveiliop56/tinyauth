@@ -74,7 +74,6 @@ WHERE "refresh_token_hash" = ?;
 SELECT * FROM "oidc_tokens"
 WHERE "sub" = ?;
 
-
 -- name: DeleteOidcToken :exec
 DELETE FROM "oidc_tokens"
 WHERE "access_token_hash" = ?;

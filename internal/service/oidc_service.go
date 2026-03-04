@@ -421,7 +421,7 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 		return TokenResponse{}, err
 	}
 
-	idToken, err := service.generateIDToken(client, user, codeEntry.Sub, codeEntry.Nonce)
+	idToken, err := service.generateIDToken(client, user, codeEntry.Scope, codeEntry.Nonce)
 
 	if err != nil {
 		return TokenResponse{}, err
@@ -452,6 +452,7 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 		Scope:                 codeEntry.Scope,
 		TokenExpiresAt:        tokenExpiresAt,
 		RefreshTokenExpiresAt: refrshTokenExpiresAt,
+		Nonce:                 codeEntry.Nonce,
 	})
 
 	if err != nil {
