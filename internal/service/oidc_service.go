@@ -49,6 +49,7 @@ type ClaimSet struct {
 	Exp               int64    `json:"exp"`
 	Name              string   `json:"name,omitempty"`
 	Email             string   `json:"email,omitempty"`
+	EmailVerified     bool     `json:"email_verified,omitempty"`
 	PreferredUsername string   `json:"preferred_username,omitempty"`
 	Groups            []string `json:"groups,omitempty"`
 	Nonce             string   `json:"nonce,omitempty"`
@@ -60,6 +61,7 @@ type UserinfoResponse struct {
 	Email             string   `json:"email,omitempty"`
 	PreferredUsername string   `json:"preferred_username,omitempty"`
 	Groups            []string `json:"groups,omitempty"`
+	EmailVerified     bool     `json:"email_verified,omitempty"`
 	UpdatedAt         int64    `json:"updated_at"`
 }
 
@@ -388,6 +390,7 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, user
 		Exp:               expiresAt,
 		Name:              userInfo.Name,
 		Email:             userInfo.Email,
+		EmailVerified:     userInfo.EmailVerified,
 		PreferredUsername: userInfo.PreferredUsername,
 		Groups:            userInfo.Groups,
 		Nonce:             nonce,
@@ -583,6 +586,8 @@ func (service *OIDCService) CompileUserinfo(user repository.OidcUserinfo, scope 
 
 	if slices.Contains(scopes, "email") {
 		userInfo.Email = user.Email
+		// We can set this as a configuration option in the future but for now it's a good idea to assume it's true
+		userInfo.EmailVerified = true
 	}
 
 	if slices.Contains(scopes, "groups") {
