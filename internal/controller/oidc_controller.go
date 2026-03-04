@@ -296,7 +296,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 			return
 		}
 
-		tokenRes, err := controller.oidc.GenerateAccessToken(c, client, entry.Sub, entry.Scope)
+		tokenRes, err := controller.oidc.GenerateAccessToken(c, client, entry)
 
 		if err != nil {
 			tlog.App.Error().Err(err).Msg("Failed to generate access token")

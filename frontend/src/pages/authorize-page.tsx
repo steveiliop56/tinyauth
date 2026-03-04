@@ -98,6 +98,7 @@ export const AuthorizePage = () => {
         client_id: props.client_id,
         redirect_uri: props.redirect_uri,
         state: props.state,
+        nonce: props.nonce,
       });
     },
     mutationKey: ["authorize", props.client_id],

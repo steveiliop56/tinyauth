@@ -11,6 +11,7 @@ type OidcCode struct {
 	RedirectURI string
 	ClientID    string
 	ExpiresAt   int64
+	Nonce       string
 }
 
 type OidcToken struct {
@@ -21,6 +22,7 @@ type OidcToken struct {
 	ClientID              string
 	TokenExpiresAt        int64
 	RefreshTokenExpiresAt int64
+	Nonce                 string
 }
 
 type OidcUserinfo struct {
