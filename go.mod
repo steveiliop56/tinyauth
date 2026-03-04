@@ -18,7 +18,7 @@ require (
 	github.com/pquerna/otp v1.5.0
 	github.com/rs/zerolog v1.34.0
 	github.com/traefik/paerser v0.2.2
-	github.com/weppos/publicsuffix-go v0.50.2
+	github.com/weppos/publicsuffix-go v0.50.3
 	golang.org/x/crypto v0.48.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	golang.org/x/oauth2 v0.35.0
