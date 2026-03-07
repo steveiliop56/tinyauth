@@ -6,6 +6,9 @@ func NewDefaultConfiguration() *Config {
 		Database: DatabaseConfig{
 			Path: "./tinyauth.db",
 		},
+		Session: SessionConfig{
+			Driver: "database",
+		},
 		Analytics: AnalyticsConfig{
 			Enabled: true,
 		},
@@ -79,6 +82,7 @@ var RedirectCookieName = "tinyauth-redirect"
 type Config struct {
 	AppURL       string             `description:"The base URL where the app is hosted." yaml:"appUrl"`
 	Database     DatabaseConfig     `description:"Database configuration." yaml:"database"`
+	Session      SessionConfig      `description:"Session configuration" yaml:"session"`
 	Analytics    AnalyticsConfig    `description:"Analytics configuration." yaml:"analytics"`
 	Resources    ResourcesConfig    `description:"Resources configuration." yaml:"resources"`
 	Server       ServerConfig       `description:"Server configuration." yaml:"server"`
@@ -92,8 +96,19 @@ type Config struct {
 	Log          LogConfig          `description:"Logging configuration." yaml:"log"`
 }
 
+type RedisConfig struct {
+	URL      string `description:"The url of the redis instance to connect to" yaml:"url"`
+	Password string `description:"The password to connect to redis with" yaml:"password"`
+	DB       int    `description:"The DB index to use" yaml:"db"`
+}
+
 type DatabaseConfig struct {
-	Path string `description:"The path to the database, including file name." yaml:"path"`
+	Path  string      `description:"The path to the database, including file name." yaml:"path"`
+	Redis RedisConfig `description:"Configure redis connection options" yaml:"redis"`
+}
+
+type SessionConfig struct {
+	Driver string `description:"The session driver to use: [database, redis]" yaml:"driver"`
 }
 
 type AnalyticsConfig struct {

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/redis/rueidis"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
@@ -44,6 +46,13 @@ type AuthServiceConfig struct {
 	LDAPGroupsCacheTTL int
 }
 
+type SessionRepository interface {
+	GetSession(context.Context, string) (repository.Session, error)
+	CreateSession(context.Context, repository.CreateSessionParams) (repository.Session, error)
+	UpdateSession(context.Context, repository.UpdateSessionParams) (repository.Session, error)
+	DeleteSession(context.Context, string) error
+}
+
 type AuthService struct {
 	config          AuthServiceConfig
 	docker          *DockerService
@@ -52,10 +61,10 @@ type AuthService struct {
 	loginMutex      sync.RWMutex
 	ldapGroupsMutex sync.RWMutex
 	ldap            *LdapService
-	queries         *repository.Queries
+	queries         SessionRepository
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries SessionRepository) *AuthService {
 	return &AuthService{
 		config:          config,
 		docker:          docker,
@@ -354,7 +363,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, e
 	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || rueidis.IsRedisNil(err) {
 			return repository.Session{}, fmt.Errorf("session not found")
 		}
 		return repository.Session{}, err
