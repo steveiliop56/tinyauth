@@ -16,6 +16,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/pquerna/otp v1.5.0
+	github.com/redis/rueidis v1.0.72
 	github.com/rs/zerolog v1.34.0
 	github.com/traefik/paerser v0.2.2
 	github.com/weppos/publicsuffix-go v0.50.3

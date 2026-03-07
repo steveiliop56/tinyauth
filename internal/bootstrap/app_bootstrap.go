@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redis/rueidis"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
@@ -125,16 +126,28 @@ func (app *BootstrapApp) Setup() error {
 
 	// Database
 	db, err := app.SetupDatabase(app.config.Database.Path)
-
 	if err != nil {
 		return fmt.Errorf("failed to setup database: %w", err)
+	}
+
+	var redisClient rueidis.Client
+	if app.config.Session.Driver == "redis" {
+		client, err := app.SetupRedis(
+			app.config.Database.Redis.URL,
+			app.config.Database.Redis.Password,
+			app.config.Database.Redis.DB,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to setup redis client: %w", err)
+		}
+		redisClient = client
 	}
 
 	// Queries
 	queries := repository.New(db)
 
 	// Services
-	services, err := app.initServices(queries)
+	services, err := app.initServices(queries, redisClient)
 
 	if err != nil {
 		return fmt.Errorf("failed to initialize services: %w", err)

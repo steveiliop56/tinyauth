@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -44,6 +45,13 @@ type AuthServiceConfig struct {
 	LDAPGroupsCacheTTL int
 }
 
+type SessionRepository interface {
+	GetSession(context.Context, string) (repository.Session, error)
+	CreateSession(context.Context, repository.CreateSessionParams) (repository.Session, error)
+	UpdateSession(context.Context, repository.UpdateSessionParams) (repository.Session, error)
+	DeleteSession(context.Context, string) error
+}
+
 type AuthService struct {
 	config          AuthServiceConfig
 	docker          *DockerService
@@ -52,10 +60,10 @@ type AuthService struct {
 	loginMutex      sync.RWMutex
 	ldapGroupsMutex sync.RWMutex
 	ldap            *LdapService
-	queries         *repository.Queries
+	queries         SessionRepository
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries SessionRepository) *AuthService {
 	return &AuthService{
 		config:          config,
 		docker:          docker,

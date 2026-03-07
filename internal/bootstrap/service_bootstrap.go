@@ -1,6 +1,9 @@
 package bootstrap
 
 import (
+	"fmt"
+
+	"github.com/redis/rueidis"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
@@ -15,7 +18,7 @@ type Services struct {
 	oidcService          *service.OIDCService
 }
 
-func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, error) {
+func (app *BootstrapApp) initServices(queries *repository.Queries, redis rueidis.Client) (Services, error) {
 	services := Services{}
 
 	ldapService := service.NewLdapService(service.LdapServiceConfig{
@@ -58,6 +61,16 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 
 	services.accessControlService = accessControlsService
 
+	var sessionRepo service.SessionRepository
+	switch app.config.Session.Driver {
+	case "database":
+		sessionRepo = queries
+	case "redis":
+		sessionRepo = repository.NewRedisSessionRepository(redis)
+	default:
+		return Services{}, fmt.Errorf("unknown session driver %s", app.config.Session.Driver)
+	}
+
 	authService := service.NewAuthService(service.AuthServiceConfig{
 		Users:              app.context.users,
 		OauthWhitelist:     app.config.OAuth.Whitelist,
@@ -70,7 +83,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		SessionCookieName:  app.context.sessionCookieName,
 		IP:                 app.config.Auth.IP,
 		LDAPGroupsCacheTTL: app.config.Ldap.GroupCacheTTL,
-	}, dockerService, services.ldapService, queries)
+	}, dockerService, services.ldapService, sessionRepo)
 
 	err = authService.Init()
 
