@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/redis/rueidis"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/utils"
@@ -362,7 +363,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, e
 	session, err := auth.queries.GetSession(c, cookie)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || rueidis.IsRedisNil(err) {
 			return repository.Session{}, fmt.Errorf("session not found")
 		}
 		return repository.Session{}, err
