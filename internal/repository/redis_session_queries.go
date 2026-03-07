@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/redis/rueidis"
 )
@@ -61,7 +62,9 @@ func (r *RedisSessionRepository) CreateSession(
 		return out, err
 	}
 
-	cmd := r.c.B().Set().Key(params.UUID).Value(string(raw)).Nx().Build()
+	cmd := r.c.B().Set().Key(params.UUID).Value(string(raw)).
+		Nx().ExSeconds(params.Expiry - time.Now().Unix()).
+		Build()
 	if err := r.c.Do(ctx, cmd).Error(); err != nil {
 		return out, err
 	}
@@ -94,7 +97,10 @@ func (r *RedisSessionRepository) UpdateSession(
 		return session, err
 	}
 
-	cmd := r.c.B().Set().Key(params.UUID).Value(string(raw)).Build()
+	cmd := r.c.B().Set().Key(params.UUID).
+		Value(string(raw)).
+		ExSeconds(params.Expiry - time.Now().Unix()).
+		Build()
 	if err := r.c.Do(ctx, cmd).Error(); err != nil {
 		return session, err
 	}
