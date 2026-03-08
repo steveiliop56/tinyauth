@@ -79,7 +79,7 @@ type AuthorizeRequest struct {
 	ResponseType string `json:"response_type" binding:"required"`
 	ClientID     string `json:"client_id" binding:"required"`
 	RedirectURI  string `json:"redirect_uri" binding:"required"`
-	State        string `json:"state" binding:"required"`
+	State        string `json:"state"`
 	Nonce        string `json:"nonce"`
 }
 

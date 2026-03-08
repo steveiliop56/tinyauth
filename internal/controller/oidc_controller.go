@@ -24,7 +24,7 @@ type OIDCController struct {
 
 type AuthorizeCallback struct {
 	Code  string `url:"code"`
-	State string `url:"state"`
+	State string `url:"state,omitempty"`
 }
 
 type TokenRequest struct {
