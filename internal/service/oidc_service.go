@@ -366,6 +366,16 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, user
 	createdAt := time.Now().Unix()
 	expiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
 
+	hasher := sha256.New()
+
+	der := x509.MarshalPKCS1PublicKey(&service.privateKey.PublicKey)
+
+	if der == nil {
+		return "", errors.New("failed to marshal public key")
+	}
+
+	hasher.Write(der)
+
 	signer, err := jose.NewSigner(jose.SigningKey{
 		Algorithm: jose.RS256,
 		Key:       service.privateKey,
@@ -373,6 +383,7 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, user
 		ExtraHeaders: map[jose.HeaderKey]any{
 			"typ": "jwt",
 			"jku": fmt.Sprintf("%s/.well-known/jwks.json", service.issuer),
+			"kid": base64.URLEncoding.EncodeToString(hasher.Sum(nil)),
 		},
 	})
 
