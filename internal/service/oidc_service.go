@@ -161,6 +161,7 @@ func (service *OIDCService) Init() error {
 			Type:  "RSA PRIVATE KEY",
 			Bytes: der,
 		})
+		tlog.App.Trace().Str("type", "RSA PRIVATE KEY").Msg("Generated private RSA key")
 		err = os.WriteFile(service.config.PrivateKeyPath, encoded, 0600)
 		if err != nil {
 			return err
@@ -171,6 +172,7 @@ func (service *OIDCService) Init() error {
 		if block == nil {
 			return errors.New("failed to decode private key")
 		}
+		tlog.App.Trace().Str("type", block.Type).Msg("Loaded private key")
 		privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
 			return err
@@ -194,6 +196,7 @@ func (service *OIDCService) Init() error {
 			Type:  "RSA PUBLIC KEY",
 			Bytes: der,
 		})
+		tlog.App.Trace().Str("type", "RSA PUBLIC KEY").Msg("Generated public RSA key")
 		err = os.WriteFile(service.config.PublicKeyPath, encoded, 0644)
 		if err != nil {
 			return err
@@ -204,8 +207,9 @@ func (service *OIDCService) Init() error {
 		if block == nil {
 			return errors.New("failed to decode public key")
 		}
+		tlog.App.Trace().Str("type", block.Type).Msg("Loaded public key")
 		switch block.Type {
-		case "RSA PRIVATE KEY":
+		case "RSA PUBLIC KEY":
 			publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
 			if err != nil {
 				return err
@@ -218,7 +222,7 @@ func (service *OIDCService) Init() error {
 			}
 			service.publicKey = publicKey.(crypto.PublicKey)
 		default:
-			return errors.New("unsupported public key type")
+			return fmt.Errorf("unsupported public key type: %s", block.Type)
 		}
 	}
 
