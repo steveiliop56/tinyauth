@@ -204,11 +204,22 @@ func (service *OIDCService) Init() error {
 		if block == nil {
 			return errors.New("failed to decode public key")
 		}
-		publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
-		if err != nil {
-			return err
+		switch block.Type {
+		case "RSA PRIVATE KEY":
+			publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+			if err != nil {
+				return err
+			}
+			service.publicKey = publicKey
+		case "PUBLIC KEY":
+			publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+			if err != nil {
+				return err
+			}
+			service.publicKey = publicKey.(crypto.PublicKey)
+		default:
+			return errors.New("unsupported public key type")
 		}
-		service.publicKey = publicKey
 	}
 
 	// We will reorganize the client into a map with the client ID as the key
