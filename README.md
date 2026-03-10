@@ -1,7 +1,7 @@
 <div align="center">
     <img alt="Tinyauth" title="Tinyauth" width="96" src="assets/logo-rounded.png">
     <h1>Tinyauth</h1>
-    <p>The simplest way to protect your apps with a login screen.</p>
+    <p>The tiniest authentication and authorization server you have ever seen.</p>
 </div>
 
 <div align="center">
@@ -14,7 +14,7 @@
 
 <br />
 
-Tinyauth is a simple authentication middleware that adds a simple login screen or OAuth with Google, Github or any other provider to all of your apps. It supports all the popular proxies like Traefik, Nginx and Caddy.
+Tinyauth is the simplest and tiniest authentication and authorization server you have ever seen. It is designed to both work as an authentication middleware for your apps, offering support for OAuth, LDAP and access-controls, and as a standalone authentication server. It supports all the popular proxies like Traefik, Nginx and Caddy.
 
 ![Screenshot](assets/screenshot.png)
 
@@ -26,7 +26,7 @@ Tinyauth is a simple authentication middleware that adds a simple login screen o
 
 ## Getting Started
 
-You can easily get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started). There is also an available [docker compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities.
+You can get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started). There is also an available [docker-compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities (keep in mind that this file lives in the development branch so it may have updates that are not yet released).
 
 ## Demo
 
@@ -40,15 +40,15 @@ If you wish to contribute to the documentation head over to the [repository](htt
 
 ## Discord
 
-Tinyauth has a [discord](https://discord.gg/eHzVaCzRRd) server. Feel free to hop in to chat about self-hosting, homelabs and of course Tinyauth. See you there!
+Tinyauth has a [Discord](https://discord.gg/eHzVaCzRRd) server. Feel free to hop in to chat about self-hosting, homelabs and of course Tinyauth. See you there!
 
 ## Contributing
 
-All contributions to the codebase are welcome! If you have any free time feel free to pick up an [issue](https://github.com/steveiliop56/tinyauth/issues) or add your own missing features. Make sure to check out the [contributing guide](./CONTRIBUTING.md) for instructions on how to get the development server up and running.
+All contributions to the codebase are welcome! If you have any free time, feel free to pick up an [issue](https://github.com/steveiliop56/tinyauth/issues) or add your own missing features. Make sure to check out the [contributing guide](./CONTRIBUTING.md) for instructions on how to get the development server up and running.
 
 ## Localization
 
-If you would like to help translate Tinyauth into more languages, visit the [Crowdin](https://crowdin.com/project/tinyauth) page.
+If you like, you can help translate Tinyauth into more languages by visiting the [Crowdin](https://crowdin.com/project/tinyauth) page.
 
 ## License
 
