@@ -90,9 +90,21 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		tlog.App.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
 	}
 
-	uri := c.Request.Header.Get("X-Forwarded-Uri")
-	proto := c.Request.Header.Get("X-Forwarded-Proto")
-	host := c.Request.Header.Get("X-Forwarded-Host")
+	uri, ok := controller.requireHeader(c, "x-forwarded-uri")
+
+	if !ok {
+		return
+	}
+
+	host, ok := controller.requireHeader(c, "x-forwarded-host")
+	if !ok {
+		return
+	}
+
+	proto, ok := controller.requireHeader(c, "x-forwarded-proto")
+	if !ok {
+		return
+	}
 
 	// Get acls
 	acls, err := controller.acls.GetAccessControls(host)
@@ -324,4 +336,17 @@ func (controller *ProxyController) handleError(c *gin.Context, req Proxy, isBrow
 	}
 
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+}
+
+func (controller *ProxyController) requireHeader(c *gin.Context, header string) (string, bool) {
+	val := c.Request.Header.Get(header)
+	if strings.TrimSpace(val) == "" {
+		tlog.App.Error().Str("header", header).Msg("Header not found")
+		c.JSON(400, gin.H{
+			"status":  400,
+			"message": "Bad Request",
+		})
+		return "", false
+	}
+	return val, true
 }
