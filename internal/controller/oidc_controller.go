@@ -115,6 +115,11 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 		return
 	}
 
+	if !userContext.IsLoggedIn {
+		controller.authorizeError(c, errors.New("err user not logged in"), "User not logged in", "The user is not logged in", "", "", "")
+		return
+	}
+
 	var req service.AuthorizeRequest
 
 	err = c.BindJSON(&req)
