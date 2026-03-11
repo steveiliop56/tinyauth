@@ -1,6 +1,5 @@
 services:
   traefik:
-    container_name: traefik
     image: traefik:v3.6
     command: --api.insecure=true --providers.docker
     ports:
@@ -9,7 +8,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   whoami:
-    container_name: whoami
     image: traefik/whoami:latest
     labels:
       traefik.enable: true
@@ -17,7 +15,6 @@ services:
       traefik.http.routers.whoami.middlewares: tinyauth
 
   tinyauth-frontend:
-    container_name: tinyauth-frontend
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev
@@ -30,7 +27,6 @@ services:
       traefik.http.routers.tinyauth.rule: Host(`tinyauth.127.0.0.1.sslip.io`)
 
   tinyauth-backend:
-    container_name: tinyauth-backend
     build:
       context: .
       dockerfile: Dockerfile.dev
