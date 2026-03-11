@@ -182,13 +182,17 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 
 			user := m.auth.GetLocalUser(basic.Username)
 
+			if user.TotpSecret != "" {
+				tlog.App.Debug().Msg("User with TOTP not allowed to login via basic auth")
+				return
+			}
+
 			c.Set("context", &config.UserContext{
 				Username:    user.Username,
 				Name:        utils.Capitalize(user.Username),
 				Email:       utils.CompileUserEmail(user.Username, m.config.CookieDomain),
 				Provider:    "local",
 				IsLoggedIn:  true,
-				TotpEnabled: user.TotpSecret != "",
 				IsBasicAuth: true,
 			})
 			c.Next()

@@ -59,6 +59,11 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 				Username: "testuser",
 				Password: "$2a$10$ne6z693sTgzT3ePoQ05PgOecUHnBjM7sSNj6M.l5CLUP.f6NyCnt.", // test
 			},
+			{
+				Username:   "totpuser",
+				Password:   "$2a$10$ne6z693sTgzT3ePoQ05PgOecUHnBjM7sSNj6M.l5CLUP.f6NyCnt.",
+				TotpSecret: "foo",
+			},
 		},
 		OauthWhitelist:     []string{},
 		SessionExpiry:      3600,
@@ -79,9 +84,11 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	return router, recorder, authService
 }
 
+// TODO: Needs tests for context middleware
+
 func TestProxyHandler(t *testing.T) {
 	// Setup
-	router, recorder, authService := setupProxyController(t, nil)
+	router, recorder, _ := setupProxyController(t, nil)
 
 	// Test invalid proxy
 	req := httptest.NewRequest("GET", "/api/auth/invalidproxy", nil)
@@ -144,21 +151,6 @@ func TestProxyHandler(t *testing.T) {
 	assert.Equal(t, 401, recorder.Code)
 
 	// Test logged in user
-	c := gin.CreateTestContextOnly(recorder, router)
-
-	err := authService.CreateSessionCookie(c, &repository.Session{
-		Username:    "testuser",
-		Name:        "testuser",
-		Email:       "testuser@example.com",
-		Provider:    "local",
-		TotpPending: false,
-		OAuthGroups: "",
-	})
-
-	assert.NilError(t, err)
-
-	cookie := c.Writer.Header().Get("Set-Cookie")
-
 	router, recorder, _ = setupProxyController(t, &[]gin.HandlerFunc{
 		func(c *gin.Context) {
 			c.Set("context", &config.UserContext{
@@ -177,44 +169,15 @@ func TestProxyHandler(t *testing.T) {
 	})
 
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
-	req.Header.Set("Cookie", cookie)
 	req.Header.Set("X-Forwarded-Proto", "https")
 	req.Header.Set("X-Forwarded-Host", "example.com")
 	req.Header.Set("X-Forwarded-Uri", "/somepath")
 	req.Header.Set("Accept", "text/html")
-	router.ServeHTTP(recorder, req)
 
+	router.ServeHTTP(recorder, req)
 	assert.Equal(t, 200, recorder.Code)
 
 	assert.Equal(t, "testuser", recorder.Header().Get("Remote-User"))
 	assert.Equal(t, "testuser", recorder.Header().Get("Remote-Name"))
 	assert.Equal(t, "testuser@example.com", recorder.Header().Get("Remote-Email"))
-
-	// Ensure basic auth is disabled for TOTP enabled users
-	router, recorder, _ = setupProxyController(t, &[]gin.HandlerFunc{
-		func(c *gin.Context) {
-			c.Set("context", &config.UserContext{
-				Username:    "testuser",
-				Name:        "testuser",
-				Email:       "testuser@example.com",
-				IsLoggedIn:  true,
-				IsBasicAuth: true,
-				OAuth:       false,
-				Provider:    "local",
-				TotpPending: false,
-				OAuthGroups: "",
-				TotpEnabled: true,
-			})
-			c.Next()
-		},
-	})
-
-	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Forwarded-Uri", "/somepath")
-	req.SetBasicAuth("testuser", "test")
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 401, recorder.Code)
 }

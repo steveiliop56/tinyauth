@@ -270,7 +270,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 	switch req.GrantType {
 	case "authorization_code":
-		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code))
+		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code), client.ClientID)
 		if err != nil {
 			if errors.Is(err, service.ErrCodeNotFound) {
 				tlog.App.Warn().Msg("Code not found")
@@ -283,6 +283,13 @@ func (controller *OIDCController) Token(c *gin.Context) {
 				tlog.App.Warn().Msg("Code expired")
 				c.JSON(400, gin.H{
 					"error": "invalid_grant",
+				})
+				return
+			}
+			if errors.Is(err, service.ErrInvalidClient) {
+				tlog.App.Warn().Msg("Invalid client ID")
+				c.JSON(400, gin.H{
+					"error": "invalid_client",
 				})
 				return
 			}

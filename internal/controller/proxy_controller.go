@@ -185,11 +185,6 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	tlog.App.Trace().Interface("context", userContext).Msg("User context from request")
 
-	if userContext.IsBasicAuth && userContext.TotpEnabled {
-		tlog.App.Debug().Msg("User has TOTP enabled, denying basic auth access")
-		userContext.IsLoggedIn = false
-	}
-
 	if userContext.IsLoggedIn {
 		userAllowed := controller.auth.IsUserAllowed(c, userContext, acls)
 

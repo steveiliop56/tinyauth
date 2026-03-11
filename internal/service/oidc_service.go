@@ -352,7 +352,7 @@ func (service *OIDCService) ValidateGrantType(grantType string) error {
 	return nil
 }
 
-func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string) (repository.OidcCode, error) {
+func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string, clientId string) (repository.OidcCode, error) {
 	oidcCode, err := service.queries.GetOidcCode(c, codeHash)
 
 	if err != nil {
@@ -372,6 +372,10 @@ func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string) (repos
 			return repository.OidcCode{}, err
 		}
 		return repository.OidcCode{}, ErrCodeExpired
+	}
+
+	if oidcCode.ClientID != clientId {
+		return repository.OidcCode{}, ErrInvalidClient
 	}
 
 	return oidcCode, nil
