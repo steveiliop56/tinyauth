@@ -136,6 +136,9 @@ func TestProxyHandler(t *testing.T) {
 	// Test logged out user (nginx)
 	recorder = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/auth/nginx", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "example.com")
+	req.Header.Set("X-Forwarded-Uri", "/somepath")
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, 401, recorder.Code)
@@ -175,6 +178,9 @@ func TestProxyHandler(t *testing.T) {
 
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
 	req.Header.Set("Cookie", cookie)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "example.com")
+	req.Header.Set("X-Forwarded-Uri", "/somepath")
 	req.Header.Set("Accept", "text/html")
 	router.ServeHTTP(recorder, req)
 
@@ -204,6 +210,9 @@ func TestProxyHandler(t *testing.T) {
 	})
 
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "example.com")
+	req.Header.Set("X-Forwarded-Uri", "/somepath")
 	req.SetBasicAuth("testuser", "test")
 	router.ServeHTTP(recorder, req)
 
