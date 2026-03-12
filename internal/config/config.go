@@ -115,6 +115,7 @@ type AuthConfig struct {
 	IP                 IPConfig `description:"IP whitelisting config options." yaml:"ip"`
 	Users              []string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
 	UsersFile          string   `description:"Path to the users file." yaml:"usersFile"`
+	Standalone         bool     `description:"Run in standalone mode, do not set cookies for subdomains." yaml:"standalone"`
 	SecureCookie       bool     `description:"Enable secure cookies." yaml:"secureCookie"`
 	SessionExpiry      int      `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
 	SessionMaxLifetime int      `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
