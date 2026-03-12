@@ -90,6 +90,10 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		tlog.App.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
 	}
 
+	// We are not marking the URI as a required header because it may be missing
+	// and we only use it for the auth enabled check which will simply not match
+	// if the header is missing. For deployments like Kubernetes, we use the
+	// x-original-uri header instead.
 	uri, ok := controller.getHeader(c, "x-forwarded-uri")
 
 	if !ok {
