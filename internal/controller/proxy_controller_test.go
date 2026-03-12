@@ -145,7 +145,7 @@ func TestProxyHandler(t *testing.T) {
 	req = httptest.NewRequest("GET", "/api/auth/nginx", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
 	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Forwarded-Uri", "/somepath")
+	// we won't set X-Forwarded-Uri to test that the controller can work without it
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, 401, recorder.Code)
@@ -171,7 +171,7 @@ func TestProxyHandler(t *testing.T) {
 	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
 	req.Header.Set("X-Forwarded-Proto", "https")
 	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Forwarded-Uri", "/somepath")
+	req.Header.Set("X-Original-Uri", "/somepath") // Test with original URI for kubernetes ingress
 	req.Header.Set("Accept", "text/html")
 
 	router.ServeHTTP(recorder, req)
