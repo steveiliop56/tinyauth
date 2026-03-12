@@ -6,7 +6,7 @@ replace github.com/traefik/paerser v0.2.2 => ./paerser
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3
-	github.com/charmbracelet/huh v0.8.0
+	github.com/charmbracelet/huh v1.0.0
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-jose/go-jose/v4 v4.1.3
