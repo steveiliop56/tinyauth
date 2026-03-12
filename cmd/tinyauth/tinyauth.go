@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"charm.land/huh/v2"
 	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/utils/loaders"
@@ -122,4 +123,10 @@ func runCmd(cfg config.Config) error {
 	}
 
 	return nil
+}
+
+type themeBase struct{}
+
+func (t *themeBase) Theme(isDark bool) *huh.Styles {
+	return huh.ThemeBase(isDark)
 }
