@@ -90,10 +90,17 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		tlog.App.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
 	}
 
-	uri, ok := controller.requireHeader(c, "x-forwarded-uri")
+	// We are not marking the URI as a required header because it may be missing
+	// and we only use it for the auth enabled check which will simply not match
+	// if the header is missing. For deployments like Kubernetes, we use the
+	// x-original-uri header instead.
+	uri, ok := controller.getHeader(c, "x-forwarded-uri")
 
 	if !ok {
-		return
+		originalUri, ok := controller.getHeader(c, "x-original-uri")
+		if ok {
+			uri = originalUri
+		}
 	}
 
 	host, ok := controller.requireHeader(c, "x-forwarded-host")
@@ -334,8 +341,8 @@ func (controller *ProxyController) handleError(c *gin.Context, req Proxy, isBrow
 }
 
 func (controller *ProxyController) requireHeader(c *gin.Context, header string) (string, bool) {
-	val := c.Request.Header.Get(header)
-	if strings.TrimSpace(val) == "" {
+	val, ok := controller.getHeader(c, header)
+	if !ok {
 		tlog.App.Error().Str("header", header).Msg("Header not found")
 		c.JSON(400, gin.H{
 			"status":  400,
@@ -344,4 +351,9 @@ func (controller *ProxyController) requireHeader(c *gin.Context, header string) 
 		return "", false
 	}
 	return val, true
+}
+
+func (controller *ProxyController) getHeader(c *gin.Context, header string) (string, bool) {
+	val := c.Request.Header.Get(header)
+	return val, strings.TrimSpace(val) != ""
 }
