@@ -2,77 +2,77 @@ package controller_test
 
 import (
 	"encoding/json"
-	"net/http/httptest"
+	"io"
+	"net/http"
 	"testing"
 
-	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/controller"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
-
 	"github.com/gin-gonic/gin"
+	"github.com/steveiliop56/tinyauth/internal/controller"
 	"gotest.tools/v3/assert"
 )
 
-var contextControllerCfg = controller.ContextControllerConfig{
-	Providers: []controller.Provider{
-		{
-			Name:  "Local",
-			ID:    "local",
-			OAuth: false,
+func TestUserContextController(t *testing.T) {
+	// Controller setup
+	suite := NewControllerTest(func(router *gin.RouterGroup) *controller.ContextController {
+		ctrl := controller.NewContextController(contextControllerCfg, router)
+		ctrl.SetupRoutes()
+		return ctrl
+	})
+
+	// Test user context
+	req, err := http.NewRequest("GET", "/api/context/user", nil)
+	assert.NilError(t, err)
+
+	ctx := testContext
+	ctx.IsLoggedIn = true
+	ctx.Provider = "local"
+
+	expected, err := json.Marshal(controller.UserContextResponse{
+		Status:      200,
+		Message:     "Success",
+		IsLoggedIn:  ctx.IsLoggedIn,
+		Username:    ctx.Username,
+		Name:        ctx.Name,
+		Email:       ctx.Email,
+		Provider:    ctx.Provider,
+		OAuth:       ctx.OAuth,
+		TotpPending: ctx.TotpPending,
+		OAuthName:   ctx.OAuthName,
+	})
+	assert.NilError(t, err)
+
+	resp := suite.RequestWithMiddleware(req, []gin.HandlerFunc{
+		func(c *gin.Context) {
+			c.Set("context", &ctx)
 		},
-		{
-			Name:  "Google",
-			ID:    "google",
-			OAuth: true,
-		},
-	},
-	Title:                 "Test App",
-	AppURL:                "http://localhost:8080",
-	CookieDomain:          "localhost",
-	ForgotPasswordMessage: "Contact admin to reset your password.",
-	BackgroundImage:       "/assets/bg.jpg",
-	OAuthAutoRedirect:     "google",
-	WarningsEnabled:       true,
-}
+	})
 
-var contextCtrlTestContext = config.UserContext{
-	Username:    "testuser",
-	Name:        "testuser",
-	Email:       "test@example.com",
-	IsLoggedIn:  true,
-	IsBasicAuth: false,
-	OAuth:       false,
-	Provider:    "local",
-	TotpPending: false,
-	OAuthGroups: "",
-	TotpEnabled: false,
-	OAuthSub:    "",
-}
+	assert.Equal(t, http.StatusOK, resp.Code)
+	bytes, err := io.ReadAll(resp.Body)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, bytes)
 
-func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
-	tlog.NewSimpleLogger().Init()
+	// Ensure user context is not available when not logged in
+	req, err = http.NewRequest("GET", "/api/context/user", nil)
+	assert.NilError(t, err)
 
-	// Setup
-	gin.SetMode(gin.TestMode)
-	router := gin.Default()
-	recorder := httptest.NewRecorder()
+	expected, err = json.Marshal(controller.UserContextResponse{
+		Status:  http.StatusUnauthorized,
+		Message: "Unauthorized",
+	})
+	assert.NilError(t, err)
 
-	if middlewares != nil {
-		for _, m := range *middlewares {
-			router.Use(m)
-		}
-	}
+	resp = suite.RequestWithMiddleware(req, nil)
+	assert.Equal(t, 200, resp.Code)
+	bytes, err = io.ReadAll(resp.Body)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, bytes)
 
-	group := router.Group("/api")
+	// Test app context
+	req, err = http.NewRequest("GET", "/api/context/app", nil)
+	assert.NilError(t, err)
 
-	ctrl := controller.NewContextController(contextControllerCfg, group)
-	ctrl.SetupRoutes()
-
-	return router, recorder
-}
-
-func TestAppContextHandler(t *testing.T) {
-	expectedRes := controller.AppContextResponse{
+	expected, err = json.Marshal(controller.AppContextResponse{
 		Status:                200,
 		Message:               "Success",
 		Providers:             contextControllerCfg.Providers,
@@ -83,71 +83,13 @@ func TestAppContextHandler(t *testing.T) {
 		BackgroundImage:       contextControllerCfg.BackgroundImage,
 		OAuthAutoRedirect:     contextControllerCfg.OAuthAutoRedirect,
 		WarningsEnabled:       contextControllerCfg.WarningsEnabled,
-	}
-
-	router, recorder := setupContextController(nil)
-	req := httptest.NewRequest("GET", "/api/context/app", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 200, recorder.Code)
-
-	var ctrlRes controller.AppContextResponse
-
-	err := json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
-
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedRes, ctrlRes)
-}
-
-func TestUserContextHandler(t *testing.T) {
-	expectedRes := controller.UserContextResponse{
-		Status:      200,
-		Message:     "Success",
-		IsLoggedIn:  contextCtrlTestContext.IsLoggedIn,
-		Username:    contextCtrlTestContext.Username,
-		Name:        contextCtrlTestContext.Name,
-		Email:       contextCtrlTestContext.Email,
-		Provider:    contextCtrlTestContext.Provider,
-		OAuth:       contextCtrlTestContext.OAuth,
-		TotpPending: contextCtrlTestContext.TotpPending,
-		OAuthName:   contextCtrlTestContext.OAuthName,
-	}
-
-	// Test with context
-	router, recorder := setupContextController(&[]gin.HandlerFunc{
-		func(c *gin.Context) {
-			c.Set("context", &contextCtrlTestContext)
-			c.Next()
-		},
 	})
-
-	req := httptest.NewRequest("GET", "/api/context/user", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 200, recorder.Code)
-
-	var ctrlRes controller.UserContextResponse
-
-	err := json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
-
 	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedRes, ctrlRes)
 
-	// Test no context
-	expectedRes = controller.UserContextResponse{
-		Status:     401,
-		Message:    "Unauthorized",
-		IsLoggedIn: false,
-	}
+	resp = suite.RequestWithMiddleware(req, nil)
 
-	router, recorder = setupContextController(nil)
-	req = httptest.NewRequest("GET", "/api/context/user", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 200, recorder.Code)
-
-	err = json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
-
+	assert.Equal(t, http.StatusOK, resp.Code)
+	bytes, err = io.ReadAll(resp.Body)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedRes, ctrlRes)
+	assert.DeepEqual(t, expected, bytes)
 }
