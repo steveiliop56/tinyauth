@@ -315,7 +315,7 @@ func (controller *ProxyController) getHeader(c *gin.Context, header string) (str
 }
 
 func (controller *ProxyController) useFriendlyError(proxyCtx ProxyContext) bool {
-	return proxyCtx.Type == ForwardAuth && proxyCtx.IsBrowser
+	return (proxyCtx.Type == ForwardAuth || proxyCtx.Type == ExtAuthz) && proxyCtx.IsBrowser
 }
 
 // Code below is inspired from https://github.com/authelia/authelia/blob/master/internal/handlers/handler_authz.go
