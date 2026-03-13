@@ -1,0 +1,15 @@
+appUrl: http://tinyauth.127.0.0.1.sslip.io
+
+auth:
+  users: test:$2a$10$eG88kFow83l5YRSlTSL2o.sZimjxFHrpiKdaSUZqpLBGX7Y2.4PZG
+
+log:
+  json: true
+  level: trace
+
+apps:
+  whoami:
+    config:
+      domain: whoami.127.0.0.1.sslip.io
+    path:
+      allow: /allow
