@@ -40,7 +40,7 @@ static_resources:
                       "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz"
                       transport_api_version: "v3"
                       http_service:
-                        path_prefix: "/api/auth/envoy"
+                        path_prefix: "/api/auth/envoy?path="
                         server_uri:
                           uri: "tinyauth:3000"
                           cluster: "tinyauth"
@@ -51,10 +51,13 @@ static_resources:
                               - exact: "authorization"
                               - exact: "accept"
                               - exact: "cookie"
-                              - exact: "location"
                           headers_to_add:
-                            - key: "X-Forwarded-Proto"
+                            - key: "x-forwarded-proto"
                               value: "%REQ(:SCHEME)%"
+                            - key: "x-forwarded-host"
+                              value: "%REQ(:AUTHORITY)%"
+                            - key: "x-forwarded-uri"
+                              value: "%REQ(:PATH)%"
                         authorization_response:
                           allowed_upstream_headers:
                             patterns:
@@ -62,9 +65,11 @@ static_resources:
                           allowed_client_headers:
                             patterns:
                               - exact: "set-cookie"
+                              - exact: "location"
                           allowed_client_headers_on_success:
                             patterns:
                               - exact: "set-cookie"
+                              - exact: "location"
                       failure_mode_allow: false
                   - name: "envoy.filters.http.router"
                     typed_config:
@@ -98,14 +103,3 @@ static_resources:
                     socket_address:
                       address: "tinyauth"
                       port_value: 3000
-layered_runtime:
-  layers:
-    - name: "static_layer_0"
-      static_layer:
-        envoy:
-          resource_limits:
-            listener:
-              example_listener_name:
-                connection_limit: 10000
-        overload:
-          global_downstream_max_connections: 50000

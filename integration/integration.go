@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var ProxiesToTest = []string{"traefik", "nginx"}
+var ProxiesToTest = []string{"traefik", "nginx", "envoy"}
 
 const (
 	EnvFile    = ".env"
