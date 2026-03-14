@@ -388,7 +388,11 @@ func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyCont
 	}
 
 	// It sets the host to the original host, not the forwarded host
-	host := c.Request.URL.Host
+	host := c.Request.Host
+
+	if strings.TrimSpace(host) == "" {
+		return ProxyContext{}, errors.New("host not found")
+	}
 
 	// We get the path from the query string
 	path := c.Query("path")
