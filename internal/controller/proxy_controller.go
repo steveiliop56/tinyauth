@@ -36,11 +36,7 @@ type ProxyContext struct {
 	Proto     string
 	Path      string
 	Method    string
-<<<<<<< HEAD
-	Type      RequestType
-=======
 	Type      AuthModuleType
->>>>>>> main
 	IsBrowser bool
 }
 
