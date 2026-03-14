@@ -17,10 +17,10 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-type RequestType int
+type AuthModuleType int
 
 const (
-	AuthRequest RequestType = iota
+	AuthRequest AuthModuleType = iota
 	ExtAuthz
 	ForwardAuth
 )
@@ -38,7 +38,7 @@ type ProxyContext struct {
 	Proto     string
 	Path      string
 	Method    string
-	Type      RequestType
+	Type      AuthModuleType
 	IsBrowser bool
 }
 
@@ -341,10 +341,6 @@ func (controller *ProxyController) getForwardAuthContext(c *gin.Context) (ProxyC
 
 	method := c.Request.Method
 
-	if method != http.MethodGet {
-		return ProxyContext{}, errors.New("method not allowed")
-	}
-
 	return ProxyContext{
 		Host:   host,
 		Proto:  proto,
@@ -372,10 +368,6 @@ func (controller *ProxyController) getAuthRequestContext(c *gin.Context) (ProxyC
 	path := url.Path
 	method := c.Request.Method
 
-	if method != http.MethodGet {
-		return ProxyContext{}, errors.New("method not allowed")
-	}
-
 	return ProxyContext{
 		Host:   host,
 		Proto:  proto,
@@ -398,7 +390,8 @@ func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyCont
 		return ProxyContext{}, errors.New("host not found")
 	}
 
-	// Seems like we can't get the path?
+	// We get the path from the query string
+	path := c.Query("path")
 
 	// For envoy we need to support every method
 	method := c.Request.Method
@@ -406,9 +399,47 @@ func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyCont
 	return ProxyContext{
 		Host:   host,
 		Proto:  proto,
+		Path:   path,
 		Method: method,
 		Type:   ExtAuthz,
 	}, nil
+}
+
+func (controller *ProxyController) determineAuthModules(proxy string) []AuthModuleType {
+	switch proxy {
+	case "traefik":
+		return []AuthModuleType{ForwardAuth}
+	case "envoy":
+		return []AuthModuleType{ExtAuthz, ForwardAuth}
+	case "nginx":
+		return []AuthModuleType{AuthRequest, ForwardAuth}
+	default:
+		return []AuthModuleType{ForwardAuth}
+	}
+}
+
+func (controller *ProxyController) getContextFromAuthModule(c *gin.Context, module AuthModuleType) (ProxyContext, error) {
+	switch module {
+	case ForwardAuth:
+		ctx, err := controller.getForwardAuthContext(c)
+		if err != nil {
+			return ProxyContext{}, err
+		}
+		return ctx, nil
+	case ExtAuthz:
+		ctx, err := controller.getExtAuthzContext(c)
+		if err != nil {
+			return ProxyContext{}, err
+		}
+		return ctx, nil
+	case AuthRequest:
+		ctx, err := controller.getAuthRequestContext(c)
+		if err != nil {
+			return ProxyContext{}, err
+		}
+		return ctx, nil
+	}
+	return ProxyContext{}, fmt.Errorf("unsupported auth module: %v", module)
 }
 
 func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext, error) {
@@ -419,44 +450,26 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 		return ProxyContext{}, err
 	}
 
+	tlog.App.Debug().Msgf("Proxy: %v", req.Proxy)
+
+	tlog.App.Trace().Interface("headers", c.Request.Header).Msg("Request headers")
+
+	authModules := controller.determineAuthModules(req.Proxy)
+
 	var ctx ProxyContext
 
-	switch req.Proxy {
-	// For nginx we need to handle both forward_auth and auth_request extraction since it can be
-	// used either with something line nginx proxy manager with advanced config or with
-	// the kubernetes ingress controller
-	case "nginx":
-		tlog.App.Debug().Str("proxy", req.Proxy).Msg("Attempting forward_auth compatible extraction")
-		forwardAuthCtx, err := controller.getForwardAuthContext(c)
+	for _, module := range authModules {
+		tlog.App.Debug().Msgf("Trying auth module: %v", module)
+		ctx, err = controller.getContextFromAuthModule(c, module)
 		if err == nil {
-			tlog.App.Debug().Str("proxy", req.Proxy).Msg("Extractions success using forward_auth")
-			ctx = forwardAuthCtx
-		} else {
-			tlog.App.Debug().Str("proxy", req.Proxy).Msg("Extractions failed using forward_auth trying with auth_request")
-			authRequestCtx, err := controller.getAuthRequestContext(c)
-			if err != nil {
-				tlog.App.Warn().Str("proxy", req.Proxy).Msg("Failed to determine required module for header extraction")
-				return ProxyContext{}, err
-			}
-			ctx = authRequestCtx
+			tlog.App.Debug().Msgf("Auth module %v succeeded", module)
+			break
 		}
-	case "envoy":
-		tlog.App.Debug().Str("proxy", req.Proxy).Msg("Attempting ext_authz compatible extraction")
-		extAuthzCtx, err := controller.getExtAuthzContext(c)
-		if err != nil {
-			tlog.App.Warn().Str("proxy", req.Proxy).Msg("Failed to determine required module for header extraction")
-			return ProxyContext{}, err
-		}
-		ctx = extAuthzCtx
-	// By default we fallback to the forward_auth module which supports most proxies like traefik or caddy
-	default:
-		tlog.App.Debug().Str("proxy", req.Proxy).Msg("Attempting forward_auth compatible extraction")
-		forwardAuthCtx, err := controller.getForwardAuthContext(c)
-		if err != nil {
-			tlog.App.Warn().Str("proxy", req.Proxy).Msg("Failed to determine required module for header extraction")
-			return ProxyContext{}, err
-		}
-		ctx = forwardAuthCtx
+		tlog.App.Debug().Err(err).Msgf("Auth module %v failed", module)
+	}
+
+	if err != nil {
+		return ProxyContext{}, err
 	}
 
 	// We don't care if the header is empty, we will just assume it's not a browser
@@ -464,9 +477,9 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 	isBrowser := BrowserUserAgentRegex.MatchString(userAgent)
 
 	if isBrowser {
-		tlog.App.Debug().Msg("Request identified as (most likely) coming from a browser")
+		tlog.App.Debug().Msg("Request identified as coming from a browser")
 	} else {
-		tlog.App.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
+		tlog.App.Debug().Msg("Request identified as coming from a non-browser client")
 	}
 
 	ctx.IsBrowser = isBrowser
