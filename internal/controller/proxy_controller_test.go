@@ -1,6 +1,7 @@
 package controller_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -9,21 +10,26 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"gotest.tools/v3/assert"
 )
 
-func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder, *service.AuthService) {
-	tlog.NewSimpleLogger().Init()
+var loggedInCtx = config.UserContext{
+	Username:   "test",
+	Name:       "Test",
+	Email:      "test@example.com",
+	IsLoggedIn: true,
+	Provider:   "local",
+}
 
+func setupProxyController(t *testing.T, middlewares []gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
 	// Setup
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 
-	if middlewares != nil {
-		for _, m := range *middlewares {
+	if len(middlewares) > 0 {
+		for _, m := range middlewares {
 			router.Use(m)
 		}
 	}
@@ -48,7 +54,13 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 	assert.NilError(t, dockerService.Init())
 
 	// Access controls
-	accessControlsService := service.NewAccessControlsService(dockerService, map[string]config.App{})
+	accessControlsService := service.NewAccessControlsService(dockerService, map[string]config.App{
+		"whoami": {
+			Path: config.AppPath{
+				Allow: "/allow",
+			},
+		},
+	})
 
 	assert.NilError(t, accessControlsService.Init())
 
@@ -77,107 +89,214 @@ func setupProxyController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.En
 
 	// Controller
 	ctrl := controller.NewProxyController(controller.ProxyControllerConfig{
-		AppURL: "http://localhost:8080",
+		AppURL: "http://tinyauth.example.com",
 	}, group, accessControlsService, authService)
 	ctrl.SetupRoutes()
 
-	return router, recorder, authService
+	return router, recorder
 }
 
 // TODO: Needs tests for context middleware
 
 func TestProxyHandler(t *testing.T) {
-	// Setup
-	router, recorder, _ := setupProxyController(t, nil)
+	// Test logged out user traefik/caddy (forward_auth)
+	router, recorder := setupProxyController(t, nil)
 
-	// Test invalid proxy
-	req := httptest.NewRequest("GET", "/api/auth/invalidproxy", nil)
+	req, err := http.NewRequest("GET", "/api/auth/traefik", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-forwarded-host", "whoami.example.com")
+	req.Header.Set("x-forwarded-proto", "http")
+	req.Header.Set("x-forwarded-uri", "/")
+
 	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusUnauthorized)
 
-	assert.Equal(t, 400, recorder.Code)
+	// Test logged out user nginx (auth_request)
+	router, recorder = setupProxyController(t, nil)
 
-	// Test invalid method for non-envoy proxy
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("POST", "/api/auth/traefik", nil)
+	req, err = http.NewRequest("GET", "/api/auth/nginx", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-original-url", "http://whoami.example.com/")
+
 	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusUnauthorized)
 
-	assert.Equal(t, 405, recorder.Code)
-	assert.Equal(t, "GET", recorder.Header().Get("Allow"))
+	// Test logged out user envoy (ext_authz)
+	router, recorder = setupProxyController(t, nil)
 
-	// Test logged out user (traefik/caddy)
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Forwarded-Uri", "/somepath")
-	req.Header.Set("Accept", "text/html")
+	req, err = http.NewRequest("GET", "/api/auth/envoy?path=/", nil)
+	assert.NilError(t, err)
+
+	req.Host = "whoami.example.com"
+	req.Header.Set("x-forwarded-proto", "http")
+
 	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusUnauthorized)
 
-	assert.Equal(t, 307, recorder.Code)
-	assert.Equal(t, "http://localhost:8080/login?redirect_uri=https%3A%2F%2Fexample.com%2Fsomepath", recorder.Header().Get("Location"))
-
-	// Test logged out user (envoy - POST method)
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("POST", "/api/auth/envoy", nil)
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Forwarded-Uri", "/somepath")
-	req.Header.Set("Accept", "text/html")
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 307, recorder.Code)
-	assert.Equal(t, "http://localhost:8080/login?redirect_uri=https%3A%2F%2Fexample.com%2Fsomepath", recorder.Header().Get("Location"))
-
-	// Test logged out user (envoy - DELETE method)
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("DELETE", "/api/auth/envoy", nil)
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Forwarded-Uri", "/somepath")
-	req.Header.Set("Accept", "text/html")
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 307, recorder.Code)
-	assert.Equal(t, "http://localhost:8080/login?redirect_uri=https%3A%2F%2Fexample.com%2Fsomepath", recorder.Header().Get("Location"))
-
-	// Test logged out user (nginx)
-	recorder = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/auth/nginx", nil)
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	// we won't set X-Forwarded-Uri to test that the controller can work without it
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 401, recorder.Code)
-
-	// Test logged in user
-	router, recorder, _ = setupProxyController(t, &[]gin.HandlerFunc{
+	// Test logged in user traefik/caddy (forward_auth)
+	router, recorder = setupProxyController(t, []gin.HandlerFunc{
 		func(c *gin.Context) {
-			c.Set("context", &config.UserContext{
-				Username:    "testuser",
-				Name:        "testuser",
-				Email:       "testuser@example.com",
-				IsLoggedIn:  true,
-				OAuth:       false,
-				Provider:    "local",
-				TotpPending: false,
-				OAuthGroups: "",
-				TotpEnabled: false,
-			})
+			c.Set("context", &loggedInCtx)
 			c.Next()
 		},
 	})
 
-	req = httptest.NewRequest("GET", "/api/auth/traefik", nil)
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	req.Header.Set("X-Original-Uri", "/somepath") // Test with original URI for kubernetes ingress
-	req.Header.Set("Accept", "text/html")
+	req, err = http.NewRequest("GET", "/api/auth/traefik", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-forwarded-host", "whoami.example.com")
+	req.Header.Set("x-forwarded-proto", "http")
+	req.Header.Set("x-forwarded-uri", "/")
 
 	router.ServeHTTP(recorder, req)
-	assert.Equal(t, 200, recorder.Code)
+	assert.Equal(t, recorder.Code, http.StatusOK)
 
-	assert.Equal(t, "testuser", recorder.Header().Get("Remote-User"))
-	assert.Equal(t, "testuser", recorder.Header().Get("Remote-Name"))
-	assert.Equal(t, "testuser@example.com", recorder.Header().Get("Remote-Email"))
+	// Test logged in user nginx (auth_request)
+	router, recorder = setupProxyController(t, []gin.HandlerFunc{
+		func(c *gin.Context) {
+			c.Set("context", &loggedInCtx)
+			c.Next()
+		},
+	})
+
+	req, err = http.NewRequest("GET", "/api/auth/nginx", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-original-url", "http://whoami.example.com/")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test logged in user envoy (ext_authz)
+	router, recorder = setupProxyController(t, []gin.HandlerFunc{
+		func(c *gin.Context) {
+			c.Set("context", &loggedInCtx)
+			c.Next()
+		},
+	})
+
+	req, err = http.NewRequest("GET", "/api/auth/envoy?path=/", nil)
+	assert.NilError(t, err)
+
+	req.Host = "whoami.example.com"
+	req.Header.Set("x-forwarded-proto", "http")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test ACL allow caddy/traefik (forward_auth)
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/traefik", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-forwarded-host", "whoami.example.com")
+	req.Header.Set("x-forwarded-proto", "http")
+	req.Header.Set("x-forwarded-uri", "/allow")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test ACL allow nginx
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/nginx", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-original-url", "http://whoami.example.com/allow")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test ACL allow envoy
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/envoy?path=/allow", nil)
+	assert.NilError(t, err)
+
+	req.Host = "whoami.example.com"
+	req.Header.Set("x-forwarded-proto", "http")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test traefik/caddy (forward_auth) without required headers
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/traefik", nil)
+	assert.NilError(t, err)
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusBadRequest)
+
+	// Test nginx (forward_auth) without required headers
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/nginx", nil)
+	assert.NilError(t, err)
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusBadRequest)
+
+	// Test envoy (forward_auth) without required headers
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/envoy", nil)
+	assert.NilError(t, err)
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusBadRequest)
+
+	// Test nginx (auth_request) with forward_auth fallback with ACLs
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/nginx", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-forwarded-host", "whoami.example.com")
+	req.Header.Set("x-forwarded-proto", "http")
+	req.Header.Set("x-forwarded-uri", "/allow")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test envoy (ext_authz) with forward_auth fallback with ACLs
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/envoy", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-forwarded-host", "whoami.example.com")
+	req.Header.Set("x-forwarded-proto", "http")
+	req.Header.Set("x-forwarded-uri", "/allow")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
+
+	// Test envoy (ext_authz) with empty path
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/envoy", nil)
+	assert.NilError(t, err)
+
+	req.Host = "whoami.example.com"
+	req.Header.Set("x-forwarded-proto", "http")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusUnauthorized)
+
+	// Ensure forward_auth fallback works with path (should ignore)
+	router, recorder = setupProxyController(t, nil)
+
+	req, err = http.NewRequest("GET", "/api/auth/traefik?path=/allow", nil)
+	assert.NilError(t, err)
+
+	req.Header.Set("x-forwarded-proto", "http")
+	req.Header.Set("x-forwarded-host", "whoami.example.com")
+	req.Header.Set("x-forwarded-uri", "/allow")
+
+	router.ServeHTTP(recorder, req)
+	assert.Equal(t, recorder.Code, http.StatusOK)
 }
