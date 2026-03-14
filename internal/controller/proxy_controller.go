@@ -339,6 +339,8 @@ func (controller *ProxyController) getForwardAuthContext(c *gin.Context) (ProxyC
 		return ProxyContext{}, errors.New("x-forwarded-proto not found")
 	}
 
+	// Normally we should only allow GET for forward auth but since it's a fallback
+	// for envoy we should allow everything, not a big deal
 	method := c.Request.Method
 
 	return ProxyContext{
@@ -378,17 +380,15 @@ func (controller *ProxyController) getAuthRequestContext(c *gin.Context) (ProxyC
 }
 
 func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyContext, error) {
+	// We hope for the someone to set the x-forwarded-proto header
 	proto, ok := controller.getHeader(c, "x-forwarded-proto")
 
 	if !ok {
 		return ProxyContext{}, errors.New("x-forwarded-proto not found")
 	}
 
-	host, ok := controller.getHeader(c, "host")
-
-	if !ok {
-		return ProxyContext{}, errors.New("host not found")
-	}
+	// It sets the host to the original host, not the forwarded host
+	host := c.Request.URL.Host
 
 	// We get the path from the query string
 	path := c.Query("path")
