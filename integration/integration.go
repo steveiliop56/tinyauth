@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"time"
 )
 
@@ -34,14 +35,36 @@ func main() {
 	logFlag := flag.Bool("log", false, "enable stack logging")
 	flag.Parse()
 
+	rootFolder, err := os.Getwd()
+
+	if err != nil {
+		slog.Error("fail", "error", err)
+		os.Exit(1)
+	}
+
+	slog.Info("root folder", "folder", rootFolder)
+
+	integrationRoot := rootFolder
+
+	if _, err := os.Stat(path.Join(rootFolder, ".git")); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			slog.Error("fail", "error", err)
+			os.Exit(1)
+		}
+	} else {
+		integrationRoot = path.Join(rootFolder, "integration")
+	}
+
+	slog.Info("integration root", "folder", integrationRoot)
+
 	for _, proxy := range ProxiesToTest {
 		slog.Info("begin", "proxy", proxy)
 		compose := fmt.Sprintf("docker-compose.%s.yml", proxy)
-		if _, err := os.Stat(compose); err != nil {
+		if _, err := os.Stat(path.Join(integrationRoot, compose)); err != nil {
 			slog.Error("fail", "proxy", proxy, "error", err)
 			os.Exit(1)
 		}
-		if err := createInstanceAndRunTests(compose, *logFlag, proxy); err != nil {
+		if err := createInstanceAndRunTests(compose, *logFlag, proxy, integrationRoot); err != nil {
 			slog.Error("fail", "proxy", proxy, "error", err)
 			os.Exit(1)
 		}
@@ -74,11 +97,13 @@ func runTests(client *http.Client, name string) error {
 	return nil
 }
 
-func createInstanceAndRunTests(compose string, log bool, name string) error {
+func createInstanceAndRunTests(compose string, log bool, name string, integrationDir string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cmdArgs := []string{"compose", "-f", compose, "--env-file", EnvFile, "up", "--build", "--force-recreate", "--remove-orphans"}
+	composeFile := path.Join(integrationDir, compose)
+	envFile := path.Join(integrationDir, EnvFile)
+	cmdArgs := []string{"compose", "-f", composeFile, "--env-file", envFile, "up", "--build", "--force-recreate", "--remove-orphans"}
 	cmd := exec.CommandContext(ctx, "docker", cmdArgs...)
 
 	if log {
