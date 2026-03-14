@@ -27,8 +27,6 @@ const (
 
 var BrowserUserAgentRegex = regexp.MustCompile("Chrome|Gecko|AppleWebKit|Opera|Edge")
 
-var SupportedProxies = []string{"nginx", "traefik", "caddy", "envoy"}
-
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
 }
@@ -366,7 +364,17 @@ func (controller *ProxyController) getAuthRequestContext(c *gin.Context) (ProxyC
 	}
 
 	host := url.Host
+
+	if strings.TrimSpace(host) == "" {
+		return ProxyContext{}, errors.New("host not found")
+	}
+
 	proto := url.Scheme
+
+	if strings.TrimSpace(proto) == "" {
+		return ProxyContext{}, errors.New("proto not found")
+	}
+
 	path := url.Path
 	method := c.Request.Method
 
@@ -411,14 +419,14 @@ func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyCont
 
 func (controller *ProxyController) determineAuthModules(proxy string) []AuthModuleType {
 	switch proxy {
-	case "traefik":
+	case "traefik", "caddy":
 		return []AuthModuleType{ForwardAuth}
 	case "envoy":
 		return []AuthModuleType{ExtAuthz, ForwardAuth}
 	case "nginx":
 		return []AuthModuleType{AuthRequest, ForwardAuth}
 	default:
-		return []AuthModuleType{ForwardAuth}
+		return []AuthModuleType{}
 	}
 }
 
@@ -456,9 +464,11 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 
 	tlog.App.Debug().Msgf("Proxy: %v", req.Proxy)
 
-	tlog.App.Trace().Interface("headers", c.Request.Header).Msg("Request headers")
-
 	authModules := controller.determineAuthModules(req.Proxy)
+
+	if len(authModules) == 0 {
+		return ProxyContext{}, fmt.Errorf("no auth modules supported for proxy: %v", req.Proxy)
+	}
 
 	var ctx ProxyContext
 
