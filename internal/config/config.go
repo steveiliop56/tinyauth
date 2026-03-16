@@ -59,6 +59,7 @@ func NewDefaultConfiguration() *Config {
 		Experimental: ExperimentalConfig{
 			ConfigFile: "",
 		},
+		LabelProvider: "docker",
 	}
 }
 
