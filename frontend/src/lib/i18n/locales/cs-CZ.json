@@ -58,6 +58,8 @@
     "invalidInput": "Neplatný údaj",
     "domainWarningTitle": "Invalid Domain",
     "domainWarningSubtitle": "This instance is configured to be accessed from <code>{{appUrl}}</code>, but <code>{{currentUrl}}</code> is being used. If you proceed, you may encounter issues with authentication.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Ignore",
     "goToCorrectDomainTitle": "Go to correct domain",
     "authorizeTitle": "Authorize",

@@ -45,3 +45,6 @@ __debug_*
 
 # generated markdown (for docs)
 /config.gen.md
+
+# testing config
+config.certify.yml

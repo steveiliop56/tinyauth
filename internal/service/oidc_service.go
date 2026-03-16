@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -41,19 +42,26 @@ var (
 )
 
 type ClaimSet struct {
-	Iss string `json:"iss"`
-	Aud string `json:"aud"`
-	Sub string `json:"sub"`
-	Iat int64  `json:"iat"`
-	Exp int64  `json:"exp"`
+	Iss               string   `json:"iss"`
+	Aud               string   `json:"aud"`
+	Sub               string   `json:"sub"`
+	Iat               int64    `json:"iat"`
+	Exp               int64    `json:"exp"`
+	Name              string   `json:"name,omitempty"`
+	Email             string   `json:"email,omitempty"`
+	EmailVerified     bool     `json:"email_verified,omitempty"`
+	PreferredUsername string   `json:"preferred_username,omitempty"`
+	Groups            []string `json:"groups,omitempty"`
+	Nonce             string   `json:"nonce,omitempty"`
 }
 
 type UserinfoResponse struct {
 	Sub               string   `json:"sub"`
-	Name              string   `json:"name"`
-	Email             string   `json:"email"`
-	PreferredUsername string   `json:"preferred_username"`
-	Groups            []string `json:"groups"`
+	Name              string   `json:"name,omitempty"`
+	Email             string   `json:"email,omitempty"`
+	PreferredUsername string   `json:"preferred_username,omitempty"`
+	Groups            []string `json:"groups,omitempty"`
+	EmailVerified     bool     `json:"email_verified,omitempty"`
 	UpdatedAt         int64    `json:"updated_at"`
 }
 
@@ -71,7 +79,8 @@ type AuthorizeRequest struct {
 	ResponseType string `json:"response_type" binding:"required"`
 	ClientID     string `json:"client_id" binding:"required"`
 	RedirectURI  string `json:"redirect_uri" binding:"required"`
-	State        string `json:"state" binding:"required"`
+	State        string `json:"state"`
+	Nonce        string `json:"nonce"`
 }
 
 type OIDCServiceConfig struct {
@@ -152,6 +161,7 @@ func (service *OIDCService) Init() error {
 			Type:  "RSA PRIVATE KEY",
 			Bytes: der,
 		})
+		tlog.App.Trace().Str("type", "RSA PRIVATE KEY").Msg("Generated private RSA key")
 		err = os.WriteFile(service.config.PrivateKeyPath, encoded, 0600)
 		if err != nil {
 			return err
@@ -162,6 +172,7 @@ func (service *OIDCService) Init() error {
 		if block == nil {
 			return errors.New("failed to decode private key")
 		}
+		tlog.App.Trace().Str("type", block.Type).Msg("Loaded private key")
 		privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
 			return err
@@ -185,6 +196,7 @@ func (service *OIDCService) Init() error {
 			Type:  "RSA PUBLIC KEY",
 			Bytes: der,
 		})
+		tlog.App.Trace().Str("type", "RSA PUBLIC KEY").Msg("Generated public RSA key")
 		err = os.WriteFile(service.config.PublicKeyPath, encoded, 0644)
 		if err != nil {
 			return err
@@ -195,11 +207,23 @@ func (service *OIDCService) Init() error {
 		if block == nil {
 			return errors.New("failed to decode public key")
 		}
-		publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
-		if err != nil {
-			return err
+		tlog.App.Trace().Str("type", block.Type).Msg("Loaded public key")
+		switch block.Type {
+		case "RSA PUBLIC KEY":
+			publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+			if err != nil {
+				return err
+			}
+			service.publicKey = publicKey
+		case "PUBLIC KEY":
+			publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+			if err != nil {
+				return err
+			}
+			service.publicKey = publicKey.(crypto.PublicKey)
+		default:
+			return fmt.Errorf("unsupported public key type: %s", block.Type)
 		}
-		service.publicKey = publicKey
 	}
 
 	// We will reorganize the client into a map with the client ID as the key
@@ -207,6 +231,9 @@ func (service *OIDCService) Init() error {
 
 	for id, client := range service.config.Clients {
 		client.ID = id
+		if client.Name == "" {
+			client.Name = utils.Capitalize(client.ID)
+		}
 		service.clients[client.ClientID] = client
 	}
 
@@ -288,6 +315,7 @@ func (service *OIDCService) StoreCode(c *gin.Context, sub string, code string, r
 		RedirectURI: req.RedirectURI,
 		ClientID:    req.ClientID,
 		ExpiresAt:   expiresAt,
+		Nonce:       req.Nonce,
 	})
 
 	return err
@@ -324,7 +352,7 @@ func (service *OIDCService) ValidateGrantType(grantType string) error {
 	return nil
 }
 
-func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string) (repository.OidcCode, error) {
+func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string, clientId string) (repository.OidcCode, error) {
 	oidcCode, err := service.queries.GetOidcCode(c, codeHash)
 
 	if err != nil {
@@ -346,12 +374,26 @@ func (service *OIDCService) GetCodeEntry(c *gin.Context, codeHash string) (repos
 		return repository.OidcCode{}, ErrCodeExpired
 	}
 
+	if oidcCode.ClientID != clientId {
+		return repository.OidcCode{}, ErrInvalidClient
+	}
+
 	return oidcCode, nil
 }
 
-func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub string) (string, error) {
+func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, user repository.OidcUserinfo, scope string, nonce string) (string, error) {
 	createdAt := time.Now().Unix()
 	expiresAt := time.Now().Add(time.Duration(service.config.SessionExpiry) * time.Second).Unix()
+
+	hasher := sha256.New()
+
+	der := x509.MarshalPKCS1PublicKey(&service.privateKey.PublicKey)
+
+	if der == nil {
+		return "", errors.New("failed to marshal public key")
+	}
+
+	hasher.Write(der)
 
 	signer, err := jose.NewSigner(jose.SigningKey{
 		Algorithm: jose.RS256,
@@ -360,6 +402,7 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 		ExtraHeaders: map[jose.HeaderKey]any{
 			"typ": "jwt",
 			"jku": fmt.Sprintf("%s/.well-known/jwks.json", service.issuer),
+			"kid": base64.URLEncoding.EncodeToString(hasher.Sum(nil)),
 		},
 	})
 
@@ -367,12 +410,20 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 		return "", err
 	}
 
+	userInfo := service.CompileUserinfo(user, scope)
+
 	claims := ClaimSet{
-		Iss: service.issuer,
-		Aud: client.ClientID,
-		Sub: sub,
-		Iat: createdAt,
-		Exp: expiresAt,
+		Iss:               service.issuer,
+		Aud:               client.ClientID,
+		Sub:               user.Sub,
+		Iat:               createdAt,
+		Exp:               expiresAt,
+		Name:              userInfo.Name,
+		Email:             userInfo.Email,
+		EmailVerified:     userInfo.EmailVerified,
+		PreferredUsername: userInfo.PreferredUsername,
+		Groups:            userInfo.Groups,
+		Nonce:             nonce,
 	}
 
 	payload, err := json.Marshal(claims)
@@ -396,8 +447,14 @@ func (service *OIDCService) generateIDToken(client config.OIDCClientConfig, sub 
 	return token, nil
 }
 
-func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OIDCClientConfig, sub string, scope string) (TokenResponse, error) {
-	idToken, err := service.generateIDToken(client, sub)
+func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OIDCClientConfig, codeEntry repository.OidcCode) (TokenResponse, error) {
+	user, err := service.GetUserinfo(c, codeEntry.Sub)
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	idToken, err := service.generateIDToken(client, user, codeEntry.Scope, codeEntry.Nonce)
 
 	if err != nil {
 		return TokenResponse{}, err
@@ -417,17 +474,18 @@ func (service *OIDCService) GenerateAccessToken(c *gin.Context, client config.OI
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(service.config.SessionExpiry),
 		IDToken:      idToken,
-		Scope:        strings.ReplaceAll(scope, ",", " "),
+		Scope:        strings.ReplaceAll(codeEntry.Scope, ",", " "),
 	}
 
 	_, err = service.queries.CreateOidcToken(c, repository.CreateOidcTokenParams{
-		Sub:                   sub,
+		Sub:                   codeEntry.Sub,
 		AccessTokenHash:       service.Hash(accessToken),
 		RefreshTokenHash:      service.Hash(refreshToken),
 		ClientID:              client.ClientID,
-		Scope:                 scope,
+		Scope:                 codeEntry.Scope,
 		TokenExpiresAt:        tokenExpiresAt,
 		RefreshTokenExpiresAt: refrshTokenExpiresAt,
+		Nonce:                 codeEntry.Nonce,
 	})
 
 	if err != nil {
@@ -456,9 +514,15 @@ func (service *OIDCService) RefreshAccessToken(c *gin.Context, refreshToken stri
 		return TokenResponse{}, ErrInvalidClient
 	}
 
+	user, err := service.GetUserinfo(c, entry.Sub)
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
 	idToken, err := service.generateIDToken(config.OIDCClientConfig{
 		ClientID: entry.ClientID,
-	}, entry.Sub)
+	}, user, entry.Scope, entry.Nonce)
 
 	if err != nil {
 		return TokenResponse{}, err
@@ -552,6 +616,8 @@ func (service *OIDCService) CompileUserinfo(user repository.OidcUserinfo, scope 
 
 	if slices.Contains(scopes, "email") {
 		userInfo.Email = user.Email
+		// We can set this as a configuration option in the future but for now it's a good idea to assume it's true
+		userInfo.EmailVerified = true
 	}
 
 	if slices.Contains(scopes, "groups") {
@@ -643,10 +709,21 @@ func (service *OIDCService) Cleanup() {
 }
 
 func (service *OIDCService) GetJWK() ([]byte, error) {
+	hasher := sha256.New()
+
+	der := x509.MarshalPKCS1PublicKey(&service.privateKey.PublicKey)
+
+	if der == nil {
+		return nil, errors.New("failed to marshal public key")
+	}
+
+	hasher.Write(der)
+
 	jwk := jose.JSONWebKey{
 		Key:       service.privateKey,
 		Algorithm: string(jose.RS256),
 		Use:       "sig",
+		KeyID:     base64.URLEncoding.EncodeToString(hasher.Sum(nil)),
 	}
 
 	return jwk.Public().MarshalJSON()

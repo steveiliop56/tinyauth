@@ -58,6 +58,8 @@
     "invalidInput": "Geçersiz girdi",
     "domainWarningTitle": "Geçersiz alan adı",
     "domainWarningSubtitle": "Bu örnek, <code>{{appUrl}}</code> adresinden erişilecek şekilde yapılandırılmıştır, ancak <code>{{currentUrl}}</code> kullanılmaktadır. Devam ederseniz, kimlik doğrulama ile ilgili sorunlarla karşılaşabilirsiniz.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Yoksay",
     "goToCorrectDomainTitle": "Doğru alana gidin",
     "authorizeTitle": "Authorize",

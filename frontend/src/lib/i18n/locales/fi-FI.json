@@ -58,6 +58,8 @@
     "invalidInput": "Virheellinen syöte",
     "domainWarningTitle": "Virheellinen verkkotunnus",
     "domainWarningSubtitle": "Tämä instanssi on määritelty käyttämään osoitetta <code>{{appUrl}}</code>, mutta nykyinen osoite on <code>{{currentUrl}}</code>. Jos jatkat, saatat törmätä ongelmiin autentikoinnissa.",
+    "domainWarningCurrent": "Current:",
+    "domainWarningExpected": "Expected:",
     "ignoreTitle": "Jätä huomiotta",
     "goToCorrectDomainTitle": "Siirry oikeaan verkkotunnukseen",
     "authorizeTitle": "Authorize",

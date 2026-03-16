@@ -124,7 +124,7 @@ func (app *BootstrapApp) Setup() error {
 	tlog.App.Trace().Str("redirectCookieName", app.context.redirectCookieName).Msg("Redirect cookie name")
 
 	// Database
-	db, err := app.SetupDatabase(app.config.DatabasePath)
+	db, err := app.SetupDatabase(app.config.Database.Path)
 
 	if err != nil {
 		return fmt.Errorf("failed to setup database: %w", err)
@@ -193,7 +193,7 @@ func (app *BootstrapApp) Setup() error {
 	go app.dbCleanup(queries)
 
 	// If analytics are not disabled, start heartbeat
-	if !app.config.DisableAnalytics {
+	if app.config.Analytics.Enabled {
 		tlog.App.Debug().Msg("Starting heartbeat routine")
 		go app.heartbeat()
 	}

@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"slices"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
@@ -15,10 +17,27 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-var SupportedProxies = []string{"nginx", "traefik", "caddy", "envoy"}
+type AuthModuleType int
+
+const (
+	AuthRequest AuthModuleType = iota
+	ExtAuthz
+	ForwardAuth
+)
+
+var BrowserUserAgentRegex = regexp.MustCompile("Chrome|Gecko|AppleWebKit|Opera|Edge")
 
 type Proxy struct {
 	Proxy string `uri:"proxy" binding:"required"`
+}
+
+type ProxyContext struct {
+	Host      string
+	Proto     string
+	Path      string
+	Method    string
+	Type      AuthModuleType
+	IsBrowser bool
 }
 
 type ProxyControllerConfig struct {
@@ -43,63 +62,30 @@ func NewProxyController(config ProxyControllerConfig, router *gin.RouterGroup, a
 
 func (controller *ProxyController) SetupRoutes() {
 	proxyGroup := controller.router.Group("/auth")
-	// There is a later check to control allowed methods per proxy
 	proxyGroup.Any("/:proxy", controller.proxyHandler)
 }
 
 func (controller *ProxyController) proxyHandler(c *gin.Context) {
-	var req Proxy
+	// Load proxy context based on the request type
+	proxyCtx, err := controller.getProxyContext(c)
 
-	err := c.BindUri(&req)
 	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to bind URI")
+		tlog.App.Warn().Err(err).Msg("Failed to get proxy context")
 		c.JSON(400, gin.H{
 			"status":  400,
-			"message": "Bad Request",
+			"message": "Bad request",
 		})
 		return
 	}
 
-	if !slices.Contains(SupportedProxies, req.Proxy) {
-		tlog.App.Warn().Str("proxy", req.Proxy).Msg("Invalid proxy")
-		c.JSON(400, gin.H{
-			"status":  400,
-			"message": "Bad Request",
-		})
-		return
-	}
-
-	// Only allow GET for non-envoy proxies.
-	// Envoy uses the original client method for the external auth request
-	// so we allow Any standard HTTP method for /api/auth/envoy
-	if req.Proxy != "envoy" && c.Request.Method != http.MethodGet {
-		tlog.App.Warn().Str("method", c.Request.Method).Msg("Invalid method for proxy")
-		c.Header("Allow", "GET")
-		c.JSON(405, gin.H{
-			"status":  405,
-			"message": "Method Not Allowed",
-		})
-		return
-	}
-
-	isBrowser := strings.Contains(c.Request.Header.Get("Accept"), "text/html")
-
-	if isBrowser {
-		tlog.App.Debug().Msg("Request identified as (most likely) coming from a browser")
-	} else {
-		tlog.App.Debug().Msg("Request identified as (most likely) coming from a non-browser client")
-	}
-
-	uri := c.Request.Header.Get("X-Forwarded-Uri")
-	proto := c.Request.Header.Get("X-Forwarded-Proto")
-	host := c.Request.Header.Get("X-Forwarded-Host")
+	tlog.App.Trace().Interface("ctx", proxyCtx).Msg("Got proxy context")
 
 	// Get acls
-	acls, err := controller.acls.GetAccessControls(host)
+	acls, err := controller.acls.GetAccessControls(proxyCtx.Host)
 
 	if err != nil {
 		tlog.App.Error().Err(err).Msg("Failed to get access controls for resource")
-		controller.handleError(c, req, isBrowser)
+		controller.handleError(c, proxyCtx)
 		return
 	}
 
@@ -116,11 +102,11 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	authEnabled, err := controller.auth.IsAuthEnabled(uri, acls.Path)
+	authEnabled, err := controller.auth.IsAuthEnabled(proxyCtx.Path, acls.Path)
 
 	if err != nil {
 		tlog.App.Error().Err(err).Msg("Failed to check if auth is enabled for resource")
-		controller.handleError(c, req, isBrowser)
+		controller.handleError(c, proxyCtx)
 		return
 	}
 
@@ -135,7 +121,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.CheckIP(acls.IP, clientIP) {
-		if req.Proxy == "nginx" || !isBrowser {
+		if !controller.useFriendlyError(proxyCtx) {
 			c.JSON(401, gin.H{
 				"status":  401,
 				"message": "Unauthorized",
@@ -144,7 +130,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		}
 
 		queries, err := query.Values(config.UnauthorizedQuery{
-			Resource: strings.Split(host, ".")[0],
+			Resource: strings.Split(proxyCtx.Host, ".")[0],
 			IP:       clientIP,
 		})
 
@@ -173,18 +159,13 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 	tlog.App.Trace().Interface("context", userContext).Msg("User context from request")
 
-	if userContext.IsBasicAuth && userContext.TotpEnabled {
-		tlog.App.Debug().Msg("User has TOTP enabled, denying basic auth access")
-		userContext.IsLoggedIn = false
-	}
-
 	if userContext.IsLoggedIn {
 		userAllowed := controller.auth.IsUserAllowed(c, userContext, acls)
 
 		if !userAllowed {
-			tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User not allowed to access resource")
+			tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(proxyCtx.Host, ".")[0]).Msg("User not allowed to access resource")
 
-			if req.Proxy == "nginx" || !isBrowser {
+			if !controller.useFriendlyError(proxyCtx) {
 				c.JSON(403, gin.H{
 					"status":  403,
 					"message": "Forbidden",
@@ -193,7 +174,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			}
 
 			queries, err := query.Values(config.UnauthorizedQuery{
-				Resource: strings.Split(host, ".")[0],
+				Resource: strings.Split(proxyCtx.Host, ".")[0],
 			})
 
 			if err != nil {
@@ -222,9 +203,9 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			}
 
 			if !groupOK {
-				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(host, ".")[0]).Msg("User groups do not match resource requirements")
+				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(proxyCtx.Host, ".")[0]).Msg("User groups do not match resource requirements")
 
-				if req.Proxy == "nginx" || !isBrowser {
+				if !controller.useFriendlyError(proxyCtx) {
 					c.JSON(403, gin.H{
 						"status":  403,
 						"message": "Forbidden",
@@ -233,7 +214,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				}
 
 				queries, err := query.Values(config.UnauthorizedQuery{
-					Resource: strings.Split(host, ".")[0],
+					Resource: strings.Split(proxyCtx.Host, ".")[0],
 					GroupErr: true,
 				})
 
@@ -275,7 +256,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Proxy == "nginx" || !isBrowser {
+	if !controller.useFriendlyError(proxyCtx) {
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -284,7 +265,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	queries, err := query.Values(config.RedirectQuery{
-		RedirectURI: fmt.Sprintf("%s://%s%s", proto, host, uri),
+		RedirectURI: fmt.Sprintf("%s://%s%s", proxyCtx.Proto, proxyCtx.Host, proxyCtx.Path),
 	})
 
 	if err != nil {
@@ -314,8 +295,8 @@ func (controller *ProxyController) setHeaders(c *gin.Context, acls config.App) {
 	}
 }
 
-func (controller *ProxyController) handleError(c *gin.Context, req Proxy, isBrowser bool) {
-	if req.Proxy == "nginx" || !isBrowser {
+func (controller *ProxyController) handleError(c *gin.Context, proxyCtx ProxyContext) {
+	if !controller.useFriendlyError(proxyCtx) {
 		c.JSON(500, gin.H{
 			"status":  500,
 			"message": "Internal Server Error",
@@ -324,4 +305,197 @@ func (controller *ProxyController) handleError(c *gin.Context, req Proxy, isBrow
 	}
 
 	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+}
+
+func (controller *ProxyController) getHeader(c *gin.Context, header string) (string, bool) {
+	val := c.Request.Header.Get(header)
+	return val, strings.TrimSpace(val) != ""
+}
+
+func (controller *ProxyController) useFriendlyError(proxyCtx ProxyContext) bool {
+	return (proxyCtx.Type == ForwardAuth || proxyCtx.Type == ExtAuthz) && proxyCtx.IsBrowser
+}
+
+// Code below is inspired from https://github.com/authelia/authelia/blob/master/internal/handlers/handler_authz.go
+// and thus it may be subject to Apache 2.0 License
+func (controller *ProxyController) getForwardAuthContext(c *gin.Context) (ProxyContext, error) {
+	host, ok := controller.getHeader(c, "x-forwarded-host")
+
+	if !ok {
+		return ProxyContext{}, errors.New("x-forwarded-host not found")
+	}
+
+	uri, ok := controller.getHeader(c, "x-forwarded-uri")
+
+	if !ok {
+		return ProxyContext{}, errors.New("x-forwarded-uri not found")
+	}
+
+	proto, ok := controller.getHeader(c, "x-forwarded-proto")
+
+	if !ok {
+		return ProxyContext{}, errors.New("x-forwarded-proto not found")
+	}
+
+	// Normally we should only allow GET for forward auth but since it's a fallback
+	// for envoy we should allow everything, not a big deal
+	method := c.Request.Method
+
+	return ProxyContext{
+		Host:   host,
+		Proto:  proto,
+		Path:   uri,
+		Method: method,
+		Type:   ForwardAuth,
+	}, nil
+}
+
+func (controller *ProxyController) getAuthRequestContext(c *gin.Context) (ProxyContext, error) {
+	xOriginalUrl, ok := controller.getHeader(c, "x-original-url")
+
+	if !ok {
+		return ProxyContext{}, errors.New("x-original-url not found")
+	}
+
+	url, err := url.Parse(xOriginalUrl)
+
+	if err != nil {
+		return ProxyContext{}, err
+	}
+
+	host := url.Host
+
+	if strings.TrimSpace(host) == "" {
+		return ProxyContext{}, errors.New("host not found")
+	}
+
+	proto := url.Scheme
+
+	if strings.TrimSpace(proto) == "" {
+		return ProxyContext{}, errors.New("proto not found")
+	}
+
+	path := url.Path
+	method := c.Request.Method
+
+	return ProxyContext{
+		Host:   host,
+		Proto:  proto,
+		Path:   path,
+		Method: method,
+		Type:   AuthRequest,
+	}, nil
+}
+
+func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyContext, error) {
+	// We hope for the someone to set the x-forwarded-proto header
+	proto, ok := controller.getHeader(c, "x-forwarded-proto")
+
+	if !ok {
+		return ProxyContext{}, errors.New("x-forwarded-proto not found")
+	}
+
+	// It sets the host to the original host, not the forwarded host
+	host := c.Request.Host
+
+	if strings.TrimSpace(host) == "" {
+		return ProxyContext{}, errors.New("host not found")
+	}
+
+	// We get the path from the query string
+	path := c.Query("path")
+
+	// For envoy we need to support every method
+	method := c.Request.Method
+
+	return ProxyContext{
+		Host:   host,
+		Proto:  proto,
+		Path:   path,
+		Method: method,
+		Type:   ExtAuthz,
+	}, nil
+}
+
+func (controller *ProxyController) determineAuthModules(proxy string) []AuthModuleType {
+	switch proxy {
+	case "traefik", "caddy":
+		return []AuthModuleType{ForwardAuth}
+	case "envoy":
+		return []AuthModuleType{ExtAuthz, ForwardAuth}
+	case "nginx":
+		return []AuthModuleType{AuthRequest, ForwardAuth}
+	default:
+		return []AuthModuleType{}
+	}
+}
+
+func (controller *ProxyController) getContextFromAuthModule(c *gin.Context, module AuthModuleType) (ProxyContext, error) {
+	switch module {
+	case ForwardAuth:
+		ctx, err := controller.getForwardAuthContext(c)
+		if err != nil {
+			return ProxyContext{}, err
+		}
+		return ctx, nil
+	case ExtAuthz:
+		ctx, err := controller.getExtAuthzContext(c)
+		if err != nil {
+			return ProxyContext{}, err
+		}
+		return ctx, nil
+	case AuthRequest:
+		ctx, err := controller.getAuthRequestContext(c)
+		if err != nil {
+			return ProxyContext{}, err
+		}
+		return ctx, nil
+	}
+	return ProxyContext{}, fmt.Errorf("unsupported auth module: %v", module)
+}
+
+func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext, error) {
+	var req Proxy
+
+	err := c.BindUri(&req)
+	if err != nil {
+		return ProxyContext{}, err
+	}
+
+	tlog.App.Debug().Msgf("Proxy: %v", req.Proxy)
+
+	authModules := controller.determineAuthModules(req.Proxy)
+
+	if len(authModules) == 0 {
+		return ProxyContext{}, fmt.Errorf("no auth modules supported for proxy: %v", req.Proxy)
+	}
+
+	var ctx ProxyContext
+
+	for _, module := range authModules {
+		tlog.App.Debug().Msgf("Trying auth module: %v", module)
+		ctx, err = controller.getContextFromAuthModule(c, module)
+		if err == nil {
+			tlog.App.Debug().Msgf("Auth module %v succeeded", module)
+			break
+		}
+		tlog.App.Debug().Err(err).Msgf("Auth module %v failed", module)
+	}
+
+	if err != nil {
+		return ProxyContext{}, err
+	}
+
+	// We don't care if the header is empty, we will just assume it's not a browser
+	userAgent, _ := controller.getHeader(c, "user-agent")
+	isBrowser := BrowserUserAgentRegex.MatchString(userAgent)
+
+	if isBrowser {
+		tlog.App.Debug().Msg("Request identified as coming from a browser")
+	} else {
+		tlog.App.Debug().Msg("Request identified as coming from a non-browser client")
+	}
+
+	ctx.IsBrowser = isBrowser
+	return ctx, nil
 }

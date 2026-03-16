@@ -24,7 +24,7 @@ type OIDCController struct {
 
 type AuthorizeCallback struct {
 	Code  string `url:"code"`
-	State string `url:"state"`
+	State string `url:"state,omitempty"`
 }
 
 type TokenRequest struct {
@@ -112,6 +112,11 @@ func (controller *OIDCController) Authorize(c *gin.Context) {
 
 	if err != nil {
 		controller.authorizeError(c, err, "Failed to get user context", "User is not logged in or the session is invalid", "", "", "")
+		return
+	}
+
+	if !userContext.IsLoggedIn {
+		controller.authorizeError(c, errors.New("err user not logged in"), "User not logged in", "The user is not logged in", "", "", "")
 		return
 	}
 
@@ -231,7 +236,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		if !ok {
 			tlog.App.Error().Msg("Missing authorization header")
 			c.Header("www-authenticate", "basic")
-			c.JSON(401, gin.H{
+			c.JSON(400, gin.H{
 				"error": "invalid_client",
 			})
 			return
@@ -265,7 +270,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 	switch req.GrantType {
 	case "authorization_code":
-		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code))
+		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code), client.ClientID)
 		if err != nil {
 			if errors.Is(err, service.ErrCodeNotFound) {
 				tlog.App.Warn().Msg("Code not found")
@@ -278,6 +283,13 @@ func (controller *OIDCController) Token(c *gin.Context) {
 				tlog.App.Warn().Msg("Code expired")
 				c.JSON(400, gin.H{
 					"error": "invalid_grant",
+				})
+				return
+			}
+			if errors.Is(err, service.ErrInvalidClient) {
+				tlog.App.Warn().Msg("Invalid client ID")
+				c.JSON(400, gin.H{
+					"error": "invalid_client",
 				})
 				return
 			}
@@ -296,7 +308,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 			return
 		}
 
-		tokenRes, err := controller.oidc.GenerateAccessToken(c, client, entry.Sub, entry.Scope)
+		tokenRes, err := controller.oidc.GenerateAccessToken(c, client, entry)
 
 		if err != nil {
 			tlog.App.Error().Err(err).Msg("Failed to generate access token")
@@ -313,7 +325,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		if err != nil {
 			if errors.Is(err, service.ErrTokenExpired) {
 				tlog.App.Error().Err(err).Msg("Refresh token expired")
-				c.JSON(401, gin.H{
+				c.JSON(400, gin.H{
 					"error": "invalid_grant",
 				})
 				return
@@ -321,7 +333,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 			if errors.Is(err, service.ErrInvalidClient) {
 				tlog.App.Error().Err(err).Msg("Invalid client")
-				c.JSON(401, gin.H{
+				c.JSON(400, gin.H{
 					"error": "invalid_grant",
 				})
 				return
@@ -336,6 +348,9 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		tokenResponse = tokenRes
 	}
+
+	c.Header("cache-control", "no-store")
+	c.Header("pragma", "no-cache")
 
 	c.JSON(200, tokenResponse)
 }

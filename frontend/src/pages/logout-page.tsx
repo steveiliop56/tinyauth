@@ -52,9 +52,9 @@ export const LogoutPage = () => {
   }
 
   return (
-    <Card className="min-w-xs sm:min-w-sm">
-      <CardHeader>
-        <CardTitle className="text-3xl">{t("logoutTitle")}</CardTitle>
+    <Card>
+      <CardHeader className="gap-1.5">
+        <CardTitle className="text-xl">{t("logoutTitle")}</CardTitle>
         <CardDescription>
           {provider !== "local" && provider !== "ldap" ? (
             <Trans
@@ -84,8 +84,10 @@ export const LogoutPage = () => {
           )}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-col items-stretch">
+      <CardFooter>
         <Button
+          className="w-full"
+          variant="outline"
           loading={logoutMutation.isPending}
           onClick={() => logoutMutation.mutate()}
         >

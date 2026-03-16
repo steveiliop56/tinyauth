@@ -1,24 +1,25 @@
 # Contributing
 
-Contributing is relatively easy, you just need to follow the steps below and you will be up and running with a development server in less than five minutes.
+Contributing to Tinyauth is straightforward. Follow the steps below to set up a development server.
 
 ## Requirements
 
 - Bun
-- Golang 1.24.0+
+- Golang v1.24.0 or later
 - Git
 - Docker
+- Make
 
-## Cloning the repository
+## Cloning the Repository
 
-You firstly need to clone the repository with:
+Start by cloning the repository:
 
 ```sh
 git clone https://github.com/steveiliop56/tinyauth
 cd tinyauth
 ```
 
-## Initialize submodules
+## Initialize Submodules
 
 The project uses Git submodules for some dependencies, so you need to initialize them with:
 
@@ -27,50 +28,58 @@ git submodule init
 git submodule update
 ```
 
-## Install requirements
+## Apply patches
 
-Although you will not need the requirements in your machine since the development will happen in Docker, I still recommend to install them because this way you will not have import errors. To install the Go requirements run:
+Some of the dependencies must be patched in order to work correctly with the project, you can apply the patches by running:
 
 ```sh
-go mod download
+git apply --directory paerser/ patches/nested_maps.diff
 ```
 
-You also need to download the frontend dependencies, this can be done like so:
+## Installing Requirements
+
+While development occurs within Docker, installing the requirements locally is recommended to avoid import errors. Install the Go dependencies:
+
+```sh
+go mod tidy
+```
+
+Frontend dependencies can be installed as follows:
 
 ```sh
 cd frontend/
 bun install
 ```
 
-## Apply patches
+## Create the `.env` file
 
-Some of the dependencies need to be patched in order to work correctly with the project, you can apply the patches by running:
+Configuration requires an environment file. Copy the `.env.example` file to `.env` and adjust the environment variables as needed.
 
-```sh
-git apply --directory paerser/ patches/nested_maps.diff
-```
+## Development Workflow
 
-## Create your `.env` file
-
-In order to configure the app you need to create an environment file, this can be done by copying the `.env.example` file to `.env` and modifying the environment variables to suit your needs.
-
-## Developing
-
-I have designed the development workflow to be entirely in Docker, this is because it will directly work with Traefik and you will not need to do any building in your host machine. The recommended development setup is to have a subdomain pointing to your machine like this:
+The development workflow is designed to run entirely within Docker, ensuring compatibility with Traefik and eliminating the need for local builds. A recommended setup involves pointing a subdomain to the local machine:
 
 ```
 *.dev.example.com -> 127.0.0.1
 dev.example.com -> 127.0.0.1
 ```
 
-> [!TIP]
-> You can use [sslip.io](https://sslip.io) as a domain if you don't have one to develop with.
+> [!NOTE]
+> A domain from [sslip.io](https://sslip.io) can be used if a custom domain is
+  unavailable. For example, set the Tinyauth domain to `tinyauth.127.0.0.1.sslip.io` and the whoami domain to `whoami.127.0.0.1.sslip.io`.
 
-Then you can just make sure the domains are correct in the development Docker compose file and run:
+Ensure the domains are correctly configured in the development Docker Compose file, then start the development environment:
 
 ```sh
-docker compose -f docker-compose.dev.yml up --build
+make dev
+```
+
+In case you need to build the binary locally, you can run:
+
+```sh
+make binary
 ```
 
 > [!NOTE]
-> I recommend copying the example `docker-compose.dev.yml` into a `docker-compose.test.yml` file, so as you don't accidentally commit any sensitive information.
+> Copying the example `docker-compose.dev.yml` file to `docker-compose.test.yml`
+  is recommended to prevent accidental commits of sensitive information. The make recipe will automatically use `docker-compose.test.yml` as well as `docker-compose.test.prod.yml` (for the `make prod` recipe) if it exists.

@@ -18,7 +18,8 @@ func TestResourcesHandler(t *testing.T) {
 	group := router.Group("/")
 
 	ctrl := controller.NewResourcesController(controller.ResourcesControllerConfig{
-		ResourcesDir: "/tmp/tinyauth",
+		Path:    "/tmp/tinyauth",
+		Enabled: true,
 	}, group)
 	ctrl.SetupRoutes()
 

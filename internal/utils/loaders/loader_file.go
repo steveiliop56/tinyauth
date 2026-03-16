@@ -1,6 +1,8 @@
 package loaders
 
 import (
+	"os"
+
 	"github.com/rs/zerolog/log"
 	"github.com/traefik/paerser/cli"
 	"github.com/traefik/paerser/file"
@@ -16,11 +18,16 @@ func (f *FileLoader) Load(args []string, cmd *cli.Command) (bool, error) {
 		return false, err
 	}
 
-	// I guess we are using traefik as the root name
-	configFileFlag := "traefik.experimental.configFile"
+	// I guess we are using traefik as the root name (we can't change it)
+	configFileFlag := "traefik.experimental.configfile"
+	envVar := "TINYAUTH_EXPERIMENTAL_CONFIGFILE"
 
 	if _, ok := flags[configFileFlag]; !ok {
-		return false, nil
+		if value := os.Getenv(envVar); value != "" {
+			flags[configFileFlag] = value
+		} else {
+			return false, nil
+		}
 	}
 
 	log.Warn().Msg("Using experimental file config loader, this feature is experimental and may change or be removed in future releases")

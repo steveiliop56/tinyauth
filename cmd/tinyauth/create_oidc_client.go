@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/steveiliop56/tinyauth/internal/utils"
@@ -34,9 +35,37 @@ func createOidcClientCmd() *cli.Command {
 			clientId := uuid.String()
 			clientSecret := "ta-" + utils.GenerateString(61)
 
-			fmt.Printf("Client Name: %s\n", clientName)
-			fmt.Printf("Client ID: %s\n", clientId)
-			fmt.Printf("Client Secret: %s\n", clientSecret)
+			uclientName := strings.ToUpper(clientName)
+			lclientName := strings.ToLower(clientName)
+
+			builder := strings.Builder{}
+
+			// header
+			fmt.Fprintf(&builder, "Created credentials for client %s\n\n", clientName)
+
+			// credentials
+			fmt.Fprintf(&builder, "Client Name: %s\n", clientName)
+			fmt.Fprintf(&builder, "Client ID: %s\n", clientId)
+			fmt.Fprintf(&builder, "Client Secret: %s\n\n", clientSecret)
+
+			// env variables
+			fmt.Fprint(&builder, "Environment variables:\n\n")
+			fmt.Fprintf(&builder, "TINYAUTH_OIDC_CLIENTS_%s_CLIENTID=%s\n", uclientName, clientId)
+			fmt.Fprintf(&builder, "TINYAUTH_OIDC_CLIENTS_%s_CLIENTSECRET=%s\n", uclientName, clientSecret)
+			fmt.Fprintf(&builder, "TINYAUTH_OIDC_CLIENTS_%s_NAME=%s\n\n", uclientName, utils.Capitalize(lclientName))
+
+			// cli flags
+			fmt.Fprint(&builder, "CLI flags:\n\n")
+			fmt.Fprintf(&builder, "--oidc.clients.%s.clientid=%s\n", lclientName, clientId)
+			fmt.Fprintf(&builder, "--oidc.clients.%s.clientsecret=%s\n", lclientName, clientSecret)
+			fmt.Fprintf(&builder, "--oidc.clients.%s.name=%s\n\n", lclientName, utils.Capitalize(lclientName))
+
+			// footer
+			fmt.Fprintln(&builder, "You can use either option to configure your OIDC client. Make sure to save these credentials as there is no way to regenerate them.")
+
+			// print
+			out := builder.String()
+			fmt.Print(out)
 			return nil
 		},
 	}

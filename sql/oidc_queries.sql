@@ -5,9 +5,10 @@ INSERT INTO "oidc_codes" (
     "scope",
     "redirect_uri",
     "client_id",
-    "expires_at"
+    "expires_at",
+    "nonce"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
@@ -45,9 +46,10 @@ INSERT INTO "oidc_tokens" (
     "scope",
     "client_id",
     "token_expires_at",
-    "refresh_token_expires_at"
+    "refresh_token_expires_at",
+    "nonce"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
@@ -71,7 +73,6 @@ WHERE "refresh_token_hash" = ?;
 -- name: GetOidcTokenBySub :one
 SELECT * FROM "oidc_tokens"
 WHERE "sub" = ?;
-
 
 -- name: DeleteOidcToken :exec
 DELETE FROM "oidc_tokens"
