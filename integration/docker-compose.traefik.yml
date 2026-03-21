@@ -1,0 +1,28 @@
+services:
+  traefik:
+    image: traefik:${TRAEFIK_VERSION}
+    command: |
+      --api.insecure=true
+      --providers.docker
+      --entryPoints.web.address=:80
+    ports:
+      - 80:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  whoami:
+    image: traefik/whoami:${WHOAMI_VERSION}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.whoami.rule: Host(`${WHOAMI_HOST}`)
+      traefik.http.routers.whoami.middlewares: tinyauth
+
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:${TINYAUTH_VERSION}
+    command: --experimental.configfile=/data/config.yml
+    volumes:
+      - ./config.yml:/data/config.yml:ro
+    labels:
+      traefik.enable: true
+      traefik.http.routers.tinyauth.rule: Host(`${TINYAUTH_HOST}`)
+      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth/traefik

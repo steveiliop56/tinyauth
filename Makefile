@@ -81,5 +81,11 @@ sql:
 	sqlc generate
 
 # Go gen
+.PHONY: generate
 generate:
 	go run ./gen
+
+# Proxy integration tests
+.PHONY: integration
+integration:
+	go run ./integration -- --log=false

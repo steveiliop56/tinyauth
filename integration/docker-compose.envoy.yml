@@ -1,0 +1,16 @@
+services:
+  envoy:
+    image: envoyproxy/envoy:${ENVOY_VERSION}
+    ports:
+      - 80:80
+    volumes:
+      - ./envoy.yml:/etc/envoy/envoy.yaml:ro
+
+  whoami:
+    image: traefik/whoami:${WHOAMI_VERSION}
+
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:${TINYAUTH_VERSION}
+    command: --experimental.configfile=/data/config.yml
+    volumes:
+      - ./config.yml:/data/config.yml:ro
