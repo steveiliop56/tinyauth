@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"golang.org/x/oauth2"
 )
 
@@ -70,7 +69,6 @@ func (s *OAuthService) GetAuthURL(state string, verifier string) string {
 }
 
 func (s *OAuthService) GetToken(code string, verifier string) (*oauth2.Token, error) {
-	tlog.App.Debug().Str("code", code).Str("verifier", verifier).Msg("Exchanging code for token")
 	return s.config.Exchange(s.ctx, code, oauth2.VerifierOption(verifier))
 }
 

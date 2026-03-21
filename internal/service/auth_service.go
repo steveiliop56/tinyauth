@@ -671,7 +671,6 @@ func (auth *AuthService) CleanupOAuthSessionsRoutine() {
 
 	for range ticker.C {
 		auth.oauthMutex.Lock()
-		defer auth.oauthMutex.Unlock()
 
 		now := time.Now()
 
@@ -680,6 +679,8 @@ func (auth *AuthService) CleanupOAuthSessionsRoutine() {
 				delete(auth.oauthPendingSessions, sessionId)
 			}
 		}
+
+		auth.oauthMutex.Unlock()
 	}
 }
 

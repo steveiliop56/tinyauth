@@ -73,8 +73,6 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	tlog.App.Debug().Interface("session", session).Msg("Created new OAuth session")
-
 	authUrl, err := controller.auth.GetOAuthURL(sessionId)
 
 	if err != nil {
@@ -145,8 +143,6 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 
 	code := c.Query("code")
-
-	tlog.App.Debug().Str("code", code).Str("state", state).Msg("Received OAuth callback")
 	_, err = controller.auth.GetOAuthToken(sessionIdCookie, code)
 
 	if err != nil {
