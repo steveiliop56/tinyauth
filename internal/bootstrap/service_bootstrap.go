@@ -58,6 +58,16 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 
 	services.accessControlService = accessControlsService
 
+	oauthBrokerService := service.NewOAuthBrokerService(app.context.oauthProviders)
+
+	err = oauthBrokerService.Init()
+
+	if err != nil {
+		return Services{}, err
+	}
+
+	services.oauthBrokerService = oauthBrokerService
+
 	authService := service.NewAuthService(service.AuthServiceConfig{
 		Users:              app.context.users,
 		OauthWhitelist:     app.config.OAuth.Whitelist,
@@ -70,7 +80,7 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 		SessionCookieName:  app.context.sessionCookieName,
 		IP:                 app.config.Auth.IP,
 		LDAPGroupsCacheTTL: app.config.Ldap.GroupCacheTTL,
-	}, dockerService, services.ldapService, queries)
+	}, dockerService, services.ldapService, queries, services.oauthBrokerService)
 
 	err = authService.Init()
 
@@ -79,16 +89,6 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 	}
 
 	services.authService = authService
-
-	oauthBrokerService := service.NewOAuthBrokerService(app.context.oauthProviders)
-
-	err = oauthBrokerService.Init()
-
-	if err != nil {
-		return Services{}, err
-	}
-
-	services.oauthBrokerService = oauthBrokerService
 
 	oidcService := service.NewOIDCService(service.OIDCServiceConfig{
 		Clients:        app.config.OIDC.Clients,

@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 )
 
 type GithubEmailResponse []struct {
@@ -24,42 +23,22 @@ type GithubUserInfoResponse struct {
 }
 
 func defaultExtractor(client *http.Client, url string) (config.Claims, error) {
-	var claims config.Claims
-
-	res, err := client.Get(url)
-	if err != nil {
-		return config.Claims{}, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return config.Claims{}, fmt.Errorf("request failed with status: %s", res.Status)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return config.Claims{}, err
-	}
-
-	tlog.App.Trace().Str("body", string(body)).Msg("Userinfo response body")
-
-	err = json.Unmarshal(body, &claims)
-	if err != nil {
-		return config.Claims{}, err
-	}
-
-	return claims, nil
+	return simpleReq[config.Claims](client, url, nil)
 }
 
 func githubExtractor(client *http.Client, url string) (config.Claims, error) {
 	var user config.Claims
 
-	userInfo, err := githubRequest[GithubUserInfoResponse](client, "https://api.github.com/user")
+	userInfo, err := simpleReq[GithubUserInfoResponse](client, "https://api.github.com/user", map[string]string{
+		"accept": "application/vnd.github+json",
+	})
 	if err != nil {
 		return config.Claims{}, err
 	}
 
-	userEmails, err := githubRequest[GithubEmailResponse](client, "https://api.github.com/user/emails")
+	userEmails, err := simpleReq[GithubEmailResponse](client, "https://api.github.com/user/emails", map[string]string{
+		"accept": "application/vnd.github+json",
+	})
 	if err != nil {
 		return config.Claims{}, err
 	}
@@ -87,35 +66,37 @@ func githubExtractor(client *http.Client, url string) (config.Claims, error) {
 	return user, nil
 }
 
-func githubRequest[T any](client *http.Client, url string) (T, error) {
-	var githubRes T
+func simpleReq[T any](client *http.Client, url string, headers map[string]string) (T, error) {
+	var decodedRes T
 
-	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return githubRes, err
+		return decodedRes, err
 	}
 
-	req.Header.Set("Accept", "application/vnd.github+json")
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return githubRes, err
+		return decodedRes, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return githubRes, fmt.Errorf("request failed with status: %s", res.Status)
+		return decodedRes, fmt.Errorf("request failed with status: %s", res.Status)
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return githubRes, err
+		return decodedRes, err
 	}
 
-	err = json.Unmarshal(body, &githubRes)
+	err = json.Unmarshal(body, &decodedRes)
 	if err != nil {
-		return githubRes, err
+		return decodedRes, err
 	}
 
-	return githubRes, nil
+	return decodedRes, nil
 }
