@@ -17,7 +17,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/oauth2"
 )
+
+type OAuthPendingSession struct {
+	State     string
+	Verifier  string
+	Token     *oauth2.Token
+	Service   *OAuthServiceImpl
+	ExpiresAt time.Time
+}
 
 type LdapGroupsCache struct {
 	Groups  []string
@@ -45,17 +54,20 @@ type AuthServiceConfig struct {
 }
 
 type AuthService struct {
-	config          AuthServiceConfig
-	docker          *DockerService
-	loginAttempts   map[string]*LoginAttempt
-	ldapGroupsCache map[string]*LdapGroupsCache
-	loginMutex      sync.RWMutex
-	ldapGroupsMutex sync.RWMutex
-	ldap            *LdapService
-	queries         *repository.Queries
+	config               AuthServiceConfig
+	docker               *DockerService
+	loginAttempts        map[string]*LoginAttempt
+	ldapGroupsCache      map[string]*LdapGroupsCache
+	oauthPendingSessions map[string]*OAuthPendingSession
+	oauthMutex           sync.RWMutex
+	loginMutex           sync.RWMutex
+	ldapGroupsMutex      sync.RWMutex
+	ldap                 *LdapService
+	queries              *repository.Queries
+	oauthBroker          *OAuthBrokerService
 }
 
-func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
+func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries, oauthBroker *OAuthBrokerService) *AuthService {
 	return &AuthService{
 		config:          config,
 		docker:          docker,
@@ -63,10 +75,12 @@ func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapS
 		ldapGroupsCache: make(map[string]*LdapGroupsCache),
 		ldap:            ldap,
 		queries:         queries,
+		oauthBroker:     oauthBroker,
 	}
 }
 
 func (auth *AuthService) Init() error {
+	go auth.CleanupOAuthSessionsRoutine()
 	return nil
 }
 
@@ -552,4 +566,136 @@ func (auth *AuthService) IsBypassedIP(acls config.AppIP, ip string) bool {
 
 	tlog.App.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
 	return false
+}
+
+func (auth *AuthService) NewOAuthSession(serviceName string) (string, error) {
+	service, ok := auth.oauthBroker.GetService(serviceName)
+
+	if !ok {
+		return "", fmt.Errorf("oauth service not found: %s", serviceName)
+	}
+
+	sessionId, err := uuid.NewRandom()
+
+	if err != nil {
+		return "", fmt.Errorf("failed to generate session ID: %w", err)
+	}
+
+	state := uuid.New().String()
+	verifier := uuid.New().String()
+
+	auth.oauthMutex.Lock()
+	auth.oauthPendingSessions[sessionId.String()] = &OAuthPendingSession{
+		State:     state,
+		Verifier:  verifier,
+		Service:   &service,
+		ExpiresAt: time.Now().Add(1 * time.Hour),
+	}
+	auth.oauthMutex.Unlock()
+
+	return sessionId.String(), nil
+}
+
+func (auth *AuthService) GetOAuthURL(sessionId string) (string, error) {
+	auth.oauthMutex.RLock()
+	defer auth.oauthMutex.RUnlock()
+
+	session, exists := auth.oauthPendingSessions[sessionId]
+
+	if !exists {
+		return "", fmt.Errorf("oauth session not found: %s", sessionId)
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		delete(auth.oauthPendingSessions, sessionId)
+		return "", fmt.Errorf("oauth session expired: %s", sessionId)
+	}
+
+	return (*session.Service).GetAuthURL(session.State, session.Verifier), nil
+}
+
+func (auth *AuthService) GetOAuthToken(sessionId string, code string) (*oauth2.Token, error) {
+	auth.oauthMutex.RLock()
+	session, exists := auth.oauthPendingSessions[sessionId]
+	auth.oauthMutex.RUnlock()
+
+	if !exists {
+		return nil, fmt.Errorf("oauth session not found: %s", sessionId)
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		auth.oauthMutex.Lock()
+		delete(auth.oauthPendingSessions, sessionId)
+		auth.oauthMutex.Unlock()
+		return nil, fmt.Errorf("oauth session expired: %s", sessionId)
+	}
+
+	token, err := (*session.Service).GetToken(code, session.Verifier)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
+	}
+
+	auth.oauthMutex.Lock()
+	session.Token = token
+	auth.oauthMutex.Unlock()
+
+	return token, nil
+}
+
+func (auth *AuthService) GetOAuthUserinfo(sessionId string) (config.Claims, error) {
+	auth.oauthMutex.RLock()
+	session, exists := auth.oauthPendingSessions[sessionId]
+	auth.oauthMutex.RUnlock()
+
+	if !exists {
+		return config.Claims{}, fmt.Errorf("oauth session not found: %s", sessionId)
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		auth.oauthMutex.Lock()
+		delete(auth.oauthPendingSessions, sessionId)
+		auth.oauthMutex.Unlock()
+		return config.Claims{}, fmt.Errorf("oauth session expired: %s", sessionId)
+	}
+
+	if session.Token == nil {
+		return config.Claims{}, fmt.Errorf("oauth token not found for session: %s", sessionId)
+	}
+
+	userinfo, err := (*session.Service).GetUserinfo(session.Token)
+
+	if err != nil {
+		return config.Claims{}, fmt.Errorf("failed to get userinfo: %w", err)
+	}
+
+	auth.oauthMutex.Lock()
+	delete(auth.oauthPendingSessions, sessionId)
+	auth.oauthMutex.Unlock()
+
+	return userinfo, nil
+}
+
+func (auth *AuthService) EndOAuthSession(sessionId string) {
+	auth.oauthMutex.Lock()
+	delete(auth.oauthPendingSessions, sessionId)
+	auth.oauthMutex.Unlock()
+}
+
+func (auth *AuthService) CleanupOAuthSessionsRoutine() {
+	ticker := time.NewTicker(30 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		auth.oauthMutex.Lock()
+		defer auth.oauthMutex.Unlock()
+
+		now := time.Now()
+
+		for sessionId, session := range auth.oauthPendingSessions {
+			if now.After(session.ExpiresAt) {
+				delete(auth.oauthPendingSessions, sessionId)
+			}
+		}
+	}
 }
