@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/redis/rueidis"
 	"github.com/steveiliop56/tinyauth/internal/assets"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -54,4 +55,16 @@ func (app *BootstrapApp) SetupDatabase(databasePath string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func (app *BootstrapApp) SetupRedis(url, password string, db int) (rueidis.Client, error) {
+	client, err := rueidis.NewClient(rueidis.ClientOption{
+		InitAddress: []string{url},
+		Password:    password,
+		SelectDB:    db,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init redis client: %w", err)
+	}
+	return client, nil
 }
