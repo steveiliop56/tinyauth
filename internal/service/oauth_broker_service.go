@@ -1,60 +1,48 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2"
 )
 
-type OAuthService interface {
-	Init() error
-	GenerateState() string
-	GenerateVerifier() string
-	GetAuthURL(state string) string
-	VerifyCode(code string) error
-	Userinfo() (config.Claims, error)
-	GetName() string
+type OAuthServiceImpl interface {
+	Name() string
+	NewRandom() string
+	GetAuthURL(state string, verifier string) string
+	GetToken(code string, verifier string) (*oauth2.Token, error)
+	GetUserinfo(token *oauth2.Token) (config.Claims, error)
 }
 
 type OAuthBrokerService struct {
-	services map[string]OAuthService
+	services map[string]OAuthServiceImpl
 	configs  map[string]config.OAuthServiceConfig
+}
+
+var presets = map[string]func(config config.OAuthServiceConfig) *OAuthService{
+	"github": newGitHubOAuthService,
+	"google": newGoogleOAuthService,
 }
 
 func NewOAuthBrokerService(configs map[string]config.OAuthServiceConfig) *OAuthBrokerService {
 	return &OAuthBrokerService{
-		services: make(map[string]OAuthService),
+		services: make(map[string]OAuthServiceImpl),
 		configs:  configs,
 	}
 }
 
 func (broker *OAuthBrokerService) Init() error {
 	for name, cfg := range broker.configs {
-		switch name {
-		case "github":
-			service := NewGithubOAuthService(cfg)
-			broker.services[name] = service
-		case "google":
-			service := NewGoogleOAuthService(cfg)
-			broker.services[name] = service
-		default:
-			service := NewGenericOAuthService(cfg)
-			broker.services[name] = service
+		if presetFunc, exists := presets[name]; exists {
+			broker.services[name] = presetFunc(cfg)
+			tlog.App.Debug().Str("service", name).Msg("Loaded OAuth service from preset")
+		} else {
+			broker.services[name] = NewOAuthService(cfg)
+			tlog.App.Debug().Str("service", name).Msg("Loaded OAuth service from config")
 		}
 	}
-
-	for name, service := range broker.services {
-		err := service.Init()
-		if err != nil {
-			tlog.App.Error().Err(err).Msgf("Failed to initialize OAuth service: %s", name)
-			return err
-		}
-		tlog.App.Info().Str("service", name).Msg("Initialized OAuth service")
-	}
-
 	return nil
 }
 
@@ -67,15 +55,7 @@ func (broker *OAuthBrokerService) GetConfiguredServices() []string {
 	return services
 }
 
-func (broker *OAuthBrokerService) GetService(name string) (OAuthService, bool) {
+func (broker *OAuthBrokerService) GetService(name string) (OAuthServiceImpl, bool) {
 	service, exists := broker.services[name]
 	return service, exists
-}
-
-func (broker *OAuthBrokerService) GetUser(service string) (config.Claims, error) {
-	oauthService, exists := broker.services[service]
-	if !exists {
-		return config.Claims{}, errors.New("oauth service not found")
-	}
-	return oauthService.Userinfo()
 }

@@ -71,7 +71,7 @@ func setupUserController(t *testing.T, middlewares *[]gin.HandlerFunc) (*gin.Eng
 		LoginTimeout:       300,
 		LoginMaxRetries:    3,
 		SessionCookieName:  "tinyauth-session",
-	}, nil, nil, queries)
+	}, nil, nil, queries, &service.OAuthBrokerService{})
 
 	// Controller
 	ctrl := controller.NewUserController(controller.UserControllerConfig{

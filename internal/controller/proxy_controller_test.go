@@ -85,7 +85,7 @@ func setupProxyController(t *testing.T, middlewares []gin.HandlerFunc) (*gin.Eng
 		LoginTimeout:       300,
 		LoginMaxRetries:    3,
 		SessionCookieName:  "tinyauth-session",
-	}, dockerService, nil, queries)
+	}, dockerService, nil, queries, &service.OAuthBrokerService{})
 
 	// Controller
 	ctrl := controller.NewProxyController(controller.ProxyControllerConfig{
