@@ -25,7 +25,7 @@ import (
 // but for now these are just safety limits to prevent unbounded memory usage
 const MaxOAuthPendingSessions = 256
 const OAuthCleanupCount = 16
-const MaxLoginAttemptRecords = 5
+const MaxLoginAttemptRecords = 256
 
 type OAuthPendingSession struct {
 	State     string
@@ -242,6 +242,9 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 	defer auth.loginMutex.Unlock()
 
 	if len(auth.loginAttempts) >= MaxLoginAttemptRecords {
+		if auth.lockdown != nil || !auth.lockdown.Active {
+			return
+		}
 		go auth.lockdownMode()
 		return
 	}
@@ -780,10 +783,10 @@ func (auth *AuthService) lockdownMode() {
 	// we might as well clear them to free up memory
 	auth.loginAttempts = make(map[string]*LoginAttempt)
 
-	auth.loginMutex.Unlock()
-
 	timer := time.NewTimer(time.Until(auth.lockdown.ActiveUntil))
 	defer timer.Stop()
+
+	auth.loginMutex.Unlock()
 
 	<-timer.C
 
