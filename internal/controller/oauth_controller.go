@@ -129,6 +129,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	c.SetCookie(controller.config.OAuthSessionCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
+	defer controller.auth.EndOAuthSession(sessionIdCookie)
 
 	state := c.Query("state")
 	csrfCookie, err := c.Cookie(controller.config.CSRFCookieName)
@@ -226,9 +227,6 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	tlog.AuditLoginSuccess(c, sessionCookie.Username, sessionCookie.Provider)
-
-	// Clear OAuth session
-	controller.auth.EndOAuthSession(sessionIdCookie)
 
 	redirectURI, err := c.Cookie(controller.config.RedirectCookieName)
 
