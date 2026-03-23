@@ -2,152 +2,153 @@ package controller_test
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
-
-	"github.com/gin-gonic/gin"
-	"gotest.tools/v3/assert"
+	"github.com/steveiliop56/tinyauth/internal/utils"
 )
 
-var contextControllerCfg = controller.ContextControllerConfig{
-	Providers: []controller.Provider{
+func TestContextController(t *testing.T) {
+	controllerConfig := controller.ContextControllerConfig{
+		Providers: []controller.Provider{
+			{
+				Name:  "Local",
+				ID:    "local",
+				OAuth: false,
+			},
+		},
+		Title:                 "Tinyauth",
+		AppURL:                "https://tinyauth.example.com",
+		CookieDomain:          "example.com",
+		ForgotPasswordMessage: "foo",
+		BackgroundImage:       "/background.jpg",
+		OAuthAutoRedirect:     "none",
+		WarningsEnabled:       true,
+	}
+
+	tests := []struct {
+		description string
+		middlewares []gin.HandlerFunc
+		expected    string
+		path        string
+	}{
 		{
-			Name:  "Local",
-			ID:    "local",
-			OAuth: false,
+			description: "Ensure context controller returns app context",
+			middlewares: []gin.HandlerFunc{},
+			path:        "/api/context/app",
+			expected: func() string {
+				expectedAppContextResponse := controller.AppContextResponse{
+					Status:                200,
+					Message:               "Success",
+					Providers:             controllerConfig.Providers,
+					Title:                 controllerConfig.Title,
+					AppURL:                controllerConfig.AppURL,
+					CookieDomain:          controllerConfig.CookieDomain,
+					ForgotPasswordMessage: controllerConfig.ForgotPasswordMessage,
+					BackgroundImage:       controllerConfig.BackgroundImage,
+					OAuthAutoRedirect:     controllerConfig.OAuthAutoRedirect,
+					WarningsEnabled:       controllerConfig.WarningsEnabled,
+				}
+
+				bytes, err := json.Marshal(expectedAppContextResponse)
+
+				if err != nil {
+					t.Fatalf("Failed to marshal expected response: %v", err)
+				}
+
+				return string(bytes)
+			}(),
 		},
 		{
-			Name:  "Google",
-			ID:    "google",
-			OAuth: true,
+			description: "Ensure user context returns 401 when unauthorized",
+			middlewares: []gin.HandlerFunc{},
+			path:        "/api/context/user",
+			expected: func() string {
+				expectedUserContextResponse := controller.UserContextResponse{
+					Status:  401,
+					Message: "Unauthorized",
+				}
+
+				bytes, err := json.Marshal(expectedUserContextResponse)
+
+				if err != nil {
+					t.Fatalf("Failed to marshal expected response: %v", err)
+				}
+
+				return string(bytes)
+			}(),
 		},
-	},
-	Title:                 "Test App",
-	AppURL:                "http://localhost:8080",
-	CookieDomain:          "localhost",
-	ForgotPasswordMessage: "Contact admin to reset your password.",
-	BackgroundImage:       "/assets/bg.jpg",
-	OAuthAutoRedirect:     "google",
-	WarningsEnabled:       true,
-}
+		{
+			description: "Ensure user context returns when authorized",
+			middlewares: []gin.HandlerFunc{
+				func(c *gin.Context) {
+					c.Set("context", &config.UserContext{
+						Username:   "johndoe",
+						Name:       "John Doe",
+						Email:      utils.CompileUserEmail("johndoe", controllerConfig.CookieDomain),
+						Provider:   "local",
+						IsLoggedIn: true,
+					})
+				},
+			},
+			path: "/api/context/user",
+			expected: func() string {
+				expectedUserContextResponse := controller.UserContextResponse{
+					Status:     200,
+					Message:    "Success",
+					IsLoggedIn: true,
+					Username:   "johndoe",
+					Name:       "John Doe",
+					Email:      utils.CompileUserEmail("johndoe", controllerConfig.CookieDomain),
+					Provider:   "local",
+				}
 
-var contextCtrlTestContext = config.UserContext{
-	Username:    "testuser",
-	Name:        "testuser",
-	Email:       "test@example.com",
-	IsLoggedIn:  true,
-	IsBasicAuth: false,
-	OAuth:       false,
-	Provider:    "local",
-	TotpPending: false,
-	OAuthGroups: "",
-	TotpEnabled: false,
-	OAuthSub:    "",
-}
+				bytes, err := json.Marshal(expectedUserContextResponse)
 
-func setupContextController(middlewares *[]gin.HandlerFunc) (*gin.Engine, *httptest.ResponseRecorder) {
-	tlog.NewSimpleLogger().Init()
+				if err != nil {
+					t.Fatalf("Failed to marshal expected response: %v", err)
+				}
 
-	// Setup
-	gin.SetMode(gin.TestMode)
-	router := gin.Default()
-	recorder := httptest.NewRecorder()
-
-	if middlewares != nil {
-		for _, m := range *middlewares {
-			router.Use(m)
-		}
-	}
-
-	group := router.Group("/api")
-
-	ctrl := controller.NewContextController(contextControllerCfg, group)
-	ctrl.SetupRoutes()
-
-	return router, recorder
-}
-
-func TestAppContextHandler(t *testing.T) {
-	expectedRes := controller.AppContextResponse{
-		Status:                200,
-		Message:               "Success",
-		Providers:             contextControllerCfg.Providers,
-		Title:                 contextControllerCfg.Title,
-		AppURL:                contextControllerCfg.AppURL,
-		CookieDomain:          contextControllerCfg.CookieDomain,
-		ForgotPasswordMessage: contextControllerCfg.ForgotPasswordMessage,
-		BackgroundImage:       contextControllerCfg.BackgroundImage,
-		OAuthAutoRedirect:     contextControllerCfg.OAuthAutoRedirect,
-		WarningsEnabled:       contextControllerCfg.WarningsEnabled,
-	}
-
-	router, recorder := setupContextController(nil)
-	req := httptest.NewRequest("GET", "/api/context/app", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 200, recorder.Code)
-
-	var ctrlRes controller.AppContextResponse
-
-	err := json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
-
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedRes, ctrlRes)
-}
-
-func TestUserContextHandler(t *testing.T) {
-	expectedRes := controller.UserContextResponse{
-		Status:      200,
-		Message:     "Success",
-		IsLoggedIn:  contextCtrlTestContext.IsLoggedIn,
-		Username:    contextCtrlTestContext.Username,
-		Name:        contextCtrlTestContext.Name,
-		Email:       contextCtrlTestContext.Email,
-		Provider:    contextCtrlTestContext.Provider,
-		OAuth:       contextCtrlTestContext.OAuth,
-		TotpPending: contextCtrlTestContext.TotpPending,
-		OAuthName:   contextCtrlTestContext.OAuthName,
-	}
-
-	// Test with context
-	router, recorder := setupContextController(&[]gin.HandlerFunc{
-		func(c *gin.Context) {
-			c.Set("context", &contextCtrlTestContext)
-			c.Next()
+				return string(bytes)
+			}(),
 		},
-	})
-
-	req := httptest.NewRequest("GET", "/api/context/user", nil)
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(t, 200, recorder.Code)
-
-	var ctrlRes controller.UserContextResponse
-
-	err := json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
-
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedRes, ctrlRes)
-
-	// Test no context
-	expectedRes = controller.UserContextResponse{
-		Status:     401,
-		Message:    "Unauthorized",
-		IsLoggedIn: false,
 	}
 
-	router, recorder = setupContextController(nil)
-	req = httptest.NewRequest("GET", "/api/context/user", nil)
-	router.ServeHTTP(recorder, req)
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			router := gin.Default()
 
-	assert.Equal(t, 200, recorder.Code)
+			for _, middleware := range test.middlewares {
+				router.Use(middleware)
+			}
 
-	err = json.Unmarshal(recorder.Body.Bytes(), &ctrlRes)
+			group := router.Group("/api")
+			gin.SetMode(gin.TestMode)
 
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedRes, ctrlRes)
+			contextController := controller.NewContextController(controllerConfig, group)
+			contextController.SetupRoutes()
+
+			recorder := httptest.NewRecorder()
+
+			request, err := http.NewRequest("GET", test.path, nil)
+
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+
+			router.ServeHTTP(recorder, request)
+
+			if recorder.Code != http.StatusOK {
+				t.Fatalf("Expected status code 200, got %d", recorder.Code)
+			}
+
+			if recorder.Body.String() != test.expected {
+				t.Fatalf("Expected response body %s, got %s", test.expected, recorder.Body.String())
+			}
+		})
+	}
 }
