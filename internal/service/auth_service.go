@@ -242,7 +242,7 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 	defer auth.loginMutex.Unlock()
 
 	if len(auth.loginAttempts) >= MaxLoginAttemptRecords {
-		if auth.lockdown != nil || !auth.lockdown.Active {
+		if auth.lockdown != nil && auth.lockdown.Active {
 			return
 		}
 		go auth.lockdownMode()
