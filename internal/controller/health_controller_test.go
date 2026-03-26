@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthController(t *testing.T) {
@@ -26,13 +27,8 @@ func TestHealthController(t *testing.T) {
 					"status":  200,
 					"message": "Healthy",
 				}
-
 				bytes, err := json.Marshal(expectedHealthResponse)
-
-				if err != nil {
-					t.Fatalf("Failed to marshal expected response: %v", err)
-				}
-
+				assert.NoError(t, err)
 				return string(bytes)
 			}(),
 		},
@@ -45,13 +41,8 @@ func TestHealthController(t *testing.T) {
 					"status":  200,
 					"message": "Healthy",
 				}
-
 				bytes, err := json.Marshal(expectedHealthResponse)
-
-				if err != nil {
-					t.Fatalf("Failed to marshal expected response: %v", err)
-				}
-
+				assert.NoError(t, err)
 				return string(bytes)
 			}(),
 		},
@@ -69,20 +60,12 @@ func TestHealthController(t *testing.T) {
 			recorder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(test.method, test.path, nil)
-
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
+			assert.NoError(t, err)
 
 			router.ServeHTTP(recorder, request)
 
-			if recorder.Code != http.StatusOK {
-				t.Fatalf("Expected status code 200, got %d", recorder.Code)
-			}
-
-			if recorder.Body.String() != test.expected {
-				t.Fatalf("Expected response body %s, got %s", test.expected, recorder.Body.String())
-			}
+			assert.Equal(t, http.StatusOK, recorder.Code)
+			assert.Equal(t, test.expected, recorder.Body.String())
 		})
 	}
 }

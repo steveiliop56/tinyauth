@@ -10,6 +10,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestContextController(t *testing.T) {
@@ -53,13 +54,8 @@ func TestContextController(t *testing.T) {
 					OAuthAutoRedirect:     controllerConfig.OAuthAutoRedirect,
 					WarningsEnabled:       controllerConfig.WarningsEnabled,
 				}
-
 				bytes, err := json.Marshal(expectedAppContextResponse)
-
-				if err != nil {
-					t.Fatalf("Failed to marshal expected response: %v", err)
-				}
-
+				assert.NoError(t, err)
 				return string(bytes)
 			}(),
 		},
@@ -72,13 +68,8 @@ func TestContextController(t *testing.T) {
 					Status:  401,
 					Message: "Unauthorized",
 				}
-
 				bytes, err := json.Marshal(expectedUserContextResponse)
-
-				if err != nil {
-					t.Fatalf("Failed to marshal expected response: %v", err)
-				}
-
+				assert.NoError(t, err)
 				return string(bytes)
 			}(),
 		},
@@ -106,13 +97,8 @@ func TestContextController(t *testing.T) {
 					Email:      utils.CompileUserEmail("johndoe", controllerConfig.CookieDomain),
 					Provider:   "local",
 				}
-
 				bytes, err := json.Marshal(expectedUserContextResponse)
-
-				if err != nil {
-					t.Fatalf("Failed to marshal expected response: %v", err)
-				}
-
+				assert.NoError(t, err)
 				return string(bytes)
 			}(),
 		},
@@ -135,20 +121,12 @@ func TestContextController(t *testing.T) {
 			recorder := httptest.NewRecorder()
 
 			request, err := http.NewRequest("GET", test.path, nil)
-
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
+			assert.NoError(t, err)
 
 			router.ServeHTTP(recorder, request)
 
-			if recorder.Code != http.StatusOK {
-				t.Fatalf("Expected status code 200, got %d", recorder.Code)
-			}
-
-			if recorder.Body.String() != test.expected {
-				t.Fatalf("Expected response body %s, got %s", test.expected, recorder.Body.String())
-			}
+			assert.Equal(t, recorder.Result().StatusCode, http.StatusOK)
+			assert.Equal(t, test.expected, recorder.Body.String())
 		})
 	}
 }
