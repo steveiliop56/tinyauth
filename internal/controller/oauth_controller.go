@@ -125,7 +125,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
 
 	code := c.Query("code")
-	service, exists := controller.broker.GetService(req.Provider)
+	oauthService, exists := controller.broker.GetService(req.Provider)
 
 	if !exists {
 		tlog.App.Warn().Msgf("OAuth provider not found: %s", req.Provider)
@@ -133,7 +133,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	err = service.VerifyCode(code)
+	err = oauthService.VerifyCode(code)
 	if err != nil {
 		tlog.App.Error().Err(err).Msg("Failed to verify OAuth code")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
@@ -192,14 +192,22 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		username = strings.Replace(user.Email, "@", "_", 1)
 	}
 
+	// Extract refresh token from the OAuth token (if available)
+	var refreshToken string
+	if token := oauthService.GetToken(); token != nil && token.RefreshToken != "" {
+		refreshToken = token.RefreshToken
+		tlog.App.Debug().Msg("Storing refresh token for session")
+	}
+
 	sessionCookie := repository.Session{
-		Username:    username,
-		Name:        name,
-		Email:       user.Email,
-		Provider:    req.Provider,
-		OAuthGroups: utils.CoalesceToString(user.Groups),
-		OAuthName:   service.GetName(),
-		OAuthSub:    user.Sub,
+		Username:     username,
+		Name:         name,
+		Email:        user.Email,
+		Provider:     req.Provider,
+		OAuthGroups:  utils.CoalesceToString(user.Groups),
+		OAuthName:    oauthService.GetName(),
+		OAuthSub:     user.Sub,
+		RefreshToken: refreshToken,
 	}
 
 	tlog.App.Trace().Interface("session_cookie", sessionCookie).Msg("Creating session cookie")

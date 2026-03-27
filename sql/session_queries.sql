@@ -10,9 +10,10 @@ INSERT INTO "sessions" (
     "expiry",
     "created_at",
     "oauth_name",
-    "oauth_sub"
+    "oauth_sub",
+    "refresh_token"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
@@ -34,7 +35,15 @@ UPDATE "sessions" SET
     "oauth_groups" = ?,
     "expiry" = ?,
     "oauth_name" = ?,
-    "oauth_sub" = ?
+    "oauth_sub" = ?,
+    "refresh_token" = ?
+WHERE "uuid" = ?
+RETURNING *;
+
+-- name: UpdateSessionGroups :one
+UPDATE "sessions" SET
+    "oauth_groups" = ?,
+    "refresh_token" = ?
 WHERE "uuid" = ?
 RETURNING *;
 

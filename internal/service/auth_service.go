@@ -53,6 +53,7 @@ type AuthService struct {
 	ldapGroupsMutex sync.RWMutex
 	ldap            *LdapService
 	queries         *repository.Queries
+	oauthBroker     *OAuthBrokerService
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries) *AuthService {
@@ -64,6 +65,11 @@ func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapS
 		ldap:            ldap,
 		queries:         queries,
 	}
+}
+
+// SetOAuthBroker sets the OAuth broker service (called after initialization to avoid circular dependency)
+func (auth *AuthService) SetOAuthBroker(broker *OAuthBrokerService) {
+	auth.oauthBroker = broker
 }
 
 func (auth *AuthService) Init() error {
@@ -250,17 +256,18 @@ func (auth *AuthService) CreateSessionCookie(c *gin.Context, data *repository.Se
 	}
 
 	session := repository.CreateSessionParams{
-		UUID:        uuid.String(),
-		Username:    data.Username,
-		Email:       data.Email,
-		Name:        data.Name,
-		Provider:    data.Provider,
-		TotpPending: data.TotpPending,
-		OAuthGroups: data.OAuthGroups,
-		Expiry:      time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
-		CreatedAt:   time.Now().Unix(),
-		OAuthName:   data.OAuthName,
-		OAuthSub:    data.OAuthSub,
+		UUID:         uuid.String(),
+		Username:     data.Username,
+		Email:        data.Email,
+		Name:         data.Name,
+		Provider:     data.Provider,
+		TotpPending:  data.TotpPending,
+		OAuthGroups:  data.OAuthGroups,
+		Expiry:       time.Now().Add(time.Duration(expiry) * time.Second).Unix(),
+		CreatedAt:    time.Now().Unix(),
+		OAuthName:    data.OAuthName,
+		OAuthSub:     data.OAuthSub,
+		RefreshToken: data.RefreshToken,
 	}
 
 	_, err = auth.queries.CreateSession(c, session)
@@ -304,16 +311,17 @@ func (auth *AuthService) RefreshSessionCookie(c *gin.Context) error {
 	newExpiry := session.Expiry + refreshThreshold
 
 	_, err = auth.queries.UpdateSession(c, repository.UpdateSessionParams{
-		Username:    session.Username,
-		Email:       session.Email,
-		Name:        session.Name,
-		Provider:    session.Provider,
-		TotpPending: session.TotpPending,
-		OAuthGroups: session.OAuthGroups,
-		Expiry:      newExpiry,
-		OAuthName:   session.OAuthName,
-		OAuthSub:    session.OAuthSub,
-		UUID:        session.UUID,
+		Username:     session.Username,
+		Email:        session.Email,
+		Name:         session.Name,
+		Provider:     session.Provider,
+		TotpPending:  session.TotpPending,
+		OAuthGroups:  session.OAuthGroups,
+		Expiry:       newExpiry,
+		OAuthName:    session.OAuthName,
+		OAuthSub:     session.OAuthSub,
+		RefreshToken: session.RefreshToken,
+		UUID:         session.UUID,
 	})
 
 	if err != nil {
@@ -380,17 +388,7 @@ func (auth *AuthService) GetSessionCookie(c *gin.Context) (repository.Session, e
 		return repository.Session{}, fmt.Errorf("session expired")
 	}
 
-	return repository.Session{
-		UUID:        session.UUID,
-		Username:    session.Username,
-		Email:       session.Email,
-		Name:        session.Name,
-		Provider:    session.Provider,
-		TotpPending: session.TotpPending,
-		OAuthGroups: session.OAuthGroups,
-		OAuthName:   session.OAuthName,
-		OAuthSub:    session.OAuthSub,
-	}, nil
+	return session, nil
 }
 
 func (auth *AuthService) LocalAuthConfigured() bool {
@@ -552,4 +550,60 @@ func (auth *AuthService) IsBypassedIP(acls config.AppIP, ip string) bool {
 
 	tlog.App.Debug().Str("ip", ip).Msg("IP not in bypass list, continuing with authentication")
 	return false
+}
+
+// RefreshOAuthGroups attempts to use a stored refresh token to get updated group membership.
+// Returns the new groups string and optionally updates the session in the database.
+// This is used when a user's group membership may have changed since they logged in.
+func (auth *AuthService) RefreshOAuthGroups(c *gin.Context, session repository.Session) (string, error) {
+	if session.RefreshToken == "" {
+		return "", fmt.Errorf("no refresh token available for session")
+	}
+
+	if auth.oauthBroker == nil {
+		return "", fmt.Errorf("OAuth broker not configured")
+	}
+
+	// Get the OAuth service for this provider
+	oauthService, exists := auth.oauthBroker.GetService(session.Provider)
+	if !exists {
+		return "", fmt.Errorf("OAuth provider not found: %s", session.Provider)
+	}
+
+	// Attempt to refresh the token
+	newToken, err := oauthService.RefreshToken(session.RefreshToken)
+	if err != nil {
+		return "", fmt.Errorf("failed to refresh OAuth token: %w", err)
+	}
+
+	// Extract groups from the new ID token
+	groups, err := ExtractGroupsFromToken(newToken)
+	if err != nil {
+		tlog.App.Warn().Err(err).Msg("Failed to extract groups from refreshed token")
+		return "", fmt.Errorf("failed to extract groups from refreshed token: %w", err)
+	}
+
+	// Convert groups to string
+	groupsStr := utils.CoalesceToString(groups)
+
+	// Get the new refresh token (may have rotated)
+	newRefreshToken := newToken.RefreshToken
+	if newRefreshToken == "" {
+		// Keep the old one if no new one was provided
+		newRefreshToken = session.RefreshToken
+	}
+
+	// Update the session in the database with new groups and refresh token
+	_, err = auth.queries.UpdateSessionGroups(c, repository.UpdateSessionGroupsParams{
+		OAuthGroups:  groupsStr,
+		RefreshToken: newRefreshToken,
+		UUID:         session.UUID,
+	})
+	if err != nil {
+		tlog.App.Error().Err(err).Msg("Failed to update session groups in database")
+		// Still return the new groups even if DB update failed
+	}
+
+	tlog.App.Info().Str("user", session.Email).Msg("Successfully refreshed OAuth groups")
+	return groupsStr, nil
 }

@@ -217,6 +217,35 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 			if userContext.OAuth {
 				groupOK = controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
+				
+				// If group check failed, attempt to refresh groups using the refresh token (max 1 retry)
+				if !groupOK && acls.OAuth.Groups != "" {
+					tlog.App.Debug().Str("user", userContext.Email).Msg("Group check failed, attempting token refresh")
+					
+					// Get the session to access the refresh token
+					session, err := controller.auth.GetSessionCookie(c)
+					if err == nil && session.RefreshToken != "" {
+						// Attempt to refresh groups
+						newGroups, err := controller.auth.RefreshOAuthGroups(c, session)
+						if err == nil {
+							// Re-check with the new groups
+							userContext.OAuthGroups = newGroups
+							groupOK = controller.auth.IsInOAuthGroup(c, userContext, acls.OAuth.Groups)
+							
+							if groupOK {
+								tlog.App.Info().Str("user", userContext.Email).Str("resource", strings.Split(host, ".")[0]).Msg("Access granted after group refresh")
+							} else {
+								tlog.App.Debug().Str("user", userContext.Email).Msg("Group check still failed after refresh")
+							}
+						} else {
+							tlog.App.Warn().Err(err).Str("user", userContext.Email).Msg("Failed to refresh OAuth groups")
+						}
+					} else if err != nil {
+						tlog.App.Debug().Err(err).Msg("Could not get session for group refresh")
+					} else {
+						tlog.App.Debug().Msg("No refresh token available for group refresh")
+					}
+				}
 			} else {
 				groupOK = controller.auth.IsInLdapGroup(c, userContext, acls.LDAP.Groups)
 			}

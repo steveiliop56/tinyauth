@@ -90,6 +90,9 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 
 	services.oauthBrokerService = oauthBrokerService
 
+	// Wire up OAuth broker to auth service for group refresh functionality
+	authService.SetOAuthBroker(oauthBrokerService)
+
 	oidcService := service.NewOIDCService(service.OIDCServiceConfig{
 		Clients:        app.config.OIDC.Clients,
 		PrivateKeyPath: app.config.OIDC.PrivateKeyPath,

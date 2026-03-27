@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -113,4 +114,14 @@ func (google *GoogleOAuthService) Userinfo() (config.Claims, error) {
 
 func (google *GoogleOAuthService) GetName() string {
 	return google.name
+}
+
+// GetToken returns the current OAuth token (after VerifyCode has been called)
+func (google *GoogleOAuthService) GetToken() *oauth2.Token {
+	return google.token
+}
+
+// RefreshToken is not supported for Google OAuth (no group-based ACLs)
+func (google *GoogleOAuthService) RefreshToken(refreshToken string) (*oauth2.Token, error) {
+	return nil, errors.New("token refresh not supported for Google OAuth")
 }

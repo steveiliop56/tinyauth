@@ -172,3 +172,39 @@ func parseIDTokenGroups(idToken string) (any, error) {
 func (generic *GenericOAuthService) GetName() string {
 	return generic.name
 }
+
+// GetToken returns the current OAuth token (after VerifyCode has been called)
+func (generic *GenericOAuthService) GetToken() *oauth2.Token {
+	return generic.token
+}
+
+// RefreshToken uses a refresh token to get a new access/ID token.
+// Returns a new token containing potentially updated id_token with fresh groups.
+func (generic *GenericOAuthService) RefreshToken(refreshToken string) (*oauth2.Token, error) {
+	if refreshToken == "" {
+		return nil, fmt.Errorf("no refresh token provided")
+	}
+
+	// Create a token source using the refresh token
+	oldToken := &oauth2.Token{
+		RefreshToken: refreshToken,
+	}
+
+	tokenSource := generic.config.TokenSource(generic.context, oldToken)
+	newToken, err := tokenSource.Token()
+	if err != nil {
+		return nil, fmt.Errorf("failed to refresh token: %w", err)
+	}
+
+	tlog.App.Debug().Msg("Successfully refreshed OAuth token")
+	return newToken, nil
+}
+
+// ExtractGroupsFromToken extracts groups from an OAuth token's id_token
+func ExtractGroupsFromToken(token *oauth2.Token) (any, error) {
+	idTokenStr, ok := token.Extra("id_token").(string)
+	if !ok || idTokenStr == "" {
+		return nil, fmt.Errorf("no id_token in token response")
+	}
+	return parseIDTokenGroups(idTokenStr)
+}

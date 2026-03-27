@@ -182,3 +182,13 @@ func (github *GithubOAuthService) Userinfo() (config.Claims, error) {
 func (github *GithubOAuthService) GetName() string {
 	return github.name
 }
+
+// GetToken returns the current OAuth token (after VerifyCode has been called)
+func (github *GithubOAuthService) GetToken() *oauth2.Token {
+	return github.token
+}
+
+// RefreshToken is not supported for GitHub OAuth (no group-based ACLs)
+func (github *GithubOAuthService) RefreshToken(refreshToken string) (*oauth2.Token, error) {
+	return nil, errors.New("token refresh not supported for GitHub OAuth")
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"golang.org/x/exp/slices"
+	"golang.org/x/oauth2"
 )
 
 type OAuthService interface {
@@ -17,6 +18,10 @@ type OAuthService interface {
 	VerifyCode(code string) error
 	Userinfo() (config.Claims, error)
 	GetName() string
+	// GetToken returns the current OAuth token (after VerifyCode has been called)
+	GetToken() *oauth2.Token
+	// RefreshToken uses a refresh token to get a new access/ID token
+	RefreshToken(refreshToken string) (*oauth2.Token, error)
 }
 
 type OAuthBrokerService struct {
@@ -78,4 +83,9 @@ func (broker *OAuthBrokerService) GetUser(service string) (config.Claims, error)
 		return config.Claims{}, errors.New("oauth service not found")
 	}
 	return oauthService.Userinfo()
+}
+
+func (broker *OAuthBrokerService) GetServiceConfig(name string) (config.OAuthServiceConfig, bool) {
+	cfg, exists := broker.configs[name]
+	return cfg, exists
 }
