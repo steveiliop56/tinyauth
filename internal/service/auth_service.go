@@ -746,3 +746,10 @@ func (auth *AuthService) ensureOAuthSessionLimit() {
 		}
 	}
 }
+
+// Function only used for testing - do not use in prod!
+func (auth *AuthService) ClearRateLimitsTestingOnly() {
+	auth.loginMutex.Lock()
+	auth.loginAttempts = make(map[string]*LoginAttempt)
+	auth.loginMutex.Unlock()
+}

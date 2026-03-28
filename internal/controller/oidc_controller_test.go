@@ -431,18 +431,12 @@ func TestOIDCController(t *testing.T) {
 	app := bootstrap.NewBootstrapApp(config.Config{})
 
 	db, err := app.SetupDatabase("/tmp/tinyauth_test.db")
-
-	if err != nil {
-		t.Fatalf("Failed to set up database: %v", err)
-	}
+	assert.NoError(t, err)
 
 	queries := repository.New(db)
 	oidcService := service.NewOIDCService(oidcServiceCfg, queries)
 	err = oidcService.Init()
-
-	if err != nil {
-		t.Fatalf("Failed to initialize OIDC service: %v", err)
-	}
+	assert.NoError(t, err)
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
