@@ -21,8 +21,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// hard-defaults, may make configurable in the future if needed,
+// but for now these are just safety limits to prevent unbounded memory usage
 const MaxOAuthPendingSessions = 256
 const OAuthCleanupCount = 16
+const MaxLoginAttemptRecords = 256
 
 type OAuthPendingSession struct {
 	State     string
@@ -41,6 +44,11 @@ type LoginAttempt struct {
 	FailedAttempts int
 	LastAttempt    time.Time
 	LockedUntil    time.Time
+}
+
+type Lockdown struct {
+	Active      bool
+	ActiveUntil time.Time
 }
 
 type AuthServiceConfig struct {
@@ -69,6 +77,7 @@ type AuthService struct {
 	ldap                 *LdapService
 	queries              *repository.Queries
 	oauthBroker          *OAuthBrokerService
+	lockdown             *Lockdown
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries, oauthBroker *OAuthBrokerService) *AuthService {
@@ -202,6 +211,11 @@ func (auth *AuthService) IsAccountLocked(identifier string) (bool, int) {
 	auth.loginMutex.RLock()
 	defer auth.loginMutex.RUnlock()
 
+	if auth.lockdown != nil && auth.lockdown.Active {
+		remaining := int(time.Until(auth.lockdown.ActiveUntil).Seconds())
+		return true, remaining
+	}
+
 	if auth.config.LoginMaxRetries <= 0 || auth.config.LoginTimeout <= 0 {
 		return false, 0
 	}
@@ -226,6 +240,14 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool) {
 
 	auth.loginMutex.Lock()
 	defer auth.loginMutex.Unlock()
+
+	if len(auth.loginAttempts) >= MaxLoginAttemptRecords {
+		if auth.lockdown != nil && auth.lockdown.Active {
+			return
+		}
+		go auth.lockdownMode()
+		return
+	}
 
 	attempt, exists := auth.loginAttempts[identifier]
 	if !exists {
@@ -747,9 +769,37 @@ func (auth *AuthService) ensureOAuthSessionLimit() {
 	}
 }
 
+func (auth *AuthService) lockdownMode() {
+	auth.loginMutex.Lock()
+
+	tlog.App.Warn().Msg("Multiple login attempts detected, possibly DDOS attack. Activating temporary lockdown.")
+
+	auth.lockdown = &Lockdown{
+		Active:      true,
+		ActiveUntil: time.Now().Add(time.Duration(auth.config.LoginTimeout) * time.Second),
+	}
+
+	// At this point all login attemps will also expire so,
+	// we might as well clear them to free up memory
+	auth.loginAttempts = make(map[string]*LoginAttempt)
+
+	timer := time.NewTimer(time.Until(auth.lockdown.ActiveUntil))
+	defer timer.Stop()
+
+	auth.loginMutex.Unlock()
+
+	<-timer.C
+
+	auth.loginMutex.Lock()
+
+	tlog.App.Info().Msg("Lockdown period ended, resuming normal operation")
+	auth.lockdown = nil
+	auth.loginMutex.Unlock()
+}
+
 // Function only used for testing - do not use in prod!
 func (auth *AuthService) ClearRateLimitsTestingOnly() {
 	auth.loginMutex.Lock()
 	auth.loginAttempts = make(map[string]*LoginAttempt)
-	auth.loginMutex.Unlock()
+  auth.loginMutex.Unlock()
 }
