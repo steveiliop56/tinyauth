@@ -3,6 +3,7 @@ package controller_test
 import (
 	"encoding/json"
 	"net/http/httptest"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -344,4 +345,10 @@ func TestUserController(t *testing.T) {
 			test.run(t, router, recorder)
 		})
 	}
+
+	err = db.Close()
+	assert.NoError(t, err)
+
+	err = os.Remove("/tmp/tinyauth_test.db")
+	assert.NoError(t, err)
 }

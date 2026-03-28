@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -457,4 +458,16 @@ func TestOIDCController(t *testing.T) {
 			test.run(t, router, recorder)
 		})
 	}
+
+	err = db.Close()
+	assert.NoError(t, err)
+
+	err = os.Remove("/tmp/tinyauth_test.db")
+	assert.NoError(t, err)
+
+	err = os.Remove(oidcServiceCfg.PrivateKeyPath)
+	assert.NoError(t, err)
+
+	err = os.Remove(oidcServiceCfg.PublicKeyPath)
+	assert.NoError(t, err)
 }

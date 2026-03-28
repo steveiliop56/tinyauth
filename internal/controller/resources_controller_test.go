@@ -5,55 +5,84 @@ import (
 	"os"
 	"testing"
 
-	"github.com/steveiliop56/tinyauth/internal/controller"
-
 	"github.com/gin-gonic/gin"
-	"gotest.tools/v3/assert"
+	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestResourcesHandler(t *testing.T) {
-	// Setup
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	group := router.Group("/")
-
-	ctrl := controller.NewResourcesController(controller.ResourcesControllerConfig{
-		Path:    "/tmp/tinyauth",
+func TestResourcesController(t *testing.T) {
+	resourcesControllerCfg := controller.ResourcesControllerConfig{
+		Path:    "/tmp/testfiles",
 		Enabled: true,
-	}, group)
-	ctrl.SetupRoutes()
+	}
 
-	// Create test data
-	err := os.Mkdir("/tmp/tinyauth", 0755)
-	assert.NilError(t, err)
-	defer os.RemoveAll("/tmp/tinyauth")
+	type testCase struct {
+		description string
+		run         func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder)
+	}
 
-	file, err := os.Create("/tmp/tinyauth/test.txt")
-	assert.NilError(t, err)
+	tests := []testCase{
+		{
+			description: "Ensure resources endpoint returns 200 OK for existing file",
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/resources/testfile.txt", nil)
+				router.ServeHTTP(recorder, req)
 
-	_, err = file.WriteString("This is a test file.")
-	assert.NilError(t, err)
-	file.Close()
+				assert.Equal(t, 200, recorder.Code)
+				assert.Equal(t, "This is a test file.", recorder.Body.String())
+			},
+		},
+		{
+			description: "Ensure resources endpoint returns 404 Not Found for non-existing file",
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/resources/nonexistent.txt", nil)
+				router.ServeHTTP(recorder, req)
 
-	// Test existing file
-	req := httptest.NewRequest("GET", "/resources/test.txt", nil)
-	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, req)
+				assert.Equal(t, 404, recorder.Code)
+			},
+		},
+		{
+			description: "Ensure resources controller denies path traversal",
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/resources/../somefile.txt", nil)
+				router.ServeHTTP(recorder, req)
 
-	assert.Equal(t, 200, recorder.Code)
-	assert.Equal(t, "This is a test file.", recorder.Body.String())
+				assert.Equal(t, 404, recorder.Code)
+			},
+		},
+	}
 
-	// Test non-existing file
-	req = httptest.NewRequest("GET", "/resources/nonexistent.txt", nil)
-	recorder = httptest.NewRecorder()
-	router.ServeHTTP(recorder, req)
+	err := os.MkdirAll(resourcesControllerCfg.Path, 0777)
+	assert.NoError(t, err)
 
-	assert.Equal(t, 404, recorder.Code)
+	testFilePath := resourcesControllerCfg.Path + "/testfile.txt"
+	err = os.WriteFile(testFilePath, []byte("This is a test file."), 0777)
+	assert.NoError(t, err)
 
-	// Test directory traversal attack
-	req = httptest.NewRequest("GET", "/resources/../etc/passwd", nil)
-	recorder = httptest.NewRecorder()
-	router.ServeHTTP(recorder, req)
+	testFilePathParent := resourcesControllerCfg.Path + "/../somefile.txt"
+	err = os.WriteFile(testFilePathParent, []byte("This file should not be accessible."), 0777)
+	assert.NoError(t, err)
 
-	assert.Equal(t, 404, recorder.Code)
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			router := gin.Default()
+			group := router.Group("/")
+			gin.SetMode(gin.TestMode)
+
+			resourcesController := controller.NewResourcesController(resourcesControllerCfg, group)
+			resourcesController.SetupRoutes()
+
+			recorder := httptest.NewRecorder()
+			test.run(t, router, recorder)
+		})
+	}
+
+	err = os.Remove(testFilePath)
+	assert.NoError(t, err)
+
+	err = os.Remove(testFilePathParent)
+	assert.NoError(t, err)
+
+	err = os.Remove(resourcesControllerCfg.Path)
+	assert.NoError(t, err)
 }
