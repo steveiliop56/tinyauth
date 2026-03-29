@@ -10,6 +10,7 @@ type Services struct {
 	accessControlService *service.AccessControlsService
 	authService          *service.AuthService
 	dockerService        *service.DockerService
+	kubernetesService    *service.KubernetesService
 	ldapService          *service.LdapService
 	oauthBrokerService   *service.OAuthBrokerService
 	oidcService          *service.OIDCService
@@ -38,17 +39,30 @@ func (app *BootstrapApp) initServices(queries *repository.Queries) (Services, er
 
 	services.ldapService = ldapService
 
-	dockerService := service.NewDockerService()
+	var labelProvider service.LabelProvider
+	var dockerService *service.DockerService
+	var kubernetesService *service.KubernetesService
 
-	err = dockerService.Init()
-
-	if err != nil {
-		return Services{}, err
+	switch app.config.LabelProvider {
+	case "kubernetes":
+		kubernetesService = service.NewKubernetesService()
+		err = kubernetesService.Init()
+		if err != nil {
+			return Services{}, err
+		}
+		services.kubernetesService = kubernetesService
+		labelProvider = kubernetesService
+	default:
+		dockerService = service.NewDockerService()
+		err = dockerService.Init()
+		if err != nil {
+			return Services{}, err
+		}
+		services.dockerService = dockerService
+		labelProvider = dockerService
 	}
 
-	services.dockerService = dockerService
-
-	accessControlsService := service.NewAccessControlsService(dockerService, app.config.Apps)
+	accessControlsService := service.NewAccessControlsService(labelProvider, app.config.Apps)
 
 	err = accessControlsService.Init()
 
