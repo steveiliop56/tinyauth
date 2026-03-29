@@ -74,7 +74,7 @@ func TestUserController(t *testing.T) {
 				assert.Equal(t, "tinyauth-session", cookie.Name)
 				assert.True(t, cookie.HttpOnly)
 				assert.Equal(t, "example.com", cookie.Domain)
-				assert.Equal(t, cookie.MaxAge, 10)
+				assert.Equal(t, 10, cookie.MaxAge)
 			},
 		},
 		{
@@ -163,7 +163,7 @@ func TestUserController(t *testing.T) {
 				assert.Equal(t, "tinyauth-session", cookie.Name)
 				assert.True(t, cookie.HttpOnly)
 				assert.Equal(t, "example.com", cookie.Domain)
-				assert.Equal(t, cookie.MaxAge, 3600) // 1 hour, default for totp pending sessions
+				assert.Equal(t, 3600, cookie.MaxAge) // 1 hour, default for totp pending sessions
 			},
 		},
 		{
@@ -233,7 +233,7 @@ func TestUserController(t *testing.T) {
 				assert.Equal(t, "tinyauth-session", totpCookie.Name)
 				assert.True(t, totpCookie.HttpOnly)
 				assert.Equal(t, "example.com", totpCookie.Domain)
-				assert.Equal(t, totpCookie.MaxAge, 10) // should use the regular session expiry time
+				assert.Equal(t, 10, totpCookie.MaxAge) // should use the regular session expiry time
 			},
 		},
 		{

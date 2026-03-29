@@ -329,7 +329,7 @@ func TestOIDCController(t *testing.T) {
 			},
 		},
 		{
-			description: "Ensure token endpoint deletes code afer use",
+			description: "Ensure token endpoint deletes code after use",
 			middlewares: []gin.HandlerFunc{
 				simpleCtx,
 			},

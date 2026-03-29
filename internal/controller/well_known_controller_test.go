@@ -66,7 +66,7 @@ func TestWellKnownController(t *testing.T) {
 					ServiceDocumentation:              "https://tinyauth.app/docs/guides/oidc",
 				}
 
-				assert.Equal(t, res, expected)
+				assert.Equal(t, expected, res)
 			},
 		},
 		{

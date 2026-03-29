@@ -282,7 +282,7 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
-			description: "Ensure user allow ACL allows correct user (should allow testuer)",
+			description: "Ensure user allow ACL allows correct user (should allow testuser)",
 			middlewares: []gin.HandlerFunc{
 				simpleCtx,
 			},
@@ -296,7 +296,7 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
-			description: "Ensure user allow ACL blocks incorrect user (should block testuer)",
+			description: "Ensure user allow ACL blocks incorrect user (should block totpuser)",
 			middlewares: []gin.HandlerFunc{
 				simpleCtxTotp,
 			},

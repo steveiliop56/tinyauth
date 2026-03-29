@@ -125,7 +125,7 @@ func TestContextController(t *testing.T) {
 
 			router.ServeHTTP(recorder, request)
 
-			assert.Equal(t, recorder.Result().StatusCode, http.StatusOK)
+			assert.Equal(t, http.StatusOK, recorder.Code)
 			assert.Equal(t, test.expected, recorder.Body.String())
 		})
 	}
