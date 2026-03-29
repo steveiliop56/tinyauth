@@ -2,7 +2,7 @@ package controller_test
 
 import (
 	"net/http/httptest"
-	"os"
+	"path"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -13,9 +13,12 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProxyController(t *testing.T) {
+	tempDir := t.TempDir()
+
 	authServiceCfg := service.AuthServiceConfig{
 		Users: []config.User{
 			{
@@ -320,26 +323,26 @@ func TestProxyController(t *testing.T) {
 
 	app := bootstrap.NewBootstrapApp(config.Config{})
 
-	db, err := app.SetupDatabase("/tmp/tinyauth_test.db")
-	assert.NoError(t, err)
+	db, err := app.SetupDatabase(path.Join(tempDir, "tinyauth.db"))
+	require.NoError(t, err)
 
 	queries := repository.New(db)
 
 	docker := service.NewDockerService()
 	err = docker.Init()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ldap := service.NewLdapService(service.LdapServiceConfig{})
 	err = ldap.Init()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	broker := service.NewOAuthBrokerService(oauthBrokerCfgs)
 	err = broker.Init()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	authService := service.NewAuthService(authServiceCfg, docker, ldap, queries, broker)
 	err = authService.Init()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	aclsService := service.NewAccessControlsService(docker, acls)
 
@@ -363,9 +366,8 @@ func TestProxyController(t *testing.T) {
 		})
 	}
 
-	err = db.Close()
-	assert.NoError(t, err)
-
-	err = os.Remove("/tmp/tinyauth_test.db")
-	assert.NoError(t, err)
+	t.Cleanup(func() {
+		err = db.Close()
+		require.NoError(t, err)
+	})
 }

@@ -4,20 +4,24 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"net/url"
-	"os"
+	"path"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/go-querystring/query"
 	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOIDCController(t *testing.T) {
+	tempDir := t.TempDir()
+
 	oidcServiceCfg := service.OIDCServiceConfig{
 		Clients: map[string]config.OIDCClientConfig{
 			"test": {
@@ -27,8 +31,8 @@ func TestOIDCController(t *testing.T) {
 				Name:                "Test Client",
 			},
 		},
-		PrivateKeyPath: "/tmp/tinyauth_testing_key.pem",
-		PublicKeyPath:  "/tmp/tinyauth_testing_key.pub",
+		PrivateKeyPath: path.Join(tempDir, "key.pem"),
+		PublicKeyPath:  path.Join(tempDir, "key.pub"),
 		Issuer:         "https://tinyauth.example.com",
 		SessionExpiry:  500,
 	}
@@ -170,11 +174,11 @@ func TestOIDCController(t *testing.T) {
 					Code:        "",
 					RedirectURI: "https://test.example.com/callback",
 				}
-				reqBodyBytes, err := json.Marshal(reqBody)
+				reqBodyEncoded, err := query.Values(reqBody)
 				assert.NoError(t, err)
 
-				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				req.Header.Set("Content-Type", "application/json")
+				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				router.ServeHTTP(recorder, req)
 
 				var res map[string]any
@@ -193,11 +197,11 @@ func TestOIDCController(t *testing.T) {
 					Code:        "some-code",
 					RedirectURI: "https://test.example.com/callback",
 				}
-				reqBodyBytes, err := json.Marshal(reqBody)
+				reqBodyEncoded, err := query.Values(reqBody)
 				assert.NoError(t, err)
 
-				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				req.Header.Set("Content-Type", "application/json")
+				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				req.SetBasicAuth("some-client-id", "some-client-secret")
 				router.ServeHTTP(recorder, req)
 
@@ -231,11 +235,11 @@ func TestOIDCController(t *testing.T) {
 					Code:        "some-code",
 					RedirectURI: "https://test.example.com/callback",
 				}
-				reqBodyBytes, err := json.Marshal(reqBody)
+				reqBodyEncoded, err := query.Values(reqBody)
 				assert.NoError(t, err)
 
-				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				req.Header.Set("Content-Type", "application/json")
+				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				router.ServeHTTP(recorder, req)
 
 				authHeader := recorder.Header().Get("www-authenticate")
@@ -270,11 +274,11 @@ func TestOIDCController(t *testing.T) {
 					Code:        code,
 					RedirectURI: "https://test.example.com/callback",
 				}
-				reqBodyBytes, err := json.Marshal(reqBody)
+				reqBodyEncoded, err := query.Values(reqBody)
 				assert.NoError(t, err)
 
-				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				req.Header.Set("Content-Type", "application/json")
+				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				req.SetBasicAuth("some-client-id", "some-client-secret")
 				router.ServeHTTP(recorder, req)
 
@@ -307,11 +311,11 @@ func TestOIDCController(t *testing.T) {
 					ClientID:     "some-client-id",
 					ClientSecret: "some-client-secret",
 				}
-				reqBodyBytes, err := json.Marshal(reqBody)
+				reqBodyEncoded, err := query.Values(reqBody)
 				assert.NoError(t, err)
 
-				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				req.Header.Set("Content-Type", "application/json")
+				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				router.ServeHTTP(recorder, req)
 
 				assert.NotEmpty(t, recorder.Header().Get("cache-control"))
@@ -356,19 +360,19 @@ func TestOIDCController(t *testing.T) {
 					Code:        code,
 					RedirectURI: "https://test.example.com/callback",
 				}
-				reqBodyBytes, err := json.Marshal(reqBody)
+				reqBodyEncoded, err := query.Values(reqBody)
 				assert.NoError(t, err)
 
-				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				req.Header.Set("Content-Type", "application/json")
+				req := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				req.SetBasicAuth("some-client-id", "some-client-secret")
 				router.ServeHTTP(recorder, req)
 
 				assert.Equal(t, 200, recorder.Code)
 
 				// Try to use the same code again
-				secondReq := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(string(reqBodyBytes)))
-				secondReq.Header.Set("Content-Type", "application/json")
+				secondReq := httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				secondReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				secondReq.SetBasicAuth("some-client-id", "some-client-secret")
 				secondRecorder := httptest.NewRecorder()
 				router.ServeHTTP(secondRecorder, secondReq)
@@ -431,13 +435,13 @@ func TestOIDCController(t *testing.T) {
 
 	app := bootstrap.NewBootstrapApp(config.Config{})
 
-	db, err := app.SetupDatabase("/tmp/tinyauth_test.db")
-	assert.NoError(t, err)
+	db, err := app.SetupDatabase(path.Join(tempDir, "tinyauth.db"))
+	require.NoError(t, err)
 
 	queries := repository.New(db)
 	oidcService := service.NewOIDCService(oidcServiceCfg, queries)
 	err = oidcService.Init()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
@@ -459,15 +463,8 @@ func TestOIDCController(t *testing.T) {
 		})
 	}
 
-	err = db.Close()
-	assert.NoError(t, err)
-
-	err = os.Remove("/tmp/tinyauth_test.db")
-	assert.NoError(t, err)
-
-	err = os.Remove(oidcServiceCfg.PrivateKeyPath)
-	assert.NoError(t, err)
-
-	err = os.Remove(oidcServiceCfg.PublicKeyPath)
-	assert.NoError(t, err)
+	t.Cleanup(func() {
+		err = db.Close()
+		require.NoError(t, err)
+	})
 }

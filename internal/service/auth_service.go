@@ -801,5 +801,6 @@ func (auth *AuthService) lockdownMode() {
 func (auth *AuthService) ClearRateLimitsTestingOnly() {
 	auth.loginMutex.Lock()
 	auth.loginAttempts = make(map[string]*LoginAttempt)
+	auth.lockdown = nil
 	auth.loginMutex.Unlock()
 }

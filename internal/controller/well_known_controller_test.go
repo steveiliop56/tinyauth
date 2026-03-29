@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
-	"os"
+	"path"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -14,9 +14,12 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWellKnownController(t *testing.T) {
+	tempDir := t.TempDir()
+
 	oidcServiceCfg := service.OIDCServiceConfig{
 		Clients: map[string]config.OIDCClientConfig{
 			"test": {
@@ -26,8 +29,8 @@ func TestWellKnownController(t *testing.T) {
 				Name:                "Test Client",
 			},
 		},
-		PrivateKeyPath: "/tmp/tinyauth_testing_key.pem",
-		PublicKeyPath:  "/tmp/tinyauth_testing_key.pub",
+		PrivateKeyPath: path.Join(tempDir, "key.pem"),
+		PublicKeyPath:  path.Join(tempDir, "key.pub"),
 		Issuer:         "https://tinyauth.example.com",
 		SessionExpiry:  500,
 	}
@@ -96,14 +99,14 @@ func TestWellKnownController(t *testing.T) {
 
 	app := bootstrap.NewBootstrapApp(config.Config{})
 
-	db, err := app.SetupDatabase("/tmp/tinyauth_test.db")
-	assert.NoError(t, err)
+	db, err := app.SetupDatabase(path.Join(tempDir, "tinyauth.db"))
+	require.NoError(t, err)
 
 	queries := repository.New(db)
 
 	oidcService := service.NewOIDCService(oidcServiceCfg, queries)
 	err = oidcService.Init()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
@@ -119,9 +122,8 @@ func TestWellKnownController(t *testing.T) {
 		})
 	}
 
-	err = db.Close()
-	assert.NoError(t, err)
-
-	err = os.Remove("/tmp/tinyauth_test.db")
-	assert.NoError(t, err)
+	t.Cleanup(func() {
+		err = db.Close()
+		require.NoError(t, err)
+	})
 }

@@ -3,18 +3,25 @@ package controller_test
 import (
 	"net/http/httptest"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestResourcesController(t *testing.T) {
+	tempDir := t.TempDir()
+
 	resourcesControllerCfg := controller.ResourcesControllerConfig{
-		Path:    "/tmp/testfiles",
+		Path:    path.Join(tempDir, "resources"),
 		Enabled: true,
 	}
+
+	err := os.Mkdir(resourcesControllerCfg.Path, 0777)
+	require.NoError(t, err)
 
 	type testCase struct {
 		description string
@@ -52,16 +59,13 @@ func TestResourcesController(t *testing.T) {
 		},
 	}
 
-	err := os.MkdirAll(resourcesControllerCfg.Path, 0777)
-	assert.NoError(t, err)
-
 	testFilePath := resourcesControllerCfg.Path + "/testfile.txt"
 	err = os.WriteFile(testFilePath, []byte("This is a test file."), 0777)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	testFilePathParent := resourcesControllerCfg.Path + "/../somefile.txt"
+	testFilePathParent := tempDir + "/somefile.txt"
 	err = os.WriteFile(testFilePathParent, []byte("This file should not be accessible."), 0777)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
@@ -76,13 +80,4 @@ func TestResourcesController(t *testing.T) {
 			test.run(t, router, recorder)
 		})
 	}
-
-	err = os.Remove(testFilePath)
-	assert.NoError(t, err)
-
-	err = os.Remove(testFilePathParent)
-	assert.NoError(t, err)
-
-	err = os.Remove(resourcesControllerCfg.Path)
-	assert.NoError(t, err)
 }
