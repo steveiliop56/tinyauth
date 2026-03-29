@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -78,6 +79,8 @@ type AuthService struct {
 	queries              *repository.Queries
 	oauthBroker          *OAuthBrokerService
 	lockdown             *Lockdown
+	lockdownCtx          context.Context
+	lockdownCancelFunc   context.CancelFunc
 }
 
 func NewAuthService(config AuthServiceConfig, docker *DockerService, ldap *LdapService, queries *repository.Queries, oauthBroker *OAuthBrokerService) *AuthService {
@@ -770,6 +773,11 @@ func (auth *AuthService) ensureOAuthSessionLimit() {
 }
 
 func (auth *AuthService) lockdownMode() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	auth.lockdownCtx = ctx
+	auth.lockdownCancelFunc = cancel
+
 	auth.loginMutex.Lock()
 
 	tlog.App.Warn().Msg("Multiple login attempts detected, possibly DDOS attack. Activating temporary lockdown.")
@@ -788,7 +796,12 @@ func (auth *AuthService) lockdownMode() {
 
 	auth.loginMutex.Unlock()
 
-	<-timer.C
+	select {
+	case <-timer.C:
+		// Timer expired, end lockdown
+	case <-ctx.Done():
+		// Context cancelled, end lockdown
+	}
 
 	auth.loginMutex.Lock()
 
@@ -801,6 +814,8 @@ func (auth *AuthService) lockdownMode() {
 func (auth *AuthService) ClearRateLimitsTestingOnly() {
 	auth.loginMutex.Lock()
 	auth.loginAttempts = make(map[string]*LoginAttempt)
-	auth.lockdown = nil
+	if auth.lockdown != nil {
+		auth.lockdownCancelFunc()
+	}
 	auth.loginMutex.Unlock()
 }
