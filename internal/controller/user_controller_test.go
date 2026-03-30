@@ -28,11 +28,11 @@ func TestUserController(t *testing.T) {
 		Users: []config.User{
 			{
 				Username: "testuser",
-				Password: "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa",
+				Password: "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa", // password
 			},
 			{
 				Username:   "totpuser",
-				Password:   "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa",
+				Password:   "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa", // password
 				TotpSecret: "JPIEBDKJH6UGWJMX66RR3S55UFP2SGKK",
 			},
 		},
