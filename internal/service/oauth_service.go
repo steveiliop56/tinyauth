@@ -17,9 +17,10 @@ type OAuthService struct {
 	config            *oauth2.Config
 	ctx               context.Context
 	userinfoExtractor UserinfoExtractor
+	id                string
 }
 
-func NewOAuthService(config config.OAuthServiceConfig) *OAuthService {
+func NewOAuthService(config config.OAuthServiceConfig, id string) *OAuthService {
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
@@ -45,6 +46,7 @@ func NewOAuthService(config config.OAuthServiceConfig) *OAuthService {
 		},
 		ctx:               ctx,
 		userinfoExtractor: defaultExtractor,
+		id:                id,
 	}
 }
 
@@ -55,6 +57,10 @@ func (s *OAuthService) WithUserinfoExtractor(extractor UserinfoExtractor) *OAuth
 
 func (s *OAuthService) Name() string {
 	return s.serviceCfg.Name
+}
+
+func (s *OAuthService) ID() string {
+	return s.id
 }
 
 func (s *OAuthService) NewRandom() string {

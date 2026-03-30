@@ -11,7 +11,7 @@ func newGoogleOAuthService(config config.OAuthServiceConfig) *OAuthService {
 	config.AuthURL = endpoints.Google.AuthURL
 	config.TokenURL = endpoints.Google.TokenURL
 	config.UserinfoURL = "https://openidconnect.googleapis.com/v1/userinfo"
-	return NewOAuthService(config)
+	return NewOAuthService(config, "google")
 }
 
 func newGitHubOAuthService(config config.OAuthServiceConfig) *OAuthService {
@@ -19,5 +19,5 @@ func newGitHubOAuthService(config config.OAuthServiceConfig) *OAuthService {
 	config.Scopes = scopes
 	config.AuthURL = endpoints.GitHub.AuthURL
 	config.TokenURL = endpoints.GitHub.TokenURL
-	return NewOAuthService(config).WithUserinfoExtractor(githubExtractor)
+	return NewOAuthService(config, "github").WithUserinfoExtractor(githubExtractor)
 }

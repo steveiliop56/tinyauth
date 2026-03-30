@@ -10,6 +10,7 @@ import (
 
 type OAuthServiceImpl interface {
 	Name() string
+	ID() string
 	NewRandom() string
 	GetAuthURL(state string, verifier string) string
 	GetToken(code string, verifier string) (*oauth2.Token, error)
@@ -39,7 +40,7 @@ func (broker *OAuthBrokerService) Init() error {
 			broker.services[name] = presetFunc(cfg)
 			tlog.App.Debug().Str("service", name).Msg("Loaded OAuth service from preset")
 		} else {
-			broker.services[name] = NewOAuthService(cfg)
+			broker.services[name] = NewOAuthService(cfg, name)
 			tlog.App.Debug().Str("service", name).Msg("Loaded OAuth service from config")
 		}
 	}

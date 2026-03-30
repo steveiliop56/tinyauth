@@ -206,11 +206,17 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
+	if service.ID() != req.Provider {
+		tlog.App.Error().Msgf("OAuth service ID mismatch: expected %s, got %s", service.ID(), req.Provider)
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+		return
+	}
+
 	sessionCookie := repository.Session{
 		Username:    username,
 		Name:        name,
 		Email:       user.Email,
-		Provider:    req.Provider,
+		Provider:    service.ID(),
 		OAuthGroups: utils.CoalesceToString(user.Groups),
 		OAuthName:   service.Name(),
 		OAuthSub:    user.Sub,
