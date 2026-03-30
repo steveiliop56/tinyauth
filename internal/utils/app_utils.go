@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/steveiliop56/tinyauth/internal/config"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
@@ -27,6 +28,11 @@ func GetCookieDomain(u string) (string, error) {
 	}
 
 	parts := strings.Split(host, ".")
+
+	if len(parts) == 2 {
+		tlog.App.Warn().Msgf("Running on the root domain, cookies will be set for .%v", host)
+		return host, nil
+	}
 
 	if len(parts) < 3 {
 		return "", errors.New("invalid app url, must be at least second level domain")

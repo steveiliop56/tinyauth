@@ -235,7 +235,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		if !ok {
 			tlog.App.Error().Msg("Missing authorization header")
-			c.Header("www-authenticate", "basic")
+			c.Header("www-authenticate", `Basic realm="Tinyauth OIDC Token Endpoint"`)
 			c.JSON(400, gin.H{
 				"error": "invalid_client",
 			})

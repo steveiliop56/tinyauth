@@ -73,6 +73,7 @@ var BuildTimestamp = "0000-00-00T00:00:00Z"
 var SessionCookieName = "tinyauth-session"
 var CSRFCookieName = "tinyauth-csrf"
 var RedirectCookieName = "tinyauth-redirect"
+var OAuthSessionCookieName = "tinyauth-oauth"
 
 // Main app config
 

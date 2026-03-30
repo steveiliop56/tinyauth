@@ -77,12 +77,13 @@ func (app *BootstrapApp) setupRouter() (*gin.Engine, error) {
 	contextController.SetupRoutes()
 
 	oauthController := controller.NewOAuthController(controller.OAuthControllerConfig{
-		AppURL:             app.config.AppURL,
-		SecureCookie:       app.config.Auth.SecureCookie,
-		CSRFCookieName:     app.context.csrfCookieName,
-		RedirectCookieName: app.context.redirectCookieName,
-		CookieDomain:       app.context.cookieDomain,
-	}, apiRouter, app.services.authService, app.services.oauthBrokerService)
+		AppURL:                 app.config.AppURL,
+		SecureCookie:           app.config.Auth.SecureCookie,
+		CSRFCookieName:         app.context.csrfCookieName,
+		RedirectCookieName:     app.context.redirectCookieName,
+		CookieDomain:           app.context.cookieDomain,
+		OAuthSessionCookieName: app.context.oauthSessionCookieName,
+	}, apiRouter, app.services.authService)
 
 	oauthController.SetupRoutes()
 
