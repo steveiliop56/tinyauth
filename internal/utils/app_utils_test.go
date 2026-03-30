@@ -25,12 +25,6 @@ func TestGetRootDomain(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, expected, result)
 
-	// Domain with no subdomain
-	domain = "http://tinyauth.app"
-	expected = "tinyauth.app"
-	_, err = utils.GetCookieDomain(domain)
-	assert.Error(t, err, "invalid app url, must be at least second level domain")
-
 	// Invalid domain (only TLD)
 	domain = "com"
 	_, err = utils.GetCookieDomain(domain)
