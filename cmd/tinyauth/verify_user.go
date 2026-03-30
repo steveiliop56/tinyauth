@@ -7,7 +7,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
-	"github.com/charmbracelet/huh"
+	"charm.land/huh/v2"
 	"github.com/pquerna/otp/totp"
 	"github.com/traefik/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
@@ -71,9 +71,8 @@ func verifyUserCmd() *cli.Command {
 					),
 				)
 
-				var baseTheme *huh.Theme = huh.ThemeBase()
-
-				err := form.WithTheme(baseTheme).Run()
+				theme := new(themeBase)
+				err := form.WithTheme(theme).Run()
 
 				if err != nil {
 					return fmt.Errorf("failed to run interactive prompt: %w", err)
