@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"slices"
 	"strings"
 	"time"
 
@@ -13,7 +12,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var OIDCIgnorePaths = []string{"/api/oidc/token", "/api/oidc/userinfo"}
+// Gin won't let us set a middleware on a specific route (at least it doesn't work,
+// see https://github.com/gin-gonic/gin/issues/531) so we have to do some hackery
+var (
+	contextSkipPathsPrefix = []string{
+		"GET /api/context/app",
+		"GET /api/healthz",
+		"HEAD /api/healthz",
+		"GET /api/oauth/url",
+		"GET /api/oauth/callback",
+		"GET /api/oidc/clients",
+		"POST /api/oidc/token",
+		"GET /api/oidc/userinfo",
+		"GET /resources",
+		"POST /api/user/login",
+		"GET /.well-known/openid-configuration",
+		"GET /.well-known/jwks.json",
+	}
+)
 
 type ContextMiddlewareConfig struct {
 	CookieDomain string
@@ -39,9 +55,7 @@ func (m *ContextMiddleware) Init() error {
 
 func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// There is no point in trying to get credentials if it's an OIDC endpoint
-		path := c.Request.URL.Path
-		if slices.Contains(OIDCIgnorePaths, strings.TrimSuffix(path, "/")) {
+		if m.isIgnorePath(c.Request.Method + " " + c.Request.URL.Path) {
 			c.Next()
 			return
 		}
@@ -223,4 +237,13 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func (m *ContextMiddleware) isIgnorePath(path string) bool {
+	for _, prefix := range contextSkipPathsPrefix {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
 }
