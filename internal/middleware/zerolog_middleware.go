@@ -8,10 +8,11 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 )
 
+// See context middleware for explanation of why we have to do this
 var (
 	loggerSkipPathsPrefix = []string{
-		"GET /api/health",
-		"HEAD /api/health",
+		"GET /api/healthz",
+		"HEAD /api/healthz",
 		"GET /favicon.ico",
 	}
 )
