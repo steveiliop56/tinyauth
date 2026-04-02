@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Delete old release
         run: gh release delete --cleanup-tag --yes nightly || echo release not found
@@ -33,7 +33,7 @@ jobs:
       BUILD_TIMESTAMP: ${{ steps.metadata.outputs.BUILD_TIMESTAMP }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
@@ -51,7 +51,7 @@ jobs:
       - generate-metadata
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
@@ -106,7 +106,7 @@ jobs:
       - generate-metadata
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
@@ -161,7 +161,7 @@ jobs:
       - generate-metadata
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
@@ -228,7 +228,7 @@ jobs:
       - image-build
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
@@ -295,7 +295,7 @@ jobs:
       - generate-metadata
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
@@ -362,7 +362,7 @@ jobs:
       - image-build-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: nightly
 
