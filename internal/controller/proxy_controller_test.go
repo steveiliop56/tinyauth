@@ -191,6 +191,53 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
+			description: "Ensure forward auth with is browser false returns json",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/auth/traefik", nil)
+				req.Header.Set("x-forwarded-host", "test.example.com")
+				req.Header.Set("x-forwarded-proto", "https")
+				req.Header.Set("x-forwarded-uri", "/")
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 401, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"status":401`)
+				assert.Contains(t, recorder.Body.String(), `"message":"Unauthorized"`)
+			},
+		},
+		{
+			description: "Ensure forward auth with caddy and browser user agent returns redirect",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/auth/traefik", nil)
+				req.Header.Set("x-forwarded-host", "test.example.com")
+				req.Header.Set("x-forwarded-proto", "https")
+				req.Header.Set("x-forwarded-uri", "/")
+				req.Header.Set("user-agent", browserUserAgent)
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 307, recorder.Code)
+				location := recorder.Header().Get("Location")
+				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
+				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2F")
+			},
+		},
+		{
+			description: "Ensure forward auth with caddy and non browser user agent returns json",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/auth/traefik", nil)
+				req.Header.Set("x-forwarded-host", "test.example.com")
+				req.Header.Set("x-forwarded-proto", "https")
+				req.Header.Set("x-forwarded-uri", "/")
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 401, recorder.Code)
+				assert.Contains(t, recorder.Body.String(), `"status":401`)
+				assert.Contains(t, recorder.Body.String(), `"message":"Unauthorized"`)
+			},
+		},
+		{
 			description: "Ensure normal authentication flow for forward auth",
 			middlewares: []gin.HandlerFunc{
 				simpleCtx,
