@@ -25,6 +25,15 @@ const (
 	ForwardAuth
 )
 
+type ProxyType int
+
+const (
+	Traefik ProxyType = iota
+	Caddy
+	Envoy
+	Nginx
+)
+
 var BrowserUserAgentRegex = regexp.MustCompile("Chrome|Gecko|AppleWebKit|Opera|Edge")
 
 type Proxy struct {
@@ -38,6 +47,7 @@ type ProxyContext struct {
 	Method    string
 	Type      AuthModuleType
 	IsBrowser bool
+	ProxyType ProxyType
 }
 
 type ProxyControllerConfig struct {
@@ -121,7 +131,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.CheckIP(acls.IP, clientIP) {
-		if !controller.useFriendlyError(proxyCtx) {
+		if !controller.useBrowserResponse(proxyCtx) {
 			c.JSON(401, gin.H{
 				"status":  401,
 				"message": "Unauthorized",
@@ -165,7 +175,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		if !userAllowed {
 			tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(proxyCtx.Host, ".")[0]).Msg("User not allowed to access resource")
 
-			if !controller.useFriendlyError(proxyCtx) {
+			if !controller.useBrowserResponse(proxyCtx) {
 				c.JSON(403, gin.H{
 					"status":  403,
 					"message": "Forbidden",
@@ -205,7 +215,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			if !groupOK {
 				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(proxyCtx.Host, ".")[0]).Msg("User groups do not match resource requirements")
 
-				if !controller.useFriendlyError(proxyCtx) {
+				if !controller.useBrowserResponse(proxyCtx) {
 					c.JSON(403, gin.H{
 						"status":  403,
 						"message": "Forbidden",
@@ -256,7 +266,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.useFriendlyError(proxyCtx) {
+	if !controller.useBrowserResponse(proxyCtx) {
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -296,7 +306,7 @@ func (controller *ProxyController) setHeaders(c *gin.Context, acls config.App) {
 }
 
 func (controller *ProxyController) handleError(c *gin.Context, proxyCtx ProxyContext) {
-	if !controller.useFriendlyError(proxyCtx) {
+	if !controller.useBrowserResponse(proxyCtx) {
 		c.JSON(500, gin.H{
 			"status":  500,
 			"message": "Internal Server Error",
@@ -312,8 +322,31 @@ func (controller *ProxyController) getHeader(c *gin.Context, header string) (str
 	return val, strings.TrimSpace(val) != ""
 }
 
-func (controller *ProxyController) useFriendlyError(proxyCtx ProxyContext) bool {
-	return (proxyCtx.Type == ForwardAuth || proxyCtx.Type == ExtAuthz) && proxyCtx.IsBrowser
+func (controller *ProxyController) useBrowserResponse(proxyCtx ProxyContext) bool {
+	if !proxyCtx.IsBrowser {
+		return false
+	}
+
+	if proxyCtx.ProxyType == Traefik {
+		return true
+	}
+
+	return false
+}
+
+func (controller *ProxyController) getProxyType(proxy string) (ProxyType, error) {
+	switch proxy {
+	case "traefik":
+		return Traefik, nil
+	case "caddy":
+		return Caddy, nil
+	case "envoy":
+		return Envoy, nil
+	case "nginx":
+		return Nginx, nil
+	default:
+		return 0, fmt.Errorf("unsupported proxy type: %v", proxy)
+	}
 }
 
 // Code below is inspired from https://github.com/authelia/authelia/blob/master/internal/handlers/handler_authz.go
@@ -417,13 +450,13 @@ func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyCont
 	}, nil
 }
 
-func (controller *ProxyController) determineAuthModules(proxy string) []AuthModuleType {
+func (controller *ProxyController) determineAuthModules(proxy ProxyType) []AuthModuleType {
 	switch proxy {
-	case "traefik", "caddy":
+	case Traefik, Caddy:
 		return []AuthModuleType{ForwardAuth}
-	case "envoy":
+	case Envoy:
 		return []AuthModuleType{ExtAuthz, ForwardAuth}
-	case "nginx":
+	case Nginx:
 		return []AuthModuleType{AuthRequest, ForwardAuth}
 	default:
 		return []AuthModuleType{}
@@ -462,9 +495,15 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 		return ProxyContext{}, err
 	}
 
+	proxy, err := controller.getProxyType(req.Proxy)
+
+	if err != nil {
+		return ProxyContext{}, err
+	}
+
 	tlog.App.Debug().Msgf("Proxy: %v", req.Proxy)
 
-	authModules := controller.determineAuthModules(req.Proxy)
+	authModules := controller.determineAuthModules(proxy)
 
 	if len(authModules) == 0 {
 		return ProxyContext{}, fmt.Errorf("no auth modules supported for proxy: %v", req.Proxy)
@@ -497,5 +536,6 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 	}
 
 	ctx.IsBrowser = isBrowser
+	ctx.ProxyType = proxy
 	return ctx, nil
 }

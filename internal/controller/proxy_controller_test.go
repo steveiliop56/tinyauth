@@ -165,6 +165,32 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
+			description: "Ensure forward auth fallback for nginx with browser user agent",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/auth/nginx", nil)
+				req.Header.Set("x-forwarded-host", "test.example.com")
+				req.Header.Set("x-forwarded-proto", "https")
+				req.Header.Set("x-forwarded-uri", "/")
+				req.Header.Set("user-agent", browserUserAgent)
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+			},
+		},
+		{
+			description: "Ensure forward auth fallback for envoy with browser user agent",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("HEAD", "/api/auth/envoy?path=/hello", nil)
+				req.Header.Set("x-forwarded-host", "test.example.com")
+				req.Header.Set("x-forwarded-proto", "https")
+				req.Header.Set("x-forwarded-uri", "/hello")
+				req.Header.Set("user-agent", browserUserAgent)
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+			},
+		},
+		{
 			description: "Ensure normal authentication flow for forward auth",
 			middlewares: []gin.HandlerFunc{
 				simpleCtx,
