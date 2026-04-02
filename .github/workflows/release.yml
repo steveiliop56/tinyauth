@@ -161,7 +161,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build
         with:
           platforms: linux/amd64
@@ -225,7 +225,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build
         with:
           platforms: linux/amd64
@@ -289,7 +289,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build
         with:
           platforms: linux/arm64
@@ -353,7 +353,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build
         with:
           platforms: linux/arm64
