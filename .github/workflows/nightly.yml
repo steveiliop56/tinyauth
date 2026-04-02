@@ -429,7 +429,7 @@ jobs:
       - image-build-arm
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-*
@@ -468,7 +468,7 @@ jobs:
       - image-build-arm-distroless
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-distroless-*
@@ -506,7 +506,7 @@ jobs:
       - binary-build
       - binary-build-arm
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: tinyauth-*
           path: binaries
