@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS "oidc_codes" (
     "redirect_uri" TEXT NOT NULL,
     "client_id" TEXT NOT NULL,
     "expires_at" INTEGER NOT NULL,
-    "nonce" TEXT DEFAULT ""
+    "nonce" TEXT DEFAULT "",
+    "code_challenge" TEXT DEFAULT "",
+    "code_challenge_method" TEXT DEFAULT ""
 );
 
 CREATE TABLE IF NOT EXISTS "oidc_tokens" (

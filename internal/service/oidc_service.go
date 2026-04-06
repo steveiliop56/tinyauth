@@ -75,12 +75,14 @@ type TokenResponse struct {
 }
 
 type AuthorizeRequest struct {
-	Scope        string `json:"scope" binding:"required"`
-	ResponseType string `json:"response_type" binding:"required"`
-	ClientID     string `json:"client_id" binding:"required"`
-	RedirectURI  string `json:"redirect_uri" binding:"required"`
-	State        string `json:"state"`
-	Nonce        string `json:"nonce"`
+	Scope               string `json:"scope" binding:"required"`
+	ResponseType        string `json:"response_type" binding:"required"`
+	ClientID            string `json:"client_id" binding:"required"`
+	RedirectURI         string `json:"redirect_uri" binding:"required"`
+	State               string `json:"state"`
+	Nonce               string `json:"nonce"`
+	CodeChallenge       string `json:"code_challenge"`
+	CodeChallengeMethod string `json:"code_challenge_method"`
 }
 
 type OIDCServiceConfig struct {
@@ -293,6 +295,13 @@ func (service *OIDCService) ValidateAuthorizeParams(req AuthorizeRequest) error 
 		return errors.New("invalid_request_uri")
 	}
 
+	// PKCE code challenge method if set
+	if req.CodeChallenge != "" && req.CodeChallengeMethod != "" {
+		if req.CodeChallengeMethod != "S256" || req.CodeChallenge == "plain" {
+			return errors.New("invalid_request")
+		}
+	}
+
 	return nil
 }
 
@@ -306,8 +315,7 @@ func (service *OIDCService) StoreCode(c *gin.Context, sub string, code string, r
 	// Fixed 10 minutes
 	expiresAt := time.Now().Add(time.Minute * time.Duration(10)).Unix()
 
-	// Insert the code into the database
-	_, err := service.queries.CreateOidcCode(c, repository.CreateOidcCodeParams{
+	entry := repository.CreateOidcCodeParams{
 		Sub:      sub,
 		CodeHash: service.Hash(code),
 		// Here it's safe to split and trust the output since, we validated the scopes before
@@ -316,7 +324,21 @@ func (service *OIDCService) StoreCode(c *gin.Context, sub string, code string, r
 		ClientID:    req.ClientID,
 		ExpiresAt:   expiresAt,
 		Nonce:       req.Nonce,
-	})
+	}
+
+	if req.CodeChallenge != "" {
+		if req.CodeChallengeMethod == "S256" {
+			entry.CodeChallenge = req.CodeChallenge
+			entry.CodeChallengeMethod = "S256"
+		} else {
+			entry.CodeChallenge = service.hashAndEncodePKCE(req.CodeChallenge)
+			entry.CodeChallengeMethod = "plain"
+			tlog.App.Warn().Msg("Received plain PKCE code challenge, it's recommended to use S256 for better security")
+		}
+	}
+
+	// Insert the code into the database
+	_, err := service.queries.CreateOidcCode(c, entry)
 
 	return err
 }
@@ -727,4 +749,21 @@ func (service *OIDCService) GetJWK() ([]byte, error) {
 	}
 
 	return jwk.Public().MarshalJSON()
+}
+
+func (service *OIDCService) ValidatePKCE(codeChallenge string, codeChallengeMethod string, codeVerifier string) bool {
+	if codeChallenge == "" {
+		return true
+	}
+	if codeChallengeMethod == "plain" {
+		// Code challenge is hashed and encoded in the database for security reasons
+		return codeChallenge == service.hashAndEncodePKCE(codeVerifier)
+	}
+	return codeChallenge == codeVerifier
+}
+
+func (service *OIDCService) hashAndEncodePKCE(codeVerifier string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(codeVerifier))
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

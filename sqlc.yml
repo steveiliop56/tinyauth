@@ -26,3 +26,7 @@ sql:
             go_type: "string"
           - column: "oidc_tokens.nonce"
             go_type: "string"
+          - column: "oidc_codes.code_challenge"
+            go_type: "string"
+          - column: "oidc_codes.code_challenge_method"
+            go_type: "string"
