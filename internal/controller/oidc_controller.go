@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
+
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
@@ -376,22 +377,48 @@ func (controller *OIDCController) Userinfo(c *gin.Context) {
 		return
 	}
 
+	var token string
+
 	authorization := c.GetHeader("Authorization")
+	if authorization != "" {
+		tokenType, bearerToken, ok := strings.Cut(authorization, " ")
+		if !ok {
+			tlog.App.Warn().Msg("OIDC userinfo accessed with malformed authorization header")
+			c.JSON(401, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
 
-	tokenType, token, ok := strings.Cut(authorization, " ")
+		if strings.ToLower(tokenType) != "bearer" {
+			tlog.App.Warn().Msg("OIDC userinfo accessed with invalid token type")
+			c.JSON(401, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
 
-	if !ok {
+		token = bearerToken
+	} else if c.Request.Method == http.MethodPost {
+		if c.ContentType() != "application/x-www-form-urlencoded" {
+			tlog.App.Warn().Msg("OIDC userinfo POST accessed with invalid content type")
+			c.JSON(400, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
+		token = c.PostForm("access_token")
+		if token == "" {
+			tlog.App.Warn().Msg("OIDC userinfo POST accessed without access_token in body")
+			c.JSON(401, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
+	} else {
 		tlog.App.Warn().Msg("OIDC userinfo accessed without authorization header")
 		c.JSON(401, gin.H{
-			"error": "invalid_grant",
-		})
-		return
-	}
-
-	if strings.ToLower(tokenType) != "bearer" {
-		tlog.App.Warn().Msg("OIDC userinfo accessed with invalid token type")
-		c.JSON(401, gin.H{
-			"error": "invalid_grant",
+			"error": "invalid_request",
 		})
 		return
 	}
