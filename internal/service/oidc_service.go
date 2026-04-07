@@ -297,7 +297,7 @@ func (service *OIDCService) ValidateAuthorizeParams(req AuthorizeRequest) error 
 
 	// PKCE code challenge method if set
 	if req.CodeChallenge != "" && req.CodeChallengeMethod != "" {
-		if req.CodeChallengeMethod != "S256" || req.CodeChallenge == "plain" {
+		if req.CodeChallengeMethod != "S256" && req.CodeChallengeMethod != "plain" {
 			return errors.New("invalid_request")
 		}
 	}
@@ -329,10 +329,8 @@ func (service *OIDCService) StoreCode(c *gin.Context, sub string, code string, r
 	if req.CodeChallenge != "" {
 		if req.CodeChallengeMethod == "S256" {
 			entry.CodeChallenge = req.CodeChallenge
-			entry.CodeChallengeMethod = "S256"
 		} else {
 			entry.CodeChallenge = service.hashAndEncodePKCE(req.CodeChallenge)
-			entry.CodeChallengeMethod = "plain"
 			tlog.App.Warn().Msg("Received plain PKCE code challenge, it's recommended to use S256 for better security")
 		}
 	}
@@ -751,19 +749,15 @@ func (service *OIDCService) GetJWK() ([]byte, error) {
 	return jwk.Public().MarshalJSON()
 }
 
-func (service *OIDCService) ValidatePKCE(codeChallenge string, codeChallengeMethod string, codeVerifier string) bool {
+func (service *OIDCService) ValidatePKCE(codeChallenge string, codeVerifier string) bool {
 	if codeChallenge == "" {
 		return true
 	}
-	if codeChallengeMethod == "plain" {
-		// Code challenge is hashed and encoded in the database for security reasons
-		return codeChallenge == service.hashAndEncodePKCE(codeVerifier)
-	}
-	return codeChallenge == codeVerifier
+	return codeChallenge == service.hashAndEncodePKCE(codeVerifier)
 }
 
 func (service *OIDCService) hashAndEncodePKCE(codeVerifier string) string {
 	hasher := sha256.New()
 	hasher.Write([]byte(codeVerifier))
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return base64.RawURLEncoding.EncodeToString(hasher.Sum(nil))
 }

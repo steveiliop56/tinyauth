@@ -8,10 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/steveiliop56/tinyauth/internal/controller"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthController(t *testing.T) {
+	tlog.NewTestLogger().Init()
 	tests := []struct {
 		description string
 		path        string

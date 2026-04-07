@@ -17,6 +17,7 @@ import (
 )
 
 func TestProxyController(t *testing.T) {
+	tlog.NewTestLogger().Init()
 	tempDir := t.TempDir()
 
 	authServiceCfg := service.AuthServiceConfig{

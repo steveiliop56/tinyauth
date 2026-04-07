@@ -10,10 +10,12 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/utils"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestContextController(t *testing.T) {
+	tlog.NewTestLogger().Init()
 	controllerConfig := controller.ContextControllerConfig{
 		Providers: []controller.Provider{
 			{

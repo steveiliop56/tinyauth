@@ -17,11 +17,13 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOIDCController(t *testing.T) {
+	tlog.NewTestLogger().Init()
 	tempDir := t.TempDir()
 
 	oidcServiceCfg := service.OIDCServiceConfig{
@@ -473,6 +475,7 @@ func TestOIDCController(t *testing.T) {
 				assert.NotEmpty(t, code)
 
 				// Now exchange the code for a token
+				recorder = httptest.NewRecorder()
 				tokenReqBody := controller.TokenRequest{
 					GrantType:    "authorization_code",
 					Code:         code,
@@ -499,7 +502,7 @@ func TestOIDCController(t *testing.T) {
 				hasher := sha256.New()
 				hasher.Write([]byte("some-challenge"))
 				codeChallenge := hasher.Sum(nil)
-				codeChallengeEncoded := base64.URLEncoding.EncodeToString(codeChallenge)
+				codeChallengeEncoded := base64.RawURLEncoding.EncodeToString(codeChallenge)
 				reqBody := service.AuthorizeRequest{
 					Scope:               "openid",
 					ResponseType:        "code",
@@ -533,6 +536,7 @@ func TestOIDCController(t *testing.T) {
 				assert.NotEmpty(t, code)
 
 				// Now exchange the code for a token
+				recorder = httptest.NewRecorder()
 				tokenReqBody := controller.TokenRequest{
 					GrantType:    "authorization_code",
 					Code:         code,
@@ -559,7 +563,7 @@ func TestOIDCController(t *testing.T) {
 				hasher := sha256.New()
 				hasher.Write([]byte("some-challenge"))
 				codeChallenge := hasher.Sum(nil)
-				codeChallengeEncoded := base64.URLEncoding.EncodeToString(codeChallenge)
+				codeChallengeEncoded := base64.RawURLEncoding.EncodeToString(codeChallenge)
 				reqBody := service.AuthorizeRequest{
 					Scope:               "openid",
 					ResponseType:        "code",
@@ -593,6 +597,7 @@ func TestOIDCController(t *testing.T) {
 				assert.NotEmpty(t, code)
 
 				// Now exchange the code for a token
+				recorder = httptest.NewRecorder()
 				tokenReqBody := controller.TokenRequest{
 					GrantType:    "authorization_code",
 					Code:         code,
@@ -607,7 +612,7 @@ func TestOIDCController(t *testing.T) {
 				req.SetBasicAuth("some-client-id", "some-client-secret")
 				router.ServeHTTP(recorder, req)
 
-				assert.Equal(t, 200, recorder.Code)
+				assert.Equal(t, 400, recorder.Code)
 			},
 		},
 	}

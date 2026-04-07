@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS "oidc_codes" (
     "client_id" TEXT NOT NULL,
     "expires_at" INTEGER NOT NULL,
     "nonce" TEXT DEFAULT "",
-    "code_challenge" TEXT DEFAULT "",
-    "code_challenge_method" TEXT DEFAULT ""
+    "code_challenge" TEXT DEFAULT ""
 );
 
 CREATE TABLE IF NOT EXISTS "oidc_tokens" (

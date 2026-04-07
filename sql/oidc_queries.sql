@@ -7,10 +7,9 @@ INSERT INTO "oidc_codes" (
     "client_id",
     "expires_at",
     "nonce",
-    "code_challenge",
-    "code_challenge_method"
+    "code_challenge"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 
