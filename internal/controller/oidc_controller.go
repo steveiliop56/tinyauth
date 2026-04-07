@@ -309,7 +309,6 @@ func (controller *OIDCController) Token(c *gin.Context) {
 			return
 		}
 
-		tlog.App.Debug().Str("challenge", entry.CodeChallenge).Str("verifier", req.CodeVerifier).Msg("Validating PKCE")
 		ok := controller.oidc.ValidatePKCE(entry.CodeChallenge, req.CodeVerifier)
 
 		if !ok {
