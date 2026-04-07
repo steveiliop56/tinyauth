@@ -615,6 +615,47 @@ func TestOIDCController(t *testing.T) {
 				assert.Equal(t, 400, recorder.Code)
 			},
 		},
+		{
+			description: "Ensure request with invalid challenge method fails",
+			middlewares: []gin.HandlerFunc{
+				simpleCtx,
+			},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				hasher := sha256.New()
+				hasher.Write([]byte("some-challenge"))
+				codeChallenge := hasher.Sum(nil)
+				codeChallengeEncoded := base64.RawURLEncoding.EncodeToString(codeChallenge)
+				reqBody := service.AuthorizeRequest{
+					Scope:               "openid",
+					ResponseType:        "code",
+					ClientID:            "some-client-id",
+					RedirectURI:         "https://test.example.com/callback",
+					State:               "some-state",
+					Nonce:               "some-nonce",
+					CodeChallenge:       codeChallengeEncoded,
+					CodeChallengeMethod: "foo",
+				}
+				reqBodyBytes, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/oidc/authorize", strings.NewReader(string(reqBodyBytes)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 200, recorder.Code)
+
+				var res map[string]any
+				err = json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+
+				redirectURI := res["redirect_uri"].(string)
+				url, err := url.Parse(redirectURI)
+				assert.NoError(t, err)
+
+				queryParams := url.Query()
+				code := queryParams.Get("error")
+				assert.NotEmpty(t, code)
+			},
+		},
 	}
 
 	app := bootstrap.NewBootstrapApp(config.Config{})
