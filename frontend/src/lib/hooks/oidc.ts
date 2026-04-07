@@ -5,6 +5,8 @@ export type OIDCValues = {
   redirect_uri: string;
   state: string;
   nonce: string;
+  code_challenge: string;
+  code_challenge_method: string;
 };
 
 interface IuseOIDCParams {
@@ -14,7 +16,12 @@ interface IuseOIDCParams {
   missingParams: string[];
 }
 
-const optionalParams: string[] = ["state", "nonce"];
+const optionalParams: string[] = [
+  "state",
+  "nonce",
+  "code_challenge",
+  "code_challenge_method",
+];
 
 export function useOIDCParams(params: URLSearchParams): IuseOIDCParams {
   let compiled: string = "";
@@ -28,6 +35,8 @@ export function useOIDCParams(params: URLSearchParams): IuseOIDCParams {
     redirect_uri: params.get("redirect_uri") ?? "",
     state: params.get("state") ?? "",
     nonce: params.get("nonce") ?? "",
+    code_challenge: params.get("code_challenge") ?? "",
+    code_challenge_method: params.get("code_challenge_method") ?? "",
   };
 
   for (const key of Object.keys(values)) {

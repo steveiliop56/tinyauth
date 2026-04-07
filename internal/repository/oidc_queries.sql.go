@@ -17,21 +17,23 @@ INSERT INTO "oidc_codes" (
     "redirect_uri",
     "client_id",
     "expires_at",
-    "nonce"
+    "nonce",
+    "code_challenge"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 type CreateOidcCodeParams struct {
-	Sub         string
-	CodeHash    string
-	Scope       string
-	RedirectURI string
-	ClientID    string
-	ExpiresAt   int64
-	Nonce       string
+	Sub           string
+	CodeHash      string
+	Scope         string
+	RedirectURI   string
+	ClientID      string
+	ExpiresAt     int64
+	Nonce         string
+	CodeChallenge string
 }
 
 func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) (OidcCode, error) {
@@ -43,6 +45,7 @@ func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) 
 		arg.ClientID,
 		arg.ExpiresAt,
 		arg.Nonce,
+		arg.CodeChallenge,
 	)
 	var i OidcCode
 	err := row.Scan(
@@ -53,6 +56,7 @@ func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) 
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
@@ -156,7 +160,7 @@ func (q *Queries) CreateOidcUserInfo(ctx context.Context, arg CreateOidcUserInfo
 const deleteExpiredOidcCodes = `-- name: DeleteExpiredOidcCodes :many
 DELETE FROM "oidc_codes"
 WHERE "expires_at" < ?
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 func (q *Queries) DeleteExpiredOidcCodes(ctx context.Context, expiresAt int64) ([]OidcCode, error) {
@@ -176,6 +180,7 @@ func (q *Queries) DeleteExpiredOidcCodes(ctx context.Context, expiresAt int64) (
 			&i.ClientID,
 			&i.ExpiresAt,
 			&i.Nonce,
+			&i.CodeChallenge,
 		); err != nil {
 			return nil, err
 		}
@@ -286,7 +291,7 @@ func (q *Queries) DeleteOidcUserInfo(ctx context.Context, sub string) error {
 const getOidcCode = `-- name: GetOidcCode :one
 DELETE FROM "oidc_codes"
 WHERE "code_hash" = ?
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, error) {
@@ -300,6 +305,7 @@ func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, e
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
@@ -307,7 +313,7 @@ func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, e
 const getOidcCodeBySub = `-- name: GetOidcCodeBySub :one
 DELETE FROM "oidc_codes"
 WHERE "sub" = ?
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 func (q *Queries) GetOidcCodeBySub(ctx context.Context, sub string) (OidcCode, error) {
@@ -321,12 +327,13 @@ func (q *Queries) GetOidcCodeBySub(ctx context.Context, sub string) (OidcCode, e
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
 
 const getOidcCodeBySubUnsafe = `-- name: GetOidcCodeBySubUnsafe :one
-SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce FROM "oidc_codes"
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge FROM "oidc_codes"
 WHERE "sub" = ?
 `
 
@@ -341,12 +348,13 @@ func (q *Queries) GetOidcCodeBySubUnsafe(ctx context.Context, sub string) (OidcC
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
 
 const getOidcCodeUnsafe = `-- name: GetOidcCodeUnsafe :one
-SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce FROM "oidc_codes"
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge FROM "oidc_codes"
 WHERE "code_hash" = ?
 `
 
@@ -361,6 +369,7 @@ func (q *Queries) GetOidcCodeUnsafe(ctx context.Context, codeHash string) (OidcC
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }

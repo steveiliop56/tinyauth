@@ -6,9 +6,10 @@ INSERT INTO "oidc_codes" (
     "redirect_uri",
     "client_id",
     "expires_at",
-    "nonce"
+    "nonce",
+    "code_challenge"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 

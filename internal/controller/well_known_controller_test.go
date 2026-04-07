@@ -13,11 +13,13 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWellKnownController(t *testing.T) {
+	tlog.NewTestLogger().Init()
 	tempDir := t.TempDir()
 
 	oidcServiceCfg := service.OIDCServiceConfig{

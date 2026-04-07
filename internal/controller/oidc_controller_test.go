@@ -1,6 +1,8 @@
 package controller_test
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"net/http/httptest"
 	"net/url"
@@ -15,11 +17,13 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOIDCController(t *testing.T) {
+	tlog.NewTestLogger().Init()
 	tempDir := t.TempDir()
 
 	oidcServiceCfg := service.OIDCServiceConfig{
@@ -429,6 +433,227 @@ func TestOIDCController(t *testing.T) {
 				// We should not have an email claim since we didn't request it in the scope
 				_, ok = userInfoRes["email"]
 				assert.False(t, ok, "Did not expect email claim in userinfo response")
+			},
+		},
+		{
+			description: "Ensure plain PKCE succeeds",
+			middlewares: []gin.HandlerFunc{
+				simpleCtx,
+			},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				reqBody := service.AuthorizeRequest{
+					Scope:         "openid",
+					ResponseType:  "code",
+					ClientID:      "some-client-id",
+					RedirectURI:   "https://test.example.com/callback",
+					State:         "some-state",
+					Nonce:         "some-nonce",
+					CodeChallenge: "some-challenge",
+					// Not setting a code challenge method should default to "plain"
+					CodeChallengeMethod: "",
+				}
+				reqBodyBytes, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/oidc/authorize", strings.NewReader(string(reqBodyBytes)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 200, recorder.Code)
+
+				var res map[string]any
+				err = json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+
+				redirectURI := res["redirect_uri"].(string)
+				url, err := url.Parse(redirectURI)
+				assert.NoError(t, err)
+
+				queryParams := url.Query()
+				assert.Equal(t, queryParams.Get("state"), "some-state")
+
+				code := queryParams.Get("code")
+				assert.NotEmpty(t, code)
+
+				// Now exchange the code for a token
+				recorder = httptest.NewRecorder()
+				tokenReqBody := controller.TokenRequest{
+					GrantType:    "authorization_code",
+					Code:         code,
+					RedirectURI:  "https://test.example.com/callback",
+					CodeVerifier: "some-challenge",
+				}
+				reqBodyEncoded, err := query.Values(tokenReqBody)
+				assert.NoError(t, err)
+
+				req = httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				req.SetBasicAuth("some-client-id", "some-client-secret")
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 200, recorder.Code)
+			},
+		},
+		{
+			description: "Ensure S256 PKCE succeeds",
+			middlewares: []gin.HandlerFunc{
+				simpleCtx,
+			},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				hasher := sha256.New()
+				hasher.Write([]byte("some-challenge"))
+				codeChallenge := hasher.Sum(nil)
+				codeChallengeEncoded := base64.RawURLEncoding.EncodeToString(codeChallenge)
+				reqBody := service.AuthorizeRequest{
+					Scope:               "openid",
+					ResponseType:        "code",
+					ClientID:            "some-client-id",
+					RedirectURI:         "https://test.example.com/callback",
+					State:               "some-state",
+					Nonce:               "some-nonce",
+					CodeChallenge:       codeChallengeEncoded,
+					CodeChallengeMethod: "S256",
+				}
+				reqBodyBytes, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/oidc/authorize", strings.NewReader(string(reqBodyBytes)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 200, recorder.Code)
+
+				var res map[string]any
+				err = json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+
+				redirectURI := res["redirect_uri"].(string)
+				url, err := url.Parse(redirectURI)
+				assert.NoError(t, err)
+
+				queryParams := url.Query()
+				assert.Equal(t, queryParams.Get("state"), "some-state")
+
+				code := queryParams.Get("code")
+				assert.NotEmpty(t, code)
+
+				// Now exchange the code for a token
+				recorder = httptest.NewRecorder()
+				tokenReqBody := controller.TokenRequest{
+					GrantType:    "authorization_code",
+					Code:         code,
+					RedirectURI:  "https://test.example.com/callback",
+					CodeVerifier: "some-challenge",
+				}
+				reqBodyEncoded, err := query.Values(tokenReqBody)
+				assert.NoError(t, err)
+
+				req = httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				req.SetBasicAuth("some-client-id", "some-client-secret")
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 200, recorder.Code)
+			},
+		},
+		{
+			description: "Ensure request with invalid PKCE fails",
+			middlewares: []gin.HandlerFunc{
+				simpleCtx,
+			},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				hasher := sha256.New()
+				hasher.Write([]byte("some-challenge"))
+				codeChallenge := hasher.Sum(nil)
+				codeChallengeEncoded := base64.RawURLEncoding.EncodeToString(codeChallenge)
+				reqBody := service.AuthorizeRequest{
+					Scope:               "openid",
+					ResponseType:        "code",
+					ClientID:            "some-client-id",
+					RedirectURI:         "https://test.example.com/callback",
+					State:               "some-state",
+					Nonce:               "some-nonce",
+					CodeChallenge:       codeChallengeEncoded,
+					CodeChallengeMethod: "S256",
+				}
+				reqBodyBytes, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/oidc/authorize", strings.NewReader(string(reqBodyBytes)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 200, recorder.Code)
+
+				var res map[string]any
+				err = json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+
+				redirectURI := res["redirect_uri"].(string)
+				url, err := url.Parse(redirectURI)
+				assert.NoError(t, err)
+
+				queryParams := url.Query()
+				assert.Equal(t, queryParams.Get("state"), "some-state")
+
+				code := queryParams.Get("code")
+				assert.NotEmpty(t, code)
+
+				// Now exchange the code for a token
+				recorder = httptest.NewRecorder()
+				tokenReqBody := controller.TokenRequest{
+					GrantType:    "authorization_code",
+					Code:         code,
+					RedirectURI:  "https://test.example.com/callback",
+					CodeVerifier: "some-challenge-1",
+				}
+				reqBodyEncoded, err := query.Values(tokenReqBody)
+				assert.NoError(t, err)
+
+				req = httptest.NewRequest("POST", "/api/oidc/token", strings.NewReader(reqBodyEncoded.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				req.SetBasicAuth("some-client-id", "some-client-secret")
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 400, recorder.Code)
+			},
+		},
+		{
+			description: "Ensure request with invalid challenge method fails",
+			middlewares: []gin.HandlerFunc{
+				simpleCtx,
+			},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				hasher := sha256.New()
+				hasher.Write([]byte("some-challenge"))
+				codeChallenge := hasher.Sum(nil)
+				codeChallengeEncoded := base64.RawURLEncoding.EncodeToString(codeChallenge)
+				reqBody := service.AuthorizeRequest{
+					Scope:               "openid",
+					ResponseType:        "code",
+					ClientID:            "some-client-id",
+					RedirectURI:         "https://test.example.com/callback",
+					State:               "some-state",
+					Nonce:               "some-nonce",
+					CodeChallenge:       codeChallengeEncoded,
+					CodeChallengeMethod: "foo",
+				}
+				reqBodyBytes, err := json.Marshal(reqBody)
+				assert.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/oidc/authorize", strings.NewReader(string(reqBodyBytes)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 200, recorder.Code)
+
+				var res map[string]any
+				err = json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+
+				redirectURI := res["redirect_uri"].(string)
+				url, err := url.Parse(redirectURI)
+				assert.NoError(t, err)
+
+				queryParams := url.Query()
+				error := queryParams.Get("error")
+				assert.NotEmpty(t, error)
 			},
 		},
 	}

@@ -34,6 +34,7 @@ type TokenRequest struct {
 	RefreshToken string `form:"refresh_token" url:"refresh_token"`
 	ClientSecret string `form:"client_secret" url:"client_secret"`
 	ClientID     string `form:"client_id" url:"client_id"`
+	CodeVerifier string `form:"code_verifier" url:"code_verifier"`
 }
 
 type CallbackError struct {
@@ -302,6 +303,16 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		if entry.RedirectURI != req.RedirectURI {
 			tlog.App.Warn().Str("redirect_uri", req.RedirectURI).Msg("Redirect URI mismatch")
+			c.JSON(400, gin.H{
+				"error": "invalid_grant",
+			})
+			return
+		}
+
+		ok := controller.oidc.ValidatePKCE(entry.CodeChallenge, req.CodeVerifier)
+
+		if !ok {
+			tlog.App.Warn().Msg("PKCE validation failed")
 			c.JSON(400, gin.H{
 				"error": "invalid_grant",
 			})
