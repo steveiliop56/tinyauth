@@ -24,6 +24,7 @@ var (
 		"GET /api/oidc/clients",
 		"POST /api/oidc/token",
 		"GET /api/oidc/userinfo",
+		"POST /api/oidc/userinfo",
 		"GET /resources",
 		"POST /api/user/login",
 		"GET /.well-known/openid-configuration",

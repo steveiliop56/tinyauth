@@ -70,6 +70,7 @@ func (controller *OIDCController) SetupRoutes() {
 	oidcGroup.POST("/authorize", controller.Authorize)
 	oidcGroup.POST("/token", controller.Token)
 	oidcGroup.GET("/userinfo", controller.Userinfo)
+	oidcGroup.POST("/userinfo", controller.Userinfo)
 }
 
 func (controller *OIDCController) GetClientInfo(c *gin.Context) {
