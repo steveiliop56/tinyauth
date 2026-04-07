@@ -652,8 +652,8 @@ func TestOIDCController(t *testing.T) {
 				assert.NoError(t, err)
 
 				queryParams := url.Query()
-				code := queryParams.Get("error")
-				assert.NotEmpty(t, code)
+				error := queryParams.Get("error")
+				assert.NotEmpty(t, error)
 			},
 		},
 	}
