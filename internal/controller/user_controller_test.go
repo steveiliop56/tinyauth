@@ -275,8 +275,6 @@ func TestUserController(t *testing.T) {
 		},
 	}
 
-	tlog.NewSimpleLogger().Init()
-
 	oauthBrokerCfgs := make(map[string]config.OAuthServiceConfig)
 
 	app := bootstrap.NewBootstrapApp(config.Config{})
