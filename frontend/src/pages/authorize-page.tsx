@@ -78,7 +78,7 @@ export const AuthorizePage = () => {
     queryKey: ["client", oidcParams.values.client_id],
     queryFn: async () => {
       const res = await fetch(
-        `/api/oidc/clients/${oidcParams.values.client_id}`,
+        `/api/oidc/clients/${encodeURIComponent(oidcParams.values.client_id)}`,
       );
       const data = await getOidcClientInfoSchema.parseAsync(await res.json());
       return data;

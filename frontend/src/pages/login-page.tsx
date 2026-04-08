@@ -106,6 +106,10 @@ export const LoginPage = () => {
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {
+        if (oidcParams.isOidc) {
+          window.location.replace(`/totp?${oidcParams.compiled}`);
+          return;
+        }
         window.location.replace(
           `/totp${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`,
         );
@@ -171,7 +175,7 @@ export const LoginPage = () => {
     return <Navigate to={`/authorize?${oidcParams.compiled}`} replace />;
   }
 
-  if (isLoggedIn && redirectUri !== "") {
+  if (isLoggedIn && redirectUri !== undefined) {
     return (
       <Navigate
         to={`/continue${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`}
