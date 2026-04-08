@@ -436,6 +436,128 @@ func TestOIDCController(t *testing.T) {
 			},
 		},
 		{
+			description: "Ensure userinfo forbids access with no authorization header",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/oidc/userinfo", nil)
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+
+				var res map[string]any
+				err := json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+				assert.Equal(t, "invalid_request", res["error"])
+			},
+		},
+		{
+			description: "Ensure userinfo forbids access with malformed authorization header",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/oidc/userinfo", nil)
+				req.Header.Set("Authorization", "Bearer")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+
+				var res map[string]any
+				err := json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+				assert.Equal(t, "invalid_request", res["error"])
+			},
+		},
+		{
+			description: "Ensure userinfo forbids access with invalid token type",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/oidc/userinfo", nil)
+				req.Header.Set("Authorization", "Basic some-token")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+
+				var res map[string]any
+				err := json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+				assert.Equal(t, "invalid_request", res["error"])
+			},
+		},
+		{
+			description: "Ensure userinfo forbids access with empty bearer token",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/oidc/userinfo", nil)
+				req.Header.Set("Authorization", "Bearer ")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+
+				var res map[string]any
+				err := json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+				assert.Equal(t, "invalid_grant", res["error"])
+			},
+		},
+		{
+			description: "Ensure userinfo POST rejects missing access token in body",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("POST", "/api/oidc/userinfo", strings.NewReader(""))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 401, recorder.Code)
+
+				var res map[string]any
+				err := json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+				assert.Equal(t, "invalid_request", res["error"])
+			},
+		},
+		{
+			description: "Ensure userinfo POST rejects wrong content type",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("POST", "/api/oidc/userinfo", strings.NewReader(`{"access_token":"some-token"}`))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 400, recorder.Code)
+
+				var res map[string]any
+				err := json.Unmarshal(recorder.Body.Bytes(), &res)
+				assert.NoError(t, err)
+				assert.Equal(t, "invalid_request", res["error"])
+			},
+		},
+		{
+			description: "Ensure userinfo accepts access token via POST body",
+			middlewares: []gin.HandlerFunc{
+				simpleCtx,
+			},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				tokenTest, found := getTestByDescription("Ensure we can get a token with a valid request")
+				assert.True(t, found, "Token test not found")
+				tokenRecorder := httptest.NewRecorder()
+				tokenTest(t, router, tokenRecorder)
+
+				var tokenRes map[string]any
+				err := json.Unmarshal(tokenRecorder.Body.Bytes(), &tokenRes)
+				assert.NoError(t, err)
+
+				accessToken := tokenRes["access_token"].(string)
+				assert.NotEmpty(t, accessToken)
+
+				body := url.Values{}
+				body.Set("access_token", accessToken)
+				req := httptest.NewRequest("POST", "/api/oidc/userinfo", strings.NewReader(body.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				router.ServeHTTP(recorder, req)
+				assert.Equal(t, 200, recorder.Code)
+
+				var userInfoRes map[string]any
+				err = json.Unmarshal(recorder.Body.Bytes(), &userInfoRes)
+				assert.NoError(t, err)
+
+				_, ok := userInfoRes["sub"]
+				assert.True(t, ok, "Expected sub claim in userinfo response")
+			},
+		},
+		{
 			description: "Ensure plain PKCE succeeds",
 			middlewares: []gin.HandlerFunc{
 				simpleCtx,
