@@ -27,11 +27,8 @@ export const TotpPage = () => {
   const redirectTimer = useRef<number | null>(null);
 
   const searchParams = new URLSearchParams(search);
-  const {
-    values: props,
-    isOidc,
-    compiled: compiledOIDCParams,
-  } = useOIDCParams(searchParams);
+  const redirectUri = searchParams.get("redirect_uri") || undefined;
+  const oidcParams = useOIDCParams(searchParams);
 
   const totpMutation = useMutation({
     mutationFn: (values: TotpSchema) => axios.post("/api/user/totp", values),
@@ -42,13 +39,13 @@ export const TotpPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
-        if (isOidc) {
-          window.location.replace(`/authorize?${compiledOIDCParams}`);
+        if (oidcParams.isOidc) {
+          window.location.replace(`/authorize?${oidcParams.compiled}`);
           return;
         }
 
         window.location.replace(
-          `/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
+          `/continue${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`,
         );
       }, 500);
     },

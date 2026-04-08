@@ -72,36 +72,27 @@ export const AuthorizePage = () => {
   const scopeMap = createScopeMap(t);
 
   const searchParams = new URLSearchParams(search);
-  const {
-    values: props,
-    missingParams,
-    isOidc,
-    compiled: compiledOIDCParams,
-  } = useOIDCParams(searchParams);
-  const scopes = props.scope ? props.scope.split(" ").filter(Boolean) : [];
+  const oidcParams = useOIDCParams(searchParams);
 
   const getClientInfo = useQuery({
-    queryKey: ["client", props.client_id],
+    queryKey: ["client", oidcParams.values.client_id],
     queryFn: async () => {
-      const res = await fetch(`/api/oidc/clients/${props.client_id}`);
+      const res = await fetch(
+        `/api/oidc/clients/${oidcParams.values.client_id}`,
+      );
       const data = await getOidcClientInfoSchema.parseAsync(await res.json());
       return data;
     },
-    enabled: isOidc,
+    enabled: oidcParams.isOidc,
   });
 
   const authorizeMutation = useMutation({
     mutationFn: () => {
       return axios.post("/api/oidc/authorize", {
-        scope: props.scope,
-        response_type: props.response_type,
-        client_id: props.client_id,
-        redirect_uri: props.redirect_uri,
-        state: props.state,
-        nonce: props.nonce,
+        ...oidcParams.values,
       });
     },
-    mutationKey: ["authorize", props.client_id],
+    mutationKey: ["authorize", oidcParams.values.client_id],
     onSuccess: (data) => {
       toast.info(t("authorizeSuccessTitle"), {
         description: t("authorizeSuccessSubtitle"),
@@ -115,17 +106,17 @@ export const AuthorizePage = () => {
     },
   });
 
-  if (missingParams.length > 0) {
+  if (oidcParams.issues.length > 0) {
     return (
       <Navigate
-        to={`/error?error=${encodeURIComponent(t("authorizeErrorMissingParams", { missingParams: missingParams.join(", ") }))}`}
+        to={`/error?error=${encodeURIComponent(t("authorizeErrorMissingParams", { missingParams: oidcParams.issues.join(", ") }))}`}
         replace
       />
     );
   }
 
   if (!isLoggedIn) {
-    return <Navigate to={`/login?${compiledOIDCParams}`} replace />;
+    return <Navigate to={`/login?${oidcParams.compiled}`} replace />;
   }
 
   if (getClientInfo.isLoading) {
@@ -151,6 +142,9 @@ export const AuthorizePage = () => {
       />
     );
   }
+
+  const scopes =
+    oidcParams.values.scope.split(" ").filter((s) => s.trim() !== "") || [];
 
   return (
     <Card>

@@ -1,64 +1,41 @@
-export type OIDCValues = {
-  scope: string;
-  response_type: string;
-  client_id: string;
-  redirect_uri: string;
-  state: string;
-  nonce: string;
-  code_challenge: string;
-  code_challenge_method: string;
-};
+import { z } from "zod";
 
-interface IuseOIDCParams {
-  values: OIDCValues;
-  compiled: string;
+export const oidcParamsSchema = z.object({
+  scope: z.string(),
+  response_type: z.string(),
+  client_id: z.string(),
+  redirect_uri: z.string(),
+  state: z.string().optional(),
+  nonce: z.string().optional(),
+  code_challenge: z.string().optional(),
+  code_challenge_method: z.string().optional(),
+  prompt: z.string().optional(),
+});
+
+export const useOIDCParams = (
+  params: URLSearchParams,
+): {
+  values: z.infer<typeof oidcParamsSchema>;
+  issues: string[];
   isOidc: boolean;
-  missingParams: string[];
-}
+  compiled: string;
+} => {
+  const obj = Object.fromEntries(params.entries());
+  const parsed = oidcParamsSchema.safeParse(obj);
 
-const optionalParams: string[] = [
-  "state",
-  "nonce",
-  "code_challenge",
-  "code_challenge_method",
-];
-
-export function useOIDCParams(params: URLSearchParams): IuseOIDCParams {
-  let compiled: string = "";
-  let isOidc = false;
-  const missingParams: string[] = [];
-
-  const values: OIDCValues = {
-    scope: params.get("scope") ?? "",
-    response_type: params.get("response_type") ?? "",
-    client_id: params.get("client_id") ?? "",
-    redirect_uri: params.get("redirect_uri") ?? "",
-    state: params.get("state") ?? "",
-    nonce: params.get("nonce") ?? "",
-    code_challenge: params.get("code_challenge") ?? "",
-    code_challenge_method: params.get("code_challenge_method") ?? "",
-  };
-
-  for (const key of Object.keys(values)) {
-    if (!values[key as keyof OIDCValues]) {
-      if (!optionalParams.includes(key)) {
-        missingParams.push(key);
-      }
-    }
-  }
-
-  if (missingParams.length === 0) {
-    isOidc = true;
-  }
-
-  if (isOidc) {
-    compiled = new URLSearchParams(values).toString();
+  if (parsed.success) {
+    return {
+      values: parsed.data,
+      issues: [],
+      isOidc: true,
+      compiled: new URLSearchParams(parsed.data).toString(),
+    };
   }
 
   return {
-    values,
-    compiled,
-    isOidc,
-    missingParams,
+    issues: parsed.error.issues.map((issue) => issue.path.toString()),
+    values: {} as z.infer<typeof oidcParamsSchema>,
+    isOidc: false,
+    compiled: "",
   };
-}
+};
