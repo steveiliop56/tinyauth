@@ -62,7 +62,29 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 		return
 	}
 
-	sessionId, session, err := controller.auth.NewOAuthSession(req.Provider)
+	var reqParams service.OAuthURLParams
+
+	err = c.BindQuery(&reqParams)
+
+	if err != nil {
+		tlog.App.Error().Err(err).Msg("Failed to bind query parameters")
+		c.JSON(400, gin.H{
+			"status":  400,
+			"message": "Bad Request",
+		})
+		return
+	}
+
+	if !controller.isOidcRequest(reqParams) {
+		isRedirectSafe := utils.IsRedirectSafe(reqParams.RedirectURI, controller.config.CookieDomain)
+
+		if !isRedirectSafe {
+			tlog.App.Warn().Str("redirect_uri", reqParams.RedirectURI).Msg("Unsafe redirect URI detected, ignoring")
+			reqParams.RedirectURI = ""
+		}
+	}
+
+	sessionId, _, err := controller.auth.NewOAuthSession(req.Provider, reqParams)
 
 	if err != nil {
 		tlog.App.Error().Err(err).Msg("Failed to create OAuth session")
@@ -85,20 +107,6 @@ func (controller *OAuthController) oauthURLHandler(c *gin.Context) {
 	}
 
 	c.SetCookie(controller.config.OAuthSessionCookieName, sessionId, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
-	c.SetCookie(controller.config.CSRFCookieName, session.State, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
-
-	redirectURI := c.Query("redirect_uri")
-	isRedirectSafe := utils.IsRedirectSafe(redirectURI, controller.config.CookieDomain)
-
-	if !isRedirectSafe {
-		tlog.App.Warn().Str("redirect_uri", redirectURI).Msg("Unsafe redirect URI detected, ignoring")
-		redirectURI = ""
-	}
-
-	if redirectURI != "" && isRedirectSafe {
-		tlog.App.Debug().Msg("Setting redirect URI cookie")
-		c.SetCookie(controller.config.RedirectCookieName, redirectURI, int(time.Hour.Seconds()), "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
-	}
 
 	c.JSON(200, gin.H{
 		"status":  200,
@@ -129,19 +137,23 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 	}
 
 	c.SetCookie(controller.config.OAuthSessionCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
-	defer controller.auth.EndOAuthSession(sessionIdCookie)
 
-	state := c.Query("state")
-	csrfCookie, err := c.Cookie(controller.config.CSRFCookieName)
+	oauthPendingSession, err := controller.auth.GetOAuthPendingSession(sessionIdCookie)
 
-	if err != nil || state != csrfCookie {
-		tlog.App.Warn().Err(err).Msg("CSRF token mismatch or cookie missing")
-		c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
+	if err != nil {
+		tlog.App.Error().Err(err).Msg("Failed to get OAuth pending session")
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
 
-	c.SetCookie(controller.config.CSRFCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
+	defer controller.auth.EndOAuthSession(sessionIdCookie)
+
+	state := c.Query("state")
+	if state != oauthPendingSession.State {
+		tlog.App.Warn().Err(err).Msg("CSRF token mismatch")
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+		return
+	}
 
 	code := c.Query("code")
 	_, err = controller.auth.GetOAuthToken(sessionIdCookie, code)
@@ -198,7 +210,7 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		username = strings.Replace(user.Email, "@", "_", 1)
 	}
 
-	service, err := controller.auth.GetOAuthService(sessionIdCookie)
+	svc, err := controller.auth.GetOAuthService(sessionIdCookie)
 
 	if err != nil {
 		tlog.App.Error().Err(err).Msg("Failed to get OAuth service for session")
@@ -206,8 +218,8 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	if service.ID() != req.Provider {
-		tlog.App.Error().Msgf("OAuth service ID mismatch: expected %s, got %s", service.ID(), req.Provider)
+	if svc.ID() != req.Provider {
+		tlog.App.Error().Msgf("OAuth service ID mismatch: expected %s, got %s", svc.ID(), req.Provider)
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
 		return
 	}
@@ -216,9 +228,9 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 		Username:    username,
 		Name:        name,
 		Email:       user.Email,
-		Provider:    service.ID(),
+		Provider:    svc.ID(),
 		OAuthGroups: utils.CoalesceToString(user.Groups),
-		OAuthName:   service.Name(),
+		OAuthName:   svc.Name(),
 		OAuthSub:    user.Sub,
 	}
 
@@ -234,24 +246,39 @@ func (controller *OAuthController) oauthCallbackHandler(c *gin.Context) {
 
 	tlog.AuditLoginSuccess(c, sessionCookie.Username, sessionCookie.Provider)
 
-	redirectURI, err := c.Cookie(controller.config.RedirectCookieName)
-
-	if err != nil || !utils.IsRedirectSafe(redirectURI, controller.config.CookieDomain) {
-		tlog.App.Debug().Msg("No redirect URI cookie found, redirecting to app root")
-		c.Redirect(http.StatusTemporaryRedirect, controller.config.AppURL)
+	if controller.isOidcRequest(oauthPendingSession.CallbackParams) {
+		tlog.App.Debug().Msg("OIDC request, redirecting to authorize page")
+		queries, err := query.Values(oauthPendingSession.CallbackParams)
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to encode OIDC callback query")
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+			return
+		}
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/authorize?%s", controller.config.AppURL, queries.Encode()))
 		return
 	}
 
-	queries, err := query.Values(config.RedirectQuery{
-		RedirectURI: redirectURI,
-	})
+	if oauthPendingSession.CallbackParams.RedirectURI != "" {
+		queries, err := query.Values(config.RedirectQuery{
+			RedirectURI: oauthPendingSession.CallbackParams.RedirectURI,
+		})
 
-	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to encode redirect URI query")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+		if err != nil {
+			tlog.App.Error().Err(err).Msg("Failed to encode redirect URI query")
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", controller.config.AppURL, queries.Encode()))
 		return
 	}
 
-	c.SetCookie(controller.config.RedirectCookieName, "", -1, "/", fmt.Sprintf(".%s", controller.config.CookieDomain), controller.config.SecureCookie, true)
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/continue?%s", controller.config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, controller.config.AppURL)
+}
+
+func (controller *OAuthController) isOidcRequest(params service.OAuthURLParams) bool {
+	return params.Scope != "" &&
+		params.ResponseType != "" &&
+		params.ClientID != "" &&
+		params.RedirectURI != ""
 }
