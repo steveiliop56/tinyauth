@@ -2,8 +2,6 @@ FROM golang:1.26-alpine3.23
 
 WORKDIR /tinyauth
 
-COPY ./paerser ./paerser
-
 COPY go.mod ./
 COPY go.sum ./
 
