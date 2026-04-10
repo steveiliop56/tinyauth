@@ -7,7 +7,7 @@ import (
 
 	"charm.land/huh/v2"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
 )
 

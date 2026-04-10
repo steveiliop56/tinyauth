@@ -39,15 +39,6 @@ jobs:
         with:
           go-version: "^1.26.0"
 
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
-
       - name: Install frontend dependencies
         run: |
           cd frontend
@@ -91,15 +82,6 @@ jobs:
         with:
           go-version: "^1.26.0"
 
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
-
       - name: Install frontend dependencies
         run: |
           cd frontend
@@ -134,15 +116,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
 
       - name: Docker meta
         id: meta
@@ -199,15 +172,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -263,15 +227,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -326,15 +281,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
 
       - name: Docker meta
         id: meta

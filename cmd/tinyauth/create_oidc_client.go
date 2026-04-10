@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/steveiliop56/tinyauth/internal/utils"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 )
 
 func createOidcClientCmd() *cli.Command {

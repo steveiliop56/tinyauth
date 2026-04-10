@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 )
 
 type healthzResponse struct {

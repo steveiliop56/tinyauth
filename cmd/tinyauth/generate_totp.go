@@ -12,7 +12,7 @@ import (
 	"charm.land/huh/v2"
 	"github.com/mdp/qrterminal/v3"
 	"github.com/pquerna/otp/totp"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 )
 
 type GenerateTotpConfig struct {

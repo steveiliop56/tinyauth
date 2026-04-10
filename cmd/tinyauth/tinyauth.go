@@ -10,7 +10,7 @@ import (
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/rs/zerolog/log"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 )
 
 func main() {

@@ -28,8 +28,6 @@ ARG BUILD_TIMESTAMP
 
 WORKDIR /tinyauth
 
-COPY ./paerser ./paerser
-
 COPY go.mod ./
 COPY go.sum ./
 
