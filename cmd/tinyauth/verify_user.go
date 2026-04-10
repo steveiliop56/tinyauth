@@ -9,7 +9,7 @@ import (
 
 	"charm.land/huh/v2"
 	"github.com/pquerna/otp/totp"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 	"golang.org/x/crypto/bcrypt"
 )
 
