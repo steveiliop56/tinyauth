@@ -24,6 +24,9 @@ Tinyauth is the simplest and tiniest authentication and authorization server you
 > [!NOTE]
 > This is the main development branch. For the latest stable release, see the [documentation](https://tinyauth.app) or the latest stable tag.
 
+> [!NOTE]
+> Tinyauth is in the process of migrating to the new [tinyauthapp](https://github.com/tinyauthapp) organization. The organization **is official** and it will host all of the Tinyauth related repositories in the future.
+
 ## Getting Started
 
 You can get started with Tinyauth by following the guide in the [documentation](https://tinyauth.app/docs/getting-started). There is also an available [docker-compose](./docker-compose.example.yml) file that has Traefik, Whoami and Tinyauth to demonstrate its capabilities (keep in mind that this file lives in the development branch so it may have updates that are not yet released).
