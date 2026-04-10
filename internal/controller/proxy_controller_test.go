@@ -116,8 +116,7 @@ func TestProxyController(t *testing.T) {
 
 				assert.Equal(t, 307, recorder.Code)
 				location := recorder.Header().Get("Location")
-				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
-				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2F")
+				assert.Equal(t, location, "https://tinyauth.example.com/login?redirect_uri=https%3A%2F%2Ftest.example.com%2F")
 			},
 		},
 		{
@@ -129,6 +128,8 @@ func TestProxyController(t *testing.T) {
 				req.Header.Set("user-agent", browserUserAgent)
 				router.ServeHTTP(recorder, req)
 				assert.Equal(t, 401, recorder.Code)
+				location := recorder.Header().Get("x-tinyauth-location")
+				assert.Equal(t, location, "https://tinyauth.example.com/login?redirect_uri=https%3A%2F%2Ftest.example.com%2F")
 			},
 		},
 		{
@@ -142,8 +143,7 @@ func TestProxyController(t *testing.T) {
 				router.ServeHTTP(recorder, req)
 				assert.Equal(t, 307, recorder.Code)
 				location := recorder.Header().Get("Location")
-				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
-				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2Fhello")
+				assert.Equal(t, location, "https://tinyauth.example.com/login?redirect_uri=https%3A%2F%2Ftest.example.com%2Fhello")
 			},
 		},
 		{
@@ -159,8 +159,7 @@ func TestProxyController(t *testing.T) {
 
 				assert.Equal(t, 307, recorder.Code)
 				location := recorder.Header().Get("Location")
-				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
-				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2F")
+				assert.Equal(t, location, "https://tinyauth.example.com/login?redirect_uri=https%3A%2F%2Ftest.example.com%2F")
 			},
 		},
 		{
@@ -174,6 +173,8 @@ func TestProxyController(t *testing.T) {
 				req.Header.Set("user-agent", browserUserAgent)
 				router.ServeHTTP(recorder, req)
 				assert.Equal(t, 401, recorder.Code)
+				location := recorder.Header().Get("x-tinyauth-location")
+				assert.Equal(t, location, "https://tinyauth.example.com/login?redirect_uri=https%3A%2F%2Ftest.example.com%2F")
 			},
 		},
 		{
@@ -189,8 +190,7 @@ func TestProxyController(t *testing.T) {
 				router.ServeHTTP(recorder, req)
 				assert.Equal(t, 307, recorder.Code)
 				location := recorder.Header().Get("Location")
-				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
-				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2Fhello")
+				assert.Equal(t, location, "https://tinyauth.example.com/login?redirect_uri=https%3A%2F%2Ftest.example.com%2Fhello")
 			},
 		},
 		{
