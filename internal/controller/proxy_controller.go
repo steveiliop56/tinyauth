@@ -323,12 +323,12 @@ func (controller *ProxyController) getHeader(c *gin.Context, header string) (str
 }
 
 func (controller *ProxyController) useBrowserResponse(proxyCtx ProxyContext) bool {
-	// If it's nginx or envoy we need non-browser response
-	if proxyCtx.ProxyType == Nginx || proxyCtx.ProxyType == Envoy {
+	// If it's nginx we need non-browser response
+	if proxyCtx.ProxyType == Nginx {
 		return false
 	}
 
-	// For other proxies (traefik or caddy) we can check
+	// For other proxies (traefik/caddy/envoy) we can check
 	// the user agent to determine if it's a browser or not
 	if proxyCtx.IsBrowser {
 		return true
