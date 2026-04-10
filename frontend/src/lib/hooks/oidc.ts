@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const oidcParamsSchema = z.object({
-  scope: z.string().nonempty(),
-  response_type: z.string().nonempty(),
-  client_id: z.string().nonempty(),
-  redirect_uri: z.string().nonempty(),
+  scope: z.string().min(1),
+  response_type: z.string().min(1),
+  client_id: z.string().min(1),
+  redirect_uri: z.string().min(1),
   state: z.string().optional(),
   nonce: z.string().optional(),
   code_challenge: z.string().optional(),
