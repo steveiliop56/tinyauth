@@ -76,10 +76,14 @@ export const LoginPage = () => {
     isPending: oauthIsPending,
     variables: oauthVariables,
   } = useMutation({
-    mutationFn: (provider: string) =>
-      axios.get(
-        `/api/oauth/url/${provider}${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
-      ),
+    mutationFn: (provider: string) => {
+      const params = isOidc
+        ? `?${compiledOIDCParams}`
+        : props.redirect_uri
+          ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}`
+          : "";
+      return axios.get(`/api/oauth/url/${provider}${params}`);
+    },
     mutationKey: ["oauth"],
     onSuccess: (data) => {
       toast.info(t("loginOauthSuccessTitle"), {
