@@ -28,12 +28,26 @@ const MaxOAuthPendingSessions = 256
 const OAuthCleanupCount = 16
 const MaxLoginAttemptRecords = 256
 
+// slightly modified version of the AuthorizeRequest from the OIDC service to basically accept all
+// parameters and pass them to the authorize page if needed
+type OAuthURLParams struct {
+	Scope               string `form:"scope" url:"scope"`
+	ResponseType        string `form:"response_type" url:"response_type"`
+	ClientID            string `form:"client_id" url:"client_id"`
+	RedirectURI         string `form:"redirect_uri" url:"redirect_uri"`
+	State               string `form:"state" url:"state"`
+	Nonce               string `form:"nonce" url:"nonce"`
+	CodeChallenge       string `form:"code_challenge" url:"code_challenge"`
+	CodeChallengeMethod string `form:"code_challenge_method" url:"code_challenge_method"`
+}
+
 type OAuthPendingSession struct {
-	State     string
-	Verifier  string
-	Token     *oauth2.Token
-	Service   *OAuthServiceImpl
-	ExpiresAt time.Time
+	State          string
+	Verifier       string
+	Token          *oauth2.Token
+	Service        *OAuthServiceImpl
+	ExpiresAt      time.Time
+	CallbackParams OAuthURLParams
 }
 
 type LdapGroupsCache struct {
@@ -598,7 +612,7 @@ func (auth *AuthService) IsBypassedIP(acls config.AppIP, ip string) bool {
 	return false
 }
 
-func (auth *AuthService) NewOAuthSession(serviceName string) (string, OAuthPendingSession, error) {
+func (auth *AuthService) NewOAuthSession(serviceName string, params OAuthURLParams) (string, OAuthPendingSession, error) {
 	auth.ensureOAuthSessionLimit()
 
 	service, ok := auth.oauthBroker.GetService(serviceName)
@@ -617,10 +631,11 @@ func (auth *AuthService) NewOAuthSession(serviceName string) (string, OAuthPendi
 	verifier := service.NewRandom()
 
 	session := OAuthPendingSession{
-		State:     state,
-		Verifier:  verifier,
-		Service:   &service,
-		ExpiresAt: time.Now().Add(1 * time.Hour),
+		State:          state,
+		Verifier:       verifier,
+		Service:        &service,
+		ExpiresAt:      time.Now().Add(1 * time.Hour),
+		CallbackParams: params,
 	}
 
 	auth.oauthMutex.Lock()
@@ -631,7 +646,7 @@ func (auth *AuthService) NewOAuthSession(serviceName string) (string, OAuthPendi
 }
 
 func (auth *AuthService) GetOAuthURL(sessionId string) (string, error) {
-	session, err := auth.getOAuthPendingSession(sessionId)
+	session, err := auth.GetOAuthPendingSession(sessionId)
 
 	if err != nil {
 		return "", err
@@ -641,7 +656,7 @@ func (auth *AuthService) GetOAuthURL(sessionId string) (string, error) {
 }
 
 func (auth *AuthService) GetOAuthToken(sessionId string, code string) (*oauth2.Token, error) {
-	session, err := auth.getOAuthPendingSession(sessionId)
+	session, err := auth.GetOAuthPendingSession(sessionId)
 
 	if err != nil {
 		return nil, err
@@ -661,7 +676,7 @@ func (auth *AuthService) GetOAuthToken(sessionId string, code string) (*oauth2.T
 }
 
 func (auth *AuthService) GetOAuthUserinfo(sessionId string) (config.Claims, error) {
-	session, err := auth.getOAuthPendingSession(sessionId)
+	session, err := auth.GetOAuthPendingSession(sessionId)
 
 	if err != nil {
 		return config.Claims{}, err
@@ -681,7 +696,7 @@ func (auth *AuthService) GetOAuthUserinfo(sessionId string) (config.Claims, erro
 }
 
 func (auth *AuthService) GetOAuthService(sessionId string) (OAuthServiceImpl, error) {
-	session, err := auth.getOAuthPendingSession(sessionId)
+	session, err := auth.GetOAuthPendingSession(sessionId)
 
 	if err != nil {
 		return nil, err
@@ -715,7 +730,7 @@ func (auth *AuthService) CleanupOAuthSessionsRoutine() {
 	}
 }
 
-func (auth *AuthService) getOAuthPendingSession(sessionId string) (*OAuthPendingSession, error) {
+func (auth *AuthService) GetOAuthPendingSession(sessionId string) (*OAuthPendingSession, error) {
 	auth.ensureOAuthSessionLimit()
 
 	auth.oauthMutex.RLock()
