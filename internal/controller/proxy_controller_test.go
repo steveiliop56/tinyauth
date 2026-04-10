@@ -147,6 +147,23 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
+			description: "Forward auth with caddy should be detected and used",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				req := httptest.NewRequest("GET", "/api/auth/caddy", nil)
+				req.Header.Set("x-forwarded-host", "test.example.com")
+				req.Header.Set("x-forwarded-proto", "https")
+				req.Header.Set("x-forwarded-uri", "/")
+				req.Header.Set("user-agent", browserUserAgent)
+				router.ServeHTTP(recorder, req)
+
+				assert.Equal(t, 307, recorder.Code)
+				location := recorder.Header().Get("Location")
+				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
+				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2F")
+			},
+		},
+		{
 			description: "Ensure forward auth fallback for nginx",
 			middlewares: []gin.HandlerFunc{},
 			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
@@ -177,7 +194,7 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
-			description: "Ensure forward auth with non browser returns json",
+			description: "Ensure forward auth with non browser returns json for traefik",
 			middlewares: []gin.HandlerFunc{},
 			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
 				req := httptest.NewRequest("GET", "/api/auth/traefik", nil)
@@ -192,30 +209,13 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
-			description: "Ensure forward auth with caddy and browser user agent returns redirect",
+			description: "Ensure forward auth with non browser returns json for caddy",
 			middlewares: []gin.HandlerFunc{},
 			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
 				req := httptest.NewRequest("GET", "/api/auth/caddy", nil)
 				req.Header.Set("x-forwarded-host", "test.example.com")
 				req.Header.Set("x-forwarded-proto", "https")
 				req.Header.Set("x-forwarded-uri", "/")
-				req.Header.Set("user-agent", browserUserAgent)
-				router.ServeHTTP(recorder, req)
-
-				assert.Equal(t, 307, recorder.Code)
-				location := recorder.Header().Get("Location")
-				assert.Contains(t, location, "https://tinyauth.example.com/login?redirect_uri=")
-				assert.Contains(t, location, "https%3A%2F%2Ftest.example.com%2F")
-			},
-		},
-		{
-			description: "Ensure forward auth with caddy and non browser user agent returns json",
-			middlewares: []gin.HandlerFunc{},
-			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
-				req := httptest.NewRequest("GET", "/api/auth/traefik", nil)
-				req.Header.Set("x-forwarded-host", "test.example.com")
-				req.Header.Set("x-forwarded-proto", "https")
-				req.Header.Set("x-forwarded-uri", "/")
 				router.ServeHTTP(recorder, req)
 
 				assert.Equal(t, 401, recorder.Code)
@@ -224,7 +224,7 @@ func TestProxyController(t *testing.T) {
 			},
 		},
 		{
-			description: "Ensure envoy non browser returns json",
+			description: "Ensure extauthz with envoy non browser returns json",
 			middlewares: []gin.HandlerFunc{},
 			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
 				req := httptest.NewRequest("HEAD", "/api/auth/envoy?path=/hello", nil)
