@@ -100,7 +100,13 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	// Get cookie domain
-	cookieDomain, err := utils.GetCookieDomain(app.context.appUrl)
+	cookieDomainResolver := utils.GetCookieDomain
+	if app.config.Auth.Standalone {
+		tlog.App.Info().Msg("Standalone mode enabled, automatic authentication for proxied apps will not work")
+		cookieDomainResolver = utils.GetStandaloneCookieDomain
+	}
+
+	cookieDomain, err := cookieDomainResolver(app.context.appUrl)
 
 	if err != nil {
 		return err
