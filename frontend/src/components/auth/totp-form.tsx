@@ -1,10 +1,5 @@
 import { Form, FormControl, FormField, FormItem } from "../ui/form";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "../ui/input-otp";
+import { Input } from "../ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { totpSchema, TotpSchema } from "@/schemas/totp-schema";
@@ -29,11 +24,11 @@ export const TotpForm = (props: Props) => {
     resolver: zodResolver(totpSchema),
   });
 
-  const handleChange = (value: string) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     form.setValue("code", value, { shouldDirty: true, shouldValidate: true });
-
     if (value.length === 6) {
-      onSubmit({ code: value });
+      form.handleSubmit(onSubmit)();
     }
   };
 
@@ -46,25 +41,19 @@ export const TotpForm = (props: Props) => {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <InputOTP
-                  maxLength={6}
+                <Input
                   {...field}
+                  id="totp-code"
+                  name="code"
+                  type="text"
+                  inputMode="numeric"
                   autoComplete="one-time-code"
                   autoFocus
+                  maxLength={6}
+                  placeholder="XXXXXX"
                   onChange={handleChange}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
+                  className="text-center"
+                />
               </FormControl>
             </FormItem>
           )}
