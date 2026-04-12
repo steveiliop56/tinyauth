@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/steveiliop56/tinyauth/internal/service"
+	"github.com/tinyauthapp/tinyauth/internal/service"
 )
 
 type OpenIDConnectConfiguration struct {

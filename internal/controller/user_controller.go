@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/steveiliop56/tinyauth/internal/repository"
-	"github.com/steveiliop56/tinyauth/internal/service"
-	"github.com/steveiliop56/tinyauth/internal/utils"
-	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
+	"github.com/tinyauthapp/tinyauth/internal/repository"
+	"github.com/tinyauthapp/tinyauth/internal/service"
+	"github.com/tinyauthapp/tinyauth/internal/utils"
+	"github.com/tinyauthapp/tinyauth/internal/utils/tlog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
