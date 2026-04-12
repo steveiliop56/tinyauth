@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-It is recommended to use the [latest](https://github.com/steveiliop56/tinyauth/releases/latest) available version of tinyauth. This is because it includes security fixes, new features and dependency updates. Older versions, especially major ones, are not supported and won't receive security or patch updates.
+It is recommended to use the [latest](https://github.com/tinyauthapp/tinyauth/releases/latest) available version of tinyauth. This is because it includes security fixes, new features and dependency updates. Older versions, especially major ones, are not supported and won't receive security or patch updates.
 
 ## Reporting a Vulnerability
 
