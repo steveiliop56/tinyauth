@@ -26,12 +26,14 @@ export const TotpForm = (props: Props) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-    form.setValue("code", value, { shouldDirty: true, shouldValidate: true });
+    form.setValue("code", value, { shouldDirty: true, shouldValidate: false });
     if (value.length === 6) {
       form.handleSubmit(onSubmit)();
     }
   };
 
+  // Note: This is not the best UX, ideally we would want https://github.com/guilhermerodz/input-otp
+  // but some password managers cannot autofill the inputs (see #92) so, simple input it is
   return (
     <Form {...form}>
       <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
@@ -43,8 +45,6 @@ export const TotpForm = (props: Props) => {
               <FormControl>
                 <Input
                   {...field}
-                  id="totp-code"
-                  name="code"
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"

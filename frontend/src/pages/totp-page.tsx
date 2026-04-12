@@ -74,7 +74,7 @@ export const TotpPage = () => {
         <CardTitle className="text-xl">{t("totpTitle")}</CardTitle>
         <CardDescription>{t("totpSubtitle")}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center">
+      <CardContent>
         <TotpForm
           formId={formId}
           onSubmit={(values) => totpMutation.mutate(values)}
