@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { totpSchema, TotpSchema } from "@/schemas/totp-schema";
 import { useTranslation } from "react-i18next";
+import { useRef } from "react";
 import z from "zod";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 export const TotpForm = (props: Props) => {
   const { formId, onSubmit } = props;
   const { t } = useTranslation();
+  const autoSubmittedRef = useRef(false);
 
   z.config({
     customError: (iss) =>
@@ -27,9 +29,12 @@ export const TotpForm = (props: Props) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     form.setValue("code", value, { shouldDirty: true, shouldValidate: false });
-    if (value.length === 6) {
+    if (value.length === 6 && !autoSubmittedRef.current) {
+      autoSubmittedRef.current = true;
       form.handleSubmit(onSubmit)();
+      return;
     }
+    autoSubmittedRef.current = false;
   };
 
   // Note: This is not the best UX, ideally we would want https://github.com/guilhermerodz/input-otp
