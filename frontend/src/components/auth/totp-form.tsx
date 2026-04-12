@@ -1,14 +1,10 @@
 import { Form, FormControl, FormField, FormItem } from "../ui/form";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "../ui/input-otp";
+import { Input } from "../ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { totpSchema, TotpSchema } from "@/schemas/totp-schema";
 import { useTranslation } from "react-i18next";
+import { useRef } from "react";
 import z from "zod";
 
 interface Props {
@@ -19,6 +15,7 @@ interface Props {
 export const TotpForm = (props: Props) => {
   const { formId, onSubmit } = props;
   const { t } = useTranslation();
+  const autoSubmittedRef = useRef(false);
 
   z.config({
     customError: (iss) =>
@@ -29,14 +26,19 @@ export const TotpForm = (props: Props) => {
     resolver: zodResolver(totpSchema),
   });
 
-  const handleChange = (value: string) => {
-    form.setValue("code", value, { shouldDirty: true, shouldValidate: true });
-
-    if (value.length === 6) {
-      onSubmit({ code: value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    form.setValue("code", value, { shouldDirty: true, shouldValidate: false });
+    if (value.length === 6 && !autoSubmittedRef.current) {
+      autoSubmittedRef.current = true;
+      form.handleSubmit(onSubmit)();
+      return;
     }
+    autoSubmittedRef.current = false;
   };
 
+  // Note: This is not the best UX, ideally we would want https://github.com/guilhermerodz/input-otp
+  // but some password managers cannot autofill the inputs (see #92) so, simple input it is
   return (
     <Form {...form}>
       <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
@@ -46,25 +48,17 @@ export const TotpForm = (props: Props) => {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <InputOTP
-                  maxLength={6}
+                <Input
                   {...field}
+                  type="text"
+                  inputMode="numeric"
                   autoComplete="one-time-code"
                   autoFocus
+                  maxLength={6}
+                  placeholder="XXXXXX"
                   onChange={handleChange}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
+                  className="text-center"
+                />
               </FormControl>
             </FormItem>
           )}
