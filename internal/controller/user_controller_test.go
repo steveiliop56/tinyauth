@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"path"
-	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/controller"
 	"github.com/steveiliop56/tinyauth/internal/repository"
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestUserController(t *testing.T) {
@@ -35,6 +35,23 @@ func TestUserController(t *testing.T) {
 				Username:   "totpuser",
 				Password:   "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa", // password
 				TotpSecret: "JPIEBDKJH6UGWJMX66RR3S55UFP2SGKK",
+			},
+			{
+				Username: "attruser",
+				Password: "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa", // password
+				Attributes: config.UserAttributes{
+					Name:  "Alice Smith",
+					Email: "alice@example.com",
+				},
+			},
+			{
+				Username:   "attrtotpuser",
+				Password:   "$2a$10$ZwVYQH07JX2zq7Fjkt3gU.BjwvvwPeli4OqOno04RQIv0P7usBrXa", // password
+				TotpSecret: "JPIEBDKJH6UGWJMX66RR3S55UFP2SGKK",
+				Attributes: config.UserAttributes{
+					Name:  "Bob Jones",
+					Email: "bob@example.com",
+				},
 			},
 		},
 		SessionExpiry:     10, // 10 seconds, useful for testing
@@ -273,6 +290,64 @@ func TestUserController(t *testing.T) {
 				assert.Contains(t, recorder.Body.String(), "Too many failed TOTP attempts.")
 			},
 		},
+		{
+			description: "Login uses name and email from user attributes",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				loginReq := controller.LoginRequest{Username: "attruser", Password: "password"}
+				body, err := json.Marshal(loginReq)
+				require.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/user/login", strings.NewReader(string(body)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+
+				require.Equal(t, 200, recorder.Code)
+				cookies := recorder.Result().Cookies()
+				require.Len(t, cookies, 1)
+				assert.Equal(t, "tinyauth-session", cookies[0].Name)
+			},
+		},
+		{
+			description: "Login with TOTP uses name and email from user attributes in pending session",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				loginReq := controller.LoginRequest{Username: "attrtotpuser", Password: "password"}
+				body, err := json.Marshal(loginReq)
+				require.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/user/login", strings.NewReader(string(body)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+
+				require.Equal(t, 200, recorder.Code)
+				var res map[string]any
+				require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &res))
+				assert.Equal(t, true, res["totpPending"])
+				require.Len(t, recorder.Result().Cookies(), 1)
+			},
+		},
+		{
+			description: "TOTP completion uses name and email from user attributes",
+			middlewares: []gin.HandlerFunc{},
+			run: func(t *testing.T, router *gin.Engine, recorder *httptest.ResponseRecorder) {
+				code, err := totp.GenerateCode("JPIEBDKJH6UGWJMX66RR3S55UFP2SGKK", time.Now())
+				require.NoError(t, err)
+
+				totpReq := controller.TotpRequest{Code: code}
+				body, err := json.Marshal(totpReq)
+				require.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "/api/user/totp", strings.NewReader(string(body)))
+				req.Header.Set("Content-Type", "application/json")
+				router.ServeHTTP(recorder, req)
+
+				require.Equal(t, 200, recorder.Code)
+				cookies := recorder.Result().Cookies()
+				require.Len(t, cookies, 1)
+				assert.Equal(t, "tinyauth-session", cookies[0].Name)
+			},
+		},
 	}
 
 	oauthBrokerCfgs := make(map[string]config.OAuthServiceConfig)
@@ -305,9 +380,31 @@ func TestUserController(t *testing.T) {
 		authService.ClearRateLimitsTestingOnly()
 	}
 
-	setTotpMiddlewareOverrides := []string{
-		"Should be able to login with totp",
-		"Totp should rate limit on multiple invalid attempts",
+	setTotpMiddlewareOverrides := map[string]config.UserContext{
+		"Should be able to login with totp": {
+			Username:    "totpuser",
+			Name:        "Totpuser",
+			Email:       "totpuser@example.com",
+			Provider:    "local",
+			TotpPending: true,
+			TotpEnabled: true,
+		},
+		"Totp should rate limit on multiple invalid attempts": {
+			Username:    "totpuser",
+			Name:        "Totpuser",
+			Email:       "totpuser@example.com",
+			Provider:    "local",
+			TotpPending: true,
+			TotpEnabled: true,
+		},
+		"TOTP completion uses name and email from user attributes": {
+			Username:    "attrtotpuser",
+			Name:        "Bob Jones",
+			Email:       "bob@example.com",
+			Provider:    "local",
+			TotpPending: true,
+			TotpEnabled: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -321,18 +418,10 @@ func TestUserController(t *testing.T) {
 
 			// Gin is stupid and doesn't allow setting a middleware after the groups
 			// so we need to do some stupid overrides here
-			if slices.Contains(setTotpMiddlewareOverrides, test.description) {
-				// Assuming the cookie is set, it should be picked up by the
-				// context middleware
+			if ctx, ok := setTotpMiddlewareOverrides[test.description]; ok {
+				ctx := ctx
 				router.Use(func(c *gin.Context) {
-					c.Set("context", &config.UserContext{
-						Username:    "totpuser",
-						Name:        "Totpuser",
-						Email:       "totpuser@example.com",
-						Provider:    "local",
-						TotpPending: true,
-						TotpEnabled: true,
-					})
+					c.Set("context", &ctx)
 				})
 			}
 
