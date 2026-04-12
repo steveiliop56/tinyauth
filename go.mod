@@ -1,4 +1,4 @@
-module github.com/steveiliop56/tinyauth
+module github.com/tinyauthapp/tinyauth
 
 go 1.26.0
 
