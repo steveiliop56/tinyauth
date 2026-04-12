@@ -1,0 +1,44 @@
+# This contains Traefik proxy versions
+# All apps must be prefixed by `traefik-`
+
+services:
+  traefik:
+    container_name: traefik
+    image: ${TRAEFIK_IMAGE:-traefik}:${TRAEFIK_IMAGE_TAG:-v3}
+    networks:
+      - e2e
+    environment:
+      TZ: "${TZ:-Europe/London}"
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+      UMASK: "000"
+    command:
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=/var/run/docker.sock"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./.ssl/key.pem:/run/secrets/key.pem:ro"
+      - "./.ssl/cert.pem:/run/secrets/cert.pem:ro"
+      - "./config:/etc/traefik"
+
+  traefik-tinyauth:
+    container_name: traefik-tinyauth
+    extends:
+      file: ../compose.base.yaml
+      service: tinyauth
+    networks:
+      e2e-external:
+      e2e:
+        aliases:
+          - "traefik-tinyauth.$DOMAIN"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tinyauth.rule=Host(`tinyauth.$DOMAIN`)"
+      - "traefik.http.services.tinyauth.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik"
+      - "traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders=X-Forwarded-User"
+      - "traefik.http.middlewares.tinyauth.forwardauth.maxResponseBodySize=32768"

@@ -1,0 +1,10 @@
+# This contains base apps without any proxy information
+
+services:
+  tinyauth:
+    image: ${TINYAUTH_IMAGE:-ghcr.io/steveiliop56/tinyauth}:${TINYAUTH_IMAGE_TAG:-v5}
+    environment:
+      TINYAUTH_ANALYTICS_ENABLED: "false"
+      TINYAUTH_APPURL: "https://tinyauth.${DOMAIN:-local}"
+    volumes:
+      - "./config:/data"

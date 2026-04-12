@@ -1,0 +1,53 @@
+name: tinyauth-e2e
+
+services:
+  traefik-tinyauth:
+    container_name: traefik-tinyauth
+    extends:
+      file: ../compose.base.yaml
+      service: tinyauth
+    networks:
+      e2e-external:
+      e2e:
+        aliases:
+          - "traefik-tinyauth.$DOMAIN"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tinyauth.rule=Host(`tinyauth.$DOMAIN`)"
+      - "traefik.http.services.tinyauth.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik"
+      - "traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders=X-Forwarded-User"
+      - "traefik.http.middlewares.tinyauth.forwardauth.maxResponseBodySize=32768"
+
+  traefik-tinyauth-google:
+    container_name: traefik-tinyauth-google
+    secrets:
+      - google_client_secret
+    environment:
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: "$GOOGLE_CLIENT_ID"
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRETFILE: "/run/secrets/google_client_secret"
+      TINYAUTH_OAUTH_WHITELIST: "${WHITELIST:?Set the WHITELIST to your google email address!}"
+
+  whoami:
+    image: traefik/whoami:latest
+    networks:
+      e2e:
+        aliases:
+          - "whoami.$DOMAIN"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.whoami.rule: Host(`whoami.$DOMAIN`)
+      traefik.http.routers.whoami.middlewares: tinyauth
+
+networks:
+  e2e-external:
+    name: "e2e-external"
+    driver: bridge
+    enable_ipv4: true
+    enable_ipv6: true
+  e2e:
+    name: "e2e"
+    driver: bridge
+    internal: true
+    enable_ipv4: true
+    enable_ipv6: false
