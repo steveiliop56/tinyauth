@@ -44,7 +44,7 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 }
 
 func (app *BootstrapApp) Setup() error {
-	tlog.App.Warn().Msg("Tinyauth is moving to an organization! All versions after v5.0.7 will be released under ghcr.io/tinyauthapp/tinyauth. Existing images will continue to work but new features and updates (including security ones) will only be released under the new image path.")
+	fmt.Println("Tinyauth is moving to an organization! All versions after v5.0.7 will be released under ghcr.io/tinyauthapp/tinyauth. Existing images will continue to work but new features and updates (including security ones) will only be released under the new image path.")
 
 	// get app url
 	appUrl, err := url.Parse(app.config.AppURL)
