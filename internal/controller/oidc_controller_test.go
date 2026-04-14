@@ -387,7 +387,7 @@ func TestOIDCController(t *testing.T) {
 				err = json.Unmarshal(secondRecorder.Body.Bytes(), &secondRes)
 				assert.NoError(t, err)
 
-				assert.Equal(t, secondRes["error"], "invalid_grant")
+				assert.Equal(t, "invalid_grant", secondRes["error"])
 			},
 		},
 		{

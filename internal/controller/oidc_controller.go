@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -276,8 +275,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 	case "authorization_code":
 		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code), client.ClientID)
 		if err != nil {
-			err := controller.oidc.DeleteTokenByCodeHash(c, controller.oidc.Hash(req.Code))
-			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			if err := controller.oidc.DeleteTokenByCodeHash(c, controller.oidc.Hash(req.Code)); err != nil {
 				tlog.App.Error().Err(err).Msg("Failed to delete access token by code hash")
 			}
 			if errors.Is(err, service.ErrCodeNotFound) {
