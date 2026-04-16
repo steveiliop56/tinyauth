@@ -18,7 +18,7 @@ import { OAuthButton } from "@/components/ui/oauth-button";
 import { SeperatorWithChildren } from "@/components/ui/separator";
 import { useAppContext } from "@/context/app-context";
 import { useUserContext } from "@/context/user-context";
-import { useOIDCParams } from "@/lib/hooks/oidc";
+import { useOIDCParams, parseOIDCParams } from "@/lib/hooks/oidc";
 import { LoginSchema } from "@/schemas/login-schema";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -113,13 +113,23 @@ export const LoginPage = () => {
     mutationFn: (values: LoginSchema) => axios.post("/api/user/login", values),
     mutationKey: ["login"],
     onSuccess: (data) => {
+      // Re-parse OIDC params from window.location.search to avoid stale
+      // closures. When the authorize page redirects to /login via React
+      // Router's <Navigate replace />, useLocation().search may not reflect
+      // the updated URL at render time, but window.location.search is always
+      // current. This ensures OIDC params survive the login -> TOTP flow.
+      const currentParams = new URLSearchParams(window.location.search);
+      const currentOidcParams = parseOIDCParams(currentParams);
+      const currentRedirectUri =
+        currentParams.get("redirect_uri") || undefined;
+
       if (data.data.totpPending) {
-        if (oidcParams.isOidc) {
-          window.location.replace(`/totp?${oidcParams.compiled}`);
+        if (currentOidcParams.isOidc) {
+          window.location.replace(`/totp?${currentOidcParams.compiled}`);
           return;
         }
         window.location.replace(
-          `/totp${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`,
+          `/totp${currentRedirectUri ? `?redirect_uri=${encodeURIComponent(currentRedirectUri)}` : ""}`,
         );
         return;
       }
@@ -129,12 +139,12 @@ export const LoginPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
-        if (oidcParams.isOidc) {
-          window.location.replace(`/authorize?${oidcParams.compiled}`);
+        if (currentOidcParams.isOidc) {
+          window.location.replace(`/authorize?${currentOidcParams.compiled}`);
           return;
         }
         window.location.replace(
-          `/continue${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`,
+          `/continue${currentRedirectUri ? `?redirect_uri=${encodeURIComponent(currentRedirectUri)}` : ""}`,
         );
       }, 500);
     },

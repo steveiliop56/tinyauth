@@ -38,14 +38,14 @@ function decodeRequestObject(jwt: string): Record<string, string> {
   }
 }
 
-export const useOIDCParams = (
-  params: URLSearchParams,
-): {
+export type OIDCParamsResult = {
   values: z.infer<typeof oidcParamsSchema>;
   issues: string[];
   isOidc: boolean;
   compiled: string;
-} => {
+};
+
+export const parseOIDCParams = (params: URLSearchParams): OIDCParamsResult => {
   const obj = Object.fromEntries(params.entries());
 
   // RFC 9101 / OIDC Core 6.1: if `request` param present, decode JWT payload
@@ -73,4 +73,8 @@ export const useOIDCParams = (
     isOidc: false,
     compiled: "",
   };
+};
+
+export const useOIDCParams = (params: URLSearchParams): OIDCParamsResult => {
+  return parseOIDCParams(params);
 };
