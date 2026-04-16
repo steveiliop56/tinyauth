@@ -17,21 +17,23 @@ INSERT INTO "oidc_codes" (
     "redirect_uri",
     "client_id",
     "expires_at",
-    "nonce"
+    "nonce",
+    "code_challenge"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 type CreateOidcCodeParams struct {
-	Sub         string
-	CodeHash    string
-	Scope       string
-	RedirectURI string
-	ClientID    string
-	ExpiresAt   int64
-	Nonce       string
+	Sub           string
+	CodeHash      string
+	Scope         string
+	RedirectURI   string
+	ClientID      string
+	ExpiresAt     int64
+	Nonce         string
+	CodeChallenge string
 }
 
 func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) (OidcCode, error) {
@@ -43,6 +45,7 @@ func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) 
 		arg.ClientID,
 		arg.ExpiresAt,
 		arg.Nonce,
+		arg.CodeChallenge,
 	)
 	var i OidcCode
 	err := row.Scan(
@@ -53,6 +56,7 @@ func (q *Queries) CreateOidcCode(ctx context.Context, arg CreateOidcCodeParams) 
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
@@ -66,11 +70,12 @@ INSERT INTO "oidc_tokens" (
     "client_id",
     "token_expires_at",
     "refresh_token_expires_at",
+    "code_hash",
     "nonce"
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce
+RETURNING sub, access_token_hash, refresh_token_hash, code_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce
 `
 
 type CreateOidcTokenParams struct {
@@ -81,6 +86,7 @@ type CreateOidcTokenParams struct {
 	ClientID              string
 	TokenExpiresAt        int64
 	RefreshTokenExpiresAt int64
+	CodeHash              string
 	Nonce                 string
 }
 
@@ -93,6 +99,7 @@ func (q *Queries) CreateOidcToken(ctx context.Context, arg CreateOidcTokenParams
 		arg.ClientID,
 		arg.TokenExpiresAt,
 		arg.RefreshTokenExpiresAt,
+		arg.CodeHash,
 		arg.Nonce,
 	)
 	var i OidcToken
@@ -100,6 +107,7 @@ func (q *Queries) CreateOidcToken(ctx context.Context, arg CreateOidcTokenParams
 		&i.Sub,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
+		&i.CodeHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.TokenExpiresAt,
@@ -156,7 +164,7 @@ func (q *Queries) CreateOidcUserInfo(ctx context.Context, arg CreateOidcUserInfo
 const deleteExpiredOidcCodes = `-- name: DeleteExpiredOidcCodes :many
 DELETE FROM "oidc_codes"
 WHERE "expires_at" < ?
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 func (q *Queries) DeleteExpiredOidcCodes(ctx context.Context, expiresAt int64) ([]OidcCode, error) {
@@ -176,6 +184,7 @@ func (q *Queries) DeleteExpiredOidcCodes(ctx context.Context, expiresAt int64) (
 			&i.ClientID,
 			&i.ExpiresAt,
 			&i.Nonce,
+			&i.CodeChallenge,
 		); err != nil {
 			return nil, err
 		}
@@ -193,7 +202,7 @@ func (q *Queries) DeleteExpiredOidcCodes(ctx context.Context, expiresAt int64) (
 const deleteExpiredOidcTokens = `-- name: DeleteExpiredOidcTokens :many
 DELETE FROM "oidc_tokens"
 WHERE "token_expires_at" < ? AND "refresh_token_expires_at" < ?
-RETURNING sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce
+RETURNING sub, access_token_hash, refresh_token_hash, code_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce
 `
 
 type DeleteExpiredOidcTokensParams struct {
@@ -214,6 +223,7 @@ func (q *Queries) DeleteExpiredOidcTokens(ctx context.Context, arg DeleteExpired
 			&i.Sub,
 			&i.AccessTokenHash,
 			&i.RefreshTokenHash,
+			&i.CodeHash,
 			&i.Scope,
 			&i.ClientID,
 			&i.TokenExpiresAt,
@@ -263,6 +273,16 @@ func (q *Queries) DeleteOidcToken(ctx context.Context, accessTokenHash string) e
 	return err
 }
 
+const deleteOidcTokenByCodeHash = `-- name: DeleteOidcTokenByCodeHash :exec
+DELETE FROM "oidc_tokens"
+WHERE "code_hash" = ?
+`
+
+func (q *Queries) DeleteOidcTokenByCodeHash(ctx context.Context, codeHash string) error {
+	_, err := q.db.ExecContext(ctx, deleteOidcTokenByCodeHash, codeHash)
+	return err
+}
+
 const deleteOidcTokenBySub = `-- name: DeleteOidcTokenBySub :exec
 DELETE FROM "oidc_tokens"
 WHERE "sub" = ?
@@ -286,7 +306,7 @@ func (q *Queries) DeleteOidcUserInfo(ctx context.Context, sub string) error {
 const getOidcCode = `-- name: GetOidcCode :one
 DELETE FROM "oidc_codes"
 WHERE "code_hash" = ?
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, error) {
@@ -300,6 +320,7 @@ func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, e
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
@@ -307,7 +328,7 @@ func (q *Queries) GetOidcCode(ctx context.Context, codeHash string) (OidcCode, e
 const getOidcCodeBySub = `-- name: GetOidcCodeBySub :one
 DELETE FROM "oidc_codes"
 WHERE "sub" = ?
-RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce
+RETURNING sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge
 `
 
 func (q *Queries) GetOidcCodeBySub(ctx context.Context, sub string) (OidcCode, error) {
@@ -321,12 +342,13 @@ func (q *Queries) GetOidcCodeBySub(ctx context.Context, sub string) (OidcCode, e
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
 
 const getOidcCodeBySubUnsafe = `-- name: GetOidcCodeBySubUnsafe :one
-SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce FROM "oidc_codes"
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge FROM "oidc_codes"
 WHERE "sub" = ?
 `
 
@@ -341,12 +363,13 @@ func (q *Queries) GetOidcCodeBySubUnsafe(ctx context.Context, sub string) (OidcC
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
 
 const getOidcCodeUnsafe = `-- name: GetOidcCodeUnsafe :one
-SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce FROM "oidc_codes"
+SELECT sub, code_hash, scope, redirect_uri, client_id, expires_at, nonce, code_challenge FROM "oidc_codes"
 WHERE "code_hash" = ?
 `
 
@@ -361,12 +384,13 @@ func (q *Queries) GetOidcCodeUnsafe(ctx context.Context, codeHash string) (OidcC
 		&i.ClientID,
 		&i.ExpiresAt,
 		&i.Nonce,
+		&i.CodeChallenge,
 	)
 	return i, err
 }
 
 const getOidcToken = `-- name: GetOidcToken :one
-SELECT sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce FROM "oidc_tokens"
+SELECT sub, access_token_hash, refresh_token_hash, code_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce FROM "oidc_tokens"
 WHERE "access_token_hash" = ?
 `
 
@@ -377,6 +401,7 @@ func (q *Queries) GetOidcToken(ctx context.Context, accessTokenHash string) (Oid
 		&i.Sub,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
+		&i.CodeHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.TokenExpiresAt,
@@ -387,7 +412,7 @@ func (q *Queries) GetOidcToken(ctx context.Context, accessTokenHash string) (Oid
 }
 
 const getOidcTokenByRefreshToken = `-- name: GetOidcTokenByRefreshToken :one
-SELECT sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce FROM "oidc_tokens"
+SELECT sub, access_token_hash, refresh_token_hash, code_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce FROM "oidc_tokens"
 WHERE "refresh_token_hash" = ?
 `
 
@@ -398,6 +423,7 @@ func (q *Queries) GetOidcTokenByRefreshToken(ctx context.Context, refreshTokenHa
 		&i.Sub,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
+		&i.CodeHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.TokenExpiresAt,
@@ -408,7 +434,7 @@ func (q *Queries) GetOidcTokenByRefreshToken(ctx context.Context, refreshTokenHa
 }
 
 const getOidcTokenBySub = `-- name: GetOidcTokenBySub :one
-SELECT sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce FROM "oidc_tokens"
+SELECT sub, access_token_hash, refresh_token_hash, code_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce FROM "oidc_tokens"
 WHERE "sub" = ?
 `
 
@@ -419,6 +445,7 @@ func (q *Queries) GetOidcTokenBySub(ctx context.Context, sub string) (OidcToken,
 		&i.Sub,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
+		&i.CodeHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.TokenExpiresAt,
@@ -454,7 +481,7 @@ UPDATE "oidc_tokens" SET
     "token_expires_at" = ?,
     "refresh_token_expires_at" = ?
 WHERE "refresh_token_hash" = ?
-RETURNING sub, access_token_hash, refresh_token_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce
+RETURNING sub, access_token_hash, refresh_token_hash, code_hash, scope, client_id, token_expires_at, refresh_token_expires_at, nonce
 `
 
 type UpdateOidcTokenByRefreshTokenParams struct {
@@ -478,6 +505,7 @@ func (q *Queries) UpdateOidcTokenByRefreshToken(ctx context.Context, arg UpdateO
 		&i.Sub,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
+		&i.CodeHash,
 		&i.Scope,
 		&i.ClientID,
 		&i.TokenExpiresAt,

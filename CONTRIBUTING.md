@@ -19,26 +19,9 @@ git clone https://github.com/steveiliop56/tinyauth
 cd tinyauth
 ```
 
-## Initialize Submodules
+## Installing Dependencies
 
-The project uses Git submodules for some dependencies, so you need to initialize them with:
-
-```sh
-git submodule init
-git submodule update
-```
-
-## Apply patches
-
-Some of the dependencies must be patched in order to work correctly with the project, you can apply the patches by running:
-
-```sh
-git apply --directory paerser/ patches/nested_maps.diff
-```
-
-## Installing Requirements
-
-While development occurs within Docker, installing the requirements locally is recommended to avoid import errors. Install the Go dependencies:
+While development occurs within Docker, installing the dependencies locally is recommended to avoid import errors. Install the Go dependencies:
 
 ```sh
 go mod tidy

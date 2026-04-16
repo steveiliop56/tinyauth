@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 )
 
 type healthzResponse struct {
-	Status  string `json:"status"`
+	Status  int    `json:"status"`
 	Message string `json:"message"`
 }
 

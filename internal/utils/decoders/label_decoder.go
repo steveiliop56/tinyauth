@@ -1,7 +1,7 @@
 package decoders
 
 import (
-	"github.com/traefik/paerser/parser"
+	"github.com/tinyauthapp/paerser/parser"
 )
 
 func DecodeLabels[T any](labels map[string]string, root string) (T, error) {

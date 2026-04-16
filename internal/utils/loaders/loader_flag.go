@@ -3,8 +3,8 @@ package loaders
 import (
 	"fmt"
 
-	"github.com/traefik/paerser/cli"
-	"github.com/traefik/paerser/flag"
+	"github.com/tinyauthapp/paerser/cli"
+	"github.com/tinyauthapp/paerser/flag"
 )
 
 type FlagLoader struct{}

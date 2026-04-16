@@ -51,15 +51,12 @@ export const LoginPage = () => {
   const formId = useId();
 
   const searchParams = new URLSearchParams(search);
-  const {
-    values: props,
-    isOidc,
-    compiled: compiledOIDCParams,
-  } = useOIDCParams(searchParams);
+  const redirectUri = searchParams.get("redirect_uri") || undefined;
+  const oidcParams = useOIDCParams(searchParams);
 
   const [isOauthAutoRedirect, setIsOauthAutoRedirect] = useState(
     providers.find((provider) => provider.id === oauthAutoRedirect) !==
-      undefined && props.redirect_uri,
+      undefined && redirectUri !== undefined,
   );
 
   const oauthProviders = providers.filter(
@@ -76,10 +73,18 @@ export const LoginPage = () => {
     isPending: oauthIsPending,
     variables: oauthVariables,
   } = useMutation({
-    mutationFn: (provider: string) =>
-      axios.get(
-        `/api/oauth/url/${provider}${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
-      ),
+    mutationFn: (provider: string) => {
+      const getParams = function (): string {
+        if (oidcParams.isOidc) {
+          return `?${oidcParams.compiled}`;
+        }
+        if (redirectUri) {
+          return `?redirect_uri=${encodeURIComponent(redirectUri)}`;
+        }
+        return "";
+      };
+      return axios.get(`/api/oauth/url/${provider}${getParams()}`);
+    },
     mutationKey: ["oauth"],
     onSuccess: (data) => {
       toast.info(t("loginOauthSuccessTitle"), {
@@ -109,8 +114,12 @@ export const LoginPage = () => {
     mutationKey: ["login"],
     onSuccess: (data) => {
       if (data.data.totpPending) {
+        if (oidcParams.isOidc) {
+          window.location.replace(`/totp?${oidcParams.compiled}`);
+          return;
+        }
         window.location.replace(
-          `/totp${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
+          `/totp${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`,
         );
         return;
       }
@@ -120,12 +129,12 @@ export const LoginPage = () => {
       });
 
       redirectTimer.current = window.setTimeout(() => {
-        if (isOidc) {
-          window.location.replace(`/authorize?${compiledOIDCParams}`);
+        if (oidcParams.isOidc) {
+          window.location.replace(`/authorize?${oidcParams.compiled}`);
           return;
         }
         window.location.replace(
-          `/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`,
+          `/continue${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`,
         );
       }, 500);
     },
@@ -144,7 +153,7 @@ export const LoginPage = () => {
       !isLoggedIn &&
       isOauthAutoRedirect &&
       !hasAutoRedirectedRef.current &&
-      props.redirect_uri
+      redirectUri !== undefined
     ) {
       hasAutoRedirectedRef.current = true;
       oauthMutate(oauthAutoRedirect);
@@ -155,7 +164,7 @@ export const LoginPage = () => {
     hasAutoRedirectedRef,
     oauthAutoRedirect,
     isOauthAutoRedirect,
-    props.redirect_uri,
+    redirectUri,
   ]);
 
   useEffect(() => {
@@ -170,14 +179,14 @@ export const LoginPage = () => {
     };
   }, [redirectTimer, redirectButtonTimer]);
 
-  if (isLoggedIn && isOidc) {
-    return <Navigate to={`/authorize?${compiledOIDCParams}`} replace />;
+  if (isLoggedIn && oidcParams.isOidc) {
+    return <Navigate to={`/authorize?${oidcParams.compiled}`} replace />;
   }
 
-  if (isLoggedIn && props.redirect_uri !== "") {
+  if (isLoggedIn && redirectUri !== undefined) {
     return (
       <Navigate
-        to={`/continue${props.redirect_uri ? `?redirect_uri=${encodeURIComponent(props.redirect_uri)}` : ""}`}
+        to={`/continue${redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : ""}`}
         replace
       />
     );

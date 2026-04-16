@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-querystring/query"
+
 	"github.com/steveiliop56/tinyauth/internal/service"
 	"github.com/steveiliop56/tinyauth/internal/utils"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
@@ -34,6 +35,7 @@ type TokenRequest struct {
 	RefreshToken string `form:"refresh_token" url:"refresh_token"`
 	ClientSecret string `form:"client_secret" url:"client_secret"`
 	ClientID     string `form:"client_id" url:"client_id"`
+	CodeVerifier string `form:"code_verifier" url:"code_verifier"`
 }
 
 type CallbackError struct {
@@ -69,6 +71,7 @@ func (controller *OIDCController) SetupRoutes() {
 	oidcGroup.POST("/authorize", controller.Authorize)
 	oidcGroup.POST("/token", controller.Token)
 	oidcGroup.GET("/userinfo", controller.Userinfo)
+	oidcGroup.POST("/userinfo", controller.Userinfo)
 }
 
 func (controller *OIDCController) GetClientInfo(c *gin.Context) {
@@ -235,7 +238,7 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		if !ok {
 			tlog.App.Error().Msg("Missing authorization header")
-			c.Header("www-authenticate", "basic")
+			c.Header("www-authenticate", `Basic realm="Tinyauth OIDC Token Endpoint"`)
 			c.JSON(400, gin.H{
 				"error": "invalid_client",
 			})
@@ -272,6 +275,9 @@ func (controller *OIDCController) Token(c *gin.Context) {
 	case "authorization_code":
 		entry, err := controller.oidc.GetCodeEntry(c, controller.oidc.Hash(req.Code), client.ClientID)
 		if err != nil {
+			if err := controller.oidc.DeleteTokenByCodeHash(c, controller.oidc.Hash(req.Code)); err != nil {
+				tlog.App.Error().Err(err).Msg("Failed to delete access token by code hash")
+			}
 			if errors.Is(err, service.ErrCodeNotFound) {
 				tlog.App.Warn().Msg("Code not found")
 				c.JSON(400, gin.H{
@@ -302,6 +308,16 @@ func (controller *OIDCController) Token(c *gin.Context) {
 
 		if entry.RedirectURI != req.RedirectURI {
 			tlog.App.Warn().Str("redirect_uri", req.RedirectURI).Msg("Redirect URI mismatch")
+			c.JSON(400, gin.H{
+				"error": "invalid_grant",
+			})
+			return
+		}
+
+		ok := controller.oidc.ValidatePKCE(entry.CodeChallenge, req.CodeVerifier)
+
+		if !ok {
+			tlog.App.Warn().Msg("PKCE validation failed")
 			c.JSON(400, gin.H{
 				"error": "invalid_grant",
 			})
@@ -364,22 +380,48 @@ func (controller *OIDCController) Userinfo(c *gin.Context) {
 		return
 	}
 
+	var token string
+
 	authorization := c.GetHeader("Authorization")
+	if authorization != "" {
+		tokenType, bearerToken, ok := strings.Cut(authorization, " ")
+		if !ok {
+			tlog.App.Warn().Msg("OIDC userinfo accessed with malformed authorization header")
+			c.JSON(401, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
 
-	tokenType, token, ok := strings.Cut(authorization, " ")
+		if strings.ToLower(tokenType) != "bearer" {
+			tlog.App.Warn().Msg("OIDC userinfo accessed with invalid token type")
+			c.JSON(401, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
 
-	if !ok {
+		token = bearerToken
+	} else if c.Request.Method == http.MethodPost {
+		if c.ContentType() != "application/x-www-form-urlencoded" {
+			tlog.App.Warn().Msg("OIDC userinfo POST accessed with invalid content type")
+			c.JSON(400, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
+		token = c.PostForm("access_token")
+		if token == "" {
+			tlog.App.Warn().Msg("OIDC userinfo POST accessed without access_token in body")
+			c.JSON(401, gin.H{
+				"error": "invalid_request",
+			})
+			return
+		}
+	} else {
 		tlog.App.Warn().Msg("OIDC userinfo accessed without authorization header")
 		c.JSON(401, gin.H{
-			"error": "invalid_grant",
-		})
-		return
-	}
-
-	if strings.ToLower(tokenType) != "bearer" {
-		tlog.App.Warn().Msg("OIDC userinfo accessed with invalid token type")
-		c.JSON(401, gin.H{
-			"error": "invalid_grant",
+			"error": "invalid_request",
 		})
 		return
 	}

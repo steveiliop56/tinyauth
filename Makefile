@@ -13,6 +13,8 @@ BIN_NAME := tinyauth-$(GOARCH)
 DEV_COMPOSE := $(shell test -f "docker-compose.test.yml" && echo "docker-compose.test.yml" || echo "docker-compose.dev.yml" )
 PROD_COMPOSE := $(shell test -f "docker-compose.test.prod.yml" && echo "docker-compose.test.prod.yml" || echo "docker-compose.example.yml" )
 
+.DEFAULT_GOAL := binary
+
 # Deps
 deps:
 	bun install --cwd frontend

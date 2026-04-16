@@ -13,27 +13,23 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          ui: [
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-label",
-            "@radix-ui/react-select",
-            "@radix-ui/react-separator",
-            "@radix-ui/react-slot",
-            "input-otp",
-            "tailwindcss",
-            "tailwind-merge",
-            "sonner",
-            "lucide-react",
+        codeSplitting: {
+          groups: [
+            {
+              name: "ui",
+              test: "@radix-ui|input-otp|tailwindcss|tailwind-merge|sonner|lucide-react",
+            },
+            {
+              name: "i18n",
+              test: "i18next|i18next-browser-languagedetector|i18next-resources-to-backend",
+            },
+            {
+              name: "util",
+              test: "zod|axios|react-hook-form",
+            },
           ],
-          i18n: [
-            "i18next",
-            "i18next-browser-languagedetector",
-            "i18next-resources-to-backend",
-          ],
-          util: ["zod", "axios", "react-hook-form"],
         },
       },
     },
@@ -55,6 +51,11 @@ export default defineConfig({
         target: "http://tinyauth-backend:3000/.well-known",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/\.well-known/, ""),
+      },
+      "/robots.txt": {
+        target: "http://tinyauth-backend:3000/robots.txt",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/robots.txt/, ""),
       },
     },
     allowedHosts: true,

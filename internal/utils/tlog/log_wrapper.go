@@ -55,6 +55,17 @@ func NewSimpleLogger() *Logger {
 	})
 }
 
+func NewTestLogger() *Logger {
+	return NewLogger(config.LogConfig{
+		Level: "trace",
+		Streams: config.LogStreams{
+			HTTP:  config.LogStreamConfig{Enabled: true},
+			App:   config.LogStreamConfig{Enabled: true},
+			Audit: config.LogStreamConfig{Enabled: true},
+		},
+	})
+}
+
 func (l *Logger) Init() {
 	Audit = l.Audit
 	HTTP = l.HTTP

@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
-	"github.com/traefik/paerser/cli"
-	"github.com/traefik/paerser/file"
-	"github.com/traefik/paerser/flag"
+	"github.com/tinyauthapp/paerser/cli"
+	"github.com/tinyauthapp/paerser/file"
+	"github.com/tinyauthapp/paerser/flag"
 )
 
 type FileLoader struct{}

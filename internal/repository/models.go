@@ -5,19 +5,21 @@
 package repository
 
 type OidcCode struct {
-	Sub         string
-	CodeHash    string
-	Scope       string
-	RedirectURI string
-	ClientID    string
-	ExpiresAt   int64
-	Nonce       string
+	Sub           string
+	CodeHash      string
+	Scope         string
+	RedirectURI   string
+	ClientID      string
+	ExpiresAt     int64
+	Nonce         string
+	CodeChallenge string
 }
 
 type OidcToken struct {
 	Sub                   string
 	AccessTokenHash       string
 	RefreshTokenHash      string
+	CodeHash              string
 	Scope                 string
 	ClientID              string
 	TokenExpiresAt        int64

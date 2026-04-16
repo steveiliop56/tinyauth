@@ -22,16 +22,17 @@ import (
 type BootstrapApp struct {
 	config  config.Config
 	context struct {
-		appUrl              string
-		uuid                string
-		cookieDomain        string
-		sessionCookieName   string
-		csrfCookieName      string
-		redirectCookieName  string
-		users               []config.User
-		oauthProviders      map[string]config.OAuthServiceConfig
-		configuredProviders []controller.Provider
-		oidcClients         []config.OIDCClientConfig
+		appUrl                 string
+		uuid                   string
+		cookieDomain           string
+		sessionCookieName      string
+		csrfCookieName         string
+		redirectCookieName     string
+		oauthSessionCookieName string
+		users                  []config.User
+		oauthProviders         map[string]config.OAuthServiceConfig
+		configuredProviders    []controller.Provider
+		oidcClients            []config.OIDCClientConfig
 	}
 	services Services
 }
@@ -43,6 +44,8 @@ func NewBootstrapApp(config config.Config) *BootstrapApp {
 }
 
 func (app *BootstrapApp) Setup() error {
+	fmt.Println("Tinyauth is moving to an organization! All versions after v5.0.7 will be released under ghcr.io/tinyauthapp/tinyauth. Existing images will continue to work but new features and updates (including security ones) will only be released under the new image path.")
+
 	// get app url
 	appUrl, err := url.Parse(app.config.AppURL)
 
@@ -113,6 +116,7 @@ func (app *BootstrapApp) Setup() error {
 	app.context.sessionCookieName = fmt.Sprintf("%s-%s", config.SessionCookieName, cookieId)
 	app.context.csrfCookieName = fmt.Sprintf("%s-%s", config.CSRFCookieName, cookieId)
 	app.context.redirectCookieName = fmt.Sprintf("%s-%s", config.RedirectCookieName, cookieId)
+	app.context.oauthSessionCookieName = fmt.Sprintf("%s-%s", config.OAuthSessionCookieName, cookieId)
 
 	// Dumps
 	tlog.App.Trace().Interface("config", app.config).Msg("Config dump")
@@ -190,12 +194,12 @@ func (app *BootstrapApp) Setup() error {
 
 	// Start db cleanup routine
 	tlog.App.Debug().Msg("Starting database cleanup routine")
-	go app.dbCleanup(queries)
+	go app.dbCleanupRoutine(queries)
 
 	// If analytics are not disabled, start heartbeat
 	if app.config.Analytics.Enabled {
 		tlog.App.Debug().Msg("Starting heartbeat routine")
-		go app.heartbeat()
+		go app.heartbeatRoutine()
 	}
 
 	// If we have an socket path, bind to it
@@ -226,7 +230,7 @@ func (app *BootstrapApp) Setup() error {
 	return nil
 }
 
-func (app *BootstrapApp) heartbeat() {
+func (app *BootstrapApp) heartbeatRoutine() {
 	ticker := time.NewTicker(time.Duration(12) * time.Hour)
 	defer ticker.Stop()
 
@@ -280,7 +284,7 @@ func (app *BootstrapApp) heartbeat() {
 	}
 }
 
-func (app *BootstrapApp) dbCleanup(queries *repository.Queries) {
+func (app *BootstrapApp) dbCleanupRoutine(queries *repository.Queries) {
 	ticker := time.NewTicker(time.Duration(30) * time.Minute)
 	defer ticker.Stop()
 	ctx := context.Background()

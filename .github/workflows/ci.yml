@@ -10,24 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
 
       - name: Setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: "^1.24.0"
+          go-version: "^1.26.0"
 
-      - name: Initialize submodules
-        run: |
-          git submodule init
-          git submodule update
-
-      - name: Apply patches
-        run: |
-          git apply --directory paerser/ patches/nested_maps.diff
+      - name: Go dependencies
+        run: go mod download
 
       - name: Install frontend dependencies
         run: |
@@ -56,6 +50,6 @@ jobs:
         run: go test -coverprofile=coverage.txt -v ./...
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

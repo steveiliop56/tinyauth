@@ -25,6 +25,15 @@ const (
 	ForwardAuth
 )
 
+type ProxyType int
+
+const (
+	Traefik ProxyType = iota
+	Caddy
+	Envoy
+	Nginx
+)
+
 var BrowserUserAgentRegex = regexp.MustCompile("Chrome|Gecko|AppleWebKit|Opera|Edge")
 
 type Proxy struct {
@@ -38,6 +47,7 @@ type ProxyContext struct {
 	Method    string
 	Type      AuthModuleType
 	IsBrowser bool
+	ProxyType ProxyType
 }
 
 type ProxyControllerConfig struct {
@@ -121,14 +131,6 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 	}
 
 	if !controller.auth.CheckIP(acls.IP, clientIP) {
-		if !controller.useFriendlyError(proxyCtx) {
-			c.JSON(401, gin.H{
-				"status":  401,
-				"message": "Unauthorized",
-			})
-			return
-		}
-
 		queries, err := query.Values(config.UnauthorizedQuery{
 			Resource: strings.Split(proxyCtx.Host, ".")[0],
 			IP:       clientIP,
@@ -136,11 +138,22 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 		if err != nil {
 			tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+			controller.handleError(c, proxyCtx)
 			return
 		}
 
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
+		redirectURL := fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode())
+
+		if !controller.useBrowserResponse(proxyCtx) {
+			c.Header("x-tinyauth-location", redirectURL)
+			c.JSON(401, gin.H{
+				"status":  401,
+				"message": "Unauthorized",
+			})
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 		return
 	}
 
@@ -165,21 +178,13 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		if !userAllowed {
 			tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(proxyCtx.Host, ".")[0]).Msg("User not allowed to access resource")
 
-			if !controller.useFriendlyError(proxyCtx) {
-				c.JSON(403, gin.H{
-					"status":  403,
-					"message": "Forbidden",
-				})
-				return
-			}
-
 			queries, err := query.Values(config.UnauthorizedQuery{
 				Resource: strings.Split(proxyCtx.Host, ".")[0],
 			})
 
 			if err != nil {
 				tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+				controller.handleError(c, proxyCtx)
 				return
 			}
 
@@ -189,7 +194,18 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 				queries.Set("username", userContext.Username)
 			}
 
-			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
+			redirectURL := fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode())
+
+			if !controller.useBrowserResponse(proxyCtx) {
+				c.Header("x-tinyauth-location", redirectURL)
+				c.JSON(403, gin.H{
+					"status":  403,
+					"message": "Forbidden",
+				})
+				return
+			}
+
+			c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 			return
 		}
 
@@ -205,14 +221,6 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 			if !groupOK {
 				tlog.App.Warn().Str("user", userContext.Username).Str("resource", strings.Split(proxyCtx.Host, ".")[0]).Msg("User groups do not match resource requirements")
 
-				if !controller.useFriendlyError(proxyCtx) {
-					c.JSON(403, gin.H{
-						"status":  403,
-						"message": "Forbidden",
-					})
-					return
-				}
-
 				queries, err := query.Values(config.UnauthorizedQuery{
 					Resource: strings.Split(proxyCtx.Host, ".")[0],
 					GroupErr: true,
@@ -220,7 +228,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 
 				if err != nil {
 					tlog.App.Error().Err(err).Msg("Failed to encode unauthorized query")
-					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+					controller.handleError(c, proxyCtx)
 					return
 				}
 
@@ -230,7 +238,18 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 					queries.Set("username", userContext.Username)
 				}
 
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode()))
+				redirectURL := fmt.Sprintf("%s/unauthorized?%s", controller.config.AppURL, queries.Encode())
+
+				if !controller.useBrowserResponse(proxyCtx) {
+					c.Header("x-tinyauth-location", redirectURL)
+					c.JSON(403, gin.H{
+						"status":  403,
+						"message": "Forbidden",
+					})
+					return
+				}
+
+				c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 				return
 			}
 		}
@@ -256,7 +275,20 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	if !controller.useFriendlyError(proxyCtx) {
+	queries, err := query.Values(config.RedirectQuery{
+		RedirectURI: fmt.Sprintf("%s://%s%s", proxyCtx.Proto, proxyCtx.Host, proxyCtx.Path),
+	})
+
+	if err != nil {
+		tlog.App.Error().Err(err).Msg("Failed to encode redirect URI query")
+		controller.handleError(c, proxyCtx)
+		return
+	}
+
+	redirectURL := fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode())
+
+	if !controller.useBrowserResponse(proxyCtx) {
+		c.Header("x-tinyauth-location", redirectURL)
 		c.JSON(401, gin.H{
 			"status":  401,
 			"message": "Unauthorized",
@@ -264,17 +296,7 @@ func (controller *ProxyController) proxyHandler(c *gin.Context) {
 		return
 	}
 
-	queries, err := query.Values(config.RedirectQuery{
-		RedirectURI: fmt.Sprintf("%s://%s%s", proxyCtx.Proto, proxyCtx.Host, proxyCtx.Path),
-	})
-
-	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to encode redirect URI query")
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
-		return
-	}
-
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/login?%s", controller.config.AppURL, queries.Encode()))
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
 func (controller *ProxyController) setHeaders(c *gin.Context, acls config.App) {
@@ -296,7 +318,10 @@ func (controller *ProxyController) setHeaders(c *gin.Context, acls config.App) {
 }
 
 func (controller *ProxyController) handleError(c *gin.Context, proxyCtx ProxyContext) {
-	if !controller.useFriendlyError(proxyCtx) {
+	redirectURL := fmt.Sprintf("%s/error", controller.config.AppURL)
+
+	if !controller.useBrowserResponse(proxyCtx) {
+		c.Header("x-tinyauth-location", redirectURL)
 		c.JSON(500, gin.H{
 			"status":  500,
 			"message": "Internal Server Error",
@@ -304,7 +329,7 @@ func (controller *ProxyController) handleError(c *gin.Context, proxyCtx ProxyCon
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s/error", controller.config.AppURL))
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
 func (controller *ProxyController) getHeader(c *gin.Context, header string) (string, bool) {
@@ -312,8 +337,34 @@ func (controller *ProxyController) getHeader(c *gin.Context, header string) (str
 	return val, strings.TrimSpace(val) != ""
 }
 
-func (controller *ProxyController) useFriendlyError(proxyCtx ProxyContext) bool {
-	return (proxyCtx.Type == ForwardAuth || proxyCtx.Type == ExtAuthz) && proxyCtx.IsBrowser
+func (controller *ProxyController) useBrowserResponse(proxyCtx ProxyContext) bool {
+	// If it's nginx we need non-browser response
+	if proxyCtx.ProxyType == Nginx {
+		return false
+	}
+
+	// For other proxies (traefik/caddy/envoy) we can check
+	// the user agent to determine if it's a browser or not
+	if proxyCtx.IsBrowser {
+		return true
+	}
+
+	return false
+}
+
+func (controller *ProxyController) getProxyType(proxy string) (ProxyType, error) {
+	switch proxy {
+	case "traefik":
+		return Traefik, nil
+	case "caddy":
+		return Caddy, nil
+	case "envoy":
+		return Envoy, nil
+	case "nginx":
+		return Nginx, nil
+	default:
+		return 0, fmt.Errorf("unsupported proxy type: %v", proxy)
+	}
 }
 
 // Code below is inspired from https://github.com/authelia/authelia/blob/master/internal/handlers/handler_authz.go
@@ -417,13 +468,13 @@ func (controller *ProxyController) getExtAuthzContext(c *gin.Context) (ProxyCont
 	}, nil
 }
 
-func (controller *ProxyController) determineAuthModules(proxy string) []AuthModuleType {
+func (controller *ProxyController) determineAuthModules(proxy ProxyType) []AuthModuleType {
 	switch proxy {
-	case "traefik", "caddy":
+	case Traefik, Caddy:
 		return []AuthModuleType{ForwardAuth}
-	case "envoy":
+	case Envoy:
 		return []AuthModuleType{ExtAuthz, ForwardAuth}
-	case "nginx":
+	case Nginx:
 		return []AuthModuleType{AuthRequest, ForwardAuth}
 	default:
 		return []AuthModuleType{}
@@ -462,9 +513,15 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 		return ProxyContext{}, err
 	}
 
+	proxy, err := controller.getProxyType(req.Proxy)
+
+	if err != nil {
+		return ProxyContext{}, err
+	}
+
 	tlog.App.Debug().Msgf("Proxy: %v", req.Proxy)
 
-	authModules := controller.determineAuthModules(req.Proxy)
+	authModules := controller.determineAuthModules(proxy)
 
 	if len(authModules) == 0 {
 		return ProxyContext{}, fmt.Errorf("no auth modules supported for proxy: %v", req.Proxy)
@@ -497,5 +554,6 @@ func (controller *ProxyController) getProxyContext(c *gin.Context) (ProxyContext
 	}
 
 	ctx.IsBrowser = isBrowser
+	ctx.ProxyType = proxy
 	return ctx, nil
 }

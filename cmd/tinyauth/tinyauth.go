@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 
+	"charm.land/huh/v2"
 	"github.com/steveiliop56/tinyauth/internal/bootstrap"
 	"github.com/steveiliop56/tinyauth/internal/config"
 	"github.com/steveiliop56/tinyauth/internal/utils/loaders"
 	"github.com/steveiliop56/tinyauth/internal/utils/tlog"
 
 	"github.com/rs/zerolog/log"
-	"github.com/traefik/paerser/cli"
+	"github.com/tinyauthapp/paerser/cli"
 )
 
 func main() {
@@ -122,4 +123,10 @@ func runCmd(cfg config.Config) error {
 	}
 
 	return nil
+}
+
+type themeBase struct{}
+
+func (t *themeBase) Theme(isDark bool) *huh.Styles {
+	return huh.ThemeBase(isDark)
 }
