@@ -15,7 +15,7 @@ Contributing to Tinyauth is straightforward. Follow the steps below to set up a 
 Start by cloning the repository:
 
 ```sh
-git clone https://github.com/steveiliop56/tinyauth
+git clone https://github.com/tinyauthapp/tinyauth
 cd tinyauth
 ```
 
