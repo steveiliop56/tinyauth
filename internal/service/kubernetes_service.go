@@ -43,7 +43,6 @@ type KubernetesService struct {
 	cancel       context.CancelFunc
 	started      bool
 	v1GVR        *schema.GroupVersionResource
-	v1beta1GVR   *schema.GroupVersionResource
 	mu           sync.RWMutex
 	ingressApps  map[ingressKey][]ingressApp
 	domainIndex  map[string]ingressAppKey
@@ -274,30 +273,22 @@ func (k *KubernetesService) watchGVR(gvr schema.GroupVersionResource) {
 }
 
 func (k *KubernetesService) Init() error {
-	var config *rest.Config
+	var cfg *rest.Config
 	var err error
 
-	// Try in-cluster config first
-	config, err = rest.InClusterConfig()
+	cfg, err = rest.InClusterConfig()
 	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to get in-cluster Kubernetes config")
-		k.started = false
-		return nil
+		return fmt.Errorf("failed to get in-cluster Kubernetes config: %w", err)
 	}
 
-	client, err := dynamic.NewForConfig(config)
+	client, err := dynamic.NewForConfig(cfg)
 	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to create Kubernetes client")
-		k.started = false
-		return nil
+		return fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
-	// Create discovery client to check available APIs
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
-		tlog.App.Error().Err(err).Msg("Failed to create discovery client")
-		k.started = false
-		return nil
+		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
 	k.client = client
@@ -310,24 +301,12 @@ func (k *KubernetesService) Init() error {
 		tlog.App.Debug().Err(err).Msg("Failed to discover API resources")
 	}
 
-	// Start watching available Ingress APIs
 	v1Available := false
-	v1beta1Available := false
-
-	if apiGroups != nil {
-		for _, apiGroup := range apiGroups {
-			if apiGroup.GroupVersion == "networking.k8s.io/v1" {
-				for _, resource := range apiGroup.APIResources {
-					if resource.Name == "ingresses" && resource.Kind == "Ingress" {
-						v1Available = true
-					}
-				}
-			}
-			if apiGroup.GroupVersion == "extensions/v1beta1" {
-				for _, resource := range apiGroup.APIResources {
-					if resource.Name == "ingresses" && resource.Kind == "Ingress" {
-						v1beta1Available = true
-					}
+	for _, apiGroup := range apiGroups {
+		if apiGroup.GroupVersion == "networking.k8s.io/v1" {
+			for _, resource := range apiGroup.APIResources {
+				if resource.Name == "ingresses" && resource.Kind == "Ingress" {
+					v1Available = true
 				}
 			}
 		}
