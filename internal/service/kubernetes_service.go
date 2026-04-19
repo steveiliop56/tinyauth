@@ -211,9 +211,10 @@ func (k *KubernetesService) watchGVR(gvr schema.GroupVersionResource) {
 					return
 				case event, ok := <-watcher.ResultChan():
 					if !ok {
-						tlog.App.Debug().Str("api", gvr.GroupVersion().String()).Msg("Watcher channel closed")
+						tlog.App.Debug().Str("api", gvr.GroupVersion().String()).Msg("Watcher channel closed, restarting in 5 seconds")
 						watcher.Stop()
 						cancel()
+						time.Sleep(5 * time.Second)
 						break inner
 					}
 					switch event.Type {
