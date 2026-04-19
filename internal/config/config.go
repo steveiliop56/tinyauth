@@ -18,6 +18,7 @@ func NewDefaultConfiguration() *Config {
 			Address: "0.0.0.0",
 		},
 		Auth: AuthConfig{
+			SubdomainsEnabled:  true,
 			SessionExpiry:      86400, // 1 day
 			SessionMaxLifetime: 0,     // disabled
 			LoginTimeout:       300,   // 5 minutes
@@ -116,6 +117,7 @@ type AuthConfig struct {
 	IP                 IPConfig `description:"IP whitelisting config options." yaml:"ip"`
 	Users              []string `description:"Comma-separated list of users (username:hashed_password)." yaml:"users"`
 	UsersFile          string   `description:"Path to the users file." yaml:"usersFile"`
+	SubdomainsEnabled  bool     `description:"Enable subdomains support." yaml:"subdomainsEnabled"`
 	SecureCookie       bool     `description:"Enable secure cookies." yaml:"secureCookie"`
 	SessionExpiry      int      `description:"Session expiry time in seconds." yaml:"sessionExpiry"`
 	SessionMaxLifetime int      `description:"Maximum session lifetime in seconds." yaml:"sessionMaxLifetime"`
