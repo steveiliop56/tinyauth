@@ -383,11 +383,3 @@ func (k *KubernetesService) watchIngressV1() {
 	}
 	k.watchGVR(*k.v1GVR)
 }
-
-// watchIngressV1beta1 starts watching extensions/v1beta1 ingresses
-func (k *KubernetesService) watchIngressV1beta1() {
-	if k.v1beta1GVR == nil {
-		return
-	}
-	k.watchGVR(*k.v1beta1GVR)
-}
