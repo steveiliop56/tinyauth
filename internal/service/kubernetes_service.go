@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -18,8 +19,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
-
-var _ = unstructured.Unstructured{}
 
 type ingressKey struct {
 	namespace string
@@ -200,7 +199,6 @@ func (k *KubernetesService) watchGVR(gvr schema.GroupVersionResource) {
 				time.Sleep(10 * time.Second)
 				continue
 			}
-
 			tlog.App.Debug().Str("api", gvr.GroupVersion().String()).Msg("Watcher started")
 		inner:
 			for {
@@ -313,7 +311,7 @@ func (k *KubernetesService) Init() error {
 		}
 	}
 
-	// Check permissions for available APIs
+	// Check permissions for the v1 API
 	checkAccess := func(gvr schema.GroupVersionResource) bool {
 		ctx, cancel := context.WithTimeout(k.ctx, 5*time.Second)
 		defer cancel()
