@@ -372,66 +372,7 @@ func (k *KubernetesService) GetLabels(appDomain string) (config.App, error) {
 		return app, nil
 	}
 
-	tlog.App.Debug().Str("domain", appDomain).Msg("Cache miss, falling back to API")
-
-	// Try v1 API first
-	if k.v1GVR != nil {
-		app, err := k.getLabelsFromGVR(*k.v1GVR, appDomain)
-		if err != nil {
-			tlog.App.Debug().Err(err).Msg("Failed to get labels from v1 Ingress")
-		}
-		if app.Config.Domain != "" {
-			return app, nil
-		}
-	}
-	// Fall back to v1beta1
-	if k.v1beta1GVR != nil {
-		app, err := k.getLabelsFromGVR(*k.v1beta1GVR, appDomain)
-		if err != nil {
-			tlog.App.Debug().Err(err).Msg("Failed to get labels from v1beta1 Ingress")
-		}
-		if app.Config.Domain != "" {
-			return app, nil
-		}
-	}
-	return config.App{}, nil
-}
-
-func (k *KubernetesService) getLabelsFromGVR(gvr schema.GroupVersionResource, appDomain string) (config.App, error) {
-	ctx, cancel := context.WithTimeout(k.ctx, 10*time.Second)
-	defer cancel()
-
-	list, err := k.client.Resource(gvr).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return config.App{}, err
-	}
-
-	// Update cache with all ingresses from this list
-	k.updateFromList(list.Items)
-	tlog.App.Debug().Str("api", gvr.GroupVersion().String()).Int("count", len(list.Items)).Msg("Updated cache from list")
-
-	// Search for matching app
-	for _, item := range list.Items {
-		annotations := item.GetAnnotations()
-		if annotations == nil {
-			continue
-		}
-		labels, err := decoders.DecodeLabels[config.Apps](annotations, "apps")
-		if err != nil {
-			tlog.App.Debug().Err(err).Msg("Failed to decode labels from annotations")
-			continue
-		}
-		for appName, appLabels := range labels.Apps {
-			if appLabels.Config.Domain == appDomain {
-				tlog.App.Debug().Str("name", item.GetName()).Str("namespace", item.GetNamespace()).Msg("Found matching ingress by domain")
-				return appLabels, nil
-			}
-			if strings.SplitN(appDomain, ".", 2)[0] == appName {
-				tlog.App.Debug().Str("name", item.GetName()).Str("namespace", item.GetNamespace()).Msg("Found matching ingress by app name")
-				return appLabels, nil
-			}
-		}
-	}
+	tlog.App.Debug().Str("domain", appDomain).Msg("Cache miss, no matching ingress found")
 	return config.App{}, nil
 }
 
