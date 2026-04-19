@@ -344,25 +344,7 @@ func (k *KubernetesService) Init() error {
 		tlog.App.Debug().Msg("networking.k8s.io/v1 Ingress API not available")
 	}
 
-	if v1beta1Available {
-		gvr := schema.GroupVersionResource{
-			Group:    "extensions",
-			Version:  "v1beta1",
-			Resource: "ingresses",
-		}
-		if checkAccess(gvr) {
-			tlog.App.Debug().Msg("extensions/v1beta1 Ingress API accessible")
-			k.v1beta1GVR = &gvr
-			go k.watchIngressV1beta1()
-		} else {
-			tlog.App.Warn().Msg("Insufficient permissions for extensions/v1beta1 Ingress")
-			v1beta1Available = false
-		}
-	} else {
-		tlog.App.Debug().Msg("extensions/v1beta1 Ingress API not available")
-	}
-
-	if !v1Available && !v1beta1Available {
+	if !v1Available {
 		tlog.App.Warn().Msg("No Ingress API available or accessible, Kubernetes label provider will not work")
 		k.started = false
 		return nil
