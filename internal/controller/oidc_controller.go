@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -545,7 +547,9 @@ func (controller *OIDCController) Token(c *gin.Context) {
 		return
 	}
 
-	if client.ClientSecret != creds.ClientSecret {
+	clientSecretHash := sha256.Sum256([]byte(client.ClientSecret))
+	providedSecretHash := sha256.Sum256([]byte(creds.ClientSecret))
+	if subtle.ConstantTimeCompare(clientSecretHash[:], providedSecretHash[:]) != 1 {
 		controller.log.App.Warn().Str("clientId", creds.ClientID).Msg("Invalid client secret")
 		c.JSON(400, gin.H{
 			"error": "invalid_client",
