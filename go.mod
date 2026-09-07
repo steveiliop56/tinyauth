@@ -8,7 +8,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gin-gonic/gin v1.12.0
-	github.com/go-jose/go-jose/v4 v4.1.4
+	github.com/go-jose/go-jose/v4 v4.1.5
 	github.com/go-ldap/ldap/v3 v3.4.14
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
@@ -23,14 +23,14 @@ require (
 	github.com/tinyauthapp/paerser v0.0.0-20260410140347-85c3740d6298
 	github.com/weppos/publicsuffix-go v0.50.3
 	go.uber.org/dig v1.19.0
-	golang.org/x/crypto v0.55.0
+	golang.org/x/crypto v0.56.0
 	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/tools v0.49.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.37.0
 	k8s.io/client-go v0.37.0
-	modernc.org/sqlite v1.57.0
+	modernc.org/sqlite v1.58.0
 )
 
 require (
@@ -145,9 +145,9 @@ require (
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd // indirect
-	modernc.org/libc v1.74.4 // indirect
+	modernc.org/libc v1.75.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.11.0 // indirect
+	modernc.org/memory v1.12.1 // indirect
 	rsc.io/qr v0.2.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
