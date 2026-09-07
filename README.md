@@ -81,7 +81,6 @@ A huge thank you to [selfh.st](https://selfh.st) for their generous donation to 
 
 - [JetBrains for Open-Source](https://jb.gg/OpenSource)
 - [CodeRabbit AI](https://www.coderabbit.ai)
-- [InstaPods](https://instapods.com) - [Deploy Tinyauth from 3$/month](https://app.instapods.com/dashboard/pods/create?app=tinyauth&ref=tinyauth)
 
 ## Acknowledgements
 
