@@ -270,6 +270,9 @@ func (m *ContextMiddleware) cookieAuth(ctx context.Context, uuid string, ip stri
 	return userContext, cookie, nil
 }
 
+// basicAuth authenticates a local user by username and password, handles
+// account lockout bookkeeping, and returns the user context plus any
+// response headers (e.g. lock hints) to set on the request.
 func (m *ContextMiddleware) basicAuth(username string, password string) (*model.UserContext, map[string]string, error) {
 	headers := make(map[string]string)
 	userContext := new(model.UserContext)
