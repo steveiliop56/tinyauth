@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -94,23 +95,28 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 			}
 		}
 
-		username, password, ok := c.Request.BasicAuth()
-
-		if ok {
-			userContext, headers, err := m.basicAuth(username, password)
-
-			if err != nil {
-				m.log.App.Error().Msgf("Error authenticating basic auth: %v", err)
-				c.Next()
+		// X-Api-Key takes priority when present: it lets a client carry
+		// TinyAuth basic credentials alongside an application token in the
+		// Authorization header (e.g. "Authorization: Bearer ..." APIs behind
+		// the proxy). A malformed or non-Basic X-Api-Key is rejected WITHOUT
+		// falling back to Authorization — a half-configured client must fail
+		// loudly instead of silently degrading.
+		if apiKey := c.Request.Header.Get("X-Api-Key"); apiKey != "" {
+			username, password, ok := parseAPIKeyBasicAuth(apiKey)
+			if !ok {
+				m.log.App.Debug().Msg("Invalid basic auth in X-Api-Key header")
+				c.AbortWithStatus(http.StatusUnauthorized)
 				return
 			}
 
-			for k, v := range headers {
-				c.Header(k, v)
-			}
+			m.handleBasicAuth(c, username, password)
+			return
+		}
 
-			c.Set("context", userContext)
-			c.Next()
+		username, password, ok := c.Request.BasicAuth()
+
+		if ok {
+			m.handleBasicAuth(c, username, password)
 			return
 		}
 
@@ -358,4 +364,47 @@ func (m *ContextMiddleware) tailscaleWhois(ip string) (*model.TailscaleContext, 
 	}
 
 	return &uctx, nil
+}
+
+// handleBasicAuth authenticates via the shared basic auth path and, on a
+// lock or error, still continues the chain with headers set (matching the
+// previous inline behaviour).
+func (m *ContextMiddleware) handleBasicAuth(c *gin.Context, username string, password string) {
+	userContext, headers, err := m.basicAuth(username, password)
+
+	if err != nil {
+		m.log.App.Error().Msgf("Error authenticating basic auth: %v", err)
+		c.Next()
+		return
+	}
+
+	for k, v := range headers {
+		c.Header(k, v)
+	}
+
+	c.Set("context", userContext)
+	c.Next()
+}
+
+// parseAPIKeyBasicAuth parses an X-Api-Key value in the form
+// "Basic base64(username:password)". ok is false for a wrong scheme or a
+// malformed payload — callers treat that as a hard reject without fallback.
+func parseAPIKeyBasicAuth(header string) (username string, password string, ok bool) {
+	const prefix = "Basic "
+
+	if len(header) < len(prefix) || !strings.EqualFold(header[:len(prefix)], prefix) {
+		return "", "", false
+	}
+
+	payload, err := base64.StdEncoding.DecodeString(header[len(prefix):])
+	if err != nil {
+		return "", "", false
+	}
+
+	username, password, ok = strings.Cut(string(payload), ":")
+	if !ok {
+		return "", "", false
+	}
+
+	return username, password, true
 }
