@@ -296,6 +296,18 @@ func TestContextMiddleware(t *testing.T) {
 				assert.Equal(t, http.StatusUnauthorized, recorder.Code)
 			},
 		},
+		{
+			description: "Explicitly empty X-Api-Key is rejected without fallback",
+			run: func(t *testing.T, args runArgs) {
+				req := httptest.NewRequest("GET", "/api/test", nil)
+				req.Header["X-Api-Key"] = []string{""}
+				req.Header.Set("Authorization", basicAuthHeader("testuser", "password"))
+				userCtx, recorder := args.do(req)
+
+				assert.Nil(t, userCtx)
+				assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
 	}
 
 	ctx := context.TODO()

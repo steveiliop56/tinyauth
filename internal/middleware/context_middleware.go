@@ -100,23 +100,50 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		// Authorization header (e.g. "Authorization: Bearer ..." APIs behind
 		// the proxy). A malformed or non-Basic X-Api-Key is rejected WITHOUT
 		// falling back to Authorization — a half-configured client must fail
-		// loudly instead of silently degrading.
-		if apiKey := c.Request.Header.Get("X-Api-Key"); apiKey != "" {
-			username, password, ok := parseAPIKeyBasicAuth(apiKey)
+		// loudly instead of silently degrading. Presence is checked via the
+		// header map, because Get cannot tell an absent header from an
+		// explicitly empty one.
+		if apiKeyHeaders := c.Request.Header["X-Api-Key"]; len(apiKeyHeaders) > 0 {
+			username, password, ok := parseAPIKeyBasicAuth(apiKeyHeaders[0])
 			if !ok {
 				m.log.App.Debug().Msg("Invalid basic auth in X-Api-Key header")
 				c.AbortWithStatus(http.StatusUnauthorized)
 				return
 			}
 
-			m.handleBasicAuth(c, username, password)
+			userContext, headers, err := m.basicAuth(username, password)
+			if err != nil {
+				m.log.App.Error().Msgf("Error authenticating basic auth: %v", err)
+				c.Next()
+				return
+			}
+
+			for k, v := range headers {
+				c.Header(k, v)
+			}
+
+			c.Set("context", userContext)
+			c.Next()
 			return
 		}
 
 		username, password, ok := c.Request.BasicAuth()
 
 		if ok {
-			m.handleBasicAuth(c, username, password)
+			userContext, headers, err := m.basicAuth(username, password)
+
+			if err != nil {
+				m.log.App.Error().Msgf("Error authenticating basic auth: %v", err)
+				c.Next()
+				return
+			}
+
+			for k, v := range headers {
+				c.Header(k, v)
+			}
+
+			c.Set("context", userContext)
+			c.Next()
 			return
 		}
 
@@ -364,26 +391,6 @@ func (m *ContextMiddleware) tailscaleWhois(ip string) (*model.TailscaleContext, 
 	}
 
 	return &uctx, nil
-}
-
-// handleBasicAuth authenticates via the shared basic auth path and, on a
-// lock or error, still continues the chain with headers set (matching the
-// previous inline behaviour).
-func (m *ContextMiddleware) handleBasicAuth(c *gin.Context, username string, password string) {
-	userContext, headers, err := m.basicAuth(username, password)
-
-	if err != nil {
-		m.log.App.Error().Msgf("Error authenticating basic auth: %v", err)
-		c.Next()
-		return
-	}
-
-	for k, v := range headers {
-		c.Header(k, v)
-	}
-
-	c.Set("context", userContext)
-	c.Next()
 }
 
 // parseAPIKeyBasicAuth parses an X-Api-Key value in the form
