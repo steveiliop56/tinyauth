@@ -99,7 +99,7 @@ func (m *ContextMiddleware) Middleware() gin.HandlerFunc {
 		// TinyAuth basic credentials alongside an application token in the
 		// Authorization header (e.g. "Authorization: Bearer ..." APIs behind
 		// the proxy). A malformed or non-Basic X-Api-Key is rejected WITHOUT
-		// falling back to Authorization — a half-configured client must fail
+		// falling back to Authorization: a half-configured client must fail
 		// loudly instead of silently degrading. Presence is checked via the
 		// header map, because Get cannot tell an absent header from an
 		// explicitly empty one.
@@ -398,7 +398,7 @@ func (m *ContextMiddleware) tailscaleWhois(ip string) (*model.TailscaleContext, 
 
 // parseAPIKeyBasicAuth parses an X-Api-Key value in the form
 // "Basic base64(username:password)". ok is false for a wrong scheme or a
-// malformed payload — callers treat that as a hard reject without fallback.
+// malformed payload: callers treat that as a hard reject without fallback.
 func parseAPIKeyBasicAuth(header string) (username string, password string, ok bool) {
 	const prefix = "Basic "
 
