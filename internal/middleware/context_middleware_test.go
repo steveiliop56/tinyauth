@@ -246,6 +246,68 @@ func TestContextMiddleware(t *testing.T) {
 				assert.True(t, userCtx.Authenticated)
 			},
 		},
+		{
+			description: "Valid X-Api-Key sets authenticated local context",
+			run: func(t *testing.T, args runArgs) {
+				req := httptest.NewRequest("GET", "/api/test", nil)
+				req.Header.Set("X-Api-Key", basicAuthHeader("testuser", "password"))
+				userCtx, _ := args.do(req)
+
+				require.NotNil(t, userCtx)
+				assert.Equal(t, model.ProviderLocal, userCtx.Provider)
+				assert.Equal(t, "testuser", userCtx.GetUsername())
+				assert.True(t, userCtx.Authenticated)
+			},
+		},
+		{
+			description: "X-Api-Key takes priority over Authorization",
+			run: func(t *testing.T, args runArgs) {
+				req := httptest.NewRequest("GET", "/api/test", nil)
+				req.Header.Set("X-Api-Key", basicAuthHeader("testuser", "password"))
+				req.Header.Set("Authorization", basicAuthHeader("testuser", "wrongpassword"))
+				userCtx, _ := args.do(req)
+
+				require.NotNil(t, userCtx)
+				assert.Equal(t, "testuser", userCtx.GetUsername())
+				assert.True(t, userCtx.Authenticated)
+			},
+		},
+		{
+			description: "Malformed X-Api-Key is rejected without fallback to Authorization",
+			run: func(t *testing.T, args runArgs) {
+				req := httptest.NewRequest("GET", "/api/test", nil)
+				req.Header.Set("X-Api-Key", "Basic !!!not-base64!!!")
+				req.Header.Set("Authorization", basicAuthHeader("testuser", "password"))
+				userCtx, recorder := args.do(req)
+
+				assert.Nil(t, userCtx)
+				assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
+			description: "Non-Basic scheme in X-Api-Key is rejected without fallback",
+			run: func(t *testing.T, args runArgs) {
+				req := httptest.NewRequest("GET", "/api/test", nil)
+				req.Header.Set("X-Api-Key", "Bearer some-token")
+				req.Header.Set("Authorization", basicAuthHeader("testuser", "password"))
+				userCtx, recorder := args.do(req)
+
+				assert.Nil(t, userCtx)
+				assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
+			description: "Explicitly empty X-Api-Key is rejected without fallback",
+			run: func(t *testing.T, args runArgs) {
+				req := httptest.NewRequest("GET", "/api/test", nil)
+				req.Header["X-Api-Key"] = []string{""}
+				req.Header.Set("Authorization", basicAuthHeader("testuser", "password"))
+				userCtx, recorder := args.do(req)
+
+				assert.Nil(t, userCtx)
+				assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
 	}
 
 	ctx := context.TODO()
