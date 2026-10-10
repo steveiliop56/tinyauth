@@ -268,25 +268,13 @@ func TestKubernetesServiceLookup(t *testing.T) {
 			meta := ResourceMeta{Typ: ResourceTypeIngress, Name: "route", Namespace: "default"}
 			service.addResource(ExtractionResult{Meta: &meta, Apps: map[string]model.App{"app": {Config: model.AppConfig{Domain: "app.example.com"}}}})
 			calls := 0
-			err := service.Lookup(func(name string, app *model.App) bool {
+			err := service.Lookup(func(name string, app *model.App) {
 				calls++
 				assert.Equal(t, "app", name)
 				assert.Equal(t, "app.example.com", app.Config.Domain)
-				return true
 			})
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantCalls, calls)
 		})
 	}
-}
-
-func TestKubernetesServiceGetEntryStopsOnMatch(t *testing.T) {
-	service := newKubernetesServiceForTest()
-	meta := ResourceMeta{Typ: ResourceTypeIngress, Name: "route", Namespace: "default"}
-	service.addResource(ExtractionResult{Meta: &meta, Apps: map[string]model.App{"app": {}}})
-	calls := 0
-	service.getEntry(func(_ string, _ *model.App) bool { calls++; return true })
-	assert.Equal(t, 1, calls)
-	service.removeResource(meta)
-	assert.Empty(t, service.apps)
 }

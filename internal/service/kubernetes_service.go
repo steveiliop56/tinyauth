@@ -217,15 +217,13 @@ func (k *KubernetesService) removeResource(meta ResourceMeta) {
 	delete(k.apps, meta)
 }
 
-func (k *KubernetesService) getEntry(locator func(name string, app *model.App) bool) {
+func (k *KubernetesService) runLocator(locator func(name string, app *model.App)) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
 	for _, apps := range k.apps {
 		for name, app := range apps {
-			if ok := locator(name, &app); ok {
-				return
-			}
+			locator(name, &app)
 		}
 	}
 }
@@ -386,13 +384,13 @@ func (k *KubernetesService) watchGVR(res watchedResource, ctx context.Context) {
 	}
 }
 
-func (k *KubernetesService) Lookup(locator func(name string, app *model.App) bool) error {
+func (k *KubernetesService) Lookup(locator func(name string, app *model.App)) error {
 	if !k.connected {
 		k.log.App.Debug().Msg("Kubernetes label provider not started, skipping")
 		return nil
 	}
 
-	k.getEntry(locator)
+	k.runLocator(locator)
 
 	return nil
 }

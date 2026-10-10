@@ -13,7 +13,7 @@ import (
 )
 
 type LabelProvider interface {
-	Lookup(locator func(name string, app *model.App) bool) error
+	Lookup(locator func(name string, app *model.App)) error
 }
 
 type AccessControlsService struct {
@@ -59,7 +59,7 @@ func normalizeDomain(domain string) string {
 	return strings.ToLower(domain)
 }
 
-func (service *AccessControlsService) getACLs(domain string, lookup func(locator func(name string, app *model.App) bool) error) (*model.App, error) {
+func (service *AccessControlsService) getACLs(domain string, lookup func(locator func(name string, app *model.App)) error) (*model.App, error) {
 	if !ensureAscii(domain) {
 		return nil, errors.New("domain contains non-ascii characters")
 	}
@@ -73,24 +73,23 @@ func (service *AccessControlsService) getACLs(domain string, lookup func(locator
 	var domainMatches []model.App
 	var nameMatches []model.App
 
-	locatorFunc := func(name string, app *model.App) bool {
+	locatorFunc := func(name string, app *model.App) {
 		if app.Config.Domain != "" {
 			if !ensureAscii(app.Config.Domain) {
 				service.log.App.Warn().Str("name", name).Str("domain", app.Config.Domain).Msg("Domain contains non-ascii characters, skipping")
-				return false
+				return
 			}
 			if normalizedDomain == normalizeDomain(app.Config.Domain) {
 				service.log.App.Debug().Str("name", name).Msg("Found matching container by domain")
 				domainMatches = append(domainMatches, *app)
-				return true
+				return
 			}
-			return false
+			return
 		}
 		if strings.HasPrefix(normalizedDomain, strings.ToLower(name+".")) {
 			service.log.App.Debug().Str("name", name).Msg("Found matching container by app name")
 			nameMatches = append(nameMatches, *app)
 		}
-		return false
 	}
 
 	err := lookup(locatorFunc)
@@ -118,11 +117,9 @@ func (service *AccessControlsService) getACLs(domain string, lookup func(locator
 }
 
 func (service *AccessControlsService) lookupStaticACLs(domain string) (*model.App, error) {
-	return service.getACLs(domain, func(locator func(name string, app *model.App) bool) error {
+	return service.getACLs(domain, func(locator func(name string, app *model.App)) error {
 		for app, config := range service.config.Apps {
-			if ok := locator(app, &config); ok {
-				return nil
-			}
+			locator(app, &config)
 		}
 		return nil
 	})
@@ -144,7 +141,7 @@ func (service *AccessControlsService) GetAccessControls(domain string) (*model.A
 
 	// If we have a label provider configured, try to get ACLs from it
 	if service.labelProvider != nil {
-		return service.getACLs(domain, func(locator func(name string, app *model.App) bool) error {
+		return service.getACLs(domain, func(locator func(name string, app *model.App)) error {
 			return service.labelProvider.Lookup(locator)
 		})
 	}
