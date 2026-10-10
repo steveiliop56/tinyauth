@@ -12,17 +12,20 @@ import (
 
 type KubernetesCRDInput struct {
 	Log    *logger.Logger
+	Ctx    context.Context
 	Client kubernetes.Interface
 }
 
 type KubernetesCRDExtractor struct {
 	log    *logger.Logger
+	ctx    context.Context
 	client kubernetes.Interface
 }
 
 func NewKubernetesCRDExtractor(i KubernetesCRDInput) *KubernetesCRDExtractor {
 	return &KubernetesCRDExtractor{
 		log:    i.Log,
+		ctx:    i.Ctx,
 		client: i.Client,
 	}
 }
@@ -43,7 +46,6 @@ func (k *KubernetesCRDExtractor) Extract(app *v1alpha1.Application) ExtractionRe
 		k.log.App.Warn().Str("name", meta.Name).Str("namespace", meta.Namespace).Msg("Application has no domain, skipping")
 		return ExtractionResult{
 			Meta: meta,
-			Apps: nil,
 		}
 	}
 
@@ -51,7 +53,6 @@ func (k *KubernetesCRDExtractor) Extract(app *v1alpha1.Application) ExtractionRe
 		k.log.App.Warn().Str("name", meta.Name).Str("namespace", meta.Namespace).Str("domain", app.Spec.Config.Domain).Msg("Domain is invalid, skipping")
 		return ExtractionResult{
 			Meta: meta,
-			Apps: nil,
 		}
 	}
 
@@ -59,7 +60,7 @@ func (k *KubernetesCRDExtractor) Extract(app *v1alpha1.Application) ExtractionRe
 	internalApp := app.Spec.ToInternalApp()
 	passwordRef := app.Spec.Response.BasicAuth.PasswordSecretRef
 	if passwordRef != nil {
-		secret, err := k.client.CoreV1().Secrets(meta.Namespace).Get(context.Background(), passwordRef.Name, metav1.GetOptions{})
+		secret, err := k.client.CoreV1().Secrets(meta.Namespace).Get(k.ctx, passwordRef.Name, metav1.GetOptions{})
 		if err != nil {
 			k.log.App.Warn().Err(err).Str("namespace", meta.Namespace).Str("name", meta.Name).Str("secret", passwordRef.Name).Str("key", passwordRef.Key).Msg("Failed to read basic auth password Secret, skipping")
 			return ExtractionResult{Meta: meta}

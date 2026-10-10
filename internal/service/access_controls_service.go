@@ -70,9 +70,8 @@ func (service *AccessControlsService) getACLs(domain string, lookup func(locator
 		return nil, fmt.Errorf("domain does not match cookie domain, expected %s (or a subdomain), got %s", service.runtime.CookieDomain, domain)
 	}
 
-	var domainMatch *model.App
-	var nameMatch *model.App
-	var nameMatchedApps []string
+	var domainMatches []model.App
+	var nameMatches []model.App
 
 	locatorFunc := func(name string, app *model.App) bool {
 		if app.Config.Domain != "" {
@@ -82,15 +81,14 @@ func (service *AccessControlsService) getACLs(domain string, lookup func(locator
 			}
 			if normalizedDomain == normalizeDomain(app.Config.Domain) {
 				service.log.App.Debug().Str("name", name).Msg("Found matching container by domain")
-				domainMatch = app
+				domainMatches = append(domainMatches, *app)
 				return true
 			}
 			return false
 		}
 		if strings.HasPrefix(normalizedDomain, strings.ToLower(name+".")) {
 			service.log.App.Debug().Str("name", name).Msg("Found matching container by app name")
-			nameMatch = app
-			nameMatchedApps = append(nameMatchedApps, name)
+			nameMatches = append(nameMatches, *app)
 		}
 		return false
 	}
@@ -100,22 +98,23 @@ func (service *AccessControlsService) getACLs(domain string, lookup func(locator
 		return nil, err
 	}
 
-	if domainMatch != nil {
+	if len(domainMatches) > 0 {
+		if len(domainMatches) > 1 {
+			return nil, fmt.Errorf("domain matched multiple apps, use explicit domain config")
+		}
 		service.log.App.Debug().Str("domain", domain).Msg("Found matching app by domain")
-		return domainMatch, nil
+		return &domainMatches[0], nil
 	}
 
-	if nameMatch == nil {
-		service.log.App.Debug().Str("domain", domain).Msg("No match found for domain, skipping")
-		return nil, nil
+	if len(nameMatches) > 0 {
+		if len(nameMatches) > 1 {
+			return nil, fmt.Errorf("domain matched multiple apps by name prefix, use explicit domain config")
+		}
+		service.log.App.Debug().Str("domain", domain).Msg("Found matching app by app name")
+		return &nameMatches[0], nil
 	}
 
-	if len(nameMatchedApps) > 1 {
-		return nil, fmt.Errorf("domain matched multiple apps by name prefix, use explicit domain config")
-	}
-
-	service.log.App.Debug().Str("domain", domain).Msg("Found matching app by app name")
-	return nameMatch, nil
+	return nil, nil
 }
 
 func (service *AccessControlsService) lookupStaticACLs(domain string) (*model.App, error) {

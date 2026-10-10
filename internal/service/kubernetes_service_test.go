@@ -134,8 +134,6 @@ func TestKubernetesServiceWatchedItemChange(t *testing.T) {
 			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, nil},
 		{"update without annotations replaces stale apps", testResource(ResourceTypeIngress), &typedItem{typ: ResourceTypeIngress, ingress: testIngress("shared", nil, "app.example.com")}, watch.Modified,
 			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, map[ResourceMeta]map[string]model.App{key: {}}},
-		{"invalid annotations remove stale entry", testResource(ResourceTypeIngress), &typedItem{typ: ResourceTypeIngress, ingress: testIngress("shared", map[string]string{"tinyauth.apps.app.users.invalid": "alice"}, "app.example.com")}, watch.Modified,
-			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, nil},
 		{"nil item leaves cache untouched", testResource(ResourceTypeIngress), nil, watch.Added,
 			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, map[ResourceMeta]map[string]model.App{key: {"app": {}}}},
 		{"nil ingress leaves cache untouched", testResource(ResourceTypeIngress), &typedItem{typ: ResourceTypeIngress}, watch.Modified,
@@ -144,8 +142,6 @@ func TestKubernetesServiceWatchedItemChange(t *testing.T) {
 			map[ResourceMeta]map[string]model.App{crdKey: {"shared": {}}}, map[ResourceMeta]map[string]model.App{crdKey: {"shared": {}}}},
 		{"add CRD alongside ingress", testResource(ResourceTypeCRD), &typedItem{typ: ResourceTypeCRD, crd: crd}, watch.Added,
 			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, map[ResourceMeta]map[string]model.App{key: {"app": {}}, crdKey: {"shared": {Config: model.AppConfig{Domain: "app.example.com"}, Users: model.AppUsers{Allow: "bob"}}}}},
-		{"invalid CRD removes stale entry", testResource(ResourceTypeCRD), &typedItem{typ: ResourceTypeCRD, crd: testApplication("shared", "")}, watch.Modified,
-			map[ResourceMeta]map[string]model.App{crdKey: {"shared": {}}}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

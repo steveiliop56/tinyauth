@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,7 +61,7 @@ func TestKubernetesCRDExtractorExtract(t *testing.T) {
 			if tt.resource != nil {
 				client = clientfake.NewClientset(tt.resource)
 			}
-			extractor := NewKubernetesCRDExtractor(KubernetesCRDInput{Log: kubernetesTestLogger(), Client: client})
+			extractor := NewKubernetesCRDExtractor(KubernetesCRDInput{Log: kubernetesTestLogger(), Client: client, Ctx: context.Background()})
 			assert.Equal(t, tt.want, extractor.Extract(tt.application()))
 			assert.Len(t, client.Actions(), tt.reads)
 		})

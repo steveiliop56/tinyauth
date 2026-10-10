@@ -116,6 +116,7 @@ func (ti *typedItem) fromUnstructured(typ ResourceType, obj *unstructured.Unstru
 
 type KubernetesService struct {
 	log *logger.Logger
+	ctx context.Context
 
 	apps        map[ResourceMeta]map[string]model.App
 	client      dynamic.Interface
@@ -136,6 +137,7 @@ func NewKubernetesService(i KubernetesServiceInput) (*KubernetesService, error) 
 	service := &KubernetesService{
 		log:  i.Log,
 		apps: make(map[ResourceMeta]map[string]model.App),
+		ctx:  i.Ctx,
 	}
 
 	cfg, err := service.getConfig()
@@ -254,6 +256,7 @@ func (k *KubernetesService) watchedItemChange(res watchedResource, typedItem *ty
 		extractor := NewKubernetesCRDExtractor(KubernetesCRDInput{
 			Log:    k.log,
 			Client: k.typedClient,
+			Ctx:    k.ctx,
 		})
 		result = extractor.Extract(typedItem.crd)
 	}
@@ -267,9 +270,6 @@ func (k *KubernetesService) watchedItemChange(res watchedResource, typedItem *ty
 
 	if result.Apps == nil {
 		k.log.App.Warn().Str("res", res.pretty()).Msg("Failed to extract resource, skipping")
-		if result.Meta != nil {
-			k.removeResource(*result.Meta)
-		}
 		return
 	}
 
