@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -160,12 +161,11 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 
 func (ldap *LdapService) GetUserInfo(username string) (*UserInfoResult, error) {
 	escapedUsername := ldapgo.EscapeFilter(username)
-	filter := fmt.Sprintf(ldap.config.LDAP.SearchFilter, escapedUsername)
 
 	searchRequest := ldapgo.NewSearchRequest(
 		ldap.config.LDAP.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
-		filter,
+		strings.Replace(ldap.config.LDAP.SearchFilter, "%s", escapedUsername, 1),
 		[]string{"dn", "mail", "cn"},
 		nil,
 	)
@@ -219,7 +219,7 @@ func (ldap *LdapService) GetUserGroups(userDN string) ([]string, error) {
 	searchRequest := ldapgo.NewSearchRequest(
 		ldap.config.LDAP.BaseDN,
 		ldapgo.ScopeWholeSubtree, ldapgo.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf(ldap.config.LDAP.GroupSearchFilter, escapedUserDN),
+		strings.Replace(ldap.config.LDAP.GroupSearchFilter, "%s", escapedUserDN, 1),
 		[]string{"dn"},
 		nil,
 	)
