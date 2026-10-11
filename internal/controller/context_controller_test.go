@@ -144,7 +144,7 @@ func TestContextController(t *testing.T) {
 			}(),
 		},
 		{
-			description: "Ensure version returns the build version when authorized",
+			description: "Ensure version returns the build info when authorized",
 			middlewares: []gin.HandlerFunc{
 				func(c *gin.Context) {
 					c.Set("context", &model.UserContext{
@@ -161,9 +161,11 @@ func TestContextController(t *testing.T) {
 			path: "/api/version",
 			expected: func() string {
 				expectedVersionResponse := VersionResponse{
-					Status:  200,
-					Message: "Success",
-					Version: model.Version,
+					Status:         200,
+					Message:        "Success",
+					Version:        model.Version,
+					CommitHash:     model.CommitHash,
+					BuildTimestamp: model.BuildTimestamp,
 				}
 				bytes, err := json.Marshal(expectedVersionResponse)
 				require.NoError(t, err)
