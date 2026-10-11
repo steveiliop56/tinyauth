@@ -124,6 +124,12 @@ func (app *BootstrapApp) Setup() error {
 
 	app.runtime.OAuthWhitelist = oauthWhitelist
 
+	// load oauth user mapping
+	globalUserMapping, err := utils.GetStringList(app.config.OAuth.UserMapping, app.config.OAuth.UserMappingFile)
+	if err != nil {
+		return fmt.Errorf("failed to load oauth user mapping: %w", err)
+	}
+
 	// setup oauth providers
 	app.runtime.OAuthProviders = app.config.OAuth.Providers
 
@@ -138,6 +144,13 @@ func (app *BootstrapApp) Setup() error {
 		}
 
 		provider.Whitelist = providerWhitelist
+
+		providerUserMapping, err := utils.GetStringList(provider.UserMapping, provider.UserMappingFile)
+		if err != nil {
+			return fmt.Errorf("failed to load oauth user mapping for provider %s: %w", id, err)
+		}
+
+		provider.UserMapping = append(slices.Clone(globalUserMapping), providerUserMapping...)
 
 		secret := utils.GetSecret(provider.ClientSecret, provider.ClientSecretFile)
 		provider.ClientSecret = secret

@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/tinyauthapp/tinyauth/internal/model"
+	"github.com/tinyauthapp/tinyauth/internal/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -19,6 +21,7 @@ type OAuthService struct {
 	ctx               context.Context
 	userinfoExtractor OAuthUserinfoExtractor
 	id                string
+	userMap           map[string]string
 }
 
 func NewOAuthService(config model.OAuthServiceConfig, id string, ctx context.Context) *OAuthService {
@@ -49,6 +52,7 @@ func NewOAuthService(config model.OAuthServiceConfig, id string, ctx context.Con
 		ctx:               vctx,
 		userinfoExtractor: defaultExtractor,
 		id:                id,
+		userMap:           utils.ParseUserMapping(config.UserMapping),
 	}
 }
 
@@ -82,7 +86,16 @@ func (s *OAuthService) GetToken(code string, verifier string) (*oauth2.Token, er
 
 func (s *OAuthService) GetUserinfo(token *oauth2.Token) (*model.Claims, error) {
 	client := oauth2.NewClient(s.ctx, oauth2.StaticTokenSource(token))
-	return s.userinfoExtractor(client, s.ctx, s.serviceCfg.UserinfoURL, s.mapClaims)
+	claims, err := s.userinfoExtractor(client, s.ctx, s.serviceCfg.UserinfoURL, s.mapClaims)
+	if err != nil {
+		return nil, err
+	}
+	if claims != nil && claims.Email != "" {
+		if mappedUsername, ok := s.userMap[strings.ToLower(strings.TrimSpace(claims.Email))]; ok && mappedUsername != "" {
+			claims.PreferredUsername = mappedUsername
+		}
+	}
+	return claims, nil
 }
 
 func (s *OAuthService) GetConfig() model.OAuthServiceConfig {
@@ -97,6 +110,7 @@ func (s *OAuthService) UpdateConfig(config model.OAuthServiceConfig) {
 	s.config.Endpoint.AuthURL = config.AuthURL
 	s.config.Endpoint.TokenURL = config.TokenURL
 	s.config.RedirectURL = config.RedirectURL
+	s.userMap = utils.ParseUserMapping(config.UserMapping)
 }
 
 func (s *OAuthService) mapClaims(claims map[string]any) model.Claims {

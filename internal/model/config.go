@@ -191,10 +191,12 @@ type IPConfig struct {
 }
 
 type OAuthConfig struct {
-	Whitelist     []string                      `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist,omitempty"`
-	WhitelistFile string                        `description:"Path to the OAuth whitelist file." yaml:"whitelistFile,omitempty"`
-	AutoRedirect  string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect,omitempty"`
-	Providers     map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers,omitempty"`
+	Whitelist       []string                      `description:"Comma-separated list of allowed OAuth domains." yaml:"whitelist,omitempty"`
+	WhitelistFile   string                        `description:"Path to the OAuth whitelist file." yaml:"whitelistFile,omitempty"`
+	AutoRedirect    string                        `description:"The OAuth provider to use for automatic redirection." yaml:"autoRedirect,omitempty"`
+	Providers       map[string]OAuthServiceConfig `description:"OAuth providers configuration." yaml:"providers,omitempty"`
+	UserMapping     []string                      `description:"Comma-separated list of email-to-username mappings (e.g. user@example.com:username)." yaml:"userMapping,omitempty"`
+	UserMappingFile string                        `description:"Path to the file containing email-to-username mappings." yaml:"userMappingFile,omitempty"`
 }
 
 type OIDCConfig struct {
@@ -271,6 +273,8 @@ type OAuthServiceConfig struct {
 	Insecure         bool                  `description:"Allow insecure OAuth connections." yaml:"insecure,omitempty"`
 	Name             string                `description:"Provider name in UI." yaml:"name,omitempty"`
 	Claims           OAuthServiceClaimsMap `description:"Map of claims to extract from the userinfo response." yaml:"claims,omitempty"`
+	UserMapping      []string              `description:"Comma-separated list of email-to-username mappings for this provider (e.g. user@example.com:username)." yaml:"userMapping,omitempty"`
+	UserMappingFile  string                `description:"Path to the file containing email-to-username mappings for this provider." yaml:"userMappingFile,omitempty"`
 }
 
 type OAuthServiceClaimsMap struct {
