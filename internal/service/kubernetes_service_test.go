@@ -133,7 +133,7 @@ func TestKubernetesServiceWatchedItemChange(t *testing.T) {
 		{"delete ingress", testResource(ResourceTypeIngress), &typedItem{typ: ResourceTypeIngress, ingress: ingress}, watch.Deleted,
 			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, nil},
 		{"update without annotations replaces stale apps", testResource(ResourceTypeIngress), &typedItem{typ: ResourceTypeIngress, ingress: testIngress("shared", nil, "app.example.com")}, watch.Modified,
-			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, map[ResourceMeta]map[string]model.App{key: {}}},
+			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, make(map[ResourceMeta]map[string]model.App)},
 		{"nil item leaves cache untouched", testResource(ResourceTypeIngress), nil, watch.Added,
 			map[ResourceMeta]map[string]model.App{key: {"app": {}}}, map[ResourceMeta]map[string]model.App{key: {"app": {}}}},
 		{"nil ingress leaves cache untouched", testResource(ResourceTypeIngress), &typedItem{typ: ResourceTypeIngress}, watch.Modified,

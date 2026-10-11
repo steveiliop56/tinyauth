@@ -161,7 +161,7 @@ func NewKubernetesService(i KubernetesServiceInput) (*KubernetesService, error) 
 	watchedGVRs := make(map[string]bool)
 
 	for _, res := range supportedResources {
-		ctx, cancel := context.WithTimeout(i.Ctx, 5*time.Second)
+		ctx, cancel := context.WithTimeout(i.Ctx, 10*time.Second)
 		_, err := client.Resource(res.gvr).List(ctx, metav1.ListOptions{Limit: 1})
 		cancel()
 
@@ -268,6 +268,9 @@ func (k *KubernetesService) watchedItemChange(res watchedResource, typedItem *ty
 
 	if result.Apps == nil {
 		k.log.App.Warn().Str("res", res.pretty()).Msg("Failed to extract resource, skipping")
+		if result.Meta != nil {
+			k.removeResource(*result.Meta)
+		}
 		return
 	}
 

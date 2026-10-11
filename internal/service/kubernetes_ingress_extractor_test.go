@@ -45,21 +45,19 @@ func TestKubernetesIngressExtractorExtract(t *testing.T) {
 			}},
 		},
 		{
-			name:    "invalid domain falls back to name",
+			name:    "invalid domain does not fall back to name",
 			ingress: testIngress("route", map[string]string{"tinyauth.apps.dashboard.config.domain": "dömain.example.com"}, "dashboard.example.com"),
-			want: ExtractionResult{Meta: meta, Apps: map[string]model.App{
-				"dashboard": {Config: model.AppConfig{Domain: "dömain.example.com"}},
-			}},
+			want:    ExtractionResult{Meta: meta},
 		},
 		{
 			name:    "unmatched annotations yield empty apps",
 			ingress: testIngress("route", map[string]string{"tinyauth.apps.other.users.allow": "alice"}, "dashboard.example.com"),
-			want:    ExtractionResult{Meta: meta, Apps: map[string]model.App{}},
+			want:    ExtractionResult{Meta: meta},
 		},
 		{
 			name:    "no annotations yield empty apps",
 			ingress: testIngress("route", nil, "dashboard.example.com"),
-			want:    ExtractionResult{Meta: meta, Apps: map[string]model.App{}},
+			want:    ExtractionResult{Meta: meta},
 		},
 		{
 			name:    "invalid annotations",

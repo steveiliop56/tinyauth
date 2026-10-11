@@ -125,6 +125,7 @@ func (k *KubernetesIngressExtractor) Extract(ingress *networking.Ingress) Extrac
 					continue
 				}
 			}
+			continue
 		}
 
 		if slices.ContainsFunc(hosts, func(host string) bool {
@@ -132,6 +133,10 @@ func (k *KubernetesIngressExtractor) Extract(ingress *networking.Ingress) Extrac
 		}) {
 			apps[name] = config
 		}
+	}
+
+	if len(apps) == 0 {
+		apps = nil
 	}
 
 	return ExtractionResult{

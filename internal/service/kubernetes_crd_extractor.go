@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/tinyauthapp/tinyauth/internal/model"
 	"github.com/tinyauthapp/tinyauth/internal/utils/logger"
 	"github.com/tinyauthapp/tinyauth/pkg/apis/tinyauth/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -58,23 +61,34 @@ func (k *KubernetesCRDExtractor) Extract(app *v1alpha1.Application) ExtractionRe
 
 	// Convert the CRD to the internal representation.
 	internalApp := app.Spec.ToInternalApp()
-	passwordRef := app.Spec.Response.BasicAuth.PasswordSecretRef
-	if passwordRef != nil {
-		secret, err := k.client.CoreV1().Secrets(meta.Namespace).Get(k.ctx, passwordRef.Name, metav1.GetOptions{})
-		if err != nil {
-			k.log.App.Warn().Err(err).Str("namespace", meta.Namespace).Str("name", meta.Name).Str("secret", passwordRef.Name).Str("key", passwordRef.Key).Msg("Failed to read basic auth password Secret, skipping")
-			return ExtractionResult{Meta: meta}
+
+	if ref := app.Spec.Response.BasicAuth.PasswordSecretRef; ref != nil {
+		ctx, cancel := context.WithTimeout(k.ctx, 10*time.Second)
+		secret, err := k.client.CoreV1().Secrets(meta.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		cancel()
+
+		missingKey := false
+		if err == nil {
+			if password, ok := secret.Data[ref.Key]; ok {
+				internalApp.Response.BasicAuth.Password = string(password)
+			} else {
+				missingKey = true
+				err = fmt.Errorf("key %q not found in Secret %q", ref.Key, ref.Name)
+			}
 		}
 
-		password, ok := secret.Data[passwordRef.Key]
-		if !ok {
-			k.log.App.Warn().Str("namespace", meta.Namespace).Str("name", meta.Name).Str("secret", passwordRef.Name).Str("key", passwordRef.Key).Msg("Basic auth password Secret key does not exist, skipping")
+		optional := ref.Optional != nil && *ref.Optional
+		if err != nil && !(optional && (missingKey || apierrors.IsNotFound(err))) {
+			k.log.App.Warn().Err(err).
+				Str("namespace", meta.Namespace).
+				Str("name", meta.Name).
+				Str("secret", ref.Name).
+				Str("key", ref.Key).
+				Msg("Failed to resolve basic auth password Secret, skipping")
+
 			return ExtractionResult{Meta: meta}
 		}
-
-		internalApp.Response.BasicAuth.Password = string(password)
 	}
-
 	return ExtractionResult{
 		Meta: meta,
 		Apps: map[string]model.App{
