@@ -20,14 +20,12 @@ func newMockProvider(acls map[string]model.App, shouldError bool) *mockProvider 
 	return &mockProvider{acls: acls, shouldError: shouldError}
 }
 
-func (m *mockProvider) Lookup(locator func(name string, app *model.App) bool) error {
+func (m *mockProvider) Lookup(locator func(name string, app *model.App)) error {
 	if m.shouldError {
 		return errors.New("mock error")
 	}
 	for name, app := range m.acls {
-		if ok := locator(name, &app); ok {
-			return nil
-		}
+		locator(name, &app)
 	}
 	return nil
 }
