@@ -77,8 +77,7 @@ type SkipConsentRequest struct {
 }
 
 type SkipConsentResponse struct {
-	SkipConsent bool   `json:"skipConsent"`
-	RedirectURI string `json:"redirectUri,omitempty"`
+	SkipConsent bool `json:"skipConsent"`
 }
 
 type AuthorizeScreenParams struct {
@@ -316,14 +315,6 @@ func (controller *OIDCController) skipConsent(c *gin.Context) {
 	authorizeReq, ok := controller.oidc.GetAuthorizeRequestByTicket(req.OIDCTicket)
 
 	if !ok {
-		if redirectURI, completed := controller.oidc.GetCompletedAuthorizeRequest(req.OIDCTicket, userContext.GetUsername()); completed {
-			c.JSON(200, SkipConsentResponse{
-				SkipConsent: true,
-				RedirectURI: redirectURI,
-			})
-			return
-		}
-
 		c.JSON(200, SkipConsentResponse{
 			SkipConsent: false,
 		})
@@ -332,50 +323,10 @@ func (controller *OIDCController) skipConsent(c *gin.Context) {
 
 	controller.log.App.Debug().Str("client", authorizeReq.ClientID).Str("user", userContext.GetUsername()).Msg("Checking OIDC consent")
 
-	prompts := controller.oidc.GetPrompt(authorizeReq.Prompt)
-	if slices.Contains(prompts, service.OIDCPromptLogin) ||
-	    slices.Contains(prompts, service.OIDCPromptConsent) {
-		c.JSON(200, SkipConsentResponse{
-			SkipConsent: false,
-		})
-		return
-	}
-	if authorizeReq.MaxAge != "" {
-		maxAge, err := strconv.Atoi(authorizeReq.MaxAge)
-		if err != nil || time.Unix(userContext.AuthTime, 0).Add(time.Duration(maxAge)*time.Second).Before(time.Now()) {
-			c.JSON(200, SkipConsentResponse{
-				SkipConsent: false,
-			})
-			return
-		}
-	}
-
 	client, ok := controller.oidc.GetClient(authorizeReq.ClientID)
 	if ok && client.Trusted {
-		authorizeReq, claimed := controller.oidc.ClaimAuthorizeRequestTicket(req.OIDCTicket)
-		if !claimed {
-			if redirectURI, completed := controller.oidc.GetCompletedAuthorizeRequest(req.OIDCTicket, userContext.GetUsername()); completed {
-				c.JSON(200, SkipConsentResponse{
-					SkipConsent: true,
-					RedirectURI: redirectURI,
-				})
-				return
-			}
-
-			c.JSON(200, SkipConsentResponse{SkipConsent: false})
-			return
-		}
-
-		redirectURI, err := controller.completeAuthorization(c.Request.Context(), authorizeReq, userContext, false)
-		if err != nil {
-			controller.writeCompleteAuthorizationError(c, authorizeReq, err)
-			return
-		}
-		controller.oidc.StoreCompletedAuthorizeRequest(req.OIDCTicket, userContext.GetUsername(), redirectURI)
-
 		c.JSON(200, SkipConsentResponse{
 			SkipConsent: true,
-			RedirectURI: redirectURI,
 		})
 		return
 	}
