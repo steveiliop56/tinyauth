@@ -946,24 +946,6 @@ func (service *OIDCService) GetAuthorizeRequestByTicket(ticket string) (*Authori
 	return &entry, true
 }
 
-func (service *OIDCService) ClaimAuthorizeRequestTicket(ticket string) (*AuthorizeRequest, bool) {
-	var entry AuthorizeRequest
-	claimed := false
-
-	service.caches.authorize.WithLock(func(actions cache.CacheStoreActions[AuthorizeRequest]) {
-		entry, claimed = actions.Get(ticket)
-		if claimed {
-			actions.Delete(ticket)
-		}
-	})
-
-	if !claimed {
-		return nil, false
-	}
-
-	return &entry, true
-}
-
 func (service *OIDCService) DeleteAuthorizeRequestTicket(ticket string) {
 	service.caches.authorize.Delete(ticket)
 }

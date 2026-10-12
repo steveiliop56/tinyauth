@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -378,27 +376,6 @@ func TestOIDCController(t *testing.T) {
 				// skip-consent is only a check; it must not consume the ticket.
 				_, ok := oidcService.GetAuthorizeRequestByTicket(ticket)
 				assert.True(t, ok)
-			},
-		},
-		{
-			description: "Authorize request ticket can only be claimed once",
-			run: func(t *testing.T, _ *gin.Engine, _ *httptest.ResponseRecorder) {
-				ticket := oidcService.CreateAuthorizeRequestTicket(service.AuthorizeRequest{ClientID: "trusted-client-id"})
-				var claims atomic.Int32
-				var wg sync.WaitGroup
-
-				for range 16 {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						if _, ok := oidcService.ClaimAuthorizeRequestTicket(ticket); ok {
-							claims.Add(1)
-						}
-					}()
-				}
-
-				wg.Wait()
-				assert.Equal(t, int32(1), claims.Load())
 			},
 		},
 		{
