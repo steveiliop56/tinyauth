@@ -13,7 +13,7 @@ import (
 )
 
 type LabelProvider interface {
-	Lookup(locator func(name string, app *model.App) bool) error
+	Lookup(locator func(name string, app *model.App)) error
 }
 
 type AccessControlsService struct {
@@ -42,7 +42,7 @@ func NewAccessControlsService(i AccessControlServiceInput) *AccessControlsServic
 	}
 }
 
-func (service *AccessControlsService) ensureAscii(str string) bool {
+func ensureAscii(str string) bool {
 	for i := 0; i < len(str); i++ {
 		if str[i] > unicode.MaxASCII {
 			return false
@@ -51,7 +51,7 @@ func (service *AccessControlsService) ensureAscii(str string) bool {
 	return true
 }
 
-func (service *AccessControlsService) normalizeDomain(domain string) string {
+func normalizeDomain(domain string) string {
 	if host, _, err := net.SplitHostPort(domain); err == nil {
 		domain = host
 	}
@@ -59,40 +59,37 @@ func (service *AccessControlsService) normalizeDomain(domain string) string {
 	return strings.ToLower(domain)
 }
 
-func (service *AccessControlsService) getACLs(domain string, lookup func(locator func(name string, app *model.App) bool) error) (*model.App, error) {
-	if !service.ensureAscii(domain) {
+func (service *AccessControlsService) getACLs(domain string, lookup func(locator func(name string, app *model.App)) error) (*model.App, error) {
+	if !ensureAscii(domain) {
 		return nil, errors.New("domain contains non-ascii characters")
 	}
 
-	normalizedDomain := service.normalizeDomain(domain)
+	normalizedDomain := normalizeDomain(domain)
 
 	if !strings.HasSuffix(normalizedDomain, "."+service.runtime.CookieDomain) && normalizedDomain != service.runtime.CookieDomain {
 		return nil, fmt.Errorf("domain does not match cookie domain, expected %s (or a subdomain), got %s", service.runtime.CookieDomain, domain)
 	}
 
-	var domainMatch *model.App
-	var nameMatch *model.App
-	var nameMatchedApps []string
+	var domainMatches []model.App
+	var nameMatches []model.App
 
-	locatorFunc := func(name string, app *model.App) bool {
+	locatorFunc := func(name string, app *model.App) {
 		if app.Config.Domain != "" {
-			if !service.ensureAscii(app.Config.Domain) {
+			if !ensureAscii(app.Config.Domain) {
 				service.log.App.Warn().Str("name", name).Str("domain", app.Config.Domain).Msg("Domain contains non-ascii characters, skipping")
-				return false
+				return
 			}
-			if normalizedDomain == service.normalizeDomain(app.Config.Domain) {
+			if normalizedDomain == normalizeDomain(app.Config.Domain) {
 				service.log.App.Debug().Str("name", name).Msg("Found matching container by domain")
-				domainMatch = app
-				return true
+				domainMatches = append(domainMatches, *app)
+				return
 			}
-			return false
+			return
 		}
 		if strings.HasPrefix(normalizedDomain, strings.ToLower(name+".")) {
 			service.log.App.Debug().Str("name", name).Msg("Found matching container by app name")
-			nameMatch = app
-			nameMatchedApps = append(nameMatchedApps, name)
+			nameMatches = append(nameMatches, *app)
 		}
-		return false
 	}
 
 	err := lookup(locatorFunc)
@@ -100,30 +97,29 @@ func (service *AccessControlsService) getACLs(domain string, lookup func(locator
 		return nil, err
 	}
 
-	if domainMatch != nil {
+	if len(domainMatches) > 0 {
+		if len(domainMatches) > 1 {
+			return nil, fmt.Errorf("domain matched multiple apps, use explicit domain config")
+		}
 		service.log.App.Debug().Str("domain", domain).Msg("Found matching app by domain")
-		return domainMatch, nil
+		return &domainMatches[0], nil
 	}
 
-	if nameMatch == nil {
-		service.log.App.Debug().Str("domain", domain).Msg("No match found for domain, skipping")
-		return nil, nil
+	if len(nameMatches) > 0 {
+		if len(nameMatches) > 1 {
+			return nil, fmt.Errorf("domain matched multiple apps by name prefix, use explicit domain config")
+		}
+		service.log.App.Debug().Str("domain", domain).Msg("Found matching app by app name")
+		return &nameMatches[0], nil
 	}
 
-	if len(nameMatchedApps) > 1 {
-		return nil, fmt.Errorf("domain matched multiple apps by name prefix, use explicit domain config")
-	}
-
-	service.log.App.Debug().Str("domain", domain).Msg("Found matching app by app name")
-	return nameMatch, nil
+	return nil, nil
 }
 
 func (service *AccessControlsService) lookupStaticACLs(domain string) (*model.App, error) {
-	return service.getACLs(domain, func(locator func(name string, app *model.App) bool) error {
+	return service.getACLs(domain, func(locator func(name string, app *model.App)) error {
 		for app, config := range service.config.Apps {
-			if ok := locator(app, &config); ok {
-				return nil
-			}
+			locator(app, &config)
 		}
 		return nil
 	})
@@ -145,7 +141,9 @@ func (service *AccessControlsService) GetAccessControls(domain string) (*model.A
 
 	// If we have a label provider configured, try to get ACLs from it
 	if service.labelProvider != nil {
-		return service.getACLs(domain, service.labelProvider.Lookup)
+		return service.getACLs(domain, func(locator func(name string, app *model.App)) error {
+			return service.labelProvider.Lookup(locator)
+		})
 	}
 
 	// No labels

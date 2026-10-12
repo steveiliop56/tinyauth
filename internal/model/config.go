@@ -2,6 +2,7 @@ package model
 
 import (
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -57,9 +58,10 @@ func NewDefaultConfiguration(runtimeEnv RuntimeEnv) *Config {
 			WarningsEnabled:       true,
 		},
 		LDAP: LDAPConfig{
-			Insecure:      false,
-			SearchFilter:  "(uid=%s)",
-			GroupCacheTTL: 900, // 15 minutes
+			Insecure:          false,
+			SearchFilter:      "(uid=%s)",
+			GroupSearchFilter: "(&(objectclass=groupOfUniqueNames)(uniquemember=%s))",
+			GroupCacheTTL:     900, // 15 minutes
 		},
 		Log: LogConfig{
 			Level: "info",
@@ -80,8 +82,9 @@ func NewDefaultConfiguration(runtimeEnv RuntimeEnv) *Config {
 			},
 		},
 		OIDC: OIDCConfig{
-			PrivateKeyPath: "./tinyauth_oidc_key",
-			PublicKeyPath:  "./tinyauth_oidc_key.pub",
+			LegacySubEnabled: true,
+			PrivateKeyPath:   "./tinyauth_oidc_key",
+			PublicKeyPath:    "./tinyauth_oidc_key.pub",
 		},
 		Tailscale: TailscaleConfig{
 			CacheDuration: int(time.Duration(5 * time.Minute).Seconds()),
@@ -196,29 +199,32 @@ type OAuthConfig struct {
 }
 
 type OIDCConfig struct {
-	PrivateKeyPath string                      `description:"Path to the private key file, including file name." yaml:"privateKeyPath,omitempty"`
-	PublicKeyPath  string                      `description:"Path to the public key file, including file name." yaml:"publicKeyPath,omitempty"`
-	Clients        map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients,omitempty"`
+	LegacySubEnabled bool                        `description:"Enable legacy username-based OIDC subject identifiers for backwards compatibility." yaml:"legacySubEnabled,omitempty"`
+	PrivateKeyPath   string                      `description:"Path to the private key file, including file name." yaml:"privateKeyPath,omitempty"`
+	PublicKeyPath    string                      `description:"Path to the public key file, including file name." yaml:"publicKeyPath,omitempty"`
+	Clients          map[string]OIDCClientConfig `description:"OIDC clients configuration." yaml:"clients,omitempty"`
 }
 
 type UIConfig struct {
 	Title                 string `description:"The title of the UI." yaml:"title,omitempty"`
 	ForgotPasswordMessage string `description:"Message displayed on the forgot password page." yaml:"forgotPasswordMessage,omitempty"`
 	BackgroundImage       string `description:"Path to the background image." yaml:"backgroundImage,omitempty"`
+	BackgroundCSS         string `description:"Value of the CSS background property, takes precedence over the background image." yaml:"backgroundCss,omitempty"`
 	WarningsEnabled       bool   `description:"Enable UI warnings." yaml:"warningsEnabled,omitempty"`
 }
 
 type LDAPConfig struct {
-	Address          string `description:"LDAP server address." yaml:"address,omitempty"`
-	BindDN           string `description:"Bind DN for LDAP authentication." yaml:"bindDn,omitempty"`
-	BindPassword     string `description:"Bind password for LDAP authentication." yaml:"bindPassword,omitempty"`
-	BindPasswordFile string `description:"Path to the Bind password." yaml:"bindPasswordFile,omitempty"`
-	BaseDN           string `description:"Base DN for LDAP searches." yaml:"baseDn,omitempty"`
-	Insecure         bool   `description:"Allow insecure LDAP connections." yaml:"insecure,omitempty"`
-	SearchFilter     string `description:"LDAP search filter." yaml:"searchFilter,omitempty"`
-	AuthCert         string `description:"Certificate for mTLS authentication." yaml:"authCert,omitempty"`
-	AuthKey          string `description:"Certificate key for mTLS authentication." yaml:"authKey,omitempty"`
-	GroupCacheTTL    int    `description:"Cache duration for LDAP group membership in seconds." yaml:"groupCacheTTL,omitempty"`
+	Address           string `description:"LDAP server address." yaml:"address,omitempty"`
+	BindDN            string `description:"Bind DN for LDAP authentication." yaml:"bindDn,omitempty"`
+	BindPassword      string `description:"Bind password for LDAP authentication." yaml:"bindPassword,omitempty"`
+	BindPasswordFile  string `description:"Path to the Bind password." yaml:"bindPasswordFile,omitempty"`
+	BaseDN            string `description:"Base DN for LDAP searches." yaml:"baseDn,omitempty"`
+	Insecure          bool   `description:"Allow insecure LDAP connections." yaml:"insecure,omitempty"`
+	SearchFilter      string `description:"LDAP user search filter. Use %s as the username placeholder." yaml:"searchFilter,omitempty"`
+	GroupSearchFilter string `description:"LDAP group search filter. Use %s as the user DN placeholder." yaml:"groupSearchFilter,omitempty"`
+	AuthCert          string `description:"Certificate for mTLS authentication." yaml:"authCert,omitempty"`
+	AuthKey           string `description:"Certificate key for mTLS authentication." yaml:"authKey,omitempty"`
+	GroupCacheTTL     int    `description:"Cache duration for LDAP group membership in seconds." yaml:"groupCacheTTL,omitempty"`
 }
 
 type LogConfig struct {
@@ -344,4 +350,36 @@ type AppBasicAuth struct {
 type AppPath struct {
 	Allow string `description:"Disable authentication for only paths that match the regex string." yaml:"allow,omitempty"`
 	Block string `description:"Enable authentication for only paths that match the regex string." yaml:"block,omitempty"`
+}
+
+type ValidateResult struct {
+	Warnings []string `json:"warnings"`
+	Errors   []string `json:"errors"`
+}
+
+// Helper config functions
+
+func (c *Config) Validate() ValidateResult {
+	res := ValidateResult{
+		Warnings: make([]string, 0),
+		Errors:   make([]string, 0),
+	}
+	env := DetectRuntimeEnv()
+
+	// warn on experimental features
+	if !reflect.DeepEqual(NewDefaultConfiguration(env).Experimental, c.Experimental) {
+		res.Warnings = append(res.Warnings, "Experimental features are enabled, use with caution. Experimental features may change with each release")
+	}
+
+	// warn on subdomains disabled
+	if !c.Auth.SubdomainsEnabled {
+		res.Warnings = append(res.Warnings, "Subdomains are disabled, cookies will be set for the current domain only")
+	}
+
+	// warn on legacy sub
+	if c.OIDC.LegacySubEnabled {
+		res.Warnings = append(res.Warnings, "Legacy username-based OIDC subject identifiers are enabled, this is insecure and will be removed in the next major release")
+	}
+
+	return res
 }

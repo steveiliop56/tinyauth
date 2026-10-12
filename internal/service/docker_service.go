@@ -119,7 +119,7 @@ func (docker *DockerService) inspectContainer(containerId string) (container.Ins
 	return docker.client.ContainerInspect(docker.context, containerId)
 }
 
-func (docker *DockerService) Lookup(locator func(name string, app *model.App) bool) error {
+func (docker *DockerService) Lookup(locator func(name string, app *model.App)) error {
 	if !docker.isConnected {
 		docker.log.App.Debug().Msg("Docker service not connected, returning empty labels")
 		return nil
@@ -144,9 +144,7 @@ func (docker *DockerService) Lookup(locator func(name string, app *model.App) bo
 		}
 
 		for app, config := range labels.Apps {
-			if ok := locator(app, &config); ok {
-				return nil
-			}
+			locator(app, &config)
 		}
 	}
 
