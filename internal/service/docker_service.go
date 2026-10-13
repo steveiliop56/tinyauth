@@ -91,7 +91,7 @@ func NewDockerService(i DockerServiceInput) (*DockerService, error) {
 	}
 
 	// initial sync
-	err := service.initialSync()
+	err := service.sync()
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to do initial sync: %w", err)
@@ -128,74 +128,55 @@ func (docker *DockerService) inspectContainer(containerId string) (container.Ins
 	return docker.client.ContainerInspect(docker.context, containerId)
 }
 
-func (docker *DockerService) Lookup(locator func(name string, app *model.App)) error {
-	for app, config := range docker.apps {
-		locator(app, &config)
-	}
-
-	return nil
-}
-
-func (docker *DockerService) initialSync() error {
+func (docker *DockerService) sync() error {
 	containers, err := docker.getContainers()
 	if err != nil {
 		return fmt.Errorf("failed to get containers: %w", err)
 	}
 
 	for _, ctr := range containers {
-		err = docker.updateFromContainerID(ctr.ID, false)
+		labels, err := decoders.DecodeLabels[model.Apps](ctr.Labels, "apps")
 		if err != nil {
-			return fmt.Errorf("failed to update apps from container: %w", err)
+			docker.log.App.Warn().Err(err).Str("container_id", ctr.ID).Msg("Failed to decode container labels, skipping")
+			continue
+		}
+		for app, config := range labels.Apps {
+			docker.apps[app] = config
 		}
 	}
 
 	return nil
 }
 
-func (docker *DockerService) updateFromContainerID(containerId string, shouldDelete bool) error {
-	if containerId == "" {
-		return nil
-	}
-
-	inspect, err := docker.inspectContainer(containerId)
+func (docker *DockerService) syncWithContainer(containerId string) error {
+	ctr, err := docker.inspectContainer(containerId)
 	if err != nil {
 		return fmt.Errorf("failed to inspect container: %w", err)
 	}
-
-	labels, err := decoders.DecodeLabels[model.Apps](inspect.Config.Labels, "apps")
+	labels, err := decoders.DecodeLabels[model.Apps](ctr.Config.Labels, "apps")
 	if err != nil {
-		return fmt.Errorf("failed to decode labels: %w", err)
+		return fmt.Errorf("failed to decode container labels: %w", err)
 	}
-
 	for app, config := range labels.Apps {
-		if shouldDelete {
+		if !ctr.State.Running {
 			delete(docker.apps, app)
 			continue
 		}
 		docker.apps[app] = config
 	}
-
 	return nil
 }
-
-func (docker *DockerService) updateFromEvent(event events.Message) {
+func (docker *DockerService) syncFromEvent(event events.Message) {
 	docker.log.App.Debug().Msgf("Received event: %s", event.Action)
 
-	containerId := event.Actor.ID
-
-	var err error
-
 	switch event.Action {
-	case events.ActionStart, events.ActionRestart:
-		err = docker.updateFromContainerID(containerId, false)
-	case events.ActionStop, events.ActionKill:
-		err = docker.updateFromContainerID(containerId, true)
+	case events.ActionStart, events.ActionRestart, events.ActionStop, events.ActionKill:
+		err := docker.syncWithContainer(event.Actor.ID)
+		if err != nil {
+			docker.log.App.Error().Err(err).Msg("Failed to update apps from event")
+		}
 	default:
 		docker.log.App.Debug().Msgf("Ignoring event: %s", event.Action)
-	}
-
-	if err != nil {
-		docker.log.App.Error().Err(err).Msg("Failed to update apps from event")
 	}
 }
 
@@ -225,7 +206,7 @@ func (docker *DockerService) monitor(ctx context.Context) {
 			return
 
 		case event := <-stream:
-			docker.updateFromEvent(event)
+			docker.syncFromEvent(event)
 
 		case err := <-chErr:
 			if err != nil {
@@ -234,4 +215,12 @@ func (docker *DockerService) monitor(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (docker *DockerService) Lookup(locator func(name string, app *model.App)) error {
+	for app, config := range docker.apps {
+		locator(app, &config)
+	}
+
+	return nil
 }
