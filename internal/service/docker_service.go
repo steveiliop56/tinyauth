@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/steveiliop56/ding"
 	"github.com/tinyauthapp/tinyauth/internal/model"
 	"github.com/tinyauthapp/tinyauth/internal/utils/decoders"
@@ -27,7 +29,7 @@ type DockerService struct {
 	client  *client.Client
 	context context.Context
 
-	isConnected bool
+	apps map[string]model.App
 }
 
 type DockerServiceInput struct {
@@ -42,6 +44,7 @@ func NewDockerService(i DockerServiceInput) (*DockerService, error) {
 	service := &DockerService{
 		log:     i.Log,
 		context: i.Ctx,
+		apps:    make(map[string]model.App),
 	}
 
 	service.log.App.Debug().Msg("Attempting to connect to Docker")
@@ -87,10 +90,16 @@ func NewDockerService(i DockerServiceInput) (*DockerService, error) {
 		service.client = cli
 	}
 
-	service.isConnected = true
+	// initial sync
+	err := service.initialSync()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to do initial sync: %w", err)
+	}
+
 	service.log.App.Debug().Msg("Docker connected successfully")
 
-	i.Ding.Go(service.watchAndClose, ding.RingMajor)
+	i.Ding.Go(service.monitor, ding.RingMajor)
 
 	return service, nil
 }
@@ -120,44 +129,109 @@ func (docker *DockerService) inspectContainer(containerId string) (container.Ins
 }
 
 func (docker *DockerService) Lookup(locator func(name string, app *model.App)) error {
-	if !docker.isConnected {
-		docker.log.App.Debug().Msg("Docker service not connected, returning empty labels")
-		return nil
+	for app, config := range docker.apps {
+		locator(app, &config)
 	}
 
+	return nil
+}
+
+func (docker *DockerService) initialSync() error {
 	containers, err := docker.getContainers()
 	if err != nil {
 		return fmt.Errorf("failed to get containers: %w", err)
 	}
 
 	for _, ctr := range containers {
-		inspect, err := docker.inspectContainer(ctr.ID)
+		err = docker.updateFromContainerID(ctr.ID, false)
 		if err != nil {
-			docker.log.App.Error().Err(err).Msgf("Failed to inspect container %s", ctr.ID)
-			continue
-		}
-
-		labels, err := decoders.DecodeLabels[model.Apps](inspect.Config.Labels, "apps")
-		if err != nil {
-			docker.log.App.Warn().Err(err).Msgf("Failed to decode labels for container %s", ctr.ID)
-			continue
-		}
-
-		for app, config := range labels.Apps {
-			locator(app, &config)
+			return fmt.Errorf("failed to update apps from container: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (docker *DockerService) watchAndClose(ctx context.Context) {
-	<-ctx.Done()
-	docker.log.App.Debug().Msg("Closing Docker client")
-	if docker.client != nil {
-		err := docker.client.Close()
-		if err != nil {
-			docker.log.App.Error().Err(err).Msg("Error closing Docker client")
+func (docker *DockerService) updateFromContainerID(containerId string, shouldDelete bool) error {
+	if containerId == "" {
+		return nil
+	}
+
+	inspect, err := docker.inspectContainer(containerId)
+	if err != nil {
+		return fmt.Errorf("failed to inspect container: %w", err)
+	}
+
+	labels, err := decoders.DecodeLabels[model.Apps](inspect.Config.Labels, "apps")
+	if err != nil {
+		return fmt.Errorf("failed to decode labels: %w", err)
+	}
+
+	for app, config := range labels.Apps {
+		if shouldDelete {
+			delete(docker.apps, app)
+			continue
+		}
+		docker.apps[app] = config
+	}
+
+	return nil
+}
+
+func (docker *DockerService) updateFromEvent(event events.Message) {
+	docker.log.App.Debug().Msgf("Received event: %s", event.Action)
+
+	containerId := event.Actor.ID
+
+	var err error
+
+	switch event.Action {
+	case events.ActionStart, events.ActionRestart:
+		err = docker.updateFromContainerID(containerId, false)
+	case events.ActionStop, events.ActionKill:
+		err = docker.updateFromContainerID(containerId, true)
+	default:
+		docker.log.App.Debug().Msgf("Ignoring event: %s", event.Action)
+	}
+
+	if err != nil {
+		docker.log.App.Error().Err(err).Msg("Failed to update apps from event")
+	}
+}
+
+func (docker *DockerService) buildEventsKV() filters.Args {
+	vals := []string{"start", "restart", "stop", "kill"}
+	kv := make([]filters.KeyValuePair, len(vals))
+	for i, v := range vals {
+		kv[i] = filters.KeyValuePair{
+			Key:   "event",
+			Value: v,
+		}
+	}
+	return filters.NewArgs(kv...)
+}
+
+func (docker *DockerService) monitor(ctx context.Context) {
+	defer docker.client.Close()
+
+	stream, chErr := docker.client.Events(ctx, events.ListOptions{
+		Filters: docker.buildEventsKV(),
+	})
+
+	for {
+		select {
+		case <-ctx.Done():
+			docker.log.App.Debug().Msg("Shutting down docker monitor")
+			return
+
+		case event := <-stream:
+			docker.updateFromEvent(event)
+
+		case err := <-chErr:
+			if err != nil {
+				docker.log.App.Error().Err(err).Msg("Docker event stream failed")
+				return
+			}
 		}
 	}
 }
