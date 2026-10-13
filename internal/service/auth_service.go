@@ -203,23 +203,10 @@ func (auth *AuthService) CheckUserPassword(search model.UserSearch, password str
 		return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	case model.UserLDAP:
 		if auth.ldap != nil {
-			defer func() {
-				bindErr := auth.ldap.BindService(true)
-				if bindErr != nil {
-					if err != nil {
-						err = fmt.Errorf("failed to rebind to ldap service account: %w, original error: %w", bindErr, err)
-						return
-					}
-					err = fmt.Errorf("failed to rebind to ldap service account: %w", bindErr)
-				}
-			}()
-
-			err = auth.ldap.Bind(search.Username, password)
-			if err != nil {
-				return fmt.Errorf("failed to bind to ldap user: %w", err)
-			}
-
-			return nil
+			// Authenticate performs the user bind and the service-account
+			// rebind atomically under the LDAP service lock, so the heartbeat
+			// cannot drop the connection mid-authentication (issue #1191).
+			return auth.ldap.Authenticate(search.Username, password)
 		}
 	default:
 		return errors.New("unknown user search type")

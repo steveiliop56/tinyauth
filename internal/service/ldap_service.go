@@ -122,13 +122,36 @@ func NewLdapService(i LdapServiceInput) (*LdapService, error) {
 	return ldap, nil
 }
 
+// connect establishes a new connection, binds it to the service account and
+// makes it the shared connection.
 func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
+	conn, err := ldap.dial()
+	if err != nil {
+		return nil, err
+	}
+
 	ldap.mutex.Lock()
 	defer ldap.mutex.Unlock()
 
-	var conn *ldapgo.Conn
-	var err error
+	if err := ldap.bindConn(conn); err != nil {
+		conn.Close()
+		return nil, err
+	}
 
+	// Swap the connection while holding the lock so concurrent readers never
+	// observe an unbound or closed connection.
+	old := ldap.conn
+	ldap.conn = conn
+	if old != nil {
+		old.Close()
+	}
+
+	return ldap.conn, nil
+}
+
+// dial opens a new connection to the LDAP server without touching any shared
+// state, so it is safe to call while the service lock is held.
+func (ldap *LdapService) dial() (*ldapgo.Conn, error) {
 	// TODO: There's also STARTTLS (or SASL)-based mTLS authentication
 	// scenario, where we first connect to plain text port (389) and
 	// continue with a STARTTLS negotiation:
@@ -136,27 +159,32 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	// 2. conn.StartTLS(tlsConfig)
 	// 3. conn.externalBind()
 	if ldap.cert != nil {
-		conn, err = ldapgo.DialURL(ldap.config.LDAP.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		return ldapgo.DialURL(ldap.config.LDAP.Address, ldapgo.DialWithTLSConfig(&tls.Config{
 			MinVersion:   tls.VersionTLS12,
 			Certificates: []tls.Certificate{*ldap.cert},
 		}))
-	} else {
-		conn, err = ldapgo.DialURL(ldap.config.LDAP.Address, ldapgo.DialWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: ldap.config.LDAP.Insecure,
-			MinVersion:         tls.VersionTLS12,
-		}))
-	}
-	if err != nil {
-		return nil, err
 	}
 
-	ldap.conn = conn
+	return ldapgo.DialURL(ldap.config.LDAP.Address, ldapgo.DialWithTLSConfig(&tls.Config{
+		InsecureSkipVerify: ldap.config.LDAP.Insecure,
+		MinVersion:         tls.VersionTLS12,
+	}))
+}
 
-	err = ldap.BindService(false)
-	if err != nil {
-		return nil, err
+// bindConn binds an already established connection as the LDAP service
+// account (or externally/anonymous when configured). Callers must hold the
+// service lock.
+func (ldap *LdapService) bindConn(conn *ldapgo.Conn) error {
+	if ldap.cert != nil {
+		return conn.ExternalBind()
 	}
-	return ldap.conn, nil
+
+	// attempt unauthenticated/anonymous bind if both BindDN and bindpw are unset
+	if ldap.config.LDAP.BindDN == "" && ldap.bindPw == "" {
+		return conn.UnauthenticatedBind("")
+	}
+
+	return conn.Bind(ldap.config.LDAP.BindDN, ldap.bindPw)
 }
 
 func (ldap *LdapService) GetUserInfo(username string) (*UserInfoResult, error) {
@@ -255,35 +283,9 @@ func (ldap *LdapService) GetUserGroups(userDN string) ([]string, error) {
 	return groups, nil
 }
 
-func (ldap *LdapService) BindService(rebind bool) error {
-	// Locks must not be used for initial binding attempt
-	if rebind {
-		ldap.mutex.Lock()
-		defer ldap.mutex.Unlock()
-	}
-
-	if ldap.cert != nil {
-		return ldap.conn.ExternalBind()
-	}
-
-	// attempt unauthenticated/anonymous bind if both BindDN and bindpw are unset
-	if ldap.config.LDAP.BindDN == "" && ldap.bindPw == "" {
-		return ldap.conn.UnauthenticatedBind("")
-	}
-
-	return ldap.conn.Bind(ldap.config.LDAP.BindDN, ldap.bindPw)
-}
-
-func (ldap *LdapService) Bind(userDN string, password string) error {
-	ldap.mutex.Lock()
-	defer ldap.mutex.Unlock()
-	err := ldap.conn.Bind(userDN, password)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
+// heartbeat probes the shared connection with a root search. The lock is
+// released before returning so a reconnect triggered by a failure can
+// immediately acquire it.
 func (ldap *LdapService) heartbeat() error {
 	ldap.log.App.Debug().Msg("Performing LDAP connection heartbeat")
 
@@ -296,13 +298,40 @@ func (ldap *LdapService) heartbeat() error {
 	)
 
 	ldap.mutex.Lock()
-	defer ldap.mutex.Unlock()
 	_, err := ldap.conn.Search(searchRequest)
+	ldap.mutex.Unlock()
 	if err != nil {
 		return err
 	}
 
 	// No error means the connection is alive
+	return nil
+}
+
+// Authenticate binds the connection as userDN and then restores the
+// service-account bind, all while holding the lock. This keeps the shared
+// connection from ever being left bound as an unprivileged user and stops the
+// heartbeat from dropping it in the middle of an authentication (issue #1191).
+func (ldap *LdapService) Authenticate(userDN string, password string) error {
+	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
+
+	// Always restore the service-account bind, even when the user bind fails,
+	// so the shared connection is never left bound as an unprivileged user.
+	bindErr := ldap.conn.Bind(userDN, password)
+	rebindErr := ldap.bindConn(ldap.conn)
+
+	if rebindErr != nil {
+		if bindErr != nil {
+			return fmt.Errorf("failed to rebind to ldap service account: %w, original error: %w", rebindErr, bindErr)
+		}
+		return fmt.Errorf("failed to rebind to ldap service account: %w", rebindErr)
+	}
+
+	if bindErr != nil {
+		return fmt.Errorf("failed to bind to ldap user: %w", bindErr)
+	}
+
 	return nil
 }
 
@@ -316,13 +345,28 @@ func (ldap *LdapService) reconnect(interval time.Duration) error {
 	exp.Reset()
 
 	operation := func() (*ldapgo.Conn, error) {
-		if ldap.conn != nil {
-			ldap.conn.Close()
-		}
-		conn, err := ldap.connect()
+		// Dial the replacement before touching any shared state, then swap
+		// under the lock. In-flight authentications therefore always run
+		// against a bound connection and never see a closed one.
+		conn, err := ldap.dial()
 		if err != nil {
 			return nil, err
 		}
+
+		ldap.mutex.Lock()
+		defer ldap.mutex.Unlock()
+
+		if err := ldap.bindConn(conn); err != nil {
+			conn.Close()
+			return nil, err
+		}
+
+		old := ldap.conn
+		ldap.conn = conn
+		if old != nil {
+			old.Close()
+		}
+
 		return conn, nil
 	}
 
