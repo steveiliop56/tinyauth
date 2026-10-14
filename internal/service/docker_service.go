@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
@@ -25,11 +25,12 @@ var (
 )
 
 type DockerService struct {
-	log     *logger.Logger
-	client  *client.Client
-	context context.Context
+	log    *logger.Logger
+	client *client.Client
+	ctx    context.Context
 
 	apps map[string]model.App
+	mu   sync.RWMutex
 }
 
 type DockerServiceInput struct {
@@ -42,56 +43,28 @@ type DockerServiceInput struct {
 
 func NewDockerService(i DockerServiceInput) (*DockerService, error) {
 	service := &DockerService{
-		log:     i.Log,
-		context: i.Ctx,
-		apps:    make(map[string]model.App),
+		log:  i.Log,
+		ctx:  i.Ctx,
+		apps: make(map[string]model.App),
+		mu:   sync.RWMutex{},
 	}
 
 	service.log.App.Debug().Msg("Attempting to connect to Docker")
 
-	if os.Getenv("DOCKER_HOST") == "" {
-		cli, err := service.connect()
-		if err != nil {
-			if errors.Is(err, ErrPingFailed) {
-				service.log.App.Debug().Msg("Docker not connected")
-				return nil, nil
-			}
-			return nil, fmt.Errorf("failed to connect to docker: %w", err)
-		}
-		service.client = cli
-	} else {
-		exp := backoff.NewExponentialBackOff()
-		exp.InitialInterval = 3 * time.Second
-		exp.RandomizationFactor = 0.1
-		exp.Multiplier = 1.5
-		exp.Reset()
+	cli, err := service.connectWithBackoff()
 
-		operation := func() (*client.Client, error) {
-			if service.client != nil {
-				service.client.Close()
-			}
-			cli, err := service.connect()
-			if err != nil {
-				return nil, err
-			}
-			return cli, nil
-		}
-
-		cli, err := backoff.Retry(service.context, operation, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
-
-		if err != nil {
-			if errors.Is(err, ErrPingFailed) {
-				service.log.App.Debug().Msg("Docker not connected after retrying")
-				return nil, nil
-			}
-			return nil, fmt.Errorf("failed to connect to docker after retrying: %w", err)
-		}
-
-		service.client = cli
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to docker: %w", err)
 	}
 
+	if cli == nil {
+		return nil, nil
+	}
+
+	service.client = cli
+
 	// initial sync
-	err := service.sync()
+	err = service.sync()
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to do initial sync: %w", err)
@@ -104,6 +77,33 @@ func NewDockerService(i DockerServiceInput) (*DockerService, error) {
 	return service, nil
 }
 
+func (docker *DockerService) connectWithBackoff() (*client.Client, error) {
+	exp := backoff.NewExponentialBackOff()
+	exp.InitialInterval = 3 * time.Second
+	exp.RandomizationFactor = 0.1
+	exp.Multiplier = 1.5
+	exp.Reset()
+
+	operation := func() (*client.Client, error) {
+		if docker.client != nil {
+			docker.client.Close()
+		}
+		return docker.connect()
+	}
+
+	cli, err := backoff.Retry(docker.ctx, operation, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
+
+	if err != nil {
+		if errors.Is(err, ErrPingFailed) {
+			docker.log.App.Debug().Msg("Docker not connected after retrying")
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to connect to docker after retrying: %w", err)
+	}
+
+	return cli, nil
+}
+
 func (docker *DockerService) connect() (*client.Client, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 
@@ -111,9 +111,10 @@ func (docker *DockerService) connect() (*client.Client, error) {
 		return nil, err
 	}
 
-	_, err = cli.Ping(docker.context)
+	_, err = cli.Ping(docker.ctx)
 
 	if err != nil {
+		cli.Close()
 		return nil, ErrPingFailed
 	}
 
@@ -121,11 +122,11 @@ func (docker *DockerService) connect() (*client.Client, error) {
 }
 
 func (docker *DockerService) getContainers() ([]container.Summary, error) {
-	return docker.client.ContainerList(docker.context, container.ListOptions{})
+	return docker.client.ContainerList(docker.ctx, container.ListOptions{})
 }
 
 func (docker *DockerService) inspectContainer(containerId string) (container.InspectResponse, error) {
-	return docker.client.ContainerInspect(docker.context, containerId)
+	return docker.client.ContainerInspect(docker.ctx, containerId)
 }
 
 func (docker *DockerService) sync() error {
@@ -134,16 +135,23 @@ func (docker *DockerService) sync() error {
 		return fmt.Errorf("failed to get containers: %w", err)
 	}
 
+	apps := make(map[string]model.App)
+
 	for _, ctr := range containers {
 		labels, err := decoders.DecodeLabels[model.Apps](ctr.Labels, "apps")
 		if err != nil {
 			docker.log.App.Warn().Err(err).Str("container_id", ctr.ID).Msg("Failed to decode container labels, skipping")
 			continue
 		}
+
 		for app, config := range labels.Apps {
-			docker.apps[app] = config
+			apps[app] = config
 		}
 	}
+
+	docker.mu.Lock()
+	docker.apps = apps
+	docker.mu.Unlock()
 
 	return nil
 }
@@ -157,6 +165,7 @@ func (docker *DockerService) syncWithContainer(containerId string) error {
 	if err != nil {
 		return fmt.Errorf("failed to decode container labels: %w", err)
 	}
+	docker.mu.Lock()
 	for app, config := range labels.Apps {
 		if !ctr.State.Running {
 			delete(docker.apps, app)
@@ -164,24 +173,29 @@ func (docker *DockerService) syncWithContainer(containerId string) error {
 		}
 		docker.apps[app] = config
 	}
+	docker.mu.Unlock()
 	return nil
 }
-func (docker *DockerService) syncFromEvent(event events.Message) {
-	docker.log.App.Debug().Msgf("Received event: %s", event.Action)
 
+func (docker *DockerService) syncFromEvent(event events.Message) {
 	switch event.Action {
-	case events.ActionStart, events.ActionRestart, events.ActionStop, events.ActionKill:
-		err := docker.syncWithContainer(event.Actor.ID)
-		if err != nil {
-			docker.log.App.Error().Err(err).Msg("Failed to update apps from event")
+	case events.ActionStart, events.ActionRestart,
+		events.ActionStop, events.ActionKill, events.ActionDie:
+
+		if err := docker.syncWithContainer(event.Actor.ID); err != nil {
+			docker.log.App.Warn().Err(err).
+				Msg("Failed to sync container, performing full sync")
+
+			if err := docker.sync(); err != nil {
+				docker.log.App.Error().Err(err).
+					Msg("Failed to resync Docker apps")
+			}
 		}
-	default:
-		docker.log.App.Debug().Msgf("Ignoring event: %s", event.Action)
 	}
 }
 
 func (docker *DockerService) buildEventsKV() filters.Args {
-	vals := []string{"start", "restart", "stop", "kill"}
+	vals := []string{"start", "restart", "stop", "kill", "die"}
 	kv := make([]filters.KeyValuePair, len(vals))
 	for i, v := range vals {
 		kv[i] = filters.KeyValuePair{
@@ -193,34 +207,78 @@ func (docker *DockerService) buildEventsKV() filters.Args {
 }
 
 func (docker *DockerService) monitor(ctx context.Context) {
-	defer docker.client.Close()
+	defer func() {
+		if docker.client != nil {
+			_ = docker.client.Close()
+		}
+	}()
 
-	stream, chErr := docker.client.Events(ctx, events.ListOptions{
-		Filters: docker.buildEventsKV(),
-	})
+	for ctx.Err() == nil {
+		streamCtx, cancel := context.WithCancel(ctx)
 
-	for {
-		select {
-		case <-ctx.Done():
-			docker.log.App.Debug().Msg("Shutting down docker monitor")
-			return
+		stream, chErr := docker.client.Events(streamCtx, events.ListOptions{
+			Filters: docker.buildEventsKV(),
+		})
 
-		case event := <-stream:
-			docker.syncFromEvent(event)
+		if err := docker.sync(); err != nil {
+			docker.log.App.Error().Err(err).Msg("Failed to sync docker apps")
+		} else {
+		watch:
+			for {
+				select {
+				case <-ctx.Done():
+					cancel()
+					docker.log.App.Debug().Msg("Shutting down docker monitor")
+					return
 
-		case err := <-chErr:
+				case event, ok := <-stream:
+					if !ok {
+						docker.log.App.Warn().Msg("Docker event stream closed")
+						break watch
+					}
+					docker.syncFromEvent(event)
+
+				case err, ok := <-chErr:
+					if ok && err != nil {
+						docker.log.App.Error().Err(err).Msg("Docker event stream failed")
+					}
+					break watch
+				}
+			}
+		}
+
+		cancel()
+
+		for ctx.Err() == nil {
+			docker.log.App.Warn().Msg("Attempting to reconnect to docker")
+
+			cli, err := docker.connect()
+
+			if err == nil && cli != nil {
+				docker.client.Close()
+				docker.client = cli
+				docker.log.App.Info().Msg("Docker connection recovered")
+				break
+			}
+
 			if err != nil {
-				docker.log.App.Error().Err(err).Msg("Docker event stream failed")
+				docker.log.App.Error().Err(err).Msg("Failed to reconnect to docker")
+			}
+
+			select {
+			case <-ctx.Done():
 				return
+			case <-time.After(5 * time.Second):
 			}
 		}
 	}
 }
 
 func (docker *DockerService) Lookup(locator func(name string, app *model.App)) error {
+	docker.mu.RLock()
 	for app, config := range docker.apps {
 		locator(app, &config)
 	}
-
+	docker.mu.RUnlock()
 	return nil
 }
