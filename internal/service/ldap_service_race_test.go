@@ -88,8 +88,13 @@ func TestUnsynchronizedReconnectReproducesRace(t *testing.T) {
 	s := newFakeLDAPServer(t)
 
 	searchStarted := make(chan struct{})
+	release := make(chan struct{})
+	t.Cleanup(func() { select { case <-release: default: close(release) } })
 	var once sync.Once
-	s.setBlockSearch(func() { once.Do(func() { close(searchStarted) }) })
+	s.setBlockSearch(func() {
+		once.Do(func() { close(searchStarted) })
+		<-release
+	})
 
 	conn, err := ldapgo.DialURL(s.addr())
 	require.NoError(t, err)
@@ -112,6 +117,7 @@ func TestUnsynchronizedReconnectReproducesRace(t *testing.T) {
 
 	// This is what the buggy code did: drop the connection without waiting.
 	conn.Close()
+	close(release)
 
 	select {
 	case err := <-errCh:
