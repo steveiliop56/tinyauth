@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -51,9 +52,20 @@ func NewDockerService(i DockerServiceInput) (*DockerService, error) {
 
 	service.log.App.Debug().Msg("Attempting to connect to Docker")
 
-	cli, err := service.connectWithBackoff()
+	var cli *client.Client
+	var err error
+
+	if os.Getenv("DOCKER_HOST") != "" {
+		cli, err = service.connectWithBackoff()
+	} else {
+		cli, err = service.connect()
+	}
 
 	if err != nil {
+		if errors.Is(err, ErrPingFailed) {
+			service.log.App.Debug().Msg("Docker not connected, skipping")
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to connect to docker: %w", err)
 	}
 
@@ -91,17 +103,7 @@ func (docker *DockerService) connectWithBackoff() (*client.Client, error) {
 		return docker.connect()
 	}
 
-	cli, err := backoff.Retry(docker.ctx, operation, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
-
-	if err != nil {
-		if errors.Is(err, ErrPingFailed) {
-			docker.log.App.Debug().Msg("Docker not connected after retrying")
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to connect to docker after retrying: %w", err)
-	}
-
-	return cli, nil
+	return backoff.Retry(docker.ctx, operation, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
 }
 
 func (docker *DockerService) connect() (*client.Client, error) {
