@@ -19,7 +19,7 @@ PROD_COMPOSE := $(shell test -f "docker-compose.test.prod.yml" && echo "docker-c
 
 .DEFAULT_GOAL := binary
 
-.PHONY: deps clean-data clean-webui webui binary binary-linux-amd64 binary-linux-arm64 test vet test-race dev prod sql generate docker docker-distroless tools
+.PHONY: gen deps clean-data clean-webui webui binary binary-linux-amd64 binary-linux-arm64 test vet test-race dev prod sql generate docker docker-distroless tools
 
 # Tools
 tools:
@@ -94,6 +94,9 @@ sql:
 # Go gen
 generate:
 	go generate ./...
+
+# an alias for generate
+gen: generate
 
 # Docker image
 docker:
