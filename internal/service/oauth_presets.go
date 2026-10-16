@@ -13,8 +13,6 @@ func newGoogleOAuthService(config model.OAuthServiceConfig, ctx context.Context)
 	config.AuthURL = endpoints.Google.AuthURL
 	config.TokenURL = endpoints.Google.TokenURL
 	config.UserinfoURL = "https://openidconnect.googleapis.com/v1/userinfo"
-	config.Claims.EmailVerified = "verified_email"
-	config.Claims.Sub = "id"
 	return NewOAuthService(config, "google", ctx)
 }
 

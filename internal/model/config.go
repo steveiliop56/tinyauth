@@ -277,7 +277,6 @@ type OAuthServiceConfig struct {
 }
 
 type OAuthServiceClaimsMap struct {
-	Sub           string `description:"Subject claim." yaml:"-" tinyauth:"-"`
 	Username      string `description:"Username claim." yaml:"username,omitempty"`
 	Email         string `description:"Email claim." yaml:"email,omitempty"`
 	Name          string `description:"Name claim." yaml:"name,omitempty"`
