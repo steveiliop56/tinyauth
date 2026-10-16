@@ -10,6 +10,7 @@ type Claims struct {
 	Email             string `json:"email"`
 	PreferredUsername string `json:"preferred_username"`
 	Groups            any    `json:"groups"`
+	EmailVerified     bool   `json:"email_verified"`
 }
 
 var OverrideProviders = map[string]string{

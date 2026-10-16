@@ -74,6 +74,7 @@ func githubExtractor(client *http.Client, ctx context.Context, _ string, _ MapCl
 	user.PreferredUsername = userInfo.Login
 	user.Name = userInfo.Name
 	user.Sub = strconv.Itoa(userInfo.ID)
+	user.EmailVerified = true
 
 	return &user, nil
 }
