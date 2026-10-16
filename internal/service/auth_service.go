@@ -204,7 +204,7 @@ func (auth *AuthService) CheckUserPassword(search model.UserSearch, password str
 	case model.UserLDAP:
 		if auth.ldap != nil {
 			defer func() {
-				bindErr := auth.ldap.BindService(true)
+				bindErr := auth.ldap.BindService()
 				if bindErr != nil {
 					if err != nil {
 						err = fmt.Errorf("failed to rebind to ldap service account: %w, original error: %w", bindErr, err)

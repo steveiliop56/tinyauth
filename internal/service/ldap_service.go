@@ -126,6 +126,10 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 	ldap.mutex.Lock()
 	defer ldap.mutex.Unlock()
 
+	if ldap.conn != nil {
+		ldap.conn.Close()
+	}
+
 	var conn *ldapgo.Conn
 	var err error
 
@@ -152,7 +156,7 @@ func (ldap *LdapService) connect() (*ldapgo.Conn, error) {
 
 	ldap.conn = conn
 
-	err = ldap.BindService(false)
+	err = ldap.bindServiceCallback()
 	if err != nil {
 		return nil, err
 	}
@@ -255,23 +259,23 @@ func (ldap *LdapService) GetUserGroups(userDN string) ([]string, error) {
 	return groups, nil
 }
 
-func (ldap *LdapService) BindService(rebind bool) error {
-	// Locks must not be used for initial binding attempt
-	if rebind {
-		ldap.mutex.Lock()
-		defer ldap.mutex.Unlock()
-	}
-
+func (ldap *LdapService) bindServiceCallback() error {
 	if ldap.cert != nil {
 		return ldap.conn.ExternalBind()
 	}
 
-	// attempt unauthenticated/anonymous bind if both BindDN and bindpw are unset
+	// attempt unauthenticated/anonymous bind if both bind dn and password are unset
 	if ldap.config.LDAP.BindDN == "" && ldap.bindPw == "" {
 		return ldap.conn.UnauthenticatedBind("")
 	}
 
 	return ldap.conn.Bind(ldap.config.LDAP.BindDN, ldap.bindPw)
+}
+
+func (ldap *LdapService) BindService() error {
+	ldap.mutex.Lock()
+	defer ldap.mutex.Unlock()
+	return ldap.bindServiceCallback()
 }
 
 func (ldap *LdapService) Bind(userDN string, password string) error {
@@ -315,18 +319,7 @@ func (ldap *LdapService) reconnect(interval time.Duration) error {
 	exp.Multiplier = 1.5
 	exp.Reset()
 
-	operation := func() (*ldapgo.Conn, error) {
-		if ldap.conn != nil {
-			ldap.conn.Close()
-		}
-		conn, err := ldap.connect()
-		if err != nil {
-			return nil, err
-		}
-		return conn, nil
-	}
-
-	_, err := backoff.Retry(ldap.ctx, operation, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
+	_, err := backoff.Retry(ldap.ctx, ldap.connect, backoff.WithBackOff(exp), backoff.WithMaxTries(3))
 
 	if err != nil {
 		return err
