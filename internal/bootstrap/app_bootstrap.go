@@ -151,6 +151,10 @@ func (app *BootstrapApp) Setup() error {
 			}
 		}
 
+		if provider.RedirectURL == "" {
+			provider.RedirectURL = app.runtime.AppURL + "/api/oauth/callback/" + id
+		}
+
 		app.runtime.OAuthProviders[id] = provider
 	}
 
@@ -272,24 +276,6 @@ func (app *BootstrapApp) Setup() error {
 	}
 
 	app.runtime.ConfiguredProviders = configuredProviders
-
-	// force an update of the redirect urls for all oauth providers, if they are empty
-	services := app.services.oauthBrokerService.GetConfiguredServices()
-
-	for _, service := range services {
-		oauthService, ok := app.services.oauthBrokerService.GetService(service)
-
-		if !ok {
-			return fmt.Errorf("failed to get oauth service for provider %s", service)
-		}
-
-		providerConfig := oauthService.GetConfig()
-
-		if providerConfig.RedirectURL == "" {
-			providerConfig.RedirectURL = app.runtime.AppURL + "/api/oauth/callback/" + service
-			oauthService.UpdateConfig(providerConfig)
-		}
-	}
 
 	// setup router
 	err = app.setupRouter()

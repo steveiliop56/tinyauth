@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -82,21 +83,18 @@ func (s *OAuthService) GetToken(code string, verifier string) (*oauth2.Token, er
 
 func (s *OAuthService) GetUserinfo(token *oauth2.Token) (*model.Claims, error) {
 	client := oauth2.NewClient(s.ctx, oauth2.StaticTokenSource(token))
-	return s.userinfoExtractor(client, s.ctx, s.serviceCfg.UserinfoURL, s.mapClaims)
+	res, err := s.userinfoExtractor(client, s.ctx, s.serviceCfg.UserinfoURL, s.mapClaims)
+	if err != nil {
+		return nil, err
+	}
+	if s.serviceCfg.ForceVerified && !res.EmailVerified {
+		return nil, fmt.Errorf("email is not verified")
+	}
+	return res, nil
 }
 
 func (s *OAuthService) GetConfig() model.OAuthServiceConfig {
 	return s.serviceCfg
-}
-
-func (s *OAuthService) UpdateConfig(config model.OAuthServiceConfig) {
-	s.serviceCfg = config
-	s.config.ClientID = config.ClientID
-	s.config.ClientSecret = config.ClientSecret
-	s.config.Scopes = config.Scopes
-	s.config.Endpoint.AuthURL = config.AuthURL
-	s.config.Endpoint.TokenURL = config.TokenURL
-	s.config.RedirectURL = config.RedirectURL
 }
 
 func (s *OAuthService) mapClaims(claims map[string]any) model.Claims {
@@ -106,6 +104,7 @@ func (s *OAuthService) mapClaims(claims map[string]any) model.Claims {
 		PreferredUsername: mapClaim[string]("preferred_username", s.serviceCfg.Claims.Username, claims),
 		Email:             mapClaim[string]("email", s.serviceCfg.Claims.Email, claims),
 		Groups:            mapClaim[any]("groups", s.serviceCfg.Claims.Groups, claims),
+		EmailVerified:     mapClaim[bool]("email_verified", s.serviceCfg.Claims.EmailVerified, claims),
 	}
 }
 

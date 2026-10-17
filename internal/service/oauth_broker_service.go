@@ -20,7 +20,6 @@ type IOAuthService interface {
 	GetToken(code, verifier string) (*oauth2.Token, error)
 	GetUserinfo(token *oauth2.Token) (*model.Claims, error)
 	GetConfig() model.OAuthServiceConfig
-	UpdateConfig(config model.OAuthServiceConfig)
 }
 
 type OAuthBrokerService struct {

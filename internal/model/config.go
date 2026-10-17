@@ -272,18 +272,20 @@ type OAuthServiceConfig struct {
 	UserinfoURL      string                `description:"OAuth userinfo URL." yaml:"userinfoUrl,omitempty"`
 	Insecure         bool                  `description:"Allow insecure OAuth connections." yaml:"insecure,omitempty"`
 	Name             string                `description:"Provider name in UI." yaml:"name,omitempty"`
+	ForceVerified    bool                  `description:"Force verified emails." yaml:"forceVerified,omitempty"`
 	Claims           OAuthServiceClaimsMap `description:"Map of claims to extract from the userinfo response." yaml:"claims,omitempty"`
 }
 
 type OAuthServiceClaimsMap struct {
-	Username string `description:"Username claim." yaml:"username,omitempty"`
-	Email    string `description:"Email claim." yaml:"email,omitempty"`
-	Name     string `description:"Name claim." yaml:"name,omitempty"`
-	Groups   string `description:"Groups claim." yaml:"groups,omitempty"`
+	Username      string `description:"Username claim." yaml:"username,omitempty"`
+	Email         string `description:"Email claim." yaml:"email,omitempty"`
+	Name          string `description:"Name claim." yaml:"name,omitempty"`
+	Groups        string `description:"Groups claim." yaml:"groups,omitempty"`
+	EmailVerified string `description:"Email verified claim." yaml:"emailVerified,omitempty"`
 }
 
 type OIDCClientConfig struct {
-	ID                  string   `description:"OIDC client ID." yaml:"-"`
+	ID                  string   `description:"OIDC client ID." yaml:"-" tinyauth:"-"`
 	ClientID            string   `description:"OIDC client ID." yaml:"clientId,omitempty"`
 	ClientSecret        string   `description:"OIDC client secret." yaml:"clientSecret,omitempty"`
 	ClientSecretFile    string   `description:"Path to the file containing the OIDC client secret." yaml:"clientSecretFile,omitempty"`
