@@ -286,7 +286,13 @@ func (m *ContextMiddleware) basicAuth(username string, password string) (*model.
 			return fmt.Errorf("invalid password for basic auth user: %w", err)
 		}
 
-		m.auth.RecordLoginAttempt(username, true, actions)
+		if search.Type == model.UserLocal {
+			user := m.auth.GetLocalUser(username)
+
+			if user != nil && user.TOTPSecret != "" {
+				return fmt.Errorf("user with totp not allowed to login via basic auth: %s", username)
+			}
+		}
 
 		return nil
 	})
@@ -304,10 +310,6 @@ func (m *ContextMiddleware) basicAuth(username string, password string) (*model.
 
 		if user == nil {
 			return nil, nil, fmt.Errorf("user not found locally: %s", username)
-		}
-
-		if user.TOTPSecret != "" {
-			return nil, nil, fmt.Errorf("user with totp not allowed to login via basic auth: %s", username)
 		}
 
 		userContext.Local = &model.LocalContext{
