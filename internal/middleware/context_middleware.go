@@ -259,7 +259,7 @@ func (m *ContextMiddleware) basicAuth(username string, password string) (*model.
 
 	var search *model.UserSearch
 
-	err := m.auth.WithLoginAttempt(func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
+	err := m.auth.WithLoginAttempt(username, func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
 		locked, remaining := m.auth.IsAccountLocked(username, actions)
 
 		if locked {

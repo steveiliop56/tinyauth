@@ -328,9 +328,9 @@ func (auth *AuthService) RecordLoginAttempt(identifier string, success bool, act
 	actions.Set(identifier, entry, time.Duration(auth.config.Auth.LoginTimeout)*time.Second)
 }
 
-func (auth *AuthService) WithLoginAttempt(f func(actions cache.CacheStoreActions[LoginAttempt]) error) error {
+func (auth *AuthService) WithLoginAttempt(identifier string, f func(actions cache.CacheStoreActions[LoginAttempt]) error) error {
 	var err error
-	auth.caches.login.WithLock(func(actions cache.CacheStoreActions[LoginAttempt]) {
+	auth.caches.login.WithKeyedLock(identifier, func(actions cache.CacheStoreActions[LoginAttempt]) {
 		err = f(actions)
 	})
 	return err

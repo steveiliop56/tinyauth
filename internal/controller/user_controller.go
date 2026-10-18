@@ -75,7 +75,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	var search *model.UserSearch
 
-	err = controller.auth.WithLoginAttempt(func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
+	err = controller.auth.WithLoginAttempt(req.Username, func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
 		search, err = controller.auth.SearchUser(req.Username)
 
 		if err != nil {
@@ -227,7 +227,7 @@ func (controller *UserController) loginHandler(c *gin.Context) {
 
 	controller.log.AuditLoginSuccess(req.Username, search.Type.String(), c.ClientIP())
 
-	controller.auth.WithLoginAttempt(func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
+	controller.auth.WithLoginAttempt(req.Username, func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
 		controller.auth.RecordLoginAttempt(req.Username, true, actions)
 		return nil
 	})
@@ -333,7 +333,7 @@ func (controller *UserController) totpHandler(c *gin.Context) {
 
 	var user *model.LocalUser
 
-	err = controller.auth.WithLoginAttempt(func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
+	err = controller.auth.WithLoginAttempt(context.GetUsername(), func(actions cache.CacheStoreActions[service.LoginAttempt]) error {
 		isLocked, remaining := controller.auth.IsAccountLocked(context.GetUsername(), actions)
 
 		if isLocked {
