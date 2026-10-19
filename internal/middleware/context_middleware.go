@@ -294,6 +294,8 @@ func (m *ContextMiddleware) basicAuth(username string, password string) (*model.
 			}
 		}
 
+		m.auth.RecordLoginAttempt(username, true, actions)
+
 		return nil
 	})
 
