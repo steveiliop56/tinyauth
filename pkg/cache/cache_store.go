@@ -40,17 +40,6 @@ func NewCacheStore[T any](maxSize int) *CacheStore[T] {
 	}
 }
 
-func wrapWithLock[T any](f T, mu *sync.RWMutex, ro bool) T {
-	if ro {
-		mu.RLock()
-		defer mu.RUnlock()
-	} else {
-		mu.Lock()
-		defer mu.Unlock()
-	}
-	return f
-}
-
 // WithLock allows performing multiple operations on a single lock.
 // The provided mutate function receives a set of actions (Set, Get, Delete, Update) that
 // can be used to manipulate the cache store within the locked context.
@@ -68,16 +57,16 @@ func (cs *CacheStore[T]) WithLock(mutate func(actions CacheStoreActions[T])) {
 
 // WithKeyedLock allows performing multiple operations on a single lock for a specific key.
 // The provided mutate function receives a set of actions (Set, Get, Delete, Update) that
-// can be used to manipulate the cache store within the locked context.
+// each acquire the store lock while the key lock is held for the entire callback.
 func (cs *CacheStore[T]) WithKeyedLock(key string, mutate func(actions CacheStoreActions[T])) {
 	cs.lockKeyed(key)
 	defer cs.unlockKeyed(key)
 
 	actions := CacheStoreActions[T]{
-		Set:    wrapWithLock[func(key string, value T, ttl time.Duration)](cs.setCallback, &cs.keyedMu, false),
-		Get:    wrapWithLock[func(key string) (T, bool)](cs.getCallback, &cs.keyedMu, true),
-		Delete: wrapWithLock[func(key string)](cs.deleteCallback, &cs.keyedMu, false),
-		Update: wrapWithLock[func(key string, value T, ttl time.Duration) bool](cs.updateCallback, &cs.keyedMu, false),
+		Set:    cs.Set,
+		Get:    cs.Get,
+		Delete: cs.Delete,
+		Update: cs.Update,
 	}
 	mutate(actions)
 }
