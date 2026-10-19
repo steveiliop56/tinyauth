@@ -18,10 +18,17 @@ type cacheEntry[T any] struct {
 	expiresAt *time.Time
 }
 
+type keyedCacheMutex struct {
+	mu   sync.Mutex
+	refs int
+}
+
 type CacheStore[T any] struct {
 	cache   map[string]cacheEntry[T]
 	order   []string
 	mu      sync.RWMutex
+	keyedMu sync.RWMutex
+	keyed   sync.Map
 	maxSize int
 }
 
@@ -46,6 +53,50 @@ func (cs *CacheStore[T]) WithLock(mutate func(actions CacheStoreActions[T])) {
 		Update: cs.updateCallback,
 	}
 	mutate(actions)
+}
+
+// WithKeyedLock allows performing multiple operations on a single lock for a specific key.
+// The provided mutate function receives a set of actions (Set, Get, Delete, Update) that
+// each acquire the store lock while the key lock is held for the entire callback.
+func (cs *CacheStore[T]) WithKeyedLock(key string, mutate func(actions CacheStoreActions[T])) {
+	cs.lockKeyed(key)
+	defer cs.unlockKeyed(key)
+
+	actions := CacheStoreActions[T]{
+		Set:    cs.Set,
+		Get:    cs.Get,
+		Delete: cs.Delete,
+		Update: cs.Update,
+	}
+	mutate(actions)
+}
+
+func (cs *CacheStore[T]) lockKeyed(key string) {
+	cs.keyedMu.Lock()
+
+	val, _ := cs.keyed.LoadOrStore(key, &keyedCacheMutex{})
+	km := val.(*keyedCacheMutex)
+	km.refs++
+
+	cs.keyedMu.Unlock()
+
+	km.mu.Lock()
+}
+
+func (cs *CacheStore[T]) unlockKeyed(key string) {
+	cs.keyedMu.Lock()
+
+	val, _ := cs.keyed.Load(key)
+	km := val.(*keyedCacheMutex)
+
+	km.mu.Unlock()
+	km.refs--
+
+	if km.refs == 0 {
+		cs.keyed.Delete(key)
+	}
+
+	cs.keyedMu.Unlock()
 }
 
 func (cs *CacheStore[T]) updateCallback(key string, value T, ttl time.Duration) bool {

@@ -356,6 +356,41 @@ func TestCacheStoreWithLock(t *testing.T) {
 	assert.Equal(t, 200, value)
 }
 
+func TestCacheStoreWithKeyedLock(t *testing.T) {
+	cs := NewCacheStore[int](0)
+
+	const goroutines = 16
+	const iterations = 100
+	const keys = 4
+
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for g := range goroutines {
+		go func(g int) {
+			defer wg.Done()
+			<-start
+			key := strconv.Itoa(g % keys)
+			for range iterations {
+				cs.WithKeyedLock(key, func(actions CacheStoreActions[int]) {
+					value, _ := actions.Get(key)
+					actions.Set(key, value+1, 0)
+				})
+			}
+		}(g)
+	}
+
+	close(start)
+	wg.Wait()
+
+	for k := range keys {
+		value, ok := cs.Get(strconv.Itoa(k))
+		assert.True(t, ok)
+		assert.Equal(t, goroutines/keys*iterations, value)
+	}
+}
+
 // TestCacheStoreConcurrency exercises every locking path concurrently so the
 // race detector (go test -race) can flag unsynchronised access.
 func TestCacheStoreConcurrency(t *testing.T) {
@@ -372,7 +407,7 @@ func TestCacheStoreConcurrency(t *testing.T) {
 			defer wg.Done()
 			for i := range iterations {
 				key := strconv.Itoa((g*iterations + i) % 32)
-				switch i % 6 {
+				switch i % 9 {
 				case 0:
 					cs.Set(key, i, time.Minute)
 				case 1:
@@ -389,6 +424,17 @@ func TestCacheStoreConcurrency(t *testing.T) {
 							actions.Set(key, v+1, time.Minute)
 						}
 					})
+				case 6:
+					cs.WithKeyedLock(key, func(actions CacheStoreActions[int]) {
+						actions.Set(key, i, time.Minute)
+						value, _ := actions.Get(key)
+						actions.Update(key, value+1, time.Minute)
+						actions.Delete(key)
+					})
+				case 7:
+					cs.Sweep()
+				case 8:
+					cs.Clear()
 				}
 			}
 		}(g)
