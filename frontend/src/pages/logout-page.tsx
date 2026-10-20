@@ -24,29 +24,15 @@ export const LogoutPage = () => {
   const { search } = useLocation();
   const navigate = useNavigate();
 
-  const { logout_force, logout_reason, ...loginParams } = useScreenParams(
+  const { logout_reason, ...loginParams } = useScreenParams(
     new URLSearchParams(search),
   );
   const params = searchParamsFromObject(loginParams).toString();
   const loginUrl = `/login${params ? `?${params}` : ""}`;
-  const { mutate, isPending, isSuccess, isError } = useLogout(
-    loginUrl,
-    auth.authenticated && logout_force === true,
-  );
+  const { mutate, isPending, isSuccess } = useLogout(loginUrl);
 
   if (!auth.authenticated) {
     return <Navigate to={loginUrl} replace />;
-  }
-
-  if (logout_force) {
-    return (
-      <LogoutCard
-        title={t(isError ? "logoutFailTitle" : "logoutProgressTitle")}
-        onLogout={isError ? mutate : undefined}
-      >
-        {t(isError ? "logoutFailSubtitle" : "logoutProgressSubtitle")}
-      </LogoutCard>
-    );
   }
 
   if (logout_reason === "oidc") {
@@ -73,10 +59,9 @@ export const LogoutPage = () => {
   );
 };
 
-function useLogout(loginUrl: string, autoLogout: boolean) {
+function useLogout(loginUrl: string) {
   const { t } = useTranslation();
   const redirectTimer = useRef<number | null>(null);
-  const hasAutoLoggedOut = useRef(false);
 
   const mutation = useMutation({
     mutationFn: () => axios.post("/api/user/logout"),
@@ -96,15 +81,6 @@ function useLogout(loginUrl: string, autoLogout: boolean) {
       });
     },
   });
-
-  const { mutate } = mutation;
-
-  useEffect(() => {
-    if (autoLogout && !hasAutoLoggedOut.current) {
-      hasAutoLoggedOut.current = true;
-      mutate();
-    }
-  }, [autoLogout, mutate]);
 
   useEffect(() => {
     return () => {
@@ -143,8 +119,7 @@ function LogoutCard({
       {onLogout && (
         <CardFooter className="flex flex-col items-stretch gap-3">
           <Button
-            className="text-destructive"
-            variant="outline"
+            variant="destructive"
             loading={isPending}
             onClick={onLogout}
           >

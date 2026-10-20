@@ -773,9 +773,7 @@ func (controller *OIDCController) userinfo(c *gin.Context) {
 func (controller *OIDCController) endSession(c *gin.Context) {
 	if controller.oidc == nil {
 		controller.log.App.Warn().Msg("Received OIDC userinfo request but OIDC server is not configured")
-		c.JSON(500, gin.H{
-			"error": "server_error",
-		})
+		controller.humanError(c, "OIDC server is not configured")
 		return
 	}
 
@@ -784,9 +782,7 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 	err := c.Bind(&req)
 	if err != nil {
 		controller.log.App.Warn().Err(err).Msg("Failed to bind token request")
-		c.JSON(400, gin.H{
-			"error": "invalid_request",
-		})
+		controller.humanError(c, "Invalid request")
 		return
 	}
 
@@ -797,9 +793,7 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 
 		if err != nil {
 			controller.log.App.Warn().Err(err).Msg("Failed to decode ID token hint")
-			c.JSON(400, gin.H{
-				"error": "invalid_request",
-			})
+			controller.humanError(c, "Invalid ID token")
 			return
 		}
 
@@ -814,17 +808,13 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 		// will never be not nil but just in case
 		if err != nil {
 			controller.log.App.Warn().Err(err).Msg("Failed to get audience from ID token")
-			c.JSON(400, gin.H{
-				"error": "invalid_request",
-			})
+			controller.humanError(c, "Invalid ID token")
 			return
 		}
 
 		if req.ClientID != "" && !slices.Contains(aud, req.ClientID) {
 			controller.log.App.Warn().Str("client_id", req.ClientID).Msg("Client ID does not match audience")
-			c.JSON(400, gin.H{
-				"error": "invalid_request",
-			})
+			controller.humanError(c, "Client ID does not match audience")
 			return
 		}
 
@@ -841,9 +831,7 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 
 		if !ok {
 			controller.log.App.Warn().Str("clientId", clientId).Msg("Client not found")
-			c.JSON(400, gin.H{
-				"error": "invalid_request",
-			})
+			controller.humanError(c, "Client not found")
 			return
 		}
 
@@ -857,13 +845,13 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 			} else {
 				controller.log.App.Warn().Str("clientId", req.ClientID).Msg("Client not found for post logout redirect URI")
 			}
-			c.Redirect(http.StatusFound, fmt.Sprintf("%s/logout", controller.oidc.GetIssuer()))
+			c.Redirect(http.StatusFound, fmt.Sprintf("%s/logout?logout_reason=oidc", controller.oidc.GetIssuer()))
 			return
 		}
 
 		if !slices.Contains(client.TrustedPostLogoutRedirectURIs, req.PostLogoutRedirectURI) {
 			controller.log.App.Warn().Str("client_id", client.ClientID).Str("post_logout_redirect_uri", req.PostLogoutRedirectURI).Msg("Post logout redirect URI not trusted")
-			c.Redirect(http.StatusFound, fmt.Sprintf("%s/logout", controller.oidc.GetIssuer()))
+			c.Redirect(http.StatusFound, fmt.Sprintf("%s/logout?logout_reason=oidc", controller.oidc.GetIssuer()))
 			return
 		}
 
@@ -871,9 +859,7 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 
 		if err != nil {
 			controller.log.App.Error().Err(err).Msg("Failed to parse logout redirect URI")
-			c.JSON(400, gin.H{
-				"error": "server_error",
-			})
+			controller.humanError(c, "Invalid post logout redirect URI")
 			return
 		}
 
@@ -884,9 +870,7 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 
 			if err != nil {
 				controller.log.App.Error().Err(err).Msg("Failed to delete session")
-				c.JSON(400, gin.H{
-					"error": "server_error",
-				})
+				controller.humanError(c, "Failed to end session")
 				return
 			}
 
@@ -912,7 +896,11 @@ func (controller *OIDCController) endSession(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("%s/logout", controller.oidc.GetIssuer()))
+	c.Redirect(http.StatusFound, fmt.Sprintf("%s/logout?logout_reason=oidc", controller.oidc.GetIssuer()))
+}
+
+func (controller *OIDCController) humanError(c *gin.Context, reason string) {
+	c.Redirect(http.StatusFound, fmt.Sprintf("%s/error?error=%s", controller.oidc.GetIssuer(), url.QueryEscape(reason)))
 }
 
 func (controller *OIDCController) authorizeError(c *gin.Context, params authorizeErrorParams) {
