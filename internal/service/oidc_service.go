@@ -72,29 +72,25 @@ var SupportedPrompts = []string{string(OIDCPromptLogin), string(OIDCPromptNone)}
 // instead of calling the userinfo endpoint, so we include them in the ID token as well
 // for better compatibility with existing apps
 type ClaimSet struct {
-	Iss               string   `json:"iss"`
-	Aud               string   `json:"aud"`
-	Sub               string   `json:"sub"`
-	Iat               int64    `json:"iat"`
-	Exp               int64    `json:"exp"`
-	AuthTime          int64    `json:"auth_time,omitempty"`
-	Name              string   `json:"name,omitempty"`
-	GivenName         string   `json:"given_name,omitempty"`
-	FamilyName        string   `json:"family_name,omitempty"`
-	MiddleName        string   `json:"middle_name,omitempty"`
-	Nickname          string   `json:"nickname,omitempty"`
-	Profile           string   `json:"profile,omitempty"`
-	Picture           string   `json:"picture,omitempty"`
-	Website           string   `json:"website,omitempty"`
-	Gender            string   `json:"gender,omitempty"`
-	Birthdate         string   `json:"birthdate,omitempty"`
-	Zoneinfo          string   `json:"zoneinfo,omitempty"`
-	Locale            string   `json:"locale,omitempty"`
-	Email             string   `json:"email,omitempty"`
-	EmailVerified     bool     `json:"email_verified,omitempty"`
-	PreferredUsername string   `json:"preferred_username,omitempty"`
-	Groups            []string `json:"groups,omitempty"`
-	Nonce             string   `json:"nonce,omitempty"`
+	jwt.RegisteredClaims
+	AuthTime          *jwt.NumericDate `json:"auth_time,omitempty"`
+	Name              string           `json:"name,omitempty"`
+	GivenName         string           `json:"given_name,omitempty"`
+	FamilyName        string           `json:"family_name,omitempty"`
+	MiddleName        string           `json:"middle_name,omitempty"`
+	Nickname          string           `json:"nickname,omitempty"`
+	Profile           string           `json:"profile,omitempty"`
+	Picture           string           `json:"picture,omitempty"`
+	Website           string           `json:"website,omitempty"`
+	Gender            string           `json:"gender,omitempty"`
+	Birthdate         string           `json:"birthdate,omitempty"`
+	Zoneinfo          string           `json:"zoneinfo,omitempty"`
+	Locale            string           `json:"locale,omitempty"`
+	Email             string           `json:"email,omitempty"`
+	EmailVerified     bool             `json:"email_verified,omitempty"`
+	PreferredUsername string           `json:"preferred_username,omitempty"`
+	Groups            jwt.ClaimStrings `json:"groups,omitempty"`
+	Nonce             string           `json:"nonce,omitempty"`
 }
 
 // We use this struct as both a response struct and a struct to store userinfo
@@ -153,7 +149,7 @@ type AuthorizeCodeEntry struct {
 	Nonce         string
 	CodeChallenge string
 	Userinfo      UserinfoResponse
-	AuthTime      int64
+	AuthTime      time.Time
 }
 
 type UsedCodeEntry struct {
@@ -549,9 +545,9 @@ func (service *OIDCService) GetCodeEntry(codeHash string, clientId string) (*Aut
 	return &entry, true
 }
 
-func (service *OIDCService) generateIDToken(client model.OIDCClientConfig, user UserinfoResponse, scope string, nonce string, authTime *int64) (string, error) {
-	createdAt := time.Now().Unix()
-	expiresAt := time.Now().Add(time.Duration(service.config.Auth.SessionExpiry) * time.Second).Unix()
+func (service *OIDCService) generateIDToken(client model.OIDCClientConfig, authTime *time.Time, sub, nonce string) (string, error) {
+	createdAt := time.Now().UTC()
+	expiresAt := createdAt.Add(time.Duration(service.config.Auth.SessionExpiry) * time.Second)
 
 	hasher := sha256.New()
 
@@ -578,24 +574,19 @@ func (service *OIDCService) generateIDToken(client model.OIDCClientConfig, user 
 		return "", err
 	}
 
-	userInfo := service.CompileUserinfo(user, scope)
-
 	claims := ClaimSet{
-		Iss:               service.issuer,
-		Aud:               client.ClientID,
-		Sub:               user.Sub,
-		Iat:               createdAt,
-		Exp:               expiresAt,
-		Name:              userInfo.Name,
-		Email:             userInfo.Email,
-		EmailVerified:     userInfo.EmailVerified,
-		PreferredUsername: userInfo.PreferredUsername,
-		Groups:            userInfo.Groups,
-		Nonce:             nonce,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    service.issuer,
+			Audience:  jwt.ClaimStrings{client.ClientID},
+			Subject:   sub,
+			IssuedAt:  jwt.NewNumericDate(createdAt),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
+		Nonce: nonce,
 	}
 
 	if authTime != nil {
-		claims.AuthTime = *authTime
+		claims.AuthTime = jwt.NewNumericDate(*authTime)
 	}
 
 	payload, err := json.Marshal(claims)
@@ -619,8 +610,8 @@ func (service *OIDCService) generateIDToken(client model.OIDCClientConfig, user 
 	return token, nil
 }
 
-func (service *OIDCService) GenerateAccessToken(ctx context.Context, client model.OIDCClientConfig, codeEntry AuthorizeCodeEntry, authTime int64) (*TokenResponse, error) {
-	idToken, err := service.generateIDToken(client, codeEntry.Userinfo, codeEntry.Scope, codeEntry.Nonce, &authTime)
+func (service *OIDCService) GenerateAccessToken(ctx context.Context, client model.OIDCClientConfig, codeEntry AuthorizeCodeEntry, authTime time.Time) (*TokenResponse, error) {
+	idToken, err := service.generateIDToken(client, &authTime, codeEntry.Userinfo.Sub, codeEntry.Nonce)
 
 	if err != nil {
 		return nil, err
@@ -689,20 +680,10 @@ func (service *OIDCService) RefreshAccessToken(ctx context.Context, refreshToken
 		return nil, ErrInvalidClient
 	}
 
-	// we need to unmarshal the userinfo from the database to include it in the new ID token,
-	// since the ID token includes user claims for better compatibility with existing apps
-	var userInfo UserinfoResponse
-
-	err = json.Unmarshal([]byte(entry.UserinfoJson), &userInfo)
-
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO: store auth time in the database so we can include it in the new ID token, for now we omit it
 	idToken, err := service.generateIDToken(model.OIDCClientConfig{
 		ClientID: entry.ClientID,
-	}, userInfo, entry.Scope, entry.Nonce, nil)
+	}, nil, entry.Sub, entry.Nonce)
 
 	if err != nil {
 		return nil, err
@@ -954,6 +935,29 @@ func (service *OIDCService) GetAuthorizeRequestByTicket(ticket string) (*Authori
 
 func (service *OIDCService) DeleteAuthorizeRequestTicket(ticket string) {
 	service.caches.authorize.Delete(ticket)
+}
+
+func (service *OIDCService) DecodeIDToken(tokenStr string) (*ClaimSet, error) {
+	var claims ClaimSet
+
+	parser := jwt.NewParser(
+		jwt.WithExpirationRequired(),
+		jwt.WithValidMethods([]string{"RS256"}),
+	)
+
+	token, err := parser.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (any, error) {
+		return service.publicKey, nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse id token: %w", err)
+	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid id token")
+	}
+
+	return &claims, nil
 }
 
 // DecodeAuthorizeJWT TODO: support signed request objects in the future
