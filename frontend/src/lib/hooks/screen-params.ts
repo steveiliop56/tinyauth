@@ -7,6 +7,8 @@ type ScreenParams = {
   oidc_scope?: string;
   oidc_name?: string;
   oidc_prompt?: "none" | "login";
+  logout_force?: boolean;
+  logout_reason?: "oidc";
 };
 
 const zodScreenParams = z.object({
@@ -16,6 +18,11 @@ const zodScreenParams = z.object({
   oidc_scope: z.string().optional(),
   oidc_name: z.string().optional(),
   oidc_prompt: z.enum(["none", "login"]).optional(),
+  logout_force: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
+  logout_reason: z.enum(["oidc"]).optional(),
 });
 
 export function useScreenParams(params: URLSearchParams): ScreenParams {
